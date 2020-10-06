@@ -13,7 +13,7 @@ import (
 
 	_ "gitlab.com/weeve/edge-server/edge-pipeline-service/docs"
 
-	"github.com/swaggo/http-swagger"
+	httpSwagger "github.com/swaggo/http-swagger"
 
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/controller"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
@@ -32,6 +32,8 @@ func HandleRequests(portNum int) {
 
 	subRouter := router.PathPrefix("/").Subrouter()
 	subRouter.Use(JwtVerify)
+
+	subRouter.HandleFunc("/images/pull/{imageName}", controller.PullImage)
 
 	subRouter.HandleFunc("/containers/start", controller.StartContainers).Methods("POST")
 	subRouter.HandleFunc("/containers/start/{id}", controller.StartContainer).Methods("POST")
