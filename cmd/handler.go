@@ -13,7 +13,7 @@ import (
 
 	_ "gitlab.com/weeve/edge-server/edge-pipeline-service/docs"
 
-	// httpSwagger "github.com/swaggo/http-swagger"
+	httpSwagger "github.com/swaggo/http-swagger"
 
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/controller"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
@@ -38,18 +38,14 @@ func HandleRequests(portNum int) {
 	subRouter.HandleFunc("/containers/stop", controller.StopContainers).Methods("POST")
 	subRouter.HandleFunc("/containers/stop/{id}", controller.StopContainer).Methods("POST")
 	subRouter.HandleFunc("/containers", controller.CreateContainer).Methods("POST")
+	subRouter.HandleFunc("/containers/create/{containerName}/{imageName}", controller.CreateStartContainer).Methods("POST")
 
 	subRouter.HandleFunc("/containers/{id}", controller.DeleteContainer).Methods("DELETE")
 	subRouter.HandleFunc("/containers", controller.GetAllContainers)
 	subRouter.HandleFunc("/containers/{id}", controller.GetContainer)
 	subRouter.HandleFunc("/containers/{id}/logs", controller.GetContainerLog)
 
-	corsWrapper := cors.New(cors.Options{
-		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
-		AllowedHeaders: []string{"Content-Type", "Origin", "Accept", "*"},
-	})
-
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", portNum), corsWrapper.Handler(router)))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", portNum), router))
 }
 
 func hello(w http.ResponseWriter, r *http.Request) {

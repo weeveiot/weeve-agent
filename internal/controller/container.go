@@ -159,6 +159,29 @@ func CreateContainer(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(true)
 }
 
+// CreateStartContainer will pull image and create container based on input Image and Container name
+// @Summary Pull image, Create container and Start container
+// @Description Pull image, Create container and Start container
+// @Tags containers
+// @Accept  json
+// @Produce  string
+// @Success 200
+// @Failure 400
+// @Param image name to pull, string "imageName"
+// @Param container name to create container, string  "containerName"
+// @Router /containers/create/{containerName}/{imageName} [post]
+// @Security ApiKeyAuth
+// @param Authorization header string true "Token"
+func CreateStartContainer(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Endpoint: CreateStartContainer")
+	vars := mux.Vars(r)
+	imageName := vars["imageName"]
+	containerName := vars["containerName"]
+
+	res := docker.CreateStartContainer(containerName, imageName)
+	json.NewEncoder(w).Encode(res)
+}
+
 func UpdateContainer(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint: createContainer")
 	vars := mux.Vars(r)
