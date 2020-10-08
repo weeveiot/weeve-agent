@@ -25,13 +25,14 @@ type Token struct {
 }
 
 type Manifest struct {
-	Index     int              `json:"Index"`
-	Tag       string           `json:"Tag"`
-	ImageID   string           `json:"ImageID"`
-	ImageName string           `json:"ImageID"`
-	State     string           `json:"State"`
-	Ingress   DatasourceConfig `json:"Ingress"`
-	Egress    DatasourceConfig `json:"Egress"`
+	Index         int              `json:"Index"`
+	Tag           string           `json:"Tag"`
+	ImageID       string           `json:"ImageID"`
+	ImageName     string           `json:"ImageName"`
+	ContainerName string           `json:"ContainerName"`
+	State         string           `json:"State"`
+	Ingress       DatasourceConfig `json:"Ingress"`
+	Egress        DatasourceConfig `json:"Egress"`
 }
 
 type DatasourceConfig struct {

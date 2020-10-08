@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/docker"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 
 	"github.com/gorilla/mux"
 )
@@ -161,21 +162,21 @@ func StopContainer(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @param Authorization header string true "Token"
 func CreateContainer(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Endpoint: CreateStartContainer")
+	fmt.Println("Endpoint: CreateContainer")
 	// vars := mux.Vars(r)
 	// imageName := vars["imageName"]
 	// containerName := vars["containerName"]
 
-	user := &model.Manifest{}
+	manifest := &model.Manifest{}
 
-	err := json.NewDecoder(r.Body).Decode(user)
+	err := json.NewDecoder(r.Body).Decode(manifest)
 	if err != nil {
 		var resp = map[string]interface{}{"status": false, "message": "Invalid request"}
 		json.NewEncoder(w).Encode(resp)
 		return
 	}
 
-	res := docker.CreateContainer(containerName, imageName)
+	res := docker.CreateContainer(manifest.ContainerName, manifest.ImageName)
 	json.NewEncoder(w).Encode(res)
 }
 
