@@ -147,19 +147,7 @@ func StopContainer(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
-func CreateContainer(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Endpoint: createContainer")
-	// vars := mux.Vars(r)
-	// parentPath := vars["parentPath"]
-	// imageName := vars["imageName"]
-
-	// app := ContainerApp{Name: fmt.Sprintf("%s/%s", parentPath, imageName)}
-	// result = app.CreateStartLocal(false)
-	// json.NewEncoder(w).Encode(result)
-	json.NewEncoder(w).Encode(true)
-}
-
-// CreateStartContainer will pull image and create container based on input Image and Container name
+// CreateContainer will pull image and create container based on input Image and Container name
 // @Summary Pull image, Create container and Start container
 // @Description Pull image, Create container and Start container
 // @Tags containers
@@ -172,13 +160,22 @@ func CreateContainer(w http.ResponseWriter, r *http.Request) {
 // @Router /containers/create/{containerName}/{imageName} [post]
 // @Security ApiKeyAuth
 // @param Authorization header string true "Token"
-func CreateStartContainer(w http.ResponseWriter, r *http.Request) {
+func CreateContainer(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint: CreateStartContainer")
-	vars := mux.Vars(r)
-	imageName := vars["imageName"]
-	containerName := vars["containerName"]
+	// vars := mux.Vars(r)
+	// imageName := vars["imageName"]
+	// containerName := vars["containerName"]
 
-	res := docker.CreateStartContainer(containerName, imageName)
+	user := &model.Manifest{}
+
+	err := json.NewDecoder(r.Body).Decode(user)
+	if err != nil {
+		var resp = map[string]interface{}{"status": false, "message": "Invalid request"}
+		json.NewEncoder(w).Encode(resp)
+		return
+	}
+
+	res := docker.CreateContainer(containerName, imageName)
 	json.NewEncoder(w).Encode(res)
 }
 

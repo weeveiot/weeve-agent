@@ -144,11 +144,7 @@ func StopContainer(containerId string) bool {
 	return true
 }
 
-func CreateContainer() {
-
-}
-
-func CreateStartContainer(containerName string, imageName string) string {
+func CreateContainer(containerName string, imageName string) string {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {

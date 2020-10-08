@@ -37,8 +37,8 @@ func HandleRequests(portNum int) {
 	subRouter.HandleFunc("/containers/start/{id}", controller.StartContainer).Methods("POST")
 	subRouter.HandleFunc("/containers/stop", controller.StopContainers).Methods("POST")
 	subRouter.HandleFunc("/containers/stop/{id}", controller.StopContainer).Methods("POST")
-	subRouter.HandleFunc("/containers", controller.CreateContainer).Methods("POST")
-	subRouter.HandleFunc("/containers/create/{containerName}/{imageName}", controller.CreateStartContainer).Methods("POST")
+	subRouter.HandleFunc("/containers/deploy", controller.CreateContainer).Methods("POST")
+	// subRouter.HandleFunc("/containers/create/{containerName}/{imageName}", controller.CreateStartContainer).Methods("POST")
 
 	subRouter.HandleFunc("/containers/{id}", controller.DeleteContainer).Methods("DELETE")
 	subRouter.HandleFunc("/containers", controller.GetAllContainers)
