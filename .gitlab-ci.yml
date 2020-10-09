@@ -14,6 +14,7 @@ cache:
 stages:
   - test
   - build
+  - deploy
 
 before_script:
   - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
@@ -28,7 +29,7 @@ validate:
 compile:
   stage: build
   script:
-    - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/edge-pipeline-service -n cmd/main.go
+    - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/edge-pipeline-service -x cmd/main.go
   artifacts:
     paths:
       - edge-pipeline-service
