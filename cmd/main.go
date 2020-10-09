@@ -6,8 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/jessevdk/go-flags"
-
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/cmd"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/constants"
 )
 
