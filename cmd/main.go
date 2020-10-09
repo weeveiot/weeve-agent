@@ -42,5 +42,5 @@ func main() {
 		constants.RoleArn = options.RoleArn
 	}
 	log.Info("Starting server on port ", options.Port)
-	cmd.HandleRequests(options.Port)
+	internal.HandleRequests(options.Port)
 }
