@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/bitly/go-simplejson"
 
 	"strings"
 
@@ -17,6 +18,7 @@ import (
 
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/controller"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
 
 	"github.com/gorilla/mux"
 )
@@ -46,11 +48,24 @@ func HandleRequests(portNum int) {
 	subRouter.HandleFunc("/containers/{id}/logs", controller.GetContainerLog)
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", portNum), router))
+
+	util.PrintEndpoints(router)
 }
 
 func hello(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello")
-	fmt.Println("Endpoint Hit: homePage")
+	json := simplejson.New()
+	json.Set("foo", "bar")
+	payload, err := json.MarshalJSON()
+	if err != nil {
+		log.Println(err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(payload)
+
+	// fmt.Fprintf(w, "Edge Pipeline Server, version 0.0.1")
+	// fmt.Println("Endpoint Hit: homePage")
+	// log.Debug("Handled request on /")
 }
 
 func CommonMiddleware(next http.Handler) http.Handler {

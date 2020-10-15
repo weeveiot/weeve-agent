@@ -52,4 +52,5 @@ func main() {
 	// }
 	log.Info("Starting server on port ", options.Port)
 	internal.HandleRequests(options.Port)
+	log.Debug("Running")
 }

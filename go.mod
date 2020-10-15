@@ -8,6 +8,7 @@ require (
 	github.com/auth0/go-jwt-middleware v0.0.0-20200810150920-a32d7af194d1
 	github.com/aws/aws-sdk-go v1.34.30
 	github.com/aws/aws-sdk-go-v2 v0.24.0
+	github.com/bitly/go-simplejson v0.5.0
 	github.com/containerd/containerd v1.4.1 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.7.1+incompatible // indirect
