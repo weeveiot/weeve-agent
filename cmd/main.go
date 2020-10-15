@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"fmt"
 
 	log "github.com/sirupsen/logrus"
 
@@ -12,6 +13,8 @@ import (
 
 type Options struct {
 	Port    int    `long:"port" short:"p" description:"Port number" required:"true"`
+	Verbose []bool `long:"verbose" short:"v" description:"Show verbose debug information"`
+	// TODO: We only need this for AWS ECR integration...
 	// RoleArn string `long:"role" short:"r" description:"Role Arn" required:"false"`
 }
 
@@ -22,6 +25,16 @@ func init() {
 	// log.SetFormatter(&log.JSONFormatter{})
 	log.SetFormatter(&log.TextFormatter{})
 	log.SetOutput(os.Stdout)
+	fmt.Println(options.Verbose)
+	fmt.Println(len(options.Verbose))
+	fmt.Printf("Verbosity: %v\n", options.Verbose)
+
+	if len(options.Verbose) == 1 {
+		fmt.Println("V")
+	} else {
+		fmt.Println("No")
+	}
+
 	log.SetLevel(log.DebugLevel)
 	log.Debug("Started logging")
 }
@@ -38,6 +51,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	// TODO: We only need this for AWS ECR integration...
 	// if options.RoleArn != "" {
 	// 	constants.RoleArn = options.RoleArn
 	// }
