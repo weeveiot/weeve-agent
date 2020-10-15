@@ -54,7 +54,10 @@ func HandleRequests(portNum int) {
 
 func hello(w http.ResponseWriter, r *http.Request) {
 	json := simplejson.New()
-	json.Set("foo", "bar")
+	json.Set("status", "ok")
+	json.Set("name", "Edge Pipeline Service")
+	json.Set("location", "SIMULATION")
+	json.Set("version", "0.0.1")
 	payload, err := json.MarshalJSON()
 	if err != nil {
 		log.Println(err)
