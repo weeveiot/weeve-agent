@@ -7,12 +7,12 @@ import (
 
 	"github.com/jessevdk/go-flags"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/constants"
+	// "gitlab.com/weeve/edge-server/edge-pipeline-service/internal/constants"
 )
 
 type Options struct {
 	Port    int    `long:"port" short:"p" description:"Port number" required:"true"`
-	RoleArn string `long:"role" short:"r" description:"Role Arn" required:"true"`
+	// RoleArn string `long:"role" short:"r" description:"Role Arn" required:"false"`
 }
 
 var options Options
@@ -38,9 +38,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	if options.RoleArn != "" {
-		constants.RoleArn = options.RoleArn
-	}
+	// if options.RoleArn != "" {
+	// 	constants.RoleArn = options.RoleArn
+	// }
 	log.Info("Starting server on port ", options.Port)
 	internal.HandleRequests(options.Port)
 }
