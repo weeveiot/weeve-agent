@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	// "fmt"
 
 	log "github.com/sirupsen/logrus"
 
@@ -23,7 +22,6 @@ var options Options
 var parser = flags.NewParser(&options, flags.Default)
 
 func init() {
-	// log.SetFormatter(&log.JSONFormatter{})
 	log.SetFormatter(&log.TextFormatter{})
 	log.SetOutput(os.Stdout)
 
@@ -58,6 +56,6 @@ func main() {
 	// }
 
 	log.Info("Starting server on port ", options.Port)
+
 	internal.HandleRequests(options.Port)
-	log.Debug("Running")
 }

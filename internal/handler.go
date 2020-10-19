@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	// "log"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/bitly/go-simplejson"
 
 	"strings"
 
@@ -28,7 +28,7 @@ func HandleRequests(portNum int) {
 	router.Use(CommonMiddleware)
 	// jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
 
-	router.HandleFunc("/", hello)
+	router.HandleFunc("/", controller.Status)
 	router.HandleFunc("/login", controller.Login).Methods("POST")
 	router.PathPrefix("/docs/").Handler(httpSwagger.WrapHandler)
 
@@ -47,28 +47,11 @@ func HandleRequests(portNum int) {
 	subRouter.HandleFunc("/containers/{id}", controller.GetContainer)
 	subRouter.HandleFunc("/containers/{id}/logs", controller.GetContainerLog)
 
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", portNum), router))
-
 	util.PrintEndpoints(router)
-}
 
-func hello(w http.ResponseWriter, r *http.Request) {
-	json := simplejson.New()
-	json.Set("status", "ok")
-	json.Set("name", "Edge Pipeline Service")
-	json.Set("location", "SIMULATION")
-	json.Set("version", "0.0.1")
-	payload, err := json.MarshalJSON()
-	if err != nil {
-		log.Println(err)
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(payload)
-
-	// fmt.Fprintf(w, "Edge Pipeline Server, version 0.0.1")
-	// fmt.Println("Endpoint Hit: homePage")
-	// log.Debug("Handled request on /")
+	// This is the main server loop!
+	log.Debug("Running ListenAndServe")
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", portNum), router))
 }
 
 func CommonMiddleware(next http.Handler) http.Handler {

@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 )
 
 func PrintEndpoints(r *mux.Router) {
-	fmt.Println("Printing endpoints")
+	log.Debug("Available endpoints are registered, walking router tree:")
+	fmt.Println("")
 	r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 		path, err := route.GetPathTemplate()
 		if err != nil {
@@ -21,9 +22,12 @@ func PrintEndpoints(r *mux.Router) {
 		if err != nil {
 			return nil
 		}
-		fmt.Printf("%v %s\n", methods, path)
+
+		log.Debug("\t", methods, "\t", path)
+
 		return nil
 	})
+	fmt.Println("")
 }
 
 func readJson(jsonFileName string) {
