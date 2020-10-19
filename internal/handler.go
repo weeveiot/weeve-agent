@@ -47,6 +47,8 @@ func HandleRequests(portNum int) {
 	subRouter.HandleFunc("/containers/{id}", controller.GetContainer)
 	subRouter.HandleFunc("/containers/{id}/logs", controller.GetContainerLog)
 
+    subRouter.HandleFunc("/pipeline", controller.BuildPipeline).Methods("POST")
+
 	util.PrintEndpoints(router)
 
 	// This is the main server loop!
