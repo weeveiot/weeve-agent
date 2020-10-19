@@ -27,9 +27,6 @@ func init() {
 	log.SetFormatter(&log.TextFormatter{})
 	log.SetOutput(os.Stdout)
 
-	// TODO: Add -v flag!
-	fmt.Printf("Verbosity: %v\n", options.Verbose)
-
 	log.SetLevel(log.DebugLevel)
 	log.Debug("Started logging")
 }
@@ -45,6 +42,10 @@ func main() {
 		log.Error(err)
 		os.Exit(1)
 	}
+
+	// TODO: Add -v flag!
+	fmt.Printf("Verbosity: %v\n", options.Verbose)
+	fmt.Printf("Port: %v\n", options.Port)
 
 	// TODO: We only need this for AWS ECR integration...
 	// if options.RoleArn != "" {
