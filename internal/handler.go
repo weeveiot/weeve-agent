@@ -4,7 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	// "log"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -17,6 +18,7 @@ import (
 
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/controller"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
 
 	"github.com/gorilla/mux"
 )
@@ -26,7 +28,7 @@ func HandleRequests(portNum int) {
 	router.Use(CommonMiddleware)
 	// jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
 
-	router.HandleFunc("/", hello)
+	router.HandleFunc("/", controller.Status)
 	router.HandleFunc("/login", controller.Login).Methods("POST")
 	router.PathPrefix("/docs/").Handler(httpSwagger.WrapHandler)
 
@@ -45,12 +47,11 @@ func HandleRequests(portNum int) {
 	subRouter.HandleFunc("/containers/{id}", controller.GetContainer)
 	subRouter.HandleFunc("/containers/{id}/logs", controller.GetContainerLog)
 
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", portNum), router))
-}
+	util.PrintEndpoints(router)
 
-func hello(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello")
-	fmt.Println("Endpoint Hit: homePage")
+	// This is the main server loop!
+	log.Debug("Running ListenAndServe")
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", portNum), router))
 }
 
 func CommonMiddleware(next http.Handler) http.Handler {
