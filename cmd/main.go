@@ -2,7 +2,7 @@ package main
 
 import (
 	"os"
-	"fmt"
+	// "fmt"
 
 	log "github.com/sirupsen/logrus"
 
@@ -27,8 +27,8 @@ func init() {
 	log.SetFormatter(&log.TextFormatter{})
 	log.SetOutput(os.Stdout)
 
-	log.SetLevel(log.DebugLevel)
-	log.Debug("Started logging")
+	log.SetLevel(log.InfoLevel)
+	log.Info("Started logging")
 }
 
 // @title Weeve Manager API
@@ -43,14 +43,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	// TODO: Add -v flag!
-	fmt.Printf("Verbosity: %v\n", options.Verbose)
-	fmt.Printf("Port: %v\n", options.Port)
+	// Set logging level from -v flag
+	if len(options.Verbose) >= 1 {
+		log.SetLevel(log.DebugLevel)
+	} else {
+		log.SetLevel(log.InfoLevel)
+	}
+	log.Info("Logging level set to ", log.GetLevel())
+
 
 	// TODO: We only need this for AWS ECR integration...
 	// if options.RoleArn != "" {
 	// 	constants.RoleArn = options.RoleArn
 	// }
+
 	log.Info("Starting server on port ", options.Port)
 	internal.HandleRequests(options.Port)
 	log.Debug("Running")
