@@ -1,0 +1,19 @@
+{
+	"version": "2.0.0",
+	"type": "shell",
+	"echoCommand": true,
+	"cwd": "${workspaceFolder}",
+	"tasks": [
+        {
+            "label": "rungo",
+            "command": "go run cmd/main.go -v -p 8050",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$go"
+            ]
+        }
+    ]
+}

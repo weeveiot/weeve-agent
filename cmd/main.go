@@ -49,7 +49,6 @@ func main() {
 	}
 	log.Info("Logging level set to ", log.GetLevel())
 
-
 	// TODO: We only need this for AWS ECR integration...
 	// if options.RoleArn != "" {
 	// 	constants.RoleArn = options.RoleArn

@@ -19,8 +19,4 @@ func Status(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(payload)
-
-	// fmt.Fprintf(w, "Edge Pipeline Server, version -2.0.1")
-	// fmt.Println("Endpoint Hit: homePage")
-	// log.Debug("Handled request on /")
 }

@@ -17,6 +17,7 @@ require (
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/gogo/protobuf v1.3.1 // indirect
+	github.com/golang/gddo v0.0.0-20200831202555-721e228c7686
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/jessevdk/go-flags v1.4.0
