@@ -60,4 +60,11 @@ func BuildPipeline(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Debug("POST body as simplejson:", bodyJSON)
 
+	// Now, assert keys
+	// TODO: Move this into a proper schema parser
+	// log.Debug(bodyJSON.Get("node"))
+	// nodes = bodyJSON.MustArray("nodes")
+	// fmt.Println(nodes)
+	// log.Debug(bodyJSON.MustArray("node"))
+
 }
