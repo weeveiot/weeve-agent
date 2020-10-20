@@ -6,13 +6,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
 
 func PrintEndpoints(r *mux.Router) {
 	log.Debug("Available endpoints are registered, walking router tree:")
-	fmt.Println("")
 	r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
 		path, err := route.GetPathTemplate()
 		if err != nil {
@@ -27,7 +27,6 @@ func PrintEndpoints(r *mux.Router) {
 
 		return nil
 	})
-	fmt.Println("")
 }
 
 func readJson(jsonFileName string) {

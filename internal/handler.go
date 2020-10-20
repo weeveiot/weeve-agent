@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	// "log"
-	log "github.com/sirupsen/logrus"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 
 	jwt "github.com/dgrijalva/jwt-go"
 
@@ -33,7 +35,9 @@ func HandleRequests(portNum int) {
 	router.PathPrefix("/docs/").Handler(httpSwagger.WrapHandler)
 
 	subRouter := router.PathPrefix("/").Subrouter()
-	subRouter.Use(JwtVerify)
+
+	// TODO: This is disabled for now!!
+	// subRouter.Use(JwtVerify)
 
 	subRouter.HandleFunc("/containers/start", controller.StartContainers).Methods("POST")
 	subRouter.HandleFunc("/containers/start/{id}", controller.StartContainer).Methods("POST")
@@ -47,7 +51,7 @@ func HandleRequests(portNum int) {
 	subRouter.HandleFunc("/containers/{id}", controller.GetContainer)
 	subRouter.HandleFunc("/containers/{id}/logs", controller.GetContainerLog)
 
-    subRouter.HandleFunc("/pipeline", controller.BuildPipeline).Methods("POST")
+	subRouter.HandleFunc("/pipeline", controller.BuildPipeline).Methods("POST")
 
 	util.PrintEndpoints(router)
 
