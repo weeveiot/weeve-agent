@@ -1,9 +1,10 @@
 package controller
 
 import (
+	"io/ioutil"
 	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/bitly/go-simplejson"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/golang/gddo/httputil/header"
@@ -17,26 +18,46 @@ import (
 // 4) Run the container
 func BuildPipeline(w http.ResponseWriter, r *http.Request) {
 	log.Info("POST /pipeline")
-	// If the Content-Type header is present, check that it has the value
-	// application/json. Note that we are using the gddo/httputil/header
+
+	// Enforce content type exists
+	if r.Header.Get("Content-Type") == "" {
+		msg := "Content-Type header is not application/json"
+		log.Error(msg)
+		http.Error(w, msg, http.StatusUnsupportedMediaType)
+		return
+	}
+
+	// Enforce content type is application/json
+	// Note that we are using the gddo/httputil/header
 	// package to parse and extract the value here, so the check works
 	// even if the client includes additional charset or boundary
 	// information in the header.
-	if r.Header.Get("Content-Type") != "" {
-		value, _ := header.ParseValueAndParams(r.Header, "Content-Type")
-		if value != "application/json" {
-			msg := "Content-Type header is not application/json"
-			http.Error(w, msg, http.StatusUnsupportedMediaType)
-			return
-		}
+	value, _ := header.ParseValueAndParams(r.Header, "Content-Type")
+	if value != "application/json" {
+		msg := "Content-Type header is not application/json"
+		http.Error(w, msg, http.StatusUnsupportedMediaType)
+		return
 	}
-	// err := json.NewDecoder(r.Body).Decode(&p)
-	// if err != nil {
-	// 	http.Error(w, err.Error(), http.StatusBadRequest)
-	// 	return
-	// }
-	vars := mux.Vars(r)
-	log.Debug(vars)
-	// key := vars["id"]
-	// image := dao.DeleteData(key)
+
+	// Now handle the payload, start by converting to []bytes
+	// log.Debug("Raw POST body:", r.Body)
+	bodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Error(err)
+		msg := "Error in decoding JSON payload, check for valid JSON"
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+	log.Debug("POST body as string:", string(bodyBytes))
+
+	// Finally, convert the JSON bytes into a simplejson object
+	bodyJSON, err := simplejson.NewJson(bodyBytes)
+	if err != nil {
+		log.Error(err)
+		msg := "Error in decoding JSON payload, check for valid JSON"
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+	log.Debug("POST body as simplejson:", bodyJSON)
+
 }
