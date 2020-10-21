@@ -2,11 +2,13 @@ package controller
 
 import (
 	"net/http"
+
 	"github.com/bitly/go-simplejson"
 	log "github.com/sirupsen/logrus"
 )
 
 func Status(w http.ResponseWriter, r *http.Request) {
+	log.Debug("GET / (status)")
 	json := simplejson.New()
 	json.Set("status", "ok")
 	json.Set("name", "Edge Pipeline Service")
