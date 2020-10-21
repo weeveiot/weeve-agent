@@ -31,24 +31,27 @@ type ManifestReq struct {
 }
 
 type Manifest struct {
-	Index         int              `json:"Index"`
-	Tag           string           `json:"Tag"`
-	ImageID       string           `json:"ImageID"`
-	ImageName     string           `json:"ImageName"`
-	ContainerName string           `json:"ContainerName"`
-	State         string           `json:"State"`
-	Ingress       DatasourceConfig `json:"Ingress"`
-	Egress        DatasourceConfig `json:"Egress"`
+	Index     int    `json:"Index"`
+	Name      string `json:"Name"`
+	Tag       string `json:"Tag"`
+	ImageID   string `json:"ImageID"`
+	ImageName string `json:"ImageName"`
+	// ContainerName string            `json:"ContainerName"`
+	// State string `json:"State"`
+	Ingress map[string]string `json:"Ingress"`
+	Egress  map[string]string `json:"Egress"`
+	// Ingress       DatasourceConfig `json:"Ingress"`
+	// Egress        DatasourceConfig `json:"Egress"`
 }
 
-type DatasourceConfig struct {
-	Type     string `json:"Type"`
-	Protocol string `json:"Protocol"`
-	Port     string `json:"Port"`
-	Param1   string `json:"Param1"`
-	Param2   string `json:"Param2"`
-	Param3   string `json:"Param3"`
-	Param4   string `json:"Param4"`
-	Param5   string `json:"Param5"`
-	Param6   string `json:"Param6"`
-}
+// type DatasourceConfig struct {
+// 	Type     string `json:"Type"`
+// 	Protocol string `json:"Protocol"`
+// 	Port     string `json:"Port"`
+// 	Param1   string `json:"Param1"`
+// 	Param2   string `json:"Param2"`
+// 	Param3   string `json:"Param3"`
+// 	Param4   string `json:"Param4"`
+// 	Param5   string `json:"Param5"`
+// 	Param6   string `json:"Param6"`
+// }

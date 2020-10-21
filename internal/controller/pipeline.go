@@ -2,7 +2,7 @@ package controller
 
 import (
 	"encoding/json"
-	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	// "github.com/bitly/go-simplejson"
@@ -38,62 +38,95 @@ func BuildPipeline(w http.ResponseWriter, r *http.Request) {
 	value, _ := header.ParseValueAndParams(r.Header, "Content-Type")
 	if value != "application/json" {
 		msg := "Content-Type header is not application/json"
+		log.Error(msg)
 		http.Error(w, msg, http.StatusUnsupportedMediaType)
 		return
 	}
 
 	// Now handle the payload, start by converting to []bytes
-	// log.Debug("Raw POST body:", r.Body)
-	// bodyBytes, err := ioutil.ReadAll(r.Body)
+	log.Debug("Raw POST body:", r.Body)
+	bodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Error(err)
+		msg := "Error in decoding JSON payload, check for valid JSON"
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+	log.Debug("POST body as string:", string(bodyBytes))
+
+	// Decode the JSON manifest into Golang struct
+	manifest := model.ManifestReq{}
+
+	err = json.NewDecoder(r.Body).Decode(&manifest)
+	// err = json.NewDecoder(bodyBytes).Decode(manifest)
+	log.Error(err)
 	// if err != nil {
-	// 	log.Error(err)
-	// 	msg := "Error in decoding JSON payload, check for valid JSON"
+	// 	msg := "Manifest does not match schema"
+	// 	log.Error(msg)
 	// 	http.Error(w, msg, http.StatusBadRequest)
 	// 	return
 	// }
-	// log.Debug("POST body as string:", string(bodyBytes))
-
-	manifest := &model.ManifestReq{}
-
-	err := json.NewDecoder(r.Body).Decode(manifest)
-	if err != nil {
-		fmt.Println(err)
-	}
 
 	log.Debug("Recieved manifest: ", manifest.Name)
 	log.Debug("Number of modules: ", len(manifest.Modules))
-	// m type ManifestReq struct {
-	// 	ID      string     `json:"ID"`
-	// 	Name    string     `json:"Name"`
-	// 	Modules []Manifest `json:"Modules"`
-	// }
 
+	// Iterate over the modules inside the manifest
+	// Pull all images as required
+	log.Debug("Iterate modules, pull into host if missing")
+	for i := range manifest.Modules {
+		mod := manifest.Modules[i]
+		log.Debug("\tModule: ", mod.ImageName)
+		exists := docker.ImageExists(mod.ImageID)
+		log.Debug("\tImage exists: ", exists)
+
+		if exists == false {
+			// TODO:
+			// Logic for pulling the image
+		}
+	}
+
+	// Iterate over the modules inside the manifest
+	// Pull all images as required
+	log.Debug("Iterate modules, check if containers exist")
 	for i := range manifest.Modules {
 		mod := manifest.Modules[i]
 		log.Debug("\tModule: ", mod.ImageName)
 		// image := docker.ReadImage(mod.ImageID)
 		// log.Debug("Image: ", image)
 		exists := docker.ImageExists(mod.ImageID)
-		log.Debug("\tImage exists: ", exists)
+
+		if exists == false {
+			// TODO: Add error handling?
+			msg := "Missing image on local machine:" + mod.ImageName
+			// &model.ErrorResponse{}
+			// &model.ErrorResponse{Err: "Mesage"}
+			log.Error(msg)
+			http.Error(w, msg, http.StatusInternalServerError)
+			return
+		}
+
+		// TODO:
+		// Logic for checking container exist
 	}
 
-	// // Finally, convert the JSON bytes into a simplejson object
-	// bodyJSON, err := simplejson.NewJson(bodyBytes)
-	// if err != nil {
-	// 	log.Error(err)
-	// 	msg := "Error in decoding JSON payload, check for valid JSON"
-	// 	http.Error(w, msg, http.StatusBadRequest)
-	// 	return
-	// }
-	// log.Debug("POST body as simplejson:", bodyJSON)
+	// Start all containers iteratively
+	log.Debug("Iterate modules, start each container")
+	for i := range manifest.Modules {
+		mod := manifest.Modules[i]
+		log.Debug("\tModule: ", mod.ImageName)
 
-	// bodyJSON
+		// Starting container...
 
-	// Now, assert keys
-	// TODO: Move this into a proper schema parser
-	// log.Debug(bodyJSON.Get("node"))
-	// nodes = bodyJSON.MustArray("nodes")
-	// fmt.Println(nodes)
-	// log.Debug(bodyJSON.MustArray("node"))
+		// Error handling for case container start fails...
 
+		// Log container ID, status
+
+		// Wait for all....
+
+	}
+
+	// Wait for all ...
+
+	// Finally, return 200
+	// Return payload: pipeline started / list of container IDs
 }

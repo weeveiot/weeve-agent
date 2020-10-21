@@ -176,7 +176,7 @@ func CreateContainer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := docker.CreateContainer(manifest.ContainerName, manifest.ImageName)
+	res := docker.CreateContainer(manifest.Name, manifest.ImageName)
 	json.NewEncoder(w).Encode(res)
 }
 
