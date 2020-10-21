@@ -1,11 +1,14 @@
 package controller
 
 import (
-	"io/ioutil"
+	"encoding/json"
+	"fmt"
 	"net/http"
 
-	"github.com/bitly/go-simplejson"
+	// "github.com/bitly/go-simplejson"
 	log "github.com/sirupsen/logrus"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/docker"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 
 	"github.com/golang/gddo/httputil/header"
 )
@@ -41,24 +44,50 @@ func BuildPipeline(w http.ResponseWriter, r *http.Request) {
 
 	// Now handle the payload, start by converting to []bytes
 	// log.Debug("Raw POST body:", r.Body)
-	bodyBytes, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Error(err)
-		msg := "Error in decoding JSON payload, check for valid JSON"
-		http.Error(w, msg, http.StatusBadRequest)
-		return
-	}
-	log.Debug("POST body as string:", string(bodyBytes))
+	// bodyBytes, err := ioutil.ReadAll(r.Body)
+	// if err != nil {
+	// 	log.Error(err)
+	// 	msg := "Error in decoding JSON payload, check for valid JSON"
+	// 	http.Error(w, msg, http.StatusBadRequest)
+	// 	return
+	// }
+	// log.Debug("POST body as string:", string(bodyBytes))
 
-	// Finally, convert the JSON bytes into a simplejson object
-	bodyJSON, err := simplejson.NewJson(bodyBytes)
+	manifest := &model.ManifestReq{}
+
+	err := json.NewDecoder(r.Body).Decode(manifest)
 	if err != nil {
-		log.Error(err)
-		msg := "Error in decoding JSON payload, check for valid JSON"
-		http.Error(w, msg, http.StatusBadRequest)
-		return
+		fmt.Println(err)
 	}
-	log.Debug("POST body as simplejson:", bodyJSON)
+
+	log.Debug("Recieved manifest: ", manifest.Name)
+	log.Debug("Number of modules: ", len(manifest.Modules))
+	// m type ManifestReq struct {
+	// 	ID      string     `json:"ID"`
+	// 	Name    string     `json:"Name"`
+	// 	Modules []Manifest `json:"Modules"`
+	// }
+
+	for i := range manifest.Modules {
+		mod := manifest.Modules[i]
+		log.Debug("\tModule: ", mod.ImageName)
+		// image := docker.ReadImage(mod.ImageID)
+		// log.Debug("Image: ", image)
+		exists := docker.ImageExists(mod.ImageID)
+		log.Debug("\tImage exists: ", exists)
+	}
+
+	// // Finally, convert the JSON bytes into a simplejson object
+	// bodyJSON, err := simplejson.NewJson(bodyBytes)
+	// if err != nil {
+	// 	log.Error(err)
+	// 	msg := "Error in decoding JSON payload, check for valid JSON"
+	// 	http.Error(w, msg, http.StatusBadRequest)
+	// 	return
+	// }
+	// log.Debug("POST body as simplejson:", bodyJSON)
+
+	// bodyJSON
 
 	// Now, assert keys
 	// TODO: Move this into a proper schema parser

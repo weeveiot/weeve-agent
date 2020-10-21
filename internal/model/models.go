@@ -24,6 +24,12 @@ type Token struct {
 	*jwt.StandardClaims
 }
 
+type ManifestReq struct {
+	ID      string     `json:"ID"`
+	Name    string     `json:"Name"`
+	Modules []Manifest `json:"Modules"`
+}
+
 type Manifest struct {
 	Index         int              `json:"Index"`
 	Tag           string           `json:"Tag"`
