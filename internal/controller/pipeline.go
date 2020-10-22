@@ -82,6 +82,12 @@ func BuildPipeline(w http.ResponseWriter, r *http.Request) {
 		if exists == false {
 			// TODO:
 			// Logic for pulling the image
+			exists = docker.PullImage(mod.ImageName)
+		}
+
+		if exists == true {
+			docker.CreateContainer(mod.Name, mod.ImageName)
+
 		}
 	}
 

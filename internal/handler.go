@@ -51,7 +51,7 @@ func HandleRequests(portNum int) {
 	subRouter.HandleFunc("/containers/{id}", controller.GetContainer)
 	subRouter.HandleFunc("/containers/{id}/logs", controller.GetContainerLog)
 
-	subRouter.HandleFunc("/pipeline", controller.BuildPipeline).Methods("POST")
+	subRouter.HandleFunc("/pipelines", controller.BuildPipeline).Methods("POST")
 
 	util.PrintEndpoints(router)
 
