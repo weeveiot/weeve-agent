@@ -145,7 +145,7 @@ func StopContainer(containerId string) bool {
 	return true
 }
 
-func PullImage(imageName string) {
+func PullImage(imageName string) bool {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -178,25 +178,27 @@ func CreateContainer(containerName string, imageName string) string {
 		Cmd:   []string{"echo", "Container " + containerName + " created"},
 	}, &container.HostConfig{}, &network.NetworkingConfig{}, nil, containerName)
 	if err != nil {
-		panic(err)
+		log.Error(err)
+		return "CreateFailed"
 	}
 
 	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-		panic(err)
+		log.Error(err)
+		return "StartFailed"
 	}
 
 	statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
 	select {
 	case err := <-errCh:
 		if err != nil {
-			panic(err)
+			log.Error(err)
 		}
 	case <-statusCh:
 	}
 
 	out, err := cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true})
 	if err != nil {
-		panic(err)
+		log.Error(err)
 	}
 
 	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
