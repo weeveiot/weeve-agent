@@ -2,7 +2,6 @@ package controller
 
 import (
 	"errors"
-	"io/ioutil"
 	"net/http"
 
 	// "github.com/bitly/go-simplejson"
@@ -22,21 +21,10 @@ import (
 func BuildPipeline(w http.ResponseWriter, r *http.Request) {
 	log.Info("POST /pipeline")
 
-	// Now handle the payload, start by converting to []bytes
-	log.Debug("Raw POST body:", r.Body)
-	bodyBytes, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Error(err)
-		msg := "Error in decoding JSON payload, check for valid JSON"
-		http.Error(w, msg, http.StatusBadRequest)
-		return
-	}
-	log.Info("POST body as string:", string(bodyBytes))
-
 	// Decode the JSON manifest into Golang struct
 	manifest := model.ManifestReq{}
 
-	err = util.DecodeJSONBody(w, r, &manifest)
+	err := util.DecodeJSONBody(w, r, &manifest)
 	if err != nil {
 		var mr *util.MalformedRequest
 		if errors.As(err, &mr) {
