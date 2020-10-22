@@ -1,16 +1,16 @@
 package controller
 
 import (
-	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 
 	// "github.com/bitly/go-simplejson"
+
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/docker"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
-
-	"github.com/golang/gddo/httputil/header"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
 )
 
 //TODO: Add the code for instantiating a pipeline in the node:
@@ -22,27 +22,6 @@ import (
 func BuildPipeline(w http.ResponseWriter, r *http.Request) {
 	log.Info("POST /pipeline")
 
-	// Enforce content type exists
-	if r.Header.Get("Content-Type") == "" {
-		msg := "Content-Type header is not application/json"
-		log.Error(msg)
-		http.Error(w, msg, http.StatusUnsupportedMediaType)
-		return
-	}
-
-	// Enforce content type is application/json
-	// Note that we are using the gddo/httputil/header
-	// package to parse and extract the value here, so the check works
-	// even if the client includes additional charset or boundary
-	// information in the header.
-	value, _ := header.ParseValueAndParams(r.Header, "Content-Type")
-	if value != "application/json" {
-		msg := "Content-Type header is not application/json"
-		log.Error(msg)
-		http.Error(w, msg, http.StatusUnsupportedMediaType)
-		return
-	}
-
 	// Now handle the payload, start by converting to []bytes
 	log.Debug("Raw POST body:", r.Body)
 	bodyBytes, err := ioutil.ReadAll(r.Body)
@@ -52,20 +31,24 @@ func BuildPipeline(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
-	log.Debug("POST body as string:", string(bodyBytes))
+	log.Info("POST body as string:", string(bodyBytes))
 
 	// Decode the JSON manifest into Golang struct
 	manifest := model.ManifestReq{}
 
-	err = json.NewDecoder(r.Body).Decode(&manifest)
-	// err = json.NewDecoder(bodyBytes).Decode(manifest)
-	log.Error(err)
-	// if err != nil {
-	// 	msg := "Manifest does not match schema"
-	// 	log.Error(msg)
-	// 	http.Error(w, msg, http.StatusBadRequest)
-	// 	return
-	// }
+	err = util.DecodeJSONBody(w, r, &manifest)
+	if err != nil {
+		var mr *util.MalformedRequest
+		if errors.As(err, &mr) {
+			http.Error(w, mr.Msg, mr.Status)
+		} else {
+			log.Println(err.Error())
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	log.Info(w, "Person: %+v", manifest)
 
 	log.Debug("Recieved manifest: ", manifest.Name)
 	log.Debug("Number of modules: ", len(manifest.Modules))
