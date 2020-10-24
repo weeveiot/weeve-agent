@@ -28,6 +28,7 @@ func POST_pipelines(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		var mr *util.MalformedRequest
 		if errors.As(err, &mr) {
+			log.Error(err.Error())
 			http.Error(w, mr.Msg, mr.Status)
 		} else {
 			log.Error(err.Error())
@@ -36,14 +37,14 @@ func POST_pipelines(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Info(w, "Person: %+v", manifest)
+	// log.Info(w, "Person: %+v", manifest)
 
 	log.Debug("Recieved manifest: ", manifest.Name)
-	log.Debug("Number of modules: ", len(manifest.Modules))
+	log.Debug("Number of modules in manifest: ", len(manifest.Modules))
 
 	// Iterate over the modules inside the manifest
 	// Pull all images as required
-	log.Debug("Iterate modules, pull into host if missing")
+	log.Debug("Iterate modules, Docker Pull into host if missing")
 	for i := range manifest.Modules {
 		mod := manifest.Modules[i]
 		log.Debug("\tModule: ", mod.ImageName)
@@ -56,12 +57,13 @@ func POST_pipelines(w http.ResponseWriter, r *http.Request) {
 			exists = docker.PullImage(mod.ImageName)
 		}
 
-		if exists == true {
-			docker.CreateContainer(mod.Name, mod.ImageName)
-
-		}
+		// if exists == true {
+		// 	docker.CreateContainer(mod.Name, mod.ImageName)
+		// }
 	}
 
+	log.Info("Pulled all images")
+	/*
 	// Iterate over the modules inside the manifest
 	// Pull all images as required
 	log.Debug("Iterate modules, check if containers exist")
@@ -106,4 +108,5 @@ func POST_pipelines(w http.ResponseWriter, r *http.Request) {
 
 	// Finally, return 200
 	// Return payload: pipeline started / list of container IDs
+	*/
 }
