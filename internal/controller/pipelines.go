@@ -18,7 +18,7 @@ import (
 // 3) IF image not existing locally, PULL
 //		ELSE: Continue
 // 4) Run the container
-func BuildPipeline(w http.ResponseWriter, r *http.Request) {
+func POST_pipelines(w http.ResponseWriter, r *http.Request) {
 	log.Info("POST /pipeline")
 
 	// Decode the JSON manifest into Golang struct
