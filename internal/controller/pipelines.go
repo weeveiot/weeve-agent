@@ -86,10 +86,16 @@ func POST_pipelines(w http.ResponseWriter, r *http.Request) {
 		containerExists := docker.ContainerExists(containerName)
 		log.Info(containerExists)
 
-		// Create container if not exist
+		// Create container if not exists
 		if containerExists {
-			// delte container
+			// Stop and delete container
+			err = docker.StopAndRemoveContainer(containerName)
+			if err != nil {
+				log.Info(err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
 		} else {
+			// Create and start container
 			docker.CreateContainer(containerName, mod.ImageName)
 		}
 	}

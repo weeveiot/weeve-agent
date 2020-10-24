@@ -255,6 +255,32 @@ func CreateContainer1(containerName string, imageName string) string {
 	return "Container " + containerName + " created for image " + imageName
 }
 
+// StopAndRemoveContainer Stop and remove a container
+func StopAndRemoveContainer(containerName string) error {
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		panic(err)
+	}
+
+	if err := cli.ContainerStop(ctx, containerName, nil); err != nil {
+		log.Printf("Unable to stop container %s: %s", containerName, err)
+	}
+
+	removeOptions := types.ContainerRemoveOptions{
+		RemoveVolumes: true,
+		Force:         true,
+	}
+
+	if err := cli.ContainerRemove(ctx, containerName, removeOptions); err != nil {
+		log.Printf("Unable to remove container: %s", err)
+		return err
+	}
+
+	return nil
+}
+
+// ContainerExists returns status of container existance as true or false
 func ContainerExists(containerName string) bool {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
