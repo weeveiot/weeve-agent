@@ -30,7 +30,7 @@ func POST_pipelines(w http.ResponseWriter, r *http.Request) {
 		if errors.As(err, &mr) {
 			http.Error(w, mr.Msg, mr.Status)
 		} else {
-			log.Println(err.Error())
+			log.Error(err.Error())
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
 		return
