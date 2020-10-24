@@ -48,21 +48,19 @@ func POST_pipelines(w http.ResponseWriter, r *http.Request) {
 	for i := range manifest.Modules {
 		mod := manifest.Modules[i]
 		log.Debug("\tModule: ", mod.ImageName)
-		exists := docker.ImageExists(mod.ImageID)
+		exists := docker.ImageExists(mod.ImageName)
 		log.Debug("\tImage exists: ", exists)
 
 		if exists == false {
-			// TODO:
 			// Logic for pulling the image
 			exists = docker.PullImage(mod.ImageName)
 		}
-
-		// if exists == true {
-		// 	docker.CreateContainer(mod.Name, mod.ImageName)
-		// }
 	}
 
+
+
 	log.Info("Pulled all images")
+
 	/*
 	// Iterate over the modules inside the manifest
 	// Pull all images as required
