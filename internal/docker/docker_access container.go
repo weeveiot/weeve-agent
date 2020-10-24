@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sort"
 
 	"bytes"
 	"context"
@@ -252,4 +253,26 @@ func CreateContainer1(containerName string, imageName string) string {
 	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
 
 	return "Container " + containerName + " created for image " + imageName
+}
+
+func ContainerExists(containerName string) bool {
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		panic(err)
+	}
+	options := types.ContainerListOptions{All: true}
+	containers, err := cli.ContainerList(context.Background(), options)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, container := range containers {
+		fmt.Printf("%s %s\n", container.ID[:10], container.Image)
+		findContainer := sort.SearchStrings(container.Names, containerName)
+		if findContainer != 0 {
+			return true
+		}
+	}
+
+	return false
 }
