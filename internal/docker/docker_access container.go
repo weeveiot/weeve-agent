@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"sort"
 
 	"bytes"
 	"context"
@@ -16,6 +15,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	log "github.com/sirupsen/logrus"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
 )
 
 func ReadAllContainers() []types.Container {
@@ -268,8 +268,8 @@ func ContainerExists(containerName string) bool {
 
 	for _, container := range containers {
 		fmt.Printf("%s %s\n", container.ID[:10], container.Image)
-		findContainer := sort.SearchStrings(container.Names, containerName)
-		if findContainer != 0 {
+		findContainer := util.StringArrayContains(container.Names, "/"+containerName)
+		if findContainer {
 			return true
 		}
 	}

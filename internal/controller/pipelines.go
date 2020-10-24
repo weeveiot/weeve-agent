@@ -78,8 +78,20 @@ func POST_pipelines(w http.ResponseWriter, r *http.Request) {
 		mod := manifest.Modules[i]
 		log.Debug("\tModule: ", mod.ImageName)
 
-		// TODO:
-		// Logic for checking container exist
+		// Build container name
+		containerName := GetContainerName(manifest.ID, mod.Name)
+		log.Info(containerName)
+
+		// Check if container already exists
+		containerExists := docker.ContainerExists(containerName)
+		log.Info(containerExists)
+
+		// Create container if not exist
+		if containerExists {
+			// delte container
+		} else {
+			docker.CreateContainer(containerName, mod.ImageName)
+		}
 	}
 
 	// Start all containers iteratively
@@ -107,7 +119,7 @@ func POST_pipelines(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// Build container name
+// GetContainerName Build container name
 func GetContainerName(pipelineId string, containerName string) string {
 	return pipelineId + "_" + containerName
 }

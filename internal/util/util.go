@@ -75,3 +75,13 @@ func PostApi(nextHost string, jsonReq []byte) bool {
 	fmt.Println(bodyString)
 	return true
 }
+
+// StringArrayContains tells whether a contains x.
+func StringArrayContains(stringArray []string, findString string) bool {
+	for _, n := range stringArray {
+		if findString == n {
+			return true
+		}
+	}
+	return false
+}
