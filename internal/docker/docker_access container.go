@@ -14,6 +14,7 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
+	log "github.com/sirupsen/logrus"
 )
 
 func ReadAllContainers() []types.Container {
@@ -144,7 +145,72 @@ func StopContainer(containerId string) bool {
 	return true
 }
 
+func PullImage(imageName string) bool {
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Error(err)
+		return false
+	}
+
+	// os.Stdout,_ = os.Open(os.DevNull)
+
+	//TODO: Need to disable Stdout!!
+	log.Info("Pulling image " + imageName)
+	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
+	if err != nil {
+		log.Error(err)
+		return false
+	}
+	log.Info("Pulled image" + imageName + " into host")
+	defer out.Close()
+
+	io.Copy(os.Stdout, out)
+
+	return true
+}
+
 func CreateContainer(containerName string, imageName string) string {
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		panic(err)
+	}
+
+	resp, err := cli.ContainerCreate(ctx, &container.Config{
+		Image: imageName,
+		Cmd:   []string{"echo", "Container " + containerName + " created"},
+	}, &container.HostConfig{}, &network.NetworkingConfig{}, nil, containerName)
+	if err != nil {
+		log.Error(err)
+		return "CreateFailed"
+	}
+
+	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+		log.Error(err)
+		return "StartFailed"
+	}
+
+	statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
+	select {
+	case err := <-errCh:
+		if err != nil {
+			log.Error(err)
+		}
+	case <-statusCh:
+	}
+
+	out, err := cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true})
+	if err != nil {
+		log.Error(err)
+	}
+
+	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
+
+	return "Container " + containerName + " created for image " + imageName
+}
+
+func CreateContainer1(containerName string, imageName string) string {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
