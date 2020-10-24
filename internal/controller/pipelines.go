@@ -45,6 +45,7 @@ func POST_pipelines(w http.ResponseWriter, r *http.Request) {
 	// Iterate over the modules inside the manifest
 	// Pull all images as required
 	log.Debug("Iterate modules, Docker Pull into host if missing")
+	imagesPulled := true
 	for i := range manifest.Modules {
 		mod := manifest.Modules[i]
 		log.Debug("\tModule: ", mod.ImageName)
@@ -54,33 +55,28 @@ func POST_pipelines(w http.ResponseWriter, r *http.Request) {
 		if exists == false {
 			// Logic for pulling the image
 			exists = docker.PullImage(mod.ImageName)
+			if exists == false {
+				imagesPulled = false
+			}
 		}
 	}
 
-
+	// Check if all images pulled, else return
+	if imagesPulled == false {
+		msg := "Unable to pull all images"
+		log.Error(msg)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
 
 	log.Info("Pulled all images")
 
-	/*
 	// Iterate over the modules inside the manifest
 	// Pull all images as required
 	log.Debug("Iterate modules, check if containers exist")
 	for i := range manifest.Modules {
 		mod := manifest.Modules[i]
 		log.Debug("\tModule: ", mod.ImageName)
-		// image := docker.ReadImage(mod.ImageID)
-		// log.Debug("Image: ", image)
-		exists := docker.ImageExists(mod.ImageID)
-
-		if exists == false {
-			// TODO: Add error handling?
-			msg := "Missing image on local machine:" + mod.ImageName
-			// &model.ErrorResponse{}
-			// &model.ErrorResponse{Err: "Mesage"}
-			log.Error(msg)
-			http.Error(w, msg, http.StatusInternalServerError)
-			return
-		}
 
 		// TODO:
 		// Logic for checking container exist
@@ -91,6 +87,8 @@ func POST_pipelines(w http.ResponseWriter, r *http.Request) {
 	for i := range manifest.Modules {
 		mod := manifest.Modules[i]
 		log.Debug("\tModule: ", mod.ImageName)
+
+		//container := docker.ReadAllContainers()
 
 		// Starting container...
 
@@ -106,5 +104,10 @@ func POST_pipelines(w http.ResponseWriter, r *http.Request) {
 
 	// Finally, return 200
 	// Return payload: pipeline started / list of container IDs
-	*/
+
+}
+
+// Build container name
+func GetContainerName(pipelineId string, containerName string) string {
+	return pipelineId + "_" + containerName
 }
