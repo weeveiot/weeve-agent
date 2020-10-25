@@ -39,7 +39,6 @@ func PostPipelines(w http.ResponseWriter, r *http.Request) {
 	log.Debug("Iterate modules, Docker Pull the image into host if missing")
 	imagesPulled := PullImages(manifest)
 
-
 	//******** STEP 2 - Check if pulled *************//
 	// Check if all images pulled, else return
 	if imagesPulled == false {
@@ -52,70 +51,58 @@ func PostPipelines(w http.ResponseWriter, r *http.Request) {
 
 	//******** STEP 3 - Check containers, stop and remove *************//
 	// Create and start containers
-	log.Debug("Iterate modules, check if containers exist")
+	log.Debug("Iterate modules, check if containers exist, remove")
 	for i := range manifest.Modules {
 		mod := manifest.Modules[i]
-		log.Debug("\tCreateStartContainers - Module: ", mod.ImageName)
+		log.Debug("\tModule: ", mod.ImageName)
 
 		// Build container name
 		containerName := GetContainerName(manifest.ID, mod.Name)
-		log.Info("\tCreateStartContainers - Container name:", containerName)
+		log.Info("\tContainer name:", containerName)
 
 		// Check if container already exists
 		containerExists := docker.ContainerExists(containerName)
-		log.Info("\tCreateStartContainers - Container exists:", containerExists)
+		log.Info("\tContainer exists:", containerExists)
 
-		// // Create container if not exists
-		// if containerExists {
-		// 	// Stop and delete container
-		// 	err := docker.StopAndRemoveContainer(containerName)
-		// 	if err != nil {
-		// 		return false
-		// 	}
-		// }
+		// Create container if not exists
+		if containerExists {
+			log.Debug("\tStopAndRemoveContainer - ", containerName)
+			// Stop and delete container
+			err := docker.StopAndRemoveContainer(containerName)
+			if err != nil {
+				// msg := ""
+				log.Error(err)
+				http.Error(w, string(err.Error()), http.StatusInternalServerError)
+			}
+			log.Debug("\tContainer ", containerName, " removed")
+		}
 
-		// Create and start container
-		// docker.CreateContainer(containerName, mod.ImageName)
 	}
-
-
-	// CreateStartContainers(manifest)
-
 
 	//******** STEP 4 - Start all containers *************//
 	// Start all containers iteratively
 	log.Debug("Iterate modules, start each container")
 	for i := range manifest.Modules {
 		mod := manifest.Modules[i]
-		log.Debug("\tContainer: ", mod.ImageName)
+		// log.Debug("\tContainer: ", mod.ImageName)
 
-		//container := docker.ReadAllContainers()
+		// Build container name
+		containerName := GetContainerName(manifest.ID, mod.Name)
+		log.Info("\tCreateContainer - Container name:", containerName)
 
-		// Starting container...
-
-		// Error handling for case container start fails...
-
-		// Log container ID, status
-
-		// Wait for all....
-
+		// Create and start container
+		docker.CreateContainer(containerName, mod.ImageName)
+		log.Info("\tCreateContainer - successfully started:", containerName)
 	}
 
-	// Wait for all ...
+	log.Info("Pipeline successfully instantiated from manifest ", manifest.ID)
 
 	// Finally, return 200
 	// Return payload: pipeline started / list of container IDs
-
-	msg := "Unable to pull all images"
-	log.Debug(msg)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("200 - Request processed successfully!"))
 	return
 }
-
-
-
-
 
 // CreateStartContainers iterates modules, and creates and starts containers
 func CreateStartContainers(manifest model.ManifestReq) bool {
