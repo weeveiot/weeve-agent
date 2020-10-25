@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -18,7 +19,6 @@ import (
 // func PullImagesNew(manifest model.ManifestReq) bool {
 func PullImagesNew(imageNames []string) bool {
 	for i := range imageNames {
-
 
 		// Check if image exist in local
 		exists := ImageExists(imageNames[i])
@@ -34,6 +34,33 @@ func PullImagesNew(imageNames []string) bool {
 			}
 		}
 	}
+
+	return true
+}
+
+func PullImage(imageName string) bool {
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Error(err)
+		return false
+	}
+
+	// os.Stdout,_ = os.Open(os.DevNull)
+
+	//TODO: Need to disable Stdout!!
+	log.Info("\t\tPulling image " + imageName)
+	// _, err = cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
+	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
+	if err != nil {
+		log.Error(err)
+		return false
+	}
+	defer out.Close()
+
+	io.Copy(os.Stdout, out)
+
+	log.Info("Pulled image " + imageName + " into host")
 
 	return true
 }

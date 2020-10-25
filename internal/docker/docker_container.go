@@ -146,33 +146,6 @@ func StopContainer(containerId string) bool {
 	return true
 }
 
-func PullImage(imageName string) bool {
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(err)
-		return false
-	}
-
-	// os.Stdout,_ = os.Open(os.DevNull)
-
-	//TODO: Need to disable Stdout!!
-	log.Info("\t\tPulling image " + imageName)
-	// _, err = cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
-	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
-	if err != nil {
-		log.Error(err)
-		return false
-	}
-	defer out.Close()
-
-	io.Copy(os.Stdout, out)
-
-	log.Info("Pulled image " + imageName + " into host")
-
-	return true
-}
-
 func CreateContainer(containerName string, imageName string) bool {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
