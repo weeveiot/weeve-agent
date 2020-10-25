@@ -34,10 +34,13 @@ func PostPipelines(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//******** STEP 1 - Pull all *************//
 	// Pull all images as required
 	log.Debug("Iterate modules, Docker Pull the image into host if missing")
 	imagesPulled := PullImages(manifest)
 
+
+	//******** STEP 2 - Check if pulled *************//
 	// Check if all images pulled, else return
 	if imagesPulled == false {
 		msg := "Unable to pull all images"
@@ -46,10 +49,40 @@ func PostPipelines(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create and start containers
-	log.Debug("Iterate modules, check if containers exist, and create and start containers")
-	CreateStartContainers(manifest)
 
+	//******** STEP 3 - Check containers, stop and remove *************//
+	// Create and start containers
+	log.Debug("Iterate modules, check if containers exist")
+	for i := range manifest.Modules {
+		mod := manifest.Modules[i]
+		log.Debug("\tCreateStartContainers - Module: ", mod.ImageName)
+
+		// Build container name
+		containerName := GetContainerName(manifest.ID, mod.Name)
+		log.Info("\tCreateStartContainers - Container name:", containerName)
+
+		// Check if container already exists
+		containerExists := docker.ContainerExists(containerName)
+		log.Info("\tCreateStartContainers - Container exists:", containerExists)
+
+		// // Create container if not exists
+		// if containerExists {
+		// 	// Stop and delete container
+		// 	err := docker.StopAndRemoveContainer(containerName)
+		// 	if err != nil {
+		// 		return false
+		// 	}
+		// }
+
+		// Create and start container
+		// docker.CreateContainer(containerName, mod.ImageName)
+	}
+
+
+	// CreateStartContainers(manifest)
+
+
+	//******** STEP 4 - Start all containers *************//
 	// Start all containers iteratively
 	log.Debug("Iterate modules, start each container")
 	for i := range manifest.Modules {
@@ -79,6 +112,10 @@ func PostPipelines(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("200 - Request processed successfully!"))
 	return
 }
+
+
+
+
 
 // CreateStartContainers iterates modules, and creates and starts containers
 func CreateStartContainers(manifest model.ManifestReq) bool {
@@ -121,6 +158,7 @@ func PullImages(manifest model.ManifestReq) bool {
 
 		if exists == false {
 			// Pull image if not exist in local
+			log.Debug("\t\tPulling ", mod.ImageName)
 			exists = docker.PullImage(mod.ImageName)
 			if exists == false {
 				return false
