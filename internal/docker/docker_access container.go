@@ -15,6 +15,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	log "github.com/sirupsen/logrus"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
 )
 
 func ReadAllContainers() []types.Container {
@@ -156,25 +157,29 @@ func PullImage(imageName string) bool {
 	// os.Stdout,_ = os.Open(os.DevNull)
 
 	//TODO: Need to disable Stdout!!
-	log.Info("Pulling image " + imageName)
+	log.Info("\t\tPulling image " + imageName)
+	// _, err = cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
 	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
 	if err != nil {
 		log.Error(err)
 		return false
 	}
-	log.Info("Pulled image" + imageName + " into host")
 	defer out.Close()
 
 	io.Copy(os.Stdout, out)
 
+	log.Info("Pulled image " + imageName + " into host")
+
 	return true
 }
 
-func CreateContainer(containerName string, imageName string) string {
+func CreateContainer(containerName string, imageName string) bool {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		panic(err)
+		log.Error(err)
+		// panic(err)
+		return false
 	}
 
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
@@ -183,12 +188,15 @@ func CreateContainer(containerName string, imageName string) string {
 	}, &container.HostConfig{}, &network.NetworkingConfig{}, nil, containerName)
 	if err != nil {
 		log.Error(err)
-		return "CreateFailed"
+		// return "CreateFailed"
+		return false
 	}
 
-	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
+	err = cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{})
+	if err != nil {
 		log.Error(err)
-		return "StartFailed"
+		// return "StartFailed"
+		return false
 	}
 
 	statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
@@ -196,6 +204,7 @@ func CreateContainer(containerName string, imageName string) string {
 	case err := <-errCh:
 		if err != nil {
 			log.Error(err)
+			return false
 		}
 	case <-statusCh:
 	}
@@ -203,11 +212,13 @@ func CreateContainer(containerName string, imageName string) string {
 	out, err := cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true})
 	if err != nil {
 		log.Error(err)
+		return false
 	}
 
 	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
 
-	return "Container " + containerName + " created for image " + imageName
+	// return "Container " + containerName + " created for image " + imageName
+	return true
 }
 
 func CreateContainer1(containerName string, imageName string) string {
@@ -252,4 +263,52 @@ func CreateContainer1(containerName string, imageName string) string {
 	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
 
 	return "Container " + containerName + " created for image " + imageName
+}
+
+// StopAndRemoveContainer Stop and remove a container
+func StopAndRemoveContainer(containerName string) error {
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		panic(err)
+	}
+
+	if err := cli.ContainerStop(ctx, containerName, nil); err != nil {
+		log.Printf("Unable to stop container %s: %s", containerName, err)
+	}
+
+	removeOptions := types.ContainerRemoveOptions{
+		RemoveVolumes: true,
+		Force:         true,
+	}
+
+	if err := cli.ContainerRemove(ctx, containerName, removeOptions); err != nil {
+		log.Printf("Unable to remove container: %s", err)
+		return err
+	}
+
+	return nil
+}
+
+// ContainerExists returns status of container existance as true or false
+func ContainerExists(containerName string) bool {
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		panic(err)
+	}
+	options := types.ContainerListOptions{All: true}
+	containers, err := cli.ContainerList(context.Background(), options)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, container := range containers {
+		fmt.Printf("%s %s\n", container.ID[:10], container.Image)
+		findContainer := util.StringArrayContains(container.Names, "/"+containerName)
+		if findContainer {
+			return true
+		}
+	}
+
+	return false
 }
