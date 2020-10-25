@@ -43,7 +43,6 @@ func PostPipelines(w http.ResponseWriter, r *http.Request) {
 	}
 
 	imagesPulled := docker.PullImagesNew(imageNamesList)
-	return
 
 	//******** STEP 2 - Check if pulled *************//
 	// Check if all images pulled, else return

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	log "github.com/sirupsen/logrus"
+
 	// "gitlab.com/weeve/edge-server/edge-manager-service/internal/aws"
 	// "gitlab.com/weeve/edge-server/edge-manager-service/internal/constants"
 	// "gitlab.com/weeve/edge-server/edge-manager-service/internal/docker"
@@ -24,8 +26,9 @@ import (
 // @Router /images [get]
 // @Security ApiKeyAuth
 // @param Authorization header string true "Token"
-func GetAllImages(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Endpoint: returnAllImages")
+func GETimages(w http.ResponseWriter, r *http.Request) {
+	// fmt.Println("Endpoint: returnAllImages")
+	log.Info("GET /images")
 	images := docker.ReadAllImages()
 	json.NewEncoder(w).Encode(images)
 }
@@ -42,8 +45,9 @@ func GetAllImages(w http.ResponseWriter, r *http.Request) {
 // @Router /images/{id} [get]
 // @Security ApiKeyAuth
 // @param Authorization header string true "Token"
-func GetImage(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Endpoint: getImage")
+func GETimagesID(w http.ResponseWriter, r *http.Request) {
+	// fmt.Println("Endpoint: getImage")
+	log.Info("GET /images/{id}")
 	vars := mux.Vars(r)
 	fmt.Println("vars", vars)
 	key := vars["id"]
@@ -51,14 +55,14 @@ func GetImage(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(images)
 }
 
-func CreateImage(w http.ResponseWriter, r *http.Request) {
+func POSTimage(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint: createImage")
 	vars := mux.Vars(r)
 	// image := dao.SaveData(vars)
 	json.NewEncoder(w).Encode(vars)
 }
 
-func UpdateImage(w http.ResponseWriter, r *http.Request) {
+func PUTimagesID(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint: createImage")
 	vars := mux.Vars(r)
 	key := vars["id"]
@@ -66,7 +70,7 @@ func UpdateImage(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(key)
 }
 
-func DeleteImage(w http.ResponseWriter, r *http.Request) {
+func DELETEimagesID(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint: createImage")
 	vars := mux.Vars(r)
 	key := vars["id"]

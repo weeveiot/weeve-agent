@@ -23,7 +23,8 @@ func PrintEndpoints(r *mux.Router) {
 			return nil
 		}
 
-		log.Debug("\t", methods, "\t", path)
+		// log.Debug("\t", methods, "\t\t", path)
+		log.Debug(fmt.Sprintf("\t%-10v %v", methods, path))
 
 		return nil
 	})

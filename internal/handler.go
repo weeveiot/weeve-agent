@@ -35,30 +35,29 @@ func HandleRequests(portNum int) {
 	router.PathPrefix("/docs/").Handler(httpSwagger.WrapHandler)
 
 	subRouter := router.PathPrefix("/").Subrouter()
-
-	// Handlers of all image apis
-	subRouter.HandleFunc("/images", controller.GetAllImages).Methods("GET")
-	subRouter.HandleFunc("/images/{id}", controller.GetImage).Methods("GET")
-	subRouter.HandleFunc("/images", controller.CreateImage).Methods("POST")
-	subRouter.HandleFunc("/images/{id}", controller.UpdateImage).Methods("PUT")
-	subRouter.HandleFunc("/images/{id}", controller.DeleteImage).Methods("DELETE")
-
-
 	// TODO: This is disabled for now!!
 	// subRouter.Use(JwtVerify)
 
+	// Images
+	subRouter.HandleFunc("/images", controller.GETimages).Methods("GET")
+	subRouter.HandleFunc("/images/{id}", controller.GETimagesID).Methods("GET")
+	subRouter.HandleFunc("/images", controller.POSTimage).Methods("POST")
+	subRouter.HandleFunc("/images/{id}", controller.PUTimagesID).Methods("PUT")
+	subRouter.HandleFunc("/images/{id}", controller.DELETEimagesID).Methods("DELETE")
+
+	// Containers
 	subRouter.HandleFunc("/containers/start", controller.StartContainers).Methods("POST")
 	subRouter.HandleFunc("/containers/start/{id}", controller.StartContainer).Methods("POST")
 	subRouter.HandleFunc("/containers/stop", controller.StopContainers).Methods("POST")
 	subRouter.HandleFunc("/containers/stop/{id}", controller.StopContainer).Methods("POST")
 	subRouter.HandleFunc("/containers/deploy", controller.CreateContainer).Methods("POST")
 	// subRouter.HandleFunc("/containers/create/{containerName}/{imageName}", controller.CreateStartContainer).Methods("POST")
-
 	subRouter.HandleFunc("/containers/{id}", controller.DeleteContainer).Methods("DELETE")
 	subRouter.HandleFunc("/containers", controller.GetAllContainers)
 	subRouter.HandleFunc("/containers/{id}", controller.GetContainer)
 	subRouter.HandleFunc("/containers/{id}/logs", controller.GetContainerLog)
 
+	// Pipelines
 	subRouter.HandleFunc("/pipelines", controller.PostPipelines).Methods("POST")
 
 	util.PrintEndpoints(router)

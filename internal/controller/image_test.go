@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"testing"
 
 	"github.com/gorilla/mux"
 	"gitlab.com/weeve/edge-server/edge-manager-service/internal/dao"
