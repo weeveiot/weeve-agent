@@ -158,15 +158,15 @@ func PullImage(imageName string) bool {
 
 	//TODO: Need to disable Stdout!!
 	log.Info("Pulling image " + imageName)
-	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
+	_, err = cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
 	if err != nil {
 		log.Error(err)
 		return false
 	}
 	log.Info("Pulled image" + imageName + " into host")
-	defer out.Close()
+	// defer out.Close()
 
-	io.Copy(os.Stdout, out)
+	// io.Copy(os.Stdout, out)
 
 	return true
 }

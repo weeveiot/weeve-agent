@@ -22,8 +22,10 @@ var options Options
 var parser = flags.NewParser(&options, flags.Default)
 
 func init() {
+	// log.SetFormatter(&log.JSONFormatter{})
 	log.SetFormatter(&log.TextFormatter{})
 	log.SetOutput(os.Stdout)
+	// log.SetReportCaller(true) // Not working
 
 	log.SetLevel(log.InfoLevel)
 	log.Info("Started logging")

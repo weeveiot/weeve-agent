@@ -12,3 +12,6 @@ Running the server;
 
 make build
 
+## Docker notes
+`docker container rm $(docker container ls -aq)   `
+

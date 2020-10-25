@@ -114,7 +114,7 @@ func CreateStartContainers(manifest model.ManifestReq) bool {
 func PullImages(manifest model.ManifestReq) bool {
 	for i := range manifest.Modules {
 		mod := manifest.Modules[i]
-		log.Debug("\tModule: ", mod.ImageName)
+		log.Debug("\tImageName: ", mod.ImageName)
 		// Check if image exist in local
 		exists := docker.ImageExists(mod.ImageName)
 		log.Debug("\tImage exists: ", exists)
