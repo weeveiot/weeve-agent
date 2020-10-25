@@ -35,7 +35,7 @@ func PostPipelines(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Pull all images as required
-	log.Debug("Iterate modules, Docker Pull into host if missing")
+	log.Debug("Iterate modules, Docker Pull the image into host if missing")
 	imagesPulled := PullImages(manifest)
 
 	// Check if all images pulled, else return
@@ -54,7 +54,7 @@ func PostPipelines(w http.ResponseWriter, r *http.Request) {
 	log.Debug("Iterate modules, start each container")
 	for i := range manifest.Modules {
 		mod := manifest.Modules[i]
-		log.Debug("\tModule: ", mod.ImageName)
+		log.Debug("\tContainer: ", mod.ImageName)
 
 		//container := docker.ReadAllContainers()
 
@@ -84,15 +84,15 @@ func PostPipelines(w http.ResponseWriter, r *http.Request) {
 func CreateStartContainers(manifest model.ManifestReq) bool {
 	for i := range manifest.Modules {
 		mod := manifest.Modules[i]
-		log.Debug("\tModule: ", mod.ImageName)
+		log.Debug("\tCreateStartContainers - Module: ", mod.ImageName)
 
 		// Build container name
 		containerName := GetContainerName(manifest.ID, mod.Name)
-		log.Info(containerName)
+		log.Info("\tCreateStartContainers - Container name:", containerName)
 
 		// Check if container already exists
 		containerExists := docker.ContainerExists(containerName)
-		log.Info(containerExists)
+		log.Info("\tCreateStartContainers - Container exists:", containerExists)
 
 		// Create container if not exists
 		if containerExists {
