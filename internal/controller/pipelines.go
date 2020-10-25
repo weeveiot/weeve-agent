@@ -104,35 +104,35 @@ func PostPipelines(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-// CreateStartContainers iterates modules, and creates and starts containers
-func CreateStartContainers(manifest model.ManifestReq) bool {
-	for i := range manifest.Modules {
-		mod := manifest.Modules[i]
-		log.Debug("\tCreateStartContainers - Module: ", mod.ImageName)
+// // CreateStartContainers iterates modules, and creates and starts containers
+// func CreateStartContainers(manifest model.ManifestReq) bool {
+// 	for i := range manifest.Modules {
+// 		mod := manifest.Modules[i]
+// 		log.Debug("\tCreateStartContainers - Module: ", mod.ImageName)
 
-		// Build container name
-		containerName := GetContainerName(manifest.ID, mod.Name)
-		log.Info("\tCreateStartContainers - Container name:", containerName)
+// 		// Build container name
+// 		containerName := GetContainerName(manifest.ID, mod.Name)
+// 		log.Info("\tCreateStartContainers - Container name:", containerName)
 
-		// Check if container already exists
-		containerExists := docker.ContainerExists(containerName)
-		log.Info("\tCreateStartContainers - Container exists:", containerExists)
+// 		// Check if container already exists
+// 		containerExists := docker.ContainerExists(containerName)
+// 		log.Info("\tCreateStartContainers - Container exists:", containerExists)
 
-		// Create container if not exists
-		if containerExists {
-			// Stop and delete container
-			err := docker.StopAndRemoveContainer(containerName)
-			if err != nil {
-				return false
-			}
-		}
+// 		// Create container if not exists
+// 		if containerExists {
+// 			// Stop and delete container
+// 			err := docker.StopAndRemoveContainer(containerName)
+// 			if err != nil {
+// 				return false
+// 			}
+// 		}
 
-		// Create and start container
-		docker.CreateContainer(containerName, mod.ImageName)
-	}
+// 		// Create and start container
+// 		docker.CreateContainer(containerName, mod.ImageName)
+// 	}
 
-	return true
-}
+// 	return true
+// }
 
 // PullImages iterates modules and pulls images
 func PullImages(manifest model.ManifestReq) bool {
