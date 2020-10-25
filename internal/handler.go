@@ -39,8 +39,8 @@ func HandleRequests(portNum int) {
 	// subRouter.Use(JwtVerify)
 
 	// Images
-	subRouter.HandleFunc("/images", controller.GETimages).Methods("GET")
 	subRouter.HandleFunc("/images/{id}", controller.GETimagesID).Methods("GET")
+	subRouter.HandleFunc("/images", controller.GETimages).Methods("GET")
 	subRouter.HandleFunc("/images", controller.POSTimage).Methods("POST")
 	subRouter.HandleFunc("/images/{id}", controller.PUTimagesID).Methods("PUT")
 	subRouter.HandleFunc("/images/{id}", controller.DELETEimagesID).Methods("DELETE")

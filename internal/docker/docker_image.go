@@ -8,9 +8,9 @@ import (
 	"os"
 
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/registry"
+	"github.com/docker/docker/client"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -94,9 +94,12 @@ func ReadAllImages() []types.ImageSummary {
 		panic(err)
 	}
 
-	for _, image := range images {
-		fmt.Println(image.ID)
+	if false {
+		for _, image := range images {
+			fmt.Println(image.ID)
+		}
 	}
+
 	return images
 }
 

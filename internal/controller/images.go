@@ -30,7 +30,9 @@ func GETimages(w http.ResponseWriter, r *http.Request) {
 	// fmt.Println("Endpoint: returnAllImages")
 	log.Info("GET /images")
 	images := docker.ReadAllImages()
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(images)
+	log.Debug("Returning ", len(images), " images")
 }
 
 // ShowImages godoc
@@ -46,13 +48,21 @@ func GETimages(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @param Authorization header string true "Token"
 func GETimagesID(w http.ResponseWriter, r *http.Request) {
-	// fmt.Println("Endpoint: getImage")
+	w.Header().Set("Content-Type", "application/json")
 	log.Info("GET /images/{id}")
 	vars := mux.Vars(r)
-	fmt.Println("vars", vars)
-	key := vars["id"]
-	images := docker.ReadImage(key)
-	json.NewEncoder(w).Encode(images)
+	image := docker.ReadImage(vars["id"])
+	if image.ID == "" {
+		msg := "Image " + vars["id"] + " not found"
+		log.Warn(msg)
+		http.Error(w, msg, http.StatusNotFound)
+		return
+	} else {
+		log.Debug("Returning image ", vars["id"])
+		json.NewEncoder(w).Encode(image)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("200 - Request processed successfully!"))
+	}
 }
 
 func POSTimage(w http.ResponseWriter, r *http.Request) {
