@@ -11,6 +11,7 @@ import (
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 
 	"github.com/gorilla/mux"
+	log "github.com/sirupsen/logrus"
 )
 
 func GETcontainersID(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +35,7 @@ func GETcontainersID(w http.ResponseWriter, r *http.Request) {
 // @Security ApiKeyAuth
 // @param Authorization header string true "Token"
 func GETcontainers(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Endpoint: returnAllContainers")
+	log.Info("GET /containers")
 	// vars := mux.Vars(r)
 	// key := vars["id"]
 
@@ -45,8 +46,11 @@ func GETcontainers(w http.ResponseWriter, r *http.Request) {
 	// for k, v := range containers {
 	// 	fmt.Println(k, v)
 	// }
-
 	containers := docker.ReadAllContainers()
+	log.Debug(len(containers), " containers found")
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("200 - Request processed successfully!"))
 	json.NewEncoder(w).Encode(containers)
 }
 

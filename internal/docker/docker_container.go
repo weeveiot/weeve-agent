@@ -29,9 +29,9 @@ func ReadAllContainers() []types.Container {
 		panic(err)
 	}
 
-	for _, container := range containers {
-		fmt.Printf("%s %s\n", container.ID[:10], container.Image)
-	}
+	// for _, container := range containers {
+	// 	fmt.Printf("%s %s\n", container.ID[:10], container.Image)
+	// }
 
 	return containers
 }
