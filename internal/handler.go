@@ -46,19 +46,19 @@ func HandleRequests(portNum int) {
 	subRouter.HandleFunc("/images/{id}", controller.DELETEimagesID).Methods("DELETE")
 
 	// Containers
-	subRouter.HandleFunc("/containers/start", controller.StartContainers).Methods("POST")
-	subRouter.HandleFunc("/containers/start/{id}", controller.StartContainer).Methods("POST")
-	subRouter.HandleFunc("/containers/stop", controller.StopContainers).Methods("POST")
-	subRouter.HandleFunc("/containers/stop/{id}", controller.StopContainer).Methods("POST")
-	subRouter.HandleFunc("/containers/deploy", controller.CreateContainer).Methods("POST")
+	subRouter.HandleFunc("/containers/start", controller.POSTcontainersStart).Methods("POST")
+	subRouter.HandleFunc("/containers/start/{id}", controller.POSTcontainersStartID).Methods("POST")
+	subRouter.HandleFunc("/containers/stop", controller.POSTcontainersStop).Methods("POST")
+	subRouter.HandleFunc("/containers/stop/{id}", controller.POSTcontainersStopID).Methods("POST")
+	subRouter.HandleFunc("/containers/deploy", controller.POSTcontainersDeploy).Methods("POST")
 	// subRouter.HandleFunc("/containers/create/{containerName}/{imageName}", controller.CreateStartContainer).Methods("POST")
-	subRouter.HandleFunc("/containers/{id}", controller.DeleteContainer).Methods("DELETE")
-	subRouter.HandleFunc("/containers", controller.GetAllContainers)
-	subRouter.HandleFunc("/containers/{id}", controller.GetContainer)
-	subRouter.HandleFunc("/containers/{id}/logs", controller.GetContainerLog)
+	subRouter.HandleFunc("/containers/{id}", controller.DELETEcontainersID).Methods("DELETE")
+	subRouter.HandleFunc("/containers", controller.GETcontainers).Methods("GET")
+	subRouter.HandleFunc("/containers/{id}", controller.GETcontainersID).Methods("GET")
+	subRouter.HandleFunc("/containers/{id}/logs", controller.GETcontainersIDlogs).Methods("GET")
 
 	// Pipelines
-	subRouter.HandleFunc("/pipelines", controller.PostPipelines).Methods("POST")
+	subRouter.HandleFunc("/pipelines", controller.POSTpipelines).Methods("POST")
 
 	util.PrintEndpoints(router)
 

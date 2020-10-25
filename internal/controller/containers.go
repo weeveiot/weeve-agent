@@ -13,7 +13,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func GetContainer(w http.ResponseWriter, r *http.Request) {
+func GETcontainersID(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint: getContainer")
 	// vars := mux.Vars(r)
 	// key := vars["id"]
@@ -33,7 +33,7 @@ func GetContainer(w http.ResponseWriter, r *http.Request) {
 // @Router /containers [get]
 // @Security ApiKeyAuth
 // @param Authorization header string true "Token"
-func GetAllContainers(w http.ResponseWriter, r *http.Request) {
+func GETcontainers(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint: returnAllContainers")
 	// vars := mux.Vars(r)
 	// key := vars["id"]
@@ -50,7 +50,7 @@ func GetAllContainers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(containers)
 }
 
-func GetContainerLog(w http.ResponseWriter, r *http.Request) {
+func GETcontainersIDlogs(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint: returnAll logs of Container")
 	vars := mux.Vars(r)
 
@@ -81,7 +81,7 @@ func GetContainerLog(w http.ResponseWriter, r *http.Request) {
 // @Router /containers/start [post]
 // @Security ApiKeyAuth
 // @param Authorization header string true "Token"
-func StartContainers(w http.ResponseWriter, r *http.Request) {
+func POSTcontainersStart(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint: StartContainers")
 	// vars := mux.Vars(r)
 	// key := vars["id"]
@@ -100,7 +100,7 @@ func StartContainers(w http.ResponseWriter, r *http.Request) {
 // @Router /containers/stop [post]
 // @Security ApiKeyAuth
 // @param Authorization header string true "Token"
-func StopContainers(w http.ResponseWriter, r *http.Request) {
+func POSTcontainersStop(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint: StopContainers")
 	// vars := mux.Vars(r)
 	// key := vars["id"]
@@ -120,7 +120,7 @@ func StopContainers(w http.ResponseWriter, r *http.Request) {
 // @Router /containers/start/{id} [post]
 // @Security ApiKeyAuth
 // @param Authorization header string true "Token"
-func StartContainer(w http.ResponseWriter, r *http.Request) {
+func POSTcontainersStartID(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint: StartContainers")
 	vars := mux.Vars(r)
 	key := vars["id"]
@@ -140,7 +140,7 @@ func StartContainer(w http.ResponseWriter, r *http.Request) {
 // @Router /containers/stop/{id} [post]
 // @Security ApiKeyAuth
 // @param Authorization header string true "Token"
-func StopContainer(w http.ResponseWriter, r *http.Request) {
+func POSTcontainersStopID(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint: StopContainers")
 	vars := mux.Vars(r)
 	key := vars["id"]
@@ -148,7 +148,7 @@ func StopContainer(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
-// CreateContainer will pull image and create container based on input Image and Container name
+// POSTcontainersDeploy will pull image and create container based on input Image and Container name
 // @Summary Pull image, Create container and Start container
 // @Description Pull image, Create container and Start container
 // @Tags containers
@@ -161,7 +161,7 @@ func StopContainer(w http.ResponseWriter, r *http.Request) {
 // @Router /containers/create/{containerName}/{imageName} [post]
 // @Security ApiKeyAuth
 // @param Authorization header string true "Token"
-func CreateContainer(w http.ResponseWriter, r *http.Request) {
+func POSTcontainersDeploy(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint: CreateContainer")
 	// vars := mux.Vars(r)
 	// imageName := vars["imageName"]
@@ -189,7 +189,7 @@ func UpdateContainer(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(key)
 }
 
-func DeleteContainer(w http.ResponseWriter, r *http.Request) {
+func DELETEcontainersID(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint: createContainer")
 	vars := mux.Vars(r)
 	key := vars["id"]

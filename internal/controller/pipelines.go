@@ -10,13 +10,13 @@ import (
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
 )
 
-// PostPipelines function to,
+// POSTpipelines function to,
 // 1) Receive manifest
 // 2) Iterate over each image
 // 3) IF image not existing locally, PULL
 //		ELSE: Continue
 // 4) Run the container
-func PostPipelines(w http.ResponseWriter, r *http.Request) {
+func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	log.Info("POST /pipeline")
 
 	// Decode the JSON manifest into Golang struct
