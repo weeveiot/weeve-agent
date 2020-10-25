@@ -59,9 +59,9 @@ func GETimagesID(w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		log.Debug("Returning image ", vars["id"])
-		json.NewEncoder(w).Encode(image)
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("200 - Request processed successfully!"))
+		json.NewEncoder(w).Encode(image)
 	}
 }
 
