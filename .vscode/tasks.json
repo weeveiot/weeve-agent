@@ -6,7 +6,7 @@
 	"tasks": [
         {
             "label": "rungo",
-            "command": "go run ./cmd/server.go -v -p 8030",
+            "command": "go run ./cmd/node-service.go -v -p 8030",
             "group": {
                 "kind": "build",
                 "isDefault": true
