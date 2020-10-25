@@ -36,6 +36,14 @@ func HandleRequests(portNum int) {
 
 	subRouter := router.PathPrefix("/").Subrouter()
 
+	// Handlers of all image apis
+	subRouter.HandleFunc("/images", controller.GetAllImages).Methods("GET")
+	subRouter.HandleFunc("/images/{id}", controller.GetImage).Methods("GET")
+	subRouter.HandleFunc("/images", controller.CreateImage).Methods("POST")
+	subRouter.HandleFunc("/images/{id}", controller.UpdateImage).Methods("PUT")
+	subRouter.HandleFunc("/images/{id}", controller.DeleteImage).Methods("DELETE")
+
+
 	// TODO: This is disabled for now!!
 	// subRouter.Use(JwtVerify)
 
