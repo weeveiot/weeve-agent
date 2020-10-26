@@ -7,6 +7,19 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func ParseImagesList(manifestJson []byte) []string {
+	jsonParsed, err := gabs.ParseJSON(manifestJson)
+	if err != nil {
+		panic(err)
+	}
+	var imageNamesList []string
+	for _, mod := range jsonParsed.Search("Modules").Children() {
+		imageNamesList = append(imageNamesList, mod.Search("ImageName").Data().(string))
+	}
+	return imageNamesList
+}
+
+// Print a manifest object as defined
 func PrintManifestDetails(json []byte) bool {
 	jsonParsed, err := gabs.ParseJSON(json)
 	if err != nil {
@@ -29,4 +42,14 @@ func PrintManifestDetails(json []byte) bool {
 		}
 	}
 	return true
+}
+
+// Simple pretty printer for arbitrary json
+// Depends on the gabs package
+func PrettyPrintJson(jsonBytes []byte) {
+	jsonObj, err := gabs.ParseJSON(jsonBytes)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(jsonObj.StringIndent("", "  "))
 }
