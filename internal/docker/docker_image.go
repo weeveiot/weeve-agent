@@ -3,9 +3,10 @@ package docker
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
-	"os"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
@@ -22,8 +23,11 @@ func PullImagesNew(imageNames []string) bool {
 
 		// Check if image exist in local
 		exists := ImageExists(imageNames[i])
-		log.Debug(fmt.Sprintf("\tImage %v %v, %v", i, imageNames[i], exists))
-		// log.Debug("\tImage exists: ", exists)
+		if exists {
+			log.Debug(fmt.Sprintf("\tImage %v %v, already exists on host", i, imageNames[i]))
+		} else {
+			log.Debug(fmt.Sprintf("\tImage %v %v, does not exist on host", i, imageNames[i]))
+		}
 
 		if exists == false {
 			// Pull image if not exist in local
@@ -45,19 +49,57 @@ func PullImage(imageName string) bool {
 		log.Error(err)
 		return false
 	}
-
-	//TODO: Need to disable Stdout!!
-	log.Info("\t\tPulling image " + imageName)
-	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
+	// Imager pull returns a Reader object, see:
+	// https://stackoverflow.com/questions/44452679/golang-docker-api-parse-result-of-imagepull
+	// log.Info("\t\tPulling image " + imageName)
+	events, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
 	if err != nil {
 		log.Error(err)
 		return false
 	}
-	defer out.Close()
+	// defer out.Close()
 
-	io.Copy(os.Stdout, out)
+	// io.Copy(os.Stdout, out)
 
-	log.Info("Pulled image " + imageName + " into host")
+    d := json.NewDecoder(events)
+
+    type Event struct {
+        Status         string `json:"status"`
+        Error          string `json:"error"`
+        Progress       string `json:"progress"`
+        ProgressDetail struct {
+            Current int `json:"current"`
+            Total   int `json:"total"`
+        } `json:"progressDetail"`
+    }
+
+    var event *Event
+    for {
+        if err := d.Decode(&event); err != nil {
+            if err == io.EOF {
+                break
+            }
+            panic(err)
+		}
+        // fmt.Printf(".")
+		// fmt.Printf("EVENT: %+v\n", event)
+        // fmt.Printf(".\n")
+	}
+	// fmt.Printf("\n")
+
+    // Latest event for new image
+    // EVENT: {Status:Status: Downloaded newer image for busybox:latest Error: Progress:[==================================================>]  699.2kB/699.2kB ProgressDetail:{Current:699243 Total:699243}}
+    // Latest event for up-to-date image
+    // EVENT: {Status:Status: Image is up to date for busybox:latest Error: Progress: ProgressDetail:{Current:0 Total:0}}
+    if event != nil {
+        if strings.Contains(event.Status, fmt.Sprintf("Downloaded newer image for %s", imageName)) {
+			log.Info("Pulled image " + imageName + " into host")
+        }
+        if strings.Contains(event.Status, fmt.Sprintf("Image is up to date for %s", imageName)) {
+			log.Info("Updated image " + imageName + " into host")
+        }
+	}
+
 
 	return true
 }

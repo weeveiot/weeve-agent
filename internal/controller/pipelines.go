@@ -48,7 +48,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 
 	//******** STEP 1 - Pull all *************//
 	// Pull all images as required
-	log.Debug("STEP 1 - Iterate modules, Docker Pull the image into host if missing")
+	log.Debug("STEP 1 - Iterate modules, Docker Pull image into host if missing")
 	// var imageNamesList []string
 	// for i := range manifest.Modules {
 	// 	imageNamesList = append(imageNamesList, manifest.Modules[i].ImageName)
