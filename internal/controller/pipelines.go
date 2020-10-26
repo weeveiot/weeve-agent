@@ -2,6 +2,8 @@ package controller
 
 import (
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
@@ -21,7 +23,13 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 
 	// Decode the JSON manifest into Golang struct
 	manifest := model.ManifestReq{}
-	err := util.DecodeJSONBody(w, r, &manifest)
+	body, err := ioutil.ReadAll(r.Body)
+
+	res := util.PrintManifestDetails(body)
+	fmt.Println(res)
+
+	return
+	err = util.DecodeJSONBody(w, r, &manifest)
 	if err != nil {
 		var mr *util.MalformedRequest
 		if errors.As(err, &mr) {
@@ -52,7 +60,6 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
-
 
 	//******** STEP 3 - Check containers, stop and remove *************//
 	// Create and start containers
@@ -108,7 +115,6 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("200 - Request processed successfully!"))
 	return
 }
-
 
 // GetContainerName build container name
 func GetContainerName(pipelineID string, containerName string) string {

@@ -3,6 +3,7 @@ module gitlab.com/weeve/edge-server/edge-pipeline-service
 go 1.15
 
 require (
+	github.com/Jeffail/gabs/v2 v2.6.0
 	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/auth0/go-jwt-middleware v0.0.0-20200810150920-a32d7af194d1
