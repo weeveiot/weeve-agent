@@ -77,7 +77,6 @@ func ImageExists(id string) bool {
 	}
 }
 
-
 // To be listed for selection of images in management app
 func ReadAllImages() []types.ImageSummary {
 	// https://docs.docker.com/engine/api/sdk/examples/#list-all-images
@@ -102,8 +101,6 @@ func ReadAllImages() []types.ImageSummary {
 
 	return images
 }
-
-
 
 // Management API
 
