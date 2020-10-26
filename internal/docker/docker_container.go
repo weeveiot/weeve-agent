@@ -126,9 +126,30 @@ func StartContainer(containerId string) bool {
 		panic(err)
 	}
 
-	if err := cli.ContainerStart(ctx, containerId, types.ContainerStartOptions{}); err != nil {
-		panic(err)
+	err = cli.ContainerStart(ctx, containerId, types.ContainerStartOptions{})
+	if err != nil {
+		log.Error(err)
+		return false
 	}
+
+	statusCh, errCh := cli.ContainerWait(ctx, containerId, container.WaitConditionNotRunning)
+	select {
+	case err := <-errCh:
+		if err != nil {
+			log.Error(err)
+			return false
+		}
+	case <-statusCh:
+	}
+
+	out, err := cli.ContainerLogs(ctx, containerId, types.ContainerLogsOptions{ShowStdout: true})
+	if err != nil {
+		log.Error(err)
+		return false
+	}
+
+	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
+
 	return true
 }
 
@@ -165,32 +186,10 @@ func CreateContainer(containerName string, imageName string) bool {
 		return false
 	}
 
-	err = cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{})
-	if err != nil {
-		log.Error(err)
-		// return "StartFailed"
+	if !StartContainer(resp.ID) {
 		return false
 	}
 
-	statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
-	select {
-	case err := <-errCh:
-		if err != nil {
-			log.Error(err)
-			return false
-		}
-	case <-statusCh:
-	}
-
-	out, err := cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true})
-	if err != nil {
-		log.Error(err)
-		return false
-	}
-
-	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
-
-	// return "Container " + containerName + " created for image " + imageName
 	return true
 }
 
