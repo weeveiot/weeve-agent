@@ -100,7 +100,6 @@ func PullImage(imageName string) bool {
         }
 	}
 
-
 	return true
 }
 

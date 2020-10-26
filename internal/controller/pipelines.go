@@ -76,15 +76,33 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, mod := range jsonParsed.Search("Modules").Children() {
-		log.Debug(fmt.Sprintf("\tindex: %v, name: %v", mod.Search("Index").Data(), mod.Search("Name").Data()))
+		log.Debug(fmt.Sprintf("\t***** index: %v, name: %v", mod.Search("Index").Data(), mod.Search("Name").Data()))
 		log.Debug(fmt.Sprintf("\timage %v:%v", mod.Search("ImageName").Data(), mod.Search("Tag").Data()))
 		log.Debug("\toptions:")
 		for _, opt := range mod.Search("options").Children() {
-			log.Debug(fmt.Sprintf("\t\t %v = %v", opt.Search("opt").Data(), opt.Search("val").Data()))
+			log.Debug(fmt.Sprintf("\t\t %-15v = %v", opt.Search("opt").Data(), opt.Search("val").Data()))
 		}
 		log.Debug("\targuments:")
 		for _, arg := range mod.Search("arguments").Children() {
 			log.Debug(fmt.Sprintf("\t\t %-15v= %v", arg.Search("arg").Data(), arg.Search("val").Data()))
+		}
+		containerName := GetContainerName(jsonParsed.Search("ID").Data().(string), mod.Search("Name").Data().(string))
+		log.Info("\tConstructed container name:", containerName)
+
+		containerExists := docker.ContainerExists(containerName)
+		log.Info("\tContainer exists:", containerExists)
+
+		// Create container if not exists
+		if containerExists {
+			log.Debug("\tStopAndRemoveContainer - ", containerName)
+			// Stop and delete container
+			err := docker.StopAndRemoveContainer(containerName)
+			if err != nil {
+				// msg := ""
+				log.Error(err)
+				http.Error(w, string(err.Error()), http.StatusInternalServerError)
+			}
+			log.Debug("\tContainer ", containerName, " removed")
 		}
 	}
 

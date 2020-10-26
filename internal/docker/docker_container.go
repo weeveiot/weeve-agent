@@ -276,7 +276,7 @@ func ContainerExists(containerName string) bool {
 	}
 
 	for _, container := range containers {
-		fmt.Printf("%s %s\n", container.ID[:10], container.Image)
+		// fmt.Printf("%s %s\n", container.ID[:10], container.Image)
 		findContainer := util.StringArrayContains(container.Names, "/"+containerName)
 		if findContainer {
 			return true
