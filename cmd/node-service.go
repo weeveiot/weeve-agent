@@ -31,9 +31,9 @@ func init() {
 	log.Info("Started logging")
 }
 
-// @title Weeve Manager API
+// @title Weeve Node service API and docker orchestration
 // @version 1.0
-// @description This is a weeve management api.
+// @description This is the Weeve Node service API and docker orchestration
 // @securityDefinitions.apikey ApiKeyAuth
 // @in header
 // @name Token

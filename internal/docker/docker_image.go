@@ -46,11 +46,8 @@ func PullImage(imageName string) bool {
 		return false
 	}
 
-	// os.Stdout,_ = os.Open(os.DevNull)
-
 	//TODO: Need to disable Stdout!!
 	log.Info("\t\tPulling image " + imageName)
-	// _, err = cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
 	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
 	if err != nil {
 		log.Error(err)
