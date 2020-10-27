@@ -167,6 +167,32 @@ func StopContainer(containerId string) bool {
 	return true
 }
 
+func CreateContainerOptsArgs(containerName string, imageName string) bool {
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Error(err)
+		// panic(err)
+		return false
+	}
+
+	resp, err := cli.ContainerCreate(ctx, &container.Config{
+		Image: imageName,
+		Cmd:   []string{"echo", "Container " + containerName + " created"},
+	}, &container.HostConfig{}, &network.NetworkingConfig{}, nil, containerName)
+	if err != nil {
+		log.Error(err)
+		// return "CreateFailed"
+		return false
+	}
+
+	if !StartContainer(resp.ID) {
+		return false
+	}
+
+	return true
+}
+
 func CreateContainer(containerName string, imageName string) bool {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())

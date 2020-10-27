@@ -92,7 +92,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		containerExists := docker.ContainerExists(containerName)
 		log.Info("\tContainer exists:", containerExists)
 
-		// Create container if not exists
+		// Stop + remove container if exists, start fresh
 		if containerExists {
 			log.Debug("\tStopAndRemoveContainer - ", containerName)
 			// Stop and delete container
@@ -138,6 +138,24 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	//******** STEP 4 - Start all containers *************//
 	// Start all containers iteratively
 
+	for _, mod := range jsonParsed.Search("Modules").Children() {
+		containerName := GetContainerName(jsonParsed.Search("ID").Data().(string), mod.Search("Name").Data().(string))
+		imageName := fmt.Sprintf("\timage %v:%v", mod.Search("ImageName").Data(), mod.Search("Tag").Data())
+		log.Info("\tPreparing command for container " + containerName + "from image" + imageName)
+
+		for _, opt := range mod.Search("options").Children() {
+			log.Debug(fmt.Sprintf("\t\t %-15v = %v", opt.Search("opt").Data(), opt.Search("val").Data()))
+		}
+
+		for _, arg := range mod.Search("arguments").Children() {
+			log.Debug(fmt.Sprintf("\t\t %-15v= %v", arg.Search("arg").Data(), arg.Search("val").Data()))
+		}
+
+		// Create and start container
+		docker.CreateContainer(containerName, mod.ImageName)
+		// log.Info("\tCreateContainer - successfully started:", containerName)
+
+	}
 	/*
 		log.Debug("Iterate modules, start each container")
 		for i := range manifest.Modules {
