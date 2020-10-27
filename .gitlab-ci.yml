@@ -29,7 +29,7 @@ validate:
 compile:
   stage: build
   script:
-    - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/edge-pipeline-service ./cmd/main.go
+    - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/edge-pipeline-service ./cmd/node-service.go
     # - env GOOS=linux go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/edge-pipeline-service ./cmd/main.go
   artifacts:
     paths:
