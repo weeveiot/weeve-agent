@@ -140,8 +140,9 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 
 	for _, mod := range jsonParsed.Search("Modules").Children() {
 		containerName := GetContainerName(jsonParsed.Search("ID").Data().(string), mod.Search("Name").Data().(string))
-		imageName := fmt.Sprintf("\timage %v:%v", mod.Search("ImageName").Data(), mod.Search("Tag").Data())
-		log.Info("\tPreparing command for container " + containerName + "from image" + imageName)
+		imageName := mod.Search("ImageName").Data().(string)
+		imageTag := mod.Search("Tag").Data().(string)
+		log.Info("\tPreparing command for container " + containerName + "from image" + imageName + " " + imageTag)
 
 		for _, opt := range mod.Search("options").Children() {
 			log.Debug(fmt.Sprintf("\t\t %-15v = %v", opt.Search("opt").Data(), opt.Search("val").Data()))
@@ -152,7 +153,8 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Create and start container
-		docker.CreateContainer(containerName, mod.ImageName)
+		argsString := "asdf"
+		docker.CreateContainerOptsArgs(containerName, imageName, argsString)
 		// log.Info("\tCreateContainer - successfully started:", containerName)
 
 	}
