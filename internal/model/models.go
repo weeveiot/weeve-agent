@@ -31,17 +31,23 @@ type ManifestReq struct {
 }
 
 type Manifest struct {
-	Index     int    `json:"Index"`
-	Name      string `json:"Name"`
-	Tag       string `json:"Tag"`
-	ImageID   string `json:"ImageID"`
-	ImageName string `json:"ImageName"`
-	// ContainerName string            `json:"ContainerName"`
-	// State string `json:"State"`
-	Ingress map[string]string `json:"Ingress"`
-	Egress  map[string]string `json:"Egress"`
-	// Ingress       DatasourceConfig `json:"Ingress"`
-	// Egress        DatasourceConfig `json:"Egress"`
+	Index     int      `json:"Index"`
+	Name      string   `json:"Name"`
+	Tag       string   `json:"Tag"`
+	ImageID   string   `json:"ImageID"`
+	ImageName string   `json:"ImageName"`
+	Options   Option   `json:"Options"`
+	Arguments Argument `json:"Arguments"`
+}
+
+type Argument []struct {
+	Arg string `json:"opt"`
+	Val bool   `json:"val"`
+}
+
+type Option []struct {
+	Arg string `json:"arg"`
+	Val bool   `json:"val"`
 }
 
 // type DatasourceConfig struct {
