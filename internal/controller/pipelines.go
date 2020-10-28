@@ -9,6 +9,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/docker"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
 )
 
@@ -153,8 +154,9 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Create and start container
-		argsString := "asdf"
-		docker.CreateContainerOptsArgs(containerName, imageName, argsString)
+		//argsString := "asdf"
+		argList := jsonParsed.Search("arguments").Data().(model.Argument)
+		docker.CreateContainerOptsArgs(containerName, imageName, argList)
 		// log.Info("\tCreateContainer - successfully started:", containerName)
 
 	}
