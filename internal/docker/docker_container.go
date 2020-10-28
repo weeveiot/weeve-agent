@@ -15,7 +15,6 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
 )
 
@@ -168,7 +167,8 @@ func StopContainer(containerId string) bool {
 	return true
 }
 
-func CreateContainerOptsArgs(containerName string, imageName string, argsString model.Argument) bool {
+// func CreateContainerOptsArgs(containerName string, imageName string, argsString model.Argument) bool {
+func CreateContainerOptsArgs(containerName string, imageName string, argsString string) bool {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
