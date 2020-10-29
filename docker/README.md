@@ -28,7 +28,7 @@ Receives a manifest and instantiates a manifest into a running data service. Ret
 
 ## Usage
 
-- $ docker-compose up -d
+- $ dopcker run -it -p 8030:8030weevenetwork/node-service:<tag>
 - $ docker ps
 - $ docker logs node-service -f
 - $ docker exec -ti node-service sh
