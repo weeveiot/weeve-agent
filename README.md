@@ -9,7 +9,7 @@ Using the [reflex](https://github.com/cespare/reflex) file watcher;
 `reflex -r '\.go$' -s -- sh -c 'go run ./cmd/node-service.go -v -p 8030'`
 
 Running the server;
-`go run main.go --port 8030`
+`go run ./cmd/node-service.go --port 8030`
 
 make build
 

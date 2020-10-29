@@ -39,7 +39,7 @@ func ReadAllContainers() []types.Container {
 func GetContainerLog(container string) string {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		panic(err)
+		log.Error("Env Error ", err)
 	}
 
 	options := types.ContainerLogsOptions{
@@ -52,14 +52,14 @@ func GetContainerLog(container string) string {
 
 	logs, err := cli.ContainerLogs(context.Background(), container, options)
 	if err != nil {
-		panic(err)
+		log.Error("Log fetch Error ", err)
 	}
-	fmt.Print(logs)
+	log.Debug("Logs ", logs)
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(logs)
 	logStr := buf.String()
 
-	fmt.Printf("%s", logStr)
+	log.Debug("Log string ", logStr)
 
 	return logStr
 }

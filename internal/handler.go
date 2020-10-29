@@ -31,19 +31,19 @@ func HandleRequests(portNum int) {
 	// jwtMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
 
 	router.HandleFunc("/", controller.Status)
-	router.HandleFunc("/login", controller.Login).Methods("POST")
+	// router.HandleFunc("/login", controller.Login).Methods("POST")
 	router.PathPrefix("/docs/").Handler(httpSwagger.WrapHandler)
 
 	subRouter := router.PathPrefix("/").Subrouter()
 	// TODO: This is disabled for now!!
 	// subRouter.Use(JwtVerify)
 
-	// Images
-	subRouter.HandleFunc("/images/{id}", controller.GETimagesID).Methods("GET")
-	subRouter.HandleFunc("/images", controller.GETimages).Methods("GET")
-	subRouter.HandleFunc("/images", controller.POSTimage).Methods("POST")
-	subRouter.HandleFunc("/images/{id}", controller.PUTimagesID).Methods("PUT")
-	subRouter.HandleFunc("/images/{id}", controller.DELETEimagesID).Methods("DELETE")
+	// // Images
+	// subRouter.HandleFunc("/images/{id}", controller.GETimagesID).Methods("GET")
+	// subRouter.HandleFunc("/images", controller.GETimages).Methods("GET")
+	// subRouter.HandleFunc("/images", controller.POSTimage).Methods("POST")
+	// subRouter.HandleFunc("/images/{id}", controller.PUTimagesID).Methods("PUT")
+	// subRouter.HandleFunc("/images/{id}", controller.DELETEimagesID).Methods("DELETE")
 
 	// Containers
 	subRouter.HandleFunc("/containers/start", controller.POSTcontainersStart).Methods("POST")
@@ -69,7 +69,7 @@ func HandleRequests(portNum int) {
 
 func CommonMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// w.Header().Add("Content-Type", "application/json")
+		w.Header().Add("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, Access-Control-Request-Headers, Access-Control-Request-Method, Connection, Host, Origin, User-Agent, Referer, Cache-Control, X-header")
