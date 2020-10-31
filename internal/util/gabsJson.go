@@ -14,7 +14,7 @@ func ParseImagesList(manifestJson []byte) []string {
 	}
 	var imageNamesList []string
 	for _, mod := range jsonParsed.Search("Modules").Children() {
-		imageNamesList = append(imageNamesList, mod.Search("ImageName").Data().(string))
+		imageNamesList = append(imageNamesList, mod.Search("ImageName").Data().(string)+":"+mod.Search("Tag").Data().(string))
 	}
 	return imageNamesList
 }
