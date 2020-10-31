@@ -165,7 +165,6 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		}
 
 		docker.CreateContainerOptsArgs(containerName, imageName, imageTag, strArgs)
-		log.Debug("BACK IN HANDLER")
 		// log.Info("\tCreateContainer - successfully started:", containerName)
 
 	}
@@ -185,14 +184,11 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		}
 	*/
 
-	/*
-		log.Info("Pipeline successfully instantiated from manifest ", manifest.ID)
-
-		// Finally, return 200
-		// Return payload: pipeline started / list of container IDs
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("200 - Request processed successfully!"))
-	*/
+	log.Info("Pipeline successfully instantiated from manifest ", jsonParsed.Search("Modules"))
+	// Finally, return 200
+	// Return payload: pipeline started / list of container IDs
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("200 - Request processed successfully!"))
 	return
 }
 
