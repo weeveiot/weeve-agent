@@ -132,15 +132,15 @@ func StartContainer(containerId string) bool {
 		return false
 	}
 
-	statusCh, errCh := cli.ContainerWait(ctx, containerId, container.WaitConditionNotRunning)
-	select {
-	case err := <-errCh:
-		if err != nil {
-			log.Error(err)
-			return false
-		}
-	case <-statusCh:
-	}
+	// statusCh, errCh := cli.ContainerWait(ctx, containerId, container.WaitConditionNotRunning)
+	// select {
+	// case err := <-errCh:
+	// 	if err != nil {
+	// 		log.Error(err)
+	// 		return false
+	// 	}
+	// case <-statusCh:
+	// }
 
 	out, err := cli.ContainerLogs(ctx, containerId, types.ContainerLogsOptions{ShowStdout: true})
 	if err != nil {
@@ -168,7 +168,7 @@ func StopContainer(containerId string) bool {
 }
 
 // func CreateContainerOptsArgs(containerName string, imageName string, argsString model.Argument) bool {
-func CreateContainerOptsArgs(containerName string, imageName string, imageTag string, argsString string) bool {
+func CreateContainerOptsArgs(containerName string, imageName string, imageTag string, argsString []string) bool {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -186,6 +186,7 @@ func CreateContainerOptsArgs(containerName string, imageName string, imageTag st
 		Tty:   false,
 	}
 
+	// resp, err := cli.ContainerCreate(ctx,
 	resp, err := cli.ContainerCreate(ctx,
 		containerConfig,
 		&container.HostConfig{},
@@ -199,6 +200,8 @@ func CreateContainerOptsArgs(containerName string, imageName string, imageTag st
 		return false
 	}
 	log.Debug("Created container " + containerName)
+
+
 
 	if !StartContainer(resp.ID) {
 		log.Debug("Did not start container")

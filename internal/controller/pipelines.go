@@ -153,8 +153,13 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Create and start container
-		argsString := "asdf"
+		// argsString := "asdf"
 		// argList := jsonParsed.Search("arguments").Data().(model.Argument)
+		// TODO: Build the argument string as:
+		/// InBroker=tcp://18.196.40.113:1883", "--ProcessName=container-1", "--InTopic=topic/source", "--InClient=weevenetwork/go-mqtt-gobot", "--OutBroker=tcp://18.196.40.113:1883", "--OutTopic=topic/c2", "--OutClient=weevenetwork/go-mqtt-gobot"},
+		for _, arg := range mod.Search("arguments").Children() {
+			log.Debug(fmt.Sprintf("\t\t %-15v= %v", arg.Search("arg").Data(), arg.Search("val").Data()))
+		}
 		docker.CreateContainerOptsArgs(containerName, imageName, imageTag, argsString)
 		log.Debug("BACK IN HANDLER")
 		// log.Info("\tCreateContainer - successfully started:", containerName)
