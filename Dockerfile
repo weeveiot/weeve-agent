@@ -3,35 +3,31 @@
 #########################################
 FROM golang:1.15-alpine3.12 as builder
 
-RUN apk add --no-cache git tree \
- && mkdir -p /opt/node-service
+RUN apk add --no-cache git tree
+#\
+#  && mkdir -p /opt/node-service
 
-COPY opt/ /opt/node-service/
+# RUN mkdir /app
+# COPY ./cmd ./internal /app/
+# COPY go.mod go.sum /app/
+COPY . /app/
+WORKDIR /app/
 
-RUN cd /opt/node-service \
- && go build cmd/node-service.go
-
+# RUN go get -d -v
+RUN go build ./cmd/node-service.go
 
 #########################################
 ### DIST IMAGE
 #########################################
 FROM alpine
 
-MAINTAINER Kanchen Monnin
-
-LABEL multi.author="Kanchen Monnin" \
-      multi.maintainer="kanchen.monnin@weeve.network" \
-      multi.department="DevOps" \
-      multi.service="node-service" \
-      multi.description="node-service on edge"
-
 LABEL service="node-service"
 
 # install deps
-RUN apk add --no-cache --no-progress curl tini ca-certificates
+# RUN apk add --no-cache --no-progress curl tini ca-certificates
 
 # copy node-service binary
-COPY --from=builder /opt/node-service/node-service /usr/bin/node-service
+COPY --from=builder /app/node-service /usr/bin/node-service
 
-ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["node-service", "-p", "8030"]
+# ENTRYPOINT ["/sbin/tini", "--"]
+# CMD ["node-service", "-p", "8030"]
