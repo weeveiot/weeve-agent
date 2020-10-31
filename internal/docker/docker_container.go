@@ -29,9 +29,9 @@ func ReadAllContainers() []types.Container {
 		panic(err)
 	}
 
-	for _, container := range containers {
-		fmt.Printf("%s %s\n", container.ID[:10], container.Image)
-	}
+	// for _, container := range containers {
+	// 	fmt.Printf("%s %s\n", container.ID[:10], container.Image)
+	// }
 
 	return containers
 }
@@ -39,7 +39,7 @@ func ReadAllContainers() []types.Container {
 func GetContainerLog(container string) string {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		panic(err)
+		log.Error("Env Error ", err)
 	}
 
 	options := types.ContainerLogsOptions{
@@ -52,14 +52,14 @@ func GetContainerLog(container string) string {
 
 	logs, err := cli.ContainerLogs(context.Background(), container, options)
 	if err != nil {
-		panic(err)
+		log.Error("Log fetch Error ", err)
 	}
-	fmt.Print(logs)
+	log.Debug("Logs ", logs)
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(logs)
 	logStr := buf.String()
 
-	fmt.Printf("%s", logStr)
+	log.Debug("Log string ", logStr)
 
 	return logStr
 }
@@ -126,9 +126,30 @@ func StartContainer(containerId string) bool {
 		panic(err)
 	}
 
-	if err := cli.ContainerStart(ctx, containerId, types.ContainerStartOptions{}); err != nil {
-		panic(err)
+	err = cli.ContainerStart(ctx, containerId, types.ContainerStartOptions{})
+	if err != nil {
+		log.Error(err)
+		return false
 	}
+
+	// statusCh, errCh := cli.ContainerWait(ctx, containerId, container.WaitConditionNotRunning)
+	// select {
+	// case err := <-errCh:
+	// 	if err != nil {
+	// 		log.Error(err)
+	// 		return false
+	// 	}
+	// case <-statusCh:
+	// }
+
+	out, err := cli.ContainerLogs(ctx, containerId, types.ContainerLogsOptions{ShowStdout: true})
+	if err != nil {
+		log.Error(err)
+		return false
+	}
+
+	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
+
 	return true
 }
 
@@ -146,29 +167,46 @@ func StopContainer(containerId string) bool {
 	return true
 }
 
-func PullImage(imageName string) bool {
+// func CreateContainerOptsArgs(containerName string, imageName string, argsString model.Argument) bool {
+func CreateContainerOptsArgs(containerName string, imageName string, imageTag string, args []string) bool {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
+		// panic(err)
 		return false
 	}
 
-	// os.Stdout,_ = os.Open(os.DevNull)
+	containerConfig := &container.Config{
+		Image:        imageName + ":" + imageTag,
+		AttachStdin:  false,
+		AttachStdout: false,
+		AttachStderr: false,
+		Cmd:          args,
+		Tty:          false,
+	}
 
-	//TODO: Need to disable Stdout!!
-	log.Info("\t\tPulling image " + imageName)
-	// _, err = cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
-	out, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
+	// resp, err := cli.ContainerCreate(ctx,
+	resp, err := cli.ContainerCreate(ctx,
+		containerConfig,
+		&container.HostConfig{},
+		&network.NetworkingConfig{},
+		nil,
+		containerName)
+	// fmt.Println(resp)
 	if err != nil {
 		log.Error(err)
+		// return "CreateFailed"
 		return false
 	}
-	defer out.Close()
+	log.Debug("Created container " + containerName)
 
-	io.Copy(os.Stdout, out)
+	containerStarted := StartContainer(resp.ID)
 
-	log.Info("Pulled image " + imageName + " into host")
+	if !containerStarted {
+		log.Debug("Did not start container")
+		return false
+	}
 
 	return true
 }
@@ -192,32 +230,10 @@ func CreateContainer(containerName string, imageName string) bool {
 		return false
 	}
 
-	err = cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{})
-	if err != nil {
-		log.Error(err)
-		// return "StartFailed"
+	if !StartContainer(resp.ID) {
 		return false
 	}
 
-	statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
-	select {
-	case err := <-errCh:
-		if err != nil {
-			log.Error(err)
-			return false
-		}
-	case <-statusCh:
-	}
-
-	out, err := cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true})
-	if err != nil {
-		log.Error(err)
-		return false
-	}
-
-	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
-
-	// return "Container " + containerName + " created for image " + imageName
 	return true
 }
 
@@ -303,7 +319,7 @@ func ContainerExists(containerName string) bool {
 	}
 
 	for _, container := range containers {
-		fmt.Printf("%s %s\n", container.ID[:10], container.Image)
+		// fmt.Printf("%s %s\n", container.ID[:10], container.Image)
 		findContainer := util.StringArrayContains(container.Names, "/"+containerName)
 		if findContainer {
 			return true

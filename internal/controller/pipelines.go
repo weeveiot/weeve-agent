@@ -1,46 +1,64 @@
 package controller
 
 import (
-	"errors"
+	"fmt"
+	"io/ioutil"
 	"net/http"
+
+	"github.com/Jeffail/gabs/v2"
 
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/docker"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
 )
 
-// PostPipelines function to,
+// POSTpipelines function to,
 // 1) Receive manifest
 // 2) Iterate over each image
 // 3) IF image not existing locally, PULL
 //		ELSE: Continue
 // 4) Run the container
-func PostPipelines(w http.ResponseWriter, r *http.Request) {
+func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	log.Info("POST /pipeline")
 
 	// Decode the JSON manifest into Golang struct
-	manifest := model.ManifestReq{}
-	err := util.DecodeJSONBody(w, r, &manifest)
+	// manifest := model.ManifestReq{}
+	manifestBodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		var mr *util.MalformedRequest
-		if errors.As(err, &mr) {
-			log.Error(err.Error())
-			http.Error(w, mr.Msg, mr.Status)
-		} else {
-			log.Error(err.Error())
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
-		return
+		panic(err)
 	}
+	// res := util.PrintManifestDetails(body)
+	// fmt.Println(res)
+	// util.PrettyPrintJson(body)
+
+	/*
+		err = util.DecodeJSONBody(w, r, &manifest)
+		if err != nil {
+			var mr *util.MalformedRequest
+			if errors.As(err, &mr) {
+				log.Error(err.Error())
+				http.Error(w, mr.Msg, mr.Status)
+			} else {
+				log.Error(err.Error())
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			}
+			return
+		}
+	*/
 
 	//******** STEP 1 - Pull all *************//
 	// Pull all images as required
-	log.Debug("Iterate modules, Docker Pull the image into host if missing")
-	imagesPulled := PullImages(manifest)
+	log.Debug("STEP 1 - Iterate modules, Docker Pull image into host if missing")
+	// var imageNamesList []string
+	// for i := range manifest.Modules {
+	// 	imageNamesList = append(imageNamesList, manifest.Modules[i].ImageName)
+	// }
+	imageNamesList := util.ParseImagesList(manifestBodyBytes)
+	imagesPulled := docker.PullImagesNew(imageNamesList)
 
 	//******** STEP 2 - Check if pulled *************//
 	// Check if all images pulled, else return
+	log.Debug("STEP 2 - Check if all images pulled, else return")
 	if imagesPulled == false {
 		msg := "Unable to pull all images"
 		log.Error(msg)
@@ -48,23 +66,33 @@ func PostPipelines(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	//******** STEP 3 - Check containers, stop and remove *************//
 	// Create and start containers
-	log.Debug("Iterate modules, check if containers exist, remove")
-	for i := range manifest.Modules {
-		mod := manifest.Modules[i]
-		log.Debug("\tModule: ", mod.ImageName)
+	log.Debug("STEP 3 - Check containers, stop and remove")
 
-		// Build container name
-		containerName := GetContainerName(manifest.ID, mod.Name)
-		log.Info("\tContainer name:", containerName)
+	jsonParsed, err := gabs.ParseJSON(manifestBodyBytes)
+	if err != nil {
+		panic(err)
+	}
 
-		// Check if container already exists
+	for _, mod := range jsonParsed.Search("Modules").Children() {
+		log.Debug(fmt.Sprintf("\t***** index: %v, name: %v", mod.Search("Index").Data(), mod.Search("Name").Data()))
+		log.Debug(fmt.Sprintf("\timage %v:%v", mod.Search("ImageName").Data(), mod.Search("Tag").Data()))
+		log.Debug("\toptions:")
+		for _, opt := range mod.Search("options").Children() {
+			log.Debug(fmt.Sprintf("\t\t %-15v = %v", opt.Search("opt").Data(), opt.Search("val").Data()))
+		}
+		log.Debug("\targuments:")
+		for _, arg := range mod.Search("arguments").Children() {
+			log.Debug(fmt.Sprintf("\t\t %-15v= %v", arg.Search("arg").Data(), arg.Search("val").Data()))
+		}
+		containerName := GetContainerName(jsonParsed.Search("ID").Data().(string), mod.Search("Name").Data().(string))
+		log.Info("\tConstructed container name:", containerName)
+
 		containerExists := docker.ContainerExists(containerName)
 		log.Info("\tContainer exists:", containerExists)
 
-		// Create container if not exists
+		// Stop + remove container if exists, start fresh
 		if containerExists {
 			log.Debug("\tStopAndRemoveContainer - ", containerName)
 			// Stop and delete container
@@ -76,84 +104,96 @@ func PostPipelines(w http.ResponseWriter, r *http.Request) {
 			}
 			log.Debug("\tContainer ", containerName, " removed")
 		}
-
 	}
+
+	/*
+		for i := range manifest.Modules {
+			mod := manifest.Modules[i]
+			log.Debug("\tModule: ", mod.ImageName)
+
+			// Build container name
+			containerName := GetContainerName(manifest.ID, mod.Name)
+			log.Info("\tContainer name:", containerName)
+
+			// Check if container already exists
+			containerExists := docker.ContainerExists(containerName)
+			log.Info("\tContainer exists:", containerExists)
+
+			// Create container if not exists
+			if containerExists {
+				log.Debug("\tStopAndRemoveContainer - ", containerName)
+				// Stop and delete container
+				err := docker.StopAndRemoveContainer(containerName)
+				if err != nil {
+					// msg := ""
+					log.Error(err)
+					http.Error(w, string(err.Error()), http.StatusInternalServerError)
+				}
+				log.Debug("\tContainer ", containerName, " removed")
+			}
+
+		}
+	*/
 
 	//******** STEP 4 - Start all containers *************//
 	// Start all containers iteratively
-	log.Debug("Iterate modules, start each container")
-	for i := range manifest.Modules {
-		mod := manifest.Modules[i]
-		// log.Debug("\tContainer: ", mod.ImageName)
+	log.Debug("STEP 4 - Start all containers")
+	for _, mod := range jsonParsed.Search("Modules").Children() {
+		containerName := GetContainerName(jsonParsed.Search("ID").Data().(string), mod.Search("Name").Data().(string))
+		imageName := mod.Search("ImageName").Data().(string)
+		imageTag := mod.Search("Tag").Data().(string)
 
-		// Build container name
-		containerName := GetContainerName(manifest.ID, mod.Name)
-		log.Info("\tCreateContainer - Container name:", containerName)
+		for _, opt := range mod.Search("options").Children() {
+			log.Debug(fmt.Sprintf("\t\t %-15v = %v", opt.Search("opt").Data(), opt.Search("val").Data()))
+		}
+
+		for _, arg := range mod.Search("arguments").Children() {
+			log.Debug(fmt.Sprintf("\t\t %-15v= %v", arg.Search("arg").Data(), arg.Search("val").Data()))
+		}
 
 		// Create and start container
-		docker.CreateContainer(containerName, mod.ImageName)
-		log.Info("\tCreateContainer - successfully started:", containerName)
-	}
+		// argsString := "asdf"
+		// argList := jsonParsed.Search("arguments").Data().(model.Argument)
+		// TODO: Build the argument string as:
+		/// InBroker=tcp://18.196.40.113:1883", "--ProcessName=container-1", "--InTopic=topic/source", "--InClient=weevenetwork/go-mqtt-gobot", "--OutBroker=tcp://18.196.40.113:1883", "--OutTopic=topic/c2", "--OutClient=weevenetwork/go-mqtt-gobot"},
+		log.Info("\tPreparing command for container " + containerName + "from image" + imageName + " " + imageTag)
+		var strArgs []string
+		for _, arg := range mod.Search("arguments").Children() {
+			strArgs = append(strArgs, "--"+arg.Search("arg").Data().(string)+"="+arg.Search("val").Data().(string))
+			log.Debug(fmt.Sprintf("\t\t %-15v= %v", arg.Search("arg").Data(), arg.Search("val").Data()))
 
-	log.Info("Pipeline successfully instantiated from manifest ", manifest.ID)
-
-	// Finally, return 200
-	// Return payload: pipeline started / list of container IDs
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("200 - Request processed successfully!"))
-	return
-}
-
-// // CreateStartContainers iterates modules, and creates and starts containers
-// func CreateStartContainers(manifest model.ManifestReq) bool {
-// 	for i := range manifest.Modules {
-// 		mod := manifest.Modules[i]
-// 		log.Debug("\tCreateStartContainers - Module: ", mod.ImageName)
-
-// 		// Build container name
-// 		containerName := GetContainerName(manifest.ID, mod.Name)
-// 		log.Info("\tCreateStartContainers - Container name:", containerName)
-
-// 		// Check if container already exists
-// 		containerExists := docker.ContainerExists(containerName)
-// 		log.Info("\tCreateStartContainers - Container exists:", containerExists)
-
-// 		// Create container if not exists
-// 		if containerExists {
-// 			// Stop and delete container
-// 			err := docker.StopAndRemoveContainer(containerName)
-// 			if err != nil {
-// 				return false
-// 			}
-// 		}
-
-// 		// Create and start container
-// 		docker.CreateContainer(containerName, mod.ImageName)
-// 	}
-
-// 	return true
-// }
-
-// PullImages iterates modules and pulls images
-func PullImages(manifest model.ManifestReq) bool {
-	for i := range manifest.Modules {
-		mod := manifest.Modules[i]
-		log.Debug("\tImageName: ", mod.ImageName)
-		// Check if image exist in local
-		exists := docker.ImageExists(mod.ImageName)
-		log.Debug("\tImage exists: ", exists)
-
-		if exists == false {
-			// Pull image if not exist in local
-			log.Debug("\t\tPulling ", mod.ImageName)
-			exists = docker.PullImage(mod.ImageName)
-			if exists == false {
-				return false
-			}
 		}
-	}
 
-	return true
+		docker.CreateContainerOptsArgs(containerName, imageName, imageTag, strArgs)
+		log.Debug("BACK IN HANDLER")
+		// log.Info("\tCreateContainer - successfully started:", containerName)
+
+	}
+	/*
+		log.Debug("Iterate modules, start each container")
+		for i := range manifest.Modules {
+			mod := manifest.Modules[i]
+			// log.Debug("\tContainer: ", mod.ImageName)
+
+			// Build container name
+			containerName := GetContainerName(manifest.ID, mod.Name)
+			log.Info("\tCreateContainer - Container name:", containerName)
+
+			// Create and start container
+			docker.CreateContainer(containerName, mod.ImageName)
+			log.Info("\tCreateContainer - successfully started:", containerName)
+		}
+	*/
+
+	/*
+		log.Info("Pipeline successfully instantiated from manifest ", manifest.ID)
+
+		// Finally, return 200
+		// Return payload: pipeline started / list of container IDs
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("200 - Request processed successfully!"))
+	*/
+	return
 }
 
 // GetContainerName build container name

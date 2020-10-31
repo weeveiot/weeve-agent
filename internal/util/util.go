@@ -23,7 +23,7 @@ func PrintEndpoints(r *mux.Router) {
 			return nil
 		}
 
-		log.Debug("\t", methods, "\t", path)
+		log.Debug(fmt.Sprintf("\t%-10v %v", methods[0], path))
 
 		return nil
 	})
@@ -39,7 +39,7 @@ func readJson(jsonFileName string) {
 }
 
 func GetApi(host string) string { //}, result interface{}) interface{} { //}, params []string, respStruct interface{}) {
-	fmt.Println("Http Get...%s", host)
+	fmt.Println("Http Get...", host)
 	resp, err := http.Get(host)
 	if err != nil {
 		log.Fatalln(err)
