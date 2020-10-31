@@ -30,4 +30,5 @@ LABEL service="node-service"
 COPY --from=builder /app/node-service /usr/bin/node-service
 
 # ENTRYPOINT ["/sbin/tini", "--"]
-# CMD ["node-service", "-p", "8030"]
+ENTRYPOINT [ "node-service" ]
+# CMD ["node-service"]
