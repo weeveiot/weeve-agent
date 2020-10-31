@@ -179,6 +179,9 @@ func CreateContainerOptsArgs(containerName string, imageName string, imageTag st
 
 	containerConfig := &container.Config{
 		Image: imageName + ":" + imageTag,
+		AttachStdin: false,
+		AttachStdout: false,
+		AttachStderr: false,
 		Cmd:   []string{"--InBroker=tcp://18.196.40.113:1883", "--ProcessName=container-1", "--InTopic=topic/source", "--InClient=weevenetwork/go-mqtt-gobot", "--OutBroker=tcp://18.196.40.113:1883", "--OutTopic=topic/c2", "--OutClient=weevenetwork/go-mqtt-gobot"},
 		Tty:   false,
 	}
@@ -189,6 +192,7 @@ func CreateContainerOptsArgs(containerName string, imageName string, imageTag st
 		&network.NetworkingConfig{},
 		nil,
 		containerName)
+	// fmt.Println(resp)
 	if err != nil {
 		log.Error(err)
 		// return "CreateFailed"

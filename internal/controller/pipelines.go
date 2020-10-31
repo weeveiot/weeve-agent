@@ -156,6 +156,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		argsString := "asdf"
 		// argList := jsonParsed.Search("arguments").Data().(model.Argument)
 		docker.CreateContainerOptsArgs(containerName, imageName, imageTag, argsString)
+		log.Debug("BACK IN HANDLER")
 		// log.Info("\tCreateContainer - successfully started:", containerName)
 
 	}
