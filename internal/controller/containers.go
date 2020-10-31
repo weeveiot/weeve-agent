@@ -50,7 +50,7 @@ func GETcontainers(w http.ResponseWriter, r *http.Request) {
 	log.Debug(len(containers), " containers found")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("200 - Request processed successfully!"))
+	// w.Write([]byte("200 - Request processed successfully!"))
 	json.NewEncoder(w).Encode(containers)
 }
 
