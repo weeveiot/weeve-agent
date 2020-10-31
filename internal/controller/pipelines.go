@@ -184,7 +184,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		}
 	*/
 
-	log.Info("Pipeline successfully instantiated from manifest ",jsonParsed.Search("Modules"))
+	log.Info("Pipeline successfully instantiated from manifest ", jsonParsed.Search("Modules"))
 	// Finally, return 200
 	// Return payload: pipeline started / list of container IDs
 	w.WriteHeader(http.StatusOK)
