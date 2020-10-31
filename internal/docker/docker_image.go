@@ -20,7 +20,7 @@ import (
 // func PullImagesNew(manifest model.ManifestReq) bool {
 func PullImagesNew(imageNames []string) bool {
 	for i := range imageNames {
-
+		log.Debug("IMAGE NAMES:", imageNames)
 		// Check if image exist in local
 		exists := ImageExists(imageNames[i])
 		if exists {

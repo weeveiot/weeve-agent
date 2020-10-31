@@ -137,7 +137,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 
 	//******** STEP 4 - Start all containers *************//
 	// Start all containers iteratively
-
+	log.Debug("STEP 4 - Start all containers")
 	for _, mod := range jsonParsed.Search("Modules").Children() {
 		containerName := GetContainerName(jsonParsed.Search("ID").Data().(string), mod.Search("Name").Data().(string))
 		imageName := mod.Search("ImageName").Data().(string)
@@ -155,7 +155,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		// Create and start container
 		argsString := "asdf"
 		// argList := jsonParsed.Search("arguments").Data().(model.Argument)
-		docker.CreateContainerOptsArgs(containerName, imageName, argsString)
+		docker.CreateContainerOptsArgs(containerName, imageName, imageTag, argsString)
 		// log.Info("\tCreateContainer - successfully started:", containerName)
 
 	}

@@ -168,7 +168,7 @@ func StopContainer(containerId string) bool {
 }
 
 // func CreateContainerOptsArgs(containerName string, imageName string, argsString model.Argument) bool {
-func CreateContainerOptsArgs(containerName string, imageName string, argsString string) bool {
+func CreateContainerOptsArgs(containerName string, imageName string, imageTag string, argsString string) bool {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -178,8 +178,8 @@ func CreateContainerOptsArgs(containerName string, imageName string, argsString 
 	}
 
 	containerConfig := &container.Config{
-		Image: imageName,
-		Cmd:   []string{"--InBroker='tcp://18.196.40.113:1883'", "--ProcessName=container-1", "--InTopic=topic/source", "--InClient=weevenetwork/go-mqtt-gobot", "--OutBroker=tcp://18.196.40.113:1883", "--OutTopic=topic/c2", "--OutClient=weevenetwork/go-mqtt-gobot"},
+		Image: imageName + ":" + imageTag,
+		Cmd:   []string{"--InBroker=tcp://18.196.40.113:1883", "--ProcessName=container-1", "--InTopic=topic/source", "--InClient=weevenetwork/go-mqtt-gobot", "--OutBroker=tcp://18.196.40.113:1883", "--OutTopic=topic/c2", "--OutClient=weevenetwork/go-mqtt-gobot"},
 		Tty:   false,
 	}
 
