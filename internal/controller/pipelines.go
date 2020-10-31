@@ -142,7 +142,6 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		containerName := GetContainerName(jsonParsed.Search("ID").Data().(string), mod.Search("Name").Data().(string))
 		imageName := mod.Search("ImageName").Data().(string)
 		imageTag := mod.Search("Tag").Data().(string)
-		log.Info("\tPreparing command for container " + containerName + "from image" + imageName + " " + imageTag)
 
 		for _, opt := range mod.Search("options").Children() {
 			log.Debug(fmt.Sprintf("\t\t %-15v = %v", opt.Search("opt").Data(), opt.Search("val").Data()))
@@ -157,10 +156,15 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		// argList := jsonParsed.Search("arguments").Data().(model.Argument)
 		// TODO: Build the argument string as:
 		/// InBroker=tcp://18.196.40.113:1883", "--ProcessName=container-1", "--InTopic=topic/source", "--InClient=weevenetwork/go-mqtt-gobot", "--OutBroker=tcp://18.196.40.113:1883", "--OutTopic=topic/c2", "--OutClient=weevenetwork/go-mqtt-gobot"},
+		log.Info("\tPreparing command for container " + containerName + "from image" + imageName + " " + imageTag)
+		var strArgs []string
 		for _, arg := range mod.Search("arguments").Children() {
+			strArgs = append(strArgs, "--"+arg.Search("arg").Data().(string)+"="+arg.Search("val").Data().(string))
 			log.Debug(fmt.Sprintf("\t\t %-15v= %v", arg.Search("arg").Data(), arg.Search("val").Data()))
+
 		}
-		docker.CreateContainerOptsArgs(containerName, imageName, imageTag, argsString)
+
+		docker.CreateContainerOptsArgs(containerName, imageName, imageTag, strArgs)
 		log.Debug("BACK IN HANDLER")
 		// log.Info("\tCreateContainer - successfully started:", containerName)
 

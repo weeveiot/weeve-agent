@@ -168,7 +168,7 @@ func StopContainer(containerId string) bool {
 }
 
 // func CreateContainerOptsArgs(containerName string, imageName string, argsString model.Argument) bool {
-func CreateContainerOptsArgs(containerName string, imageName string, imageTag string, argsString []string) bool {
+func CreateContainerOptsArgs(containerName string, imageName string, imageTag string, args []string) bool {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -178,12 +178,12 @@ func CreateContainerOptsArgs(containerName string, imageName string, imageTag st
 	}
 
 	containerConfig := &container.Config{
-		Image: imageName + ":" + imageTag,
-		AttachStdin: false,
+		Image:        imageName + ":" + imageTag,
+		AttachStdin:  false,
 		AttachStdout: false,
 		AttachStderr: false,
-		Cmd:   []string{"--InBroker=tcp://18.196.40.113:1883", "--ProcessName=container-1", "--InTopic=topic/source", "--InClient=weevenetwork/go-mqtt-gobot", "--OutBroker=tcp://18.196.40.113:1883", "--OutTopic=topic/c2", "--OutClient=weevenetwork/go-mqtt-gobot"},
-		Tty:   false,
+		Cmd:          args,
+		Tty:          false,
 	}
 
 	// resp, err := cli.ContainerCreate(ctx,
@@ -201,9 +201,9 @@ func CreateContainerOptsArgs(containerName string, imageName string, imageTag st
 	}
 	log.Debug("Created container " + containerName)
 
+	containerStarted := StartContainer(resp.ID)
 
-
-	if !StartContainer(resp.ID) {
+	if !containerStarted {
 		log.Debug("Did not start container")
 		return false
 	}
