@@ -16,7 +16,7 @@ Go to project root path and rub below commands to build and run code in developm
 
 `go run ./cmd/node-service.go -p 8030`
 
-## Test pipeline endpoint
+## Test pipelines endpoint
 
 To test pipelines endpoint use below sample request,
 
