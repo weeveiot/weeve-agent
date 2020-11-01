@@ -50,6 +50,7 @@ func TestManifestCreate(t *testing.T) {
 		panic(err)
 	}
 	fmt.Println("Manifest", manifest.ID, "with", manifest.NumModules, "modules")
+
 	assert.Equal(t, manifest.ID, "test-manifest-1")
 }
 
