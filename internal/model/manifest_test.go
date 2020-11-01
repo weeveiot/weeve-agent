@@ -14,21 +14,14 @@ import (
 	_ "gitlab.com/weeve/edge-server/edge-pipeline-service/testing"
 )
 
-var manifestBytes []byte
+var manifestBytesSimple []byte
+var manifestBytesNoModules []byte
+
 
 func TestMain(m *testing.M){
 
-	wd, _ := os.Getwd()
-	fmt.Println()
-	manifestPath := path.Join(wd, "testdata", "test_manifest1.json")
-	fmt.Println("Loading manifest from ", manifestPath)
-
-	var err error = nil
-	manifestBytes, err = ioutil.ReadFile(manifestPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	manifestBytesSimple = LoadJsonBytes("test_manifest1.json")
+	manifestBytesNoModules = LoadJsonBytes("test_manifest_no_modules.json")
 	code := m.Run()
 
 	os.Exit(code)
@@ -37,15 +30,39 @@ func TestMain(m *testing.M){
 	// fmt.Println(manifest
 }
 
+func LoadJsonBytes(manName string) []byte {
+	wd, _ := os.Getwd()
+	fmt.Println()
+	manifestPath := path.Join(wd, "testdata", manName)
+	// fmt.Println("Loading manifest from ", manifestPath)
+
+	var err error = nil
+	manifestBytes, err := ioutil.ReadFile(manifestPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return manifestBytes
+}
 func TestManifestCreate(t *testing.T) {
 
-	manifest := ParseJSONManifest(manifestBytes)
-	fmt.Println("Manifest created, ID: ", manifest.ID)
+	manifest, err := ParseJSONManifest(manifestBytesSimple)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Manifest", manifest.ID, "with", manifest.NumModules, "modules")
 	assert.Equal(t, manifest.ID, "test-manifest-1")
 }
 
+func TestManifestFailNoModules(t *testing.T) {
+	_, err := ParseJSONManifest(manifestBytesNoModules)
+	assert.Error(t, err)
+}
+
 func TestGetImageNamesList(t *testing.T) {
-	manifest := ParseJSONManifest(manifestBytes)
+	manifest, err := ParseJSONManifest(manifestBytesSimple)
+	if err != nil {
+		panic(err)
+	}
 	imgNameList := manifest.ImageNamesList()
 	for i, img := range(imgNameList) {
 		fmt.Println("Image", i, img)
@@ -53,7 +70,10 @@ func TestGetImageNamesList(t *testing.T) {
 }
 
 func TestGetContainerNamesList(t *testing.T) {
-	manifest := ParseJSONManifest(manifestBytes)
+	manifest, err := ParseJSONManifest(manifestBytesSimple)
+	if err != nil {
+		panic(err)
+	}
 	conNameList := manifest.ContainerNamesList()
 	for i, img := range(conNameList) {
 		fmt.Println("Container", i, img)
@@ -62,7 +82,10 @@ func TestGetContainerNamesList(t *testing.T) {
 
 
 func TestGetStartCommands(t *testing.T) {
-	manifest := ParseJSONManifest(manifestBytes)
+	manifest, err := ParseJSONManifest(manifestBytesSimple)
+	if err != nil {
+		panic(err)
+	}
 	startCommands := manifest.GetContainerStart()
 	for i, command := range(startCommands) {
 		fmt.Println("Start", i, command)

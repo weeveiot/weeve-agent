@@ -1,6 +1,7 @@
 package model
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/Jeffail/gabs/v2"
@@ -11,28 +12,39 @@ type Manifest struct {
 	data []byte;
 	Manifest gabs.Container;
 	ID string;
+	NumModules int;
 }
 
 type StartCommand struct {
-	containerName string;
-	imageName string
-	imageTag string;
-	entryPointArgs []string;
+	ContainerName string;
+	ImageName string
+	ImageTag string;
+	EntryPointArgs []string;
 }
 
 // Create a Manifest type
-func ParseJSONManifest(data []byte) Manifest {
+func ParseJSONManifest(data []byte) (Manifest, error) {
 	log.Debug("Parsing data into arbitrary JSON")
 	var thisManifest = Manifest{}
 	thisManifest.data = data
 	jsonParsed, err := gabs.ParseJSON(thisManifest.data )
 	if err != nil {
-		panic(err)
+		return Manifest{}, err
 	}
 
 	thisManifest.Manifest = *jsonParsed
 	thisManifest.ID = thisManifest.Manifest.Search("ID").Data().(string)
-	return thisManifest
+	thisManifest.NumModules = thisManifest.CountNumModules()
+	if thisManifest.NumModules == 0 {
+		msg := "No modules found in manifest"
+		log.Error(msg)
+		return Manifest{}, errors.New(msg)
+	}
+	return thisManifest, nil
+}
+
+func (m Manifest) CountNumModules() int {
+	return len(m.Manifest.Search("Modules").Children())
 }
 
 func (m Manifest) ImageNamesList()  []string {
@@ -79,16 +91,16 @@ func (m Manifest) GetContainerStart() []StartCommand {
 	for _, mod := range m.Manifest.Search("Modules").Children() {
 		var thisStartCommand StartCommand;
 
-		thisStartCommand.containerName = GetContainerName(m.Manifest.Search("ID").Data().(string), mod.Search("Name").Data().(string))
-		thisStartCommand.imageName = mod.Search("ImageName").Data().(string)
-		thisStartCommand.imageTag = mod.Search("Tag").Data().(string)
+		thisStartCommand.ContainerName = GetContainerName(m.Manifest.Search("ID").Data().(string), mod.Search("Name").Data().(string))
+		thisStartCommand.ImageName = mod.Search("ImageName").Data().(string)
+		thisStartCommand.ImageTag = mod.Search("Tag").Data().(string)
 
 		var strArgs []string
 		for _, arg := range mod.Search("arguments").Children() {
 			strArgs = append(strArgs, "--"+arg.Search("arg").Data().(string)+"="+arg.Search("val").Data().(string))
 		}
 
-		thisStartCommand.entryPointArgs = strArgs
+		thisStartCommand.EntryPointArgs = strArgs
 		startCommands = append(startCommands, thisStartCommand)
 	}
 	return startCommands

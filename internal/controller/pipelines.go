@@ -18,7 +18,12 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	man := model.ParseJSONManifest(manifestBodyBytes)
+
+	man, err := model.ParseJSONManifest(manifestBodyBytes)
+	if err != nil {
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
 	// res := util.PrintManifestDetails(body)
 	// util.PrettyPrintJson(body)
 
@@ -68,59 +73,19 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	log.Debug("Start all containers")
 
 	for _, startCommand := range man.GetContainerStart() {
-		log.Info("\tStart container: ", startCommand)
+		log.Info("\tCreating ", startCommand.ContainerName, " from ", startCommand.ImageName, ":", startCommand.ImageTag)
+		docker.CreateContainerOptsArgs(
+			startCommand.ContainerName,
+			startCommand.ImageName,
+			startCommand.ImageTag,
+			startCommand.EntryPointArgs,
+		)
+		log.Info("\tSuccessfully created with args: ", startCommand.EntryPointArgs)
 	}
 
-	return
-	for _, mod := range man.Manifest.Search("Modules").Children() {
-		containerName := model.GetContainerName(man.Manifest.Search("ID").Data().(string), mod.Search("Name").Data().(string))
-		imageName := mod.Search("ImageName").Data().(string)
-		imageTag := mod.Search("Tag").Data().(string)
-
-		for _, opt := range mod.Search("options").Children() {
-			log.Debug(fmt.Sprintf("\t\t %-15v = %v", opt.Search("opt").Data(), opt.Search("val").Data()))
-		}
-
-		for _, arg := range mod.Search("arguments").Children() {
-			log.Debug(fmt.Sprintf("\t\t %-15v= %v", arg.Search("arg").Data(), arg.Search("val").Data()))
-		}
-
-		// Create and start container
-		// argsString := "asdf"
-		// argList := jsonParsed.Search("arguments").Data().(model.Argument)
-		// TODO: Build the argument string as:
-		/// InBroker=tcp://18.196.40.113:1883", "--ProcessName=container-1", "--InTopic=topic/source", "--InClient=weevenetwork/go-mqtt-gobot", "--OutBroker=tcp://18.196.40.113:1883", "--OutTopic=topic/c2", "--OutClient=weevenetwork/go-mqtt-gobot"},
-		log.Info("\tPreparing command for container " + containerName + "from image" + imageName + " " + imageTag)
-		var strArgs []string
-		for _, arg := range mod.Search("arguments").Children() {
-			strArgs = append(strArgs, "--"+arg.Search("arg").Data().(string)+"="+arg.Search("val").Data().(string))
-			log.Debug(fmt.Sprintf("\t\t %-15v= %v", arg.Search("arg").Data(), arg.Search("val").Data()))
-
-		}
-
-		docker.CreateContainerOptsArgs(containerName, imageName, imageTag, strArgs)
-		// log.Info("\tCreateContainer - successfully started:", containerName)
-
-	}
-	/*
-		log.Debug("Iterate modules, start each container")
-		for i := range manifest.Modules {
-			mod := manifest.Modules[i]
-			// log.Debug("\tContainer: ", mod.ImageName)
-
-			// Build container name
-			containerName := GetContainerName(manifest.ID, mod.Name)
-			log.Info("\tCreateContainer - Container name:", containerName)
-
-			// Create and start container
-			docker.CreateContainer(containerName, mod.ImageName)
-			log.Info("\tCreateContainer - successfully started:", containerName)
-		}
-	*/
-
-	log.Info("Pipeline successfully instantiated from manifest ", man.Manifest.Search("Modules"))
 	// Finally, return 200
 	// Return payload: pipeline started / list of container IDs
+	log.Info("Started")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("200 - Request processed successfully!"))
 	return
