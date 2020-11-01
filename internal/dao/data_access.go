@@ -22,7 +22,7 @@ func ReadSingleData(objectName string, id string) map[string]string {
 }
 
 func SaveData(table string, dataMap map[string]interface{}) map[string]interface{} {
-	fmt.Println("Save data to %s json", table)
+	fmt.Println("Save data to json", table)
 	jsonStr, err := json.Marshal(dataMap)
 	if err != nil {
 		fmt.Println(err)
