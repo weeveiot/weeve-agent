@@ -3,7 +3,6 @@ module gitlab.com/weeve/edge-server/edge-pipeline-service
 go 1.15
 
 require (
-	github.com/Jeffail/gabs v1.4.0
 	github.com/Jeffail/gabs/v2 v2.6.0
 	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/bitly/go-simplejson v0.5.0
