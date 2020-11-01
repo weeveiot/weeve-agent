@@ -1,6 +1,9 @@
 package model
 
-import "github.com/Jeffail/gabs/v2"
+import (
+	"github.com/Jeffail/gabs/v2"
+	log "github.com/sirupsen/logrus"
+)
 
 type Manifest struct {
 	data []byte;
@@ -10,6 +13,7 @@ type Manifest struct {
 
 // Create a Manifest type
 func ParseJSONManifest(data []byte) Manifest {
+	log.Debug("Parsing data into arbitrary JSON")
 	var thisManifest = Manifest{}
 	thisManifest.data = data
 	jsonParsed, err := gabs.ParseJSON(thisManifest.data )

@@ -12,7 +12,6 @@ import (
 
 func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	log.Info("POST /pipeline")
-	log.Debug("TESTING1")
 
 	//Get the manifest as a []byte
 	manifestBodyBytes, err := ioutil.ReadAll(r.Body)
@@ -21,54 +20,34 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	}
 	man := model.ParseJSONManifest(manifestBodyBytes)
 
-	// Parse the bytes into the 'gabs' json package
-	// jsonParsed, err := gabs.ParseJSON(manifestBodyBytes)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
 	// res := util.PrintManifestDetails(body)
-	// fmt.Println(res)
 	// util.PrettyPrintJson(body)
-
-	/*
-		err = util.DecodeJSONBody(w, r, &manifest)
-		if err != nil {
-			var mr *util.MalformedRequest
-			if errors.As(err, &mr) {
-				log.Error(err.Error())
-				http.Error(w, mr.Msg, mr.Status)
-			} else {
-				log.Error(err.Error())
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			}
-			return
-		}
-	*/
 
 	//******** STEP 1 - Pull all *************//
 	// Pull all images as required
 	log.Debug("STEP 1 - Iterate modules, Docker Pull image into host if missing")
-
 	imgNameList := man.ImageNamesList()
 
-	imagesPulled := docker.PullImagesNew(imgNameList)
-
-	//******** STEP 2 - Check if pulled *************//
-	// Check if all images pulled, else return
-	log.Debug("STEP 2 - Check if all images pulled, else return")
-	if imagesPulled == false {
-		msg := "Unable to pull all images"
-		log.Error(msg)
-		http.Error(w, msg, http.StatusInternalServerError)
-		return
+	for i, imgName := range imgNameList {
+		// Check if image exist in local
+		exists := docker.ImageExists(imgName)
+		if exists { // Image already exists, continue
+			log.Debug(fmt.Sprintf("\tImage %v %v, already exists on host", i, imgName))
+		} else { // Pull this image
+			log.Debug(fmt.Sprintf("\tImage %v %v, does not exist on host", i, imgName))
+			log.Debug("\t\tPulling ", imgName)
+			exists = docker.PullImage(imgName)
+			if exists == false {
+				msg := "Unable to pull image " + imgName
+				log.Error(msg)
+				http.Error(w, msg, http.StatusInternalServerError)
+			}
+		}
 	}
 
 	//******** STEP 3 - Check containers, stop and remove *************//
 	// Create and start containers
 	log.Debug("STEP 3 - Check containers, stop and remove")
-
-
 
 	for _, mod := range man.Manifest.Search("Modules").Children() {
 		log.Debug(fmt.Sprintf("\t***** index: %v, name: %v", mod.Search("Index").Data(), mod.Search("Name").Data()))
@@ -129,7 +108,6 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 
 		}
 	*/
-	log.Debug("TESTING2")
 	//******** STEP 4 - Start all containers *************//
 	// Start all containers iteratively
 	log.Debug("STEP 4 - Start all containers")
