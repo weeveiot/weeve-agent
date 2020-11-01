@@ -132,6 +132,7 @@ func StartContainer(containerId string) bool {
 		return false
 	}
 
+	//TODO: Wait for containers
 	// statusCh, errCh := cli.ContainerWait(ctx, containerId, container.WaitConditionNotRunning)
 	// select {
 	// case err := <-errCh:

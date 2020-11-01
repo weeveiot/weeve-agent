@@ -7,11 +7,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func ParseImagesList(manifestJson []byte) []string {
-	jsonParsed, err := gabs.ParseJSON(manifestJson)
-	if err != nil {
-		panic(err)
-	}
+// Given the full manifest file, return the array of images
+//
+func ParseImagesList(jsonParsed *gabs.Container) []string {
 	var imageNamesList []string
 	for _, mod := range jsonParsed.Search("Modules").Children() {
 		imageNamesList = append(imageNamesList, mod.Search("ImageName").Data().(string)+":"+mod.Search("Tag").Data().(string))
@@ -20,12 +18,7 @@ func ParseImagesList(manifestJson []byte) []string {
 }
 
 // Print a manifest object as defined
-func PrintManifestDetails(json []byte) bool {
-	jsonParsed, err := gabs.ParseJSON(json)
-	if err != nil {
-		panic(err)
-	}
-
+func PrintManifestDetails(jsonParsed *gabs.Container) bool {
 	log.Debug("Manifest id: ", jsonParsed.Search("ID").Data())
 	log.Debug("Manifest name: ", jsonParsed.Search("Name").Data())
 	log.Debug("Modules:")

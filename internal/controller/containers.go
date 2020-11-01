@@ -36,41 +36,18 @@ func GETcontainersID(w http.ResponseWriter, r *http.Request) {
 // @param Authorization header string true "Token"
 func GETcontainers(w http.ResponseWriter, r *http.Request) {
 	log.Info("GET /containers")
-	// vars := mux.Vars(r)
-	// key := vars["id"]
-
-	// var host string
-	// host = "ec2-3-128-113-67.us-east-2.compute.amazonaws.com"
-
-	// containers := docker.ReadRemoteContainers(host, "true")
-	// for k, v := range containers {
-	// 	fmt.Println(k, v)
-	// }
 	containers := docker.ReadAllContainers()
 	log.Debug(len(containers), " containers found")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	// w.Write([]byte("200 - Request processed successfully!"))
 	json.NewEncoder(w).Encode(containers)
 }
 
 func GETcontainersIDlogs(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint: returnAll logs of Container")
 	vars := mux.Vars(r)
-
 	key := vars["id"]
-
-	// stream := vars["stream"]
-
-	// fmt.Println(stream)
-
-	// var host string
-	// host = "ec2-3-128-113-67.us-east-2.compute.amazonaws.com"
-
 	logs := docker.GetContainerLog(key)
-	// for k, v := range containers {
-	// 	fmt.Println(k, v)
-	// }
 	json.NewEncoder(w).Encode(logs)
 }
 
@@ -165,6 +142,7 @@ func POSTcontainersStopID(w http.ResponseWriter, r *http.Request) {
 // @Router /containers/create/{containerName}/{imageName} [post]
 // @Security ApiKeyAuth
 // @param Authorization header string true "Token"
+//TODO: Refactor!
 func POSTcontainersDeploy(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint: CreateContainer")
 	// vars := mux.Vars(r)
@@ -180,89 +158,27 @@ func POSTcontainersDeploy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := docker.CreateContainer(manifest.Name, manifest.ImageName)
-	json.NewEncoder(w).Encode(res)
+	// res := docker.CreateContainer(manifest.Name, manifest.ImageName)
+	// json.NewEncoder(w).Encode(res)
 }
 
-func UpdateContainer(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Endpoint: createContainer")
-	vars := mux.Vars(r)
-	key := vars["id"]
-	// container := nil
+// func UpdateContainer(w http.ResponseWriter, r *http.Request) {
+// 	fmt.Println("Endpoint: createContainer")
+// 	vars := mux.Vars(r)
+// 	key := vars["id"]
+// 	// container := nil
 
-	json.NewEncoder(w).Encode(key)
-}
+// 	json.NewEncoder(w).Encode(key)
+// }
 
+
+//TODO: Not implemented!
 func DELETEcontainersID(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Endpoint: createContainer")
-	vars := mux.Vars(r)
-	key := vars["id"]
-	// container := nil
-	// dao.DeleteData(key)
-	json.NewEncoder(w).Encode(key)
+	fmt.Println("Endpoint: Delete Container")
+	w.WriteHeader(http.StatusNotImplemented)
+	// vars := mux.Vars(r)
+	// key := vars["id"]
+	// // container := nil
+	// // dao.DeleteData(key)
+	// json.NewEncoder(w).Encode(key)
 }
-
-// type Container struct {
-// 	Id      string `json:"Id"`
-// 	Name    string `json:"Name"`
-// 	Tag     string `json:"Tag"`
-// 	Image   string `json:"Image"`
-// 	ImageID string `json:"ImageID"`
-// 	Command string `json:"Command"`
-// 	State string `json:"State"`
-// 	Status string `json:"Status"`
-// 	Ports []Port `json:"Port"`
-// 	Labels Labels `json:"Labels"`
-// 	HostConfig HostConfig `json:"HostConfig"`
-// 	NetworkSettings NetworkSettings `json:"NetworkSettings"`
-// 	Mounts []Mounts `json:"Mounts"`
-// }
-
-// type Labels struct {
-// 	label []string `json:"label"`
-// }
-
-// type Mounts struct {
-// 	Name string\`json:"Name"`
-// 	Source string\`json:"Source"`
-// 	Destination string\`json:"Destination"`
-// 	Driver string\`json:"Driver"`
-// 	Mode string\`json:"Mode"`
-// 	RW bool\`json:"RW"`
-// 	Propagation string\`json:"Propagation"`
-
-// }
-
-// type NetworkSettings struct {
-// 	Networks Networks `json:"Networks"`
-// }
-
-// type Networks struct {
-// 	Bridge BridgeNW`json:"Bridge"`
-// }
-// type BridgeNW struct {
-// 	IPAMConfig string `json:"IPAMConfig"`
-// 	Links string `json:"Links"`
-// 	Aliases string `json:"Aliases"`
-// 	NetworkID string `json:"NetworkID"`
-// 	EndpointID string `json:"EndpointID"`
-// 	Gateway string `json:"Gateway"`
-// 	IPAddress string `json:"IPAddress"`
-// 	IPPrefixLen string `json:"IPPrefixLen"`
-// 	IPv6Gateway string `json:"IPv6Gateway"`
-// 	GlobalIPv6Address string `json:"GlobalIPv6Address"`
-// 	GlobalIPv6PrefixLen string `json:"GlobalIPv6PrefixLen"`
-// 	MacAddress string `json:"MacAddress"`
-// }
-
-// type HostConfig struct {
-// 	NetworkMode string `json:"NetworkMode"`
-// }
-
-// type Port struct {
-// 	PrivatePort int `json:"PrivatePort"`
-// 	PublicPort int `json:"PublicPort"`
-// 	Type string `json:"Type"`
-// }
-
-// var Containers []Container

@@ -3,6 +3,7 @@ module gitlab.com/weeve/edge-server/edge-pipeline-service
 go 1.15
 
 require (
+	github.com/Jeffail/gabs v1.4.0
 	github.com/Jeffail/gabs/v2 v2.6.0
 	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/bitly/go-simplejson v0.5.0
@@ -22,6 +23,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/sirupsen/logrus v1.4.1
+	github.com/stretchr/testify v1.4.0
 	github.com/swaggo/http-swagger v0.0.0-20200308142732-58ac5e232fba
 	golang.org/x/net v0.0.0-20200822124328-c89045814202 // indirect
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect

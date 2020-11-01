@@ -9,24 +9,23 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/docker"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
 )
 
-// POSTpipelines function to,
-// 1) Receive manifest
-// 2) Iterate over each image
-// 3) IF image not existing locally, PULL
-//		ELSE: Continue
-// 4) Run the container
 func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	log.Info("POST /pipeline")
 
-	// Decode the JSON manifest into Golang struct
-	// manifest := model.ManifestReq{}
+	//Get the manifest as a []byte
 	manifestBodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		panic(err)
 	}
+
+	// Parse the bytes into the 'gabs' json package
+	jsonParsed, err := gabs.ParseJSON(manifestBodyBytes)
+	if err != nil {
+		panic(err)
+	}
+
 	// res := util.PrintManifestDetails(body)
 	// fmt.Println(res)
 	// util.PrettyPrintJson(body)
@@ -53,7 +52,12 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	// for i := range manifest.Modules {
 	// 	imageNamesList = append(imageNamesList, manifest.Modules[i].ImageName)
 	// }
-	imageNamesList := util.ParseImagesList(manifestBodyBytes)
+	var imageNamesList []string
+	for _, mod := range jsonParsed.Search("Modules").Children() {
+		imageNamesList = append(imageNamesList, mod.Search("ImageName").Data().(string)+":"+mod.Search("Tag").Data().(string))
+	}
+
+	// imageNamesList := util.ParseImagesList(jsonParsed)
 	imagesPulled := docker.PullImagesNew(imageNamesList)
 
 	//******** STEP 2 - Check if pulled *************//
@@ -70,10 +74,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	// Create and start containers
 	log.Debug("STEP 3 - Check containers, stop and remove")
 
-	jsonParsed, err := gabs.ParseJSON(manifestBodyBytes)
-	if err != nil {
-		panic(err)
-	}
+
 
 	for _, mod := range jsonParsed.Search("Modules").Children() {
 		log.Debug(fmt.Sprintf("\t***** index: %v, name: %v", mod.Search("Index").Data(), mod.Search("Name").Data()))
