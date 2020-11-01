@@ -13,6 +13,13 @@ type Manifest struct {
 	ID string;
 }
 
+type StartCommand struct {
+	containerName string;
+	imageName string
+	imageTag string;
+	entryPointArgs []string;
+}
+
 // Create a Manifest type
 func ParseJSONManifest(data []byte) Manifest {
 	log.Debug("Parsing data into arbitrary JSON")
@@ -63,4 +70,25 @@ func (m Manifest) ContainerNamesList() []string {
 
 func GetContainerName(pipelineID string, containerName string) string {
 	return pipelineID + "_" + containerName
+}
+
+func (m Manifest) GetContainerStart() []StartCommand {
+	var startCommands []StartCommand
+	for _, mod := range m.Manifest.Search("Modules").Children() {
+		var thisStartCommand StartCommand;
+
+		thisStartCommand.containerName = GetContainerName(m.Manifest.Search("ID").Data().(string), mod.Search("Name").Data().(string))
+		thisStartCommand.imageName = mod.Search("ImageName").Data().(string)
+		thisStartCommand.imageTag = mod.Search("Tag").Data().(string)
+
+		var strArgs []string
+		for _, arg := range mod.Search("arguments").Children() {
+			strArgs = append(strArgs, "--"+arg.Search("arg").Data().(string)+"="+arg.Search("val").Data().(string))
+			log.Debug(fmt.Sprintf("\t\t %-15v= %v", arg.Search("arg").Data(), arg.Search("val").Data()))
+		}
+
+		thisStartCommand.entryPointArgs = strArgs
+		startCommands = append(startCommands, thisStartCommand)
+	}
+	return startCommands
 }

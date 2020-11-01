@@ -46,10 +46,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	//******** STEP 2 - Check containers, stop and remove *************//
 	log.Debug("Checking containers, stopping and removing")
 
-	for _, mod := range man.Manifest.Search("Modules").Children() {
-
-		containerName := GetContainerName(man.Manifest.Search("ID").Data().(string), mod.Search("Name").Data().(string))
-		// log.Info("\tConstructed container name:", containerName)
+	for _, containerName := range man.ContainerNamesList() {
 
 		containerExists := docker.ContainerExists(containerName)
 		log.Info("\tContainer exists:", containerExists)
@@ -60,7 +57,6 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 			// Stop and delete container
 			err := docker.StopAndRemoveContainer(containerName)
 			if err != nil {
-				// msg := ""
 				log.Error(err)
 				http.Error(w, string(err.Error()), http.StatusInternalServerError)
 			}
@@ -68,39 +64,12 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	/*
-		for i := range manifest.Modules {
-			mod := manifest.Modules[i]
-			log.Debug("\tModule: ", mod.ImageName)
+	//******** STEP 3 - Start all containers *************//
+	log.Debug("Start all containers")
 
-			// Build container name
-			containerName := GetContainerName(manifest.ID, mod.Name)
-			log.Info("\tContainer name:", containerName)
-
-			// Check if container already exists
-			containerExists := docker.ContainerExists(containerName)
-			log.Info("\tContainer exists:", containerExists)
-
-			// Create container if not exists
-			if containerExists {
-				log.Debug("\tStopAndRemoveContainer - ", containerName)
-				// Stop and delete container
-				err := docker.StopAndRemoveContainer(containerName)
-				if err != nil {
-					// msg := ""
-					log.Error(err)
-					http.Error(w, string(err.Error()), http.StatusInternalServerError)
-				}
-				log.Debug("\tContainer ", containerName, " removed")
-			}
-
-		}
-	*/
-	//******** STEP 4 - Start all containers *************//
-	// Start all containers iteratively
-	log.Debug("STEP 4 - Start all containers")
+	return
 	for _, mod := range man.Manifest.Search("Modules").Children() {
-		containerName := GetContainerName(man.Manifest.Search("ID").Data().(string), mod.Search("Name").Data().(string))
+		containerName := model.GetContainerName(man.Manifest.Search("ID").Data().(string), mod.Search("Name").Data().(string))
 		imageName := mod.Search("ImageName").Data().(string)
 		imageTag := mod.Search("Tag").Data().(string)
 

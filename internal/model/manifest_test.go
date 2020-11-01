@@ -59,3 +59,12 @@ func TestGetContainerNamesList(t *testing.T) {
 		fmt.Println("Container", i, img)
 	}
 }
+
+
+func TestGetStartCommands(t *testing.T) {
+	manifest := ParseJSONManifest(manifestBytes)
+	startCommands := manifest.GetContainerStart()
+	for i, command := range(startCommands) {
+		fmt.Println("Start", i, command)
+	}
+}
