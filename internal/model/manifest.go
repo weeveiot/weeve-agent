@@ -4,7 +4,8 @@ import "github.com/Jeffail/gabs/v2"
 
 type Manifest struct {
 	data []byte;
-	manifest gabs.Container;
+	Manifest gabs.Container;
+	ID string;
 }
 
 // Create a Manifest type
@@ -16,13 +17,16 @@ func ParseJSONManifest(data []byte) Manifest {
 		panic(err)
 	}
 
-	thisManifest.manifest = *jsonParsed
+	thisManifest.Manifest = *jsonParsed
+	thisManifest.ID = thisManifest.Manifest.Search("ID").Data().(string)
 	return thisManifest
 }
 
-// func (m Manifest) ImageNamesList []string {
-// 	for _, mod := range m.manifest.Search("Modules").Children() {
-// 		imageNamesList = append(imageNamesList, mod.Search("ImageName").Data().(string)+":"+mod.Search("Tag").Data().(string))
-// 	}
-// }
+func (m Manifest) ImageNamesList()  []string {
+	var imageNamesList []string
+	for _, mod := range m.Manifest.Search("Modules").Children() {
+		imageNamesList = append(imageNamesList, mod.Search("ImageName").Data().(string)+":"+mod.Search("Tag").Data().(string))
+	}
+	return imageNamesList
+}
 

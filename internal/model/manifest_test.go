@@ -23,7 +23,6 @@ func TestMain(m *testing.M){
 	manifestPath := path.Join(wd, "testdata", "test_manifest1.json")
 	fmt.Println("Loading manifest from ", manifestPath)
 
-
 	var err error = nil
 	manifestBytes, err = ioutil.ReadFile(manifestPath)
 	if err != nil {
@@ -38,30 +37,20 @@ func TestMain(m *testing.M){
 	// fmt.Println(manifest
 }
 
-
 func TestManifestCreate(t *testing.T) {
-	// wd, _ := os.Getwd()
-	// fmt.Println(wd)
-	// manifestPath := path.Join(wd, "testdata", "test_manifest1.json")
-	// // file, err := os.Open(path.Join(wd, "testdata", "test_manifest1.json"))
-	// manifestBytes, err := ioutil.ReadFile(manifestPath)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	manifest := ParseJSONManifest(manifestBytes)
-	fmt.Println(manifest.manifest)
-	// manifest := manifest.ParseJSON(manifestBytes)
-	// fmt.Println(file)
-	// Parse the bytes into the 'gabs' json package
-	// jsonParsed, err := gabs
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Println(manifest)
 
-	assert.True(t, true)
+	manifest := ParseJSONManifest(manifestBytes)
+	fmt.Println("Manifest created, ID: ", manifest.ID)
+	assert.Equal(t, manifest.ID, "test-manifest-1")
 }
 
-// func TestManifestImageNames(t *testing.T) {
-// 	M	ImageNamesList
-// }
+func TestGetImageNamesList(t *testing.T) {
+	// M	ImageNamesList
+	manifest := ParseJSONManifest(manifestBytes)
+	// fmt.Println(manifest.manifest)
+	_ = manifest.Manifest
+	imgNameList := manifest.ImageNamesList()
+	for i, img := range(imgNameList) {
+		fmt.Println("Image", i, img)
+	}
+}

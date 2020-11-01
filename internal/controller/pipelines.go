@@ -5,26 +5,27 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/Jeffail/gabs/v2"
-
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/docker"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 )
 
 func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	log.Info("POST /pipeline")
+	log.Debug("TESTING1")
 
 	//Get the manifest as a []byte
 	manifestBodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		panic(err)
 	}
+	man := model.ParseJSONManifest(manifestBodyBytes)
 
 	// Parse the bytes into the 'gabs' json package
-	jsonParsed, err := gabs.ParseJSON(manifestBodyBytes)
-	if err != nil {
-		panic(err)
-	}
+	// jsonParsed, err := gabs.ParseJSON(manifestBodyBytes)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	// res := util.PrintManifestDetails(body)
 	// fmt.Println(res)
@@ -48,17 +49,10 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	//******** STEP 1 - Pull all *************//
 	// Pull all images as required
 	log.Debug("STEP 1 - Iterate modules, Docker Pull image into host if missing")
-	// var imageNamesList []string
-	// for i := range manifest.Modules {
-	// 	imageNamesList = append(imageNamesList, manifest.Modules[i].ImageName)
-	// }
-	var imageNamesList []string
-	for _, mod := range jsonParsed.Search("Modules").Children() {
-		imageNamesList = append(imageNamesList, mod.Search("ImageName").Data().(string)+":"+mod.Search("Tag").Data().(string))
-	}
 
-	// imageNamesList := util.ParseImagesList(jsonParsed)
-	imagesPulled := docker.PullImagesNew(imageNamesList)
+	imgNameList := man.ImageNamesList()
+
+	imagesPulled := docker.PullImagesNew(imgNameList)
 
 	//******** STEP 2 - Check if pulled *************//
 	// Check if all images pulled, else return
@@ -76,7 +70,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 
 
 
-	for _, mod := range jsonParsed.Search("Modules").Children() {
+	for _, mod := range man.Manifest.Search("Modules").Children() {
 		log.Debug(fmt.Sprintf("\t***** index: %v, name: %v", mod.Search("Index").Data(), mod.Search("Name").Data()))
 		log.Debug(fmt.Sprintf("\timage %v:%v", mod.Search("ImageName").Data(), mod.Search("Tag").Data()))
 		log.Debug("\toptions:")
@@ -87,7 +81,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		for _, arg := range mod.Search("arguments").Children() {
 			log.Debug(fmt.Sprintf("\t\t %-15v= %v", arg.Search("arg").Data(), arg.Search("val").Data()))
 		}
-		containerName := GetContainerName(jsonParsed.Search("ID").Data().(string), mod.Search("Name").Data().(string))
+		containerName := GetContainerName(man.Manifest.Search("ID").Data().(string), mod.Search("Name").Data().(string))
 		log.Info("\tConstructed container name:", containerName)
 
 		containerExists := docker.ContainerExists(containerName)
@@ -135,12 +129,12 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 
 		}
 	*/
-
+	log.Debug("TESTING2")
 	//******** STEP 4 - Start all containers *************//
 	// Start all containers iteratively
 	log.Debug("STEP 4 - Start all containers")
-	for _, mod := range jsonParsed.Search("Modules").Children() {
-		containerName := GetContainerName(jsonParsed.Search("ID").Data().(string), mod.Search("Name").Data().(string))
+	for _, mod := range man.Manifest.Search("Modules").Children() {
+		containerName := GetContainerName(man.Manifest.Search("ID").Data().(string), mod.Search("Name").Data().(string))
 		imageName := mod.Search("ImageName").Data().(string)
 		imageTag := mod.Search("Tag").Data().(string)
 
@@ -185,7 +179,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		}
 	*/
 
-	log.Info("Pipeline successfully instantiated from manifest ", jsonParsed.Search("Modules"))
+	log.Info("Pipeline successfully instantiated from manifest ", man.Manifest.Search("Modules"))
 	// Finally, return 200
 	// Return payload: pipeline started / list of container IDs
 	w.WriteHeader(http.StatusOK)

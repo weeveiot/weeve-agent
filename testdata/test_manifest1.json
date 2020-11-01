@@ -1,5 +1,5 @@
 {
-    "ID":"manifest2",
+    "ID":"test-manifest-1",
 	"Name": "ManifestSingleContainerWithParameters",
 	"Modules": [
     {
