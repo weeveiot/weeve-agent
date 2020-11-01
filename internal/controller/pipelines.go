@@ -67,6 +67,10 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	//******** STEP 3 - Start all containers *************//
 	log.Debug("Start all containers")
 
+	for _, startCommand := range man.GetContainerStart() {
+		log.Info("\tStart container: ", startCommand)
+	}
+
 	return
 	for _, mod := range man.Manifest.Search("Modules").Children() {
 		containerName := model.GetContainerName(man.Manifest.Search("ID").Data().(string), mod.Search("Name").Data().(string))

@@ -68,6 +68,8 @@ func (m Manifest) ContainerNamesList() []string {
 	return containerNamesList
 }
 
+// GetContainerName is a simple utility to return a standard container name
+// This function appends the pipelineID and containerName with _
 func GetContainerName(pipelineID string, containerName string) string {
 	return pipelineID + "_" + containerName
 }
@@ -84,7 +86,6 @@ func (m Manifest) GetContainerStart() []StartCommand {
 		var strArgs []string
 		for _, arg := range mod.Search("arguments").Children() {
 			strArgs = append(strArgs, "--"+arg.Search("arg").Data().(string)+"="+arg.Search("val").Data().(string))
-			log.Debug(fmt.Sprintf("\t\t %-15v= %v", arg.Search("arg").Data(), arg.Search("val").Data()))
 		}
 
 		thisStartCommand.entryPointArgs = strArgs
