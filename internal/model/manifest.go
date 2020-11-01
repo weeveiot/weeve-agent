@@ -7,10 +7,22 @@ type Manifest struct {
 	manifest gabs.Container;
 }
 
-func (m Manifest) ParseJSON(data []byte) gabs.Container {
-	jsonParsed, err := gabs.ParseJSON(data)
+// Create a Manifest type
+func ParseJSONManifest(data []byte) Manifest {
+	var thisManifest = Manifest{}
+	thisManifest.data = data
+	jsonParsed, err := gabs.ParseJSON(thisManifest.data )
 	if err != nil {
 		panic(err)
 	}
-	return *jsonParsed
+
+	thisManifest.manifest = *jsonParsed
+	return thisManifest
 }
+
+// func (m Manifest) ImageNamesList []string {
+// 	for _, mod := range m.manifest.Search("Modules").Children() {
+// 		imageNamesList = append(imageNamesList, mod.Search("ImageName").Data().(string)+":"+mod.Search("Tag").Data().(string))
+// 	}
+// }
+
