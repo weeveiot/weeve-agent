@@ -45,12 +45,17 @@ func TestManifestCreate(t *testing.T) {
 }
 
 func TestGetImageNamesList(t *testing.T) {
-	// M	ImageNamesList
 	manifest := ParseJSONManifest(manifestBytes)
-	// fmt.Println(manifest.manifest)
-	_ = manifest.Manifest
 	imgNameList := manifest.ImageNamesList()
 	for i, img := range(imgNameList) {
 		fmt.Println("Image", i, img)
+	}
+}
+
+func TestGetContainerNamesList(t *testing.T) {
+	manifest := ParseJSONManifest(manifestBytes)
+	conNameList := manifest.ContainerNamesList()
+	for i, img := range(conNameList) {
+		fmt.Println("Container", i, img)
 	}
 }

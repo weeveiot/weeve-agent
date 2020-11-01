@@ -19,16 +19,14 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	man := model.ParseJSONManifest(manifestBodyBytes)
-
 	// res := util.PrintManifestDetails(body)
 	// util.PrettyPrintJson(body)
 
 	//******** STEP 1 - Pull all *************//
 	// Pull all images as required
-	log.Debug("STEP 1 - Iterate modules, Docker Pull image into host if missing")
-	imgNameList := man.ImageNamesList()
+	log.Debug("Iterating modules, pulling image into host if missing")
 
-	for i, imgName := range imgNameList {
+	for i, imgName := range man.ImageNamesList() {
 		// Check if image exist in local
 		exists := docker.ImageExists(imgName)
 		if exists { // Image already exists, continue
@@ -45,23 +43,13 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	//******** STEP 3 - Check containers, stop and remove *************//
-	// Create and start containers
-	log.Debug("STEP 3 - Check containers, stop and remove")
+	//******** STEP 2 - Check containers, stop and remove *************//
+	log.Debug("Checking containers, stopping and removing")
 
 	for _, mod := range man.Manifest.Search("Modules").Children() {
-		log.Debug(fmt.Sprintf("\t***** index: %v, name: %v", mod.Search("Index").Data(), mod.Search("Name").Data()))
-		log.Debug(fmt.Sprintf("\timage %v:%v", mod.Search("ImageName").Data(), mod.Search("Tag").Data()))
-		log.Debug("\toptions:")
-		for _, opt := range mod.Search("options").Children() {
-			log.Debug(fmt.Sprintf("\t\t %-15v = %v", opt.Search("opt").Data(), opt.Search("val").Data()))
-		}
-		log.Debug("\targuments:")
-		for _, arg := range mod.Search("arguments").Children() {
-			log.Debug(fmt.Sprintf("\t\t %-15v= %v", arg.Search("arg").Data(), arg.Search("val").Data()))
-		}
+
 		containerName := GetContainerName(man.Manifest.Search("ID").Data().(string), mod.Search("Name").Data().(string))
-		log.Info("\tConstructed container name:", containerName)
+		// log.Info("\tConstructed container name:", containerName)
 
 		containerExists := docker.ContainerExists(containerName)
 		log.Info("\tContainer exists:", containerExists)
@@ -165,7 +153,3 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-// GetContainerName build container name
-func GetContainerName(pipelineID string, containerName string) string {
-	return pipelineID + "_" + containerName
-}
