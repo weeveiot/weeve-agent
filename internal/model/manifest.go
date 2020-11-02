@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/docker/go-connections/nat"
@@ -135,10 +136,15 @@ func (m Manifest) GetContainerStart() []StartCommand {
 		for _, option := range thisStartCommand.Options {
 			fmt.Println("THIS OPTION", option)
 			if option.key == "ExposedPorts" {
-				fmt.Println("EXP")
+				fmt.Println("EXP", option)
+				res := strings.Split(option.val, ":")
+				fmt.Println(res)
+				thisStartCommand.ExposedPorts = nat.PortSet{
+					"4140/tcp": struct{}{},
+				}
 			}
 			if option.key == "network" {
-				fmt.Println("EXP")
+				fmt.Println("Networ", option)
 			}
 		}
 
