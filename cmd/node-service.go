@@ -27,7 +27,7 @@ func init() {
 	log.SetOutput(os.Stdout)
 	// log.SetReportCaller(true) // Not working
 
-	log.SetLevel(log.InfoLevel)
+	log.SetLevel(log.DebugLevel)
 	log.Info("Started logging")
 }
 
