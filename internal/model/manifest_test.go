@@ -16,12 +16,13 @@ import (
 
 var manifestBytesSimple []byte
 var manifestBytesNoModules []byte
+var manifestBytes3nodesBroker []byte
 
-
-func TestMain(m *testing.M){
+func TestMain(m *testing.M) {
 
 	manifestBytesSimple = LoadJsonBytes("test_manifest1.json")
 	manifestBytesNoModules = LoadJsonBytes("test_manifest_no_modules.json")
+	manifestBytes3nodesBroker = LoadJsonBytes("test_manifest_3broker.json")
 	code := m.Run()
 
 	os.Exit(code)
@@ -65,7 +66,7 @@ func TestGetImageNamesList(t *testing.T) {
 		panic(err)
 	}
 	imgNameList := manifest.ImageNamesList()
-	for i, img := range(imgNameList) {
+	for i, img := range imgNameList {
 		fmt.Println("Image", i, img)
 	}
 }
@@ -76,11 +77,10 @@ func TestGetContainerNamesList(t *testing.T) {
 		panic(err)
 	}
 	conNameList := manifest.ContainerNamesList()
-	for i, img := range(conNameList) {
+	for i, img := range conNameList {
 		fmt.Println("Container", i, img)
 	}
 }
-
 
 func TestGetStartCommands(t *testing.T) {
 	manifest, err := ParseJSONManifest(manifestBytesSimple)
@@ -88,7 +88,20 @@ func TestGetStartCommands(t *testing.T) {
 		panic(err)
 	}
 	startCommands := manifest.GetContainerStart()
-	for i, command := range(startCommands) {
+	for i, command := range startCommands {
 		fmt.Println("Start", i, command)
+	}
+}
+
+func TestStartOptionsComplex(t *testing.T) {
+	manifest, err := ParseJSONManifest(manifestBytes3nodesBroker)
+	if err != nil {
+		panic(err)
+	}
+	startCommands := manifest.GetContainerStart()
+	for i, command := range startCommands {
+		fmt.Println("Start", i, command)
+		PrintStartCommand(command)
+		fmt.Println("Options:", command.Options)
 	}
 }

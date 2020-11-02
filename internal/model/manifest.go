@@ -1,25 +1,43 @@
 package model
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/Jeffail/gabs/v2"
+	"github.com/docker/go-connections/nat"
 	log "github.com/sirupsen/logrus"
 )
 
 type Manifest struct {
-	data []byte;
-	Manifest gabs.Container;
-	ID string;
-	NumModules int;
+	data       []byte
+	Manifest   gabs.Container
+	ID         string
+	NumModules int
 }
 
 type StartCommand struct {
-	ContainerName string;
-	ImageName string
-	ImageTag string;
-	EntryPointArgs []string;
+	ContainerName  string
+	ImageName      string
+	ImageTag       string
+	EntryPointArgs []string
+	Options        []OptionKeyVal
+	ExposedPorts   nat.PortSet // This must be set for the container create
+	PortBinding    nat.PortMap // This must be set for the containerStart
+}
+
+type OptionKeyVal struct {
+	key string
+	val string
+}
+
+func PrintStartCommand(sc StartCommand) {
+	empJSON, err := json.MarshalIndent(sc, "", "  ")
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	fmt.Printf("StartCommand:\n %s\n", string(empJSON))
 }
 
 // Create a Manifest type
@@ -27,7 +45,7 @@ func ParseJSONManifest(data []byte) (Manifest, error) {
 	log.Debug("Parsing data into arbitrary JSON")
 	var thisManifest = Manifest{}
 	thisManifest.data = data
-	jsonParsed, err := gabs.ParseJSON(thisManifest.data )
+	jsonParsed, err := gabs.ParseJSON(thisManifest.data)
 	if err != nil {
 		return Manifest{}, err
 	}
@@ -47,7 +65,7 @@ func (m Manifest) CountNumModules() int {
 	return len(m.Manifest.Search("Modules").Children())
 }
 
-func (m Manifest) ImageNamesList()  []string {
+func (m Manifest) ImageNamesList() []string {
 	var imageNamesList []string
 	for _, mod := range m.Manifest.Search("Modules").Children() {
 		imageNamesList = append(imageNamesList, mod.Search("ImageName").Data().(string)+":"+mod.Search("Tag").Data().(string))
@@ -89,11 +107,22 @@ func GetContainerName(pipelineID string, containerName string) string {
 func (m Manifest) GetContainerStart() []StartCommand {
 	var startCommands []StartCommand
 	for _, mod := range m.Manifest.Search("Modules").Children() {
-		var thisStartCommand StartCommand;
+		var thisStartCommand StartCommand
 
 		thisStartCommand.ContainerName = GetContainerName(m.Manifest.Search("ID").Data().(string), mod.Search("Name").Data().(string))
 		thisStartCommand.ImageName = mod.Search("ImageName").Data().(string)
 		thisStartCommand.ImageTag = mod.Search("Tag").Data().(string)
+
+		var theseOptions []OptionKeyVal
+		for _, opt := range mod.Search("options").Children() {
+			log.Debug(opt)
+			var thisOption OptionKeyVal
+			thisOption.key = opt.Search("opt").Data().(string)
+			thisOption.val = opt.Search("val").Data().(string)
+			theseOptions = append(theseOptions, thisOption)
+			fmt.Println(thisOption)
+		}
+		thisStartCommand.Options = theseOptions
 
 		var strArgs []string
 		for _, arg := range mod.Search("arguments").Children() {
@@ -101,7 +130,20 @@ func (m Manifest) GetContainerStart() []StartCommand {
 		}
 
 		thisStartCommand.EntryPointArgs = strArgs
+
+		// Handle the ExposedPorts option
+		for _, option := range thisStartCommand.Options {
+			fmt.Println("THIS OPTION", option)
+			if option.key == "ExposedPorts" {
+				fmt.Println("EXP")
+			}
+			if option.key == "network" {
+				fmt.Println("EXP")
+			}
+		}
+
 		startCommands = append(startCommands, thisStartCommand)
 	}
+
 	return startCommands
 }
