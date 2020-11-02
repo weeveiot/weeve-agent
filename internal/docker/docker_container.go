@@ -19,19 +19,18 @@ import (
 )
 
 func ReadAllContainers() []types.Container {
+	log.Debug("Docker_container -> ReadAllContainers")
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		panic(err)
+		log.Error(err)
+		return nil
 	}
 	options := types.ContainerListOptions{All: true}
 	containers, err := cli.ContainerList(context.Background(), options)
 	if err != nil {
-		panic(err)
+		log.Error(err)
 	}
-
-	// for _, container := range containers {
-	// 	fmt.Printf("%s %s\n", container.ID[:10], container.Image)
-	// }
+	log.Debug("Docker_container -> ReadAllContainers response", containers)
 
 	return containers
 }
@@ -68,13 +67,13 @@ func StopContainers() bool {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		panic(err)
+		log.Error(err)
 	}
 
 	options := types.ContainerListOptions{All: true}
 	containers, err := cli.ContainerList(ctx, options)
 	if err != nil {
-		panic(err)
+		log.Error(err)
 	}
 
 	for _, container := range containers {
@@ -83,7 +82,7 @@ func StopContainers() bool {
 
 		if container.State == "running" {
 			if err := cli.ContainerStop(ctx, container.ID, nil); err != nil {
-				panic(err)
+				log.Error(err)
 			}
 		}
 		fmt.Println("Success")
@@ -95,13 +94,13 @@ func StartContainers() bool {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		panic(err)
+		log.Error(err)
 	}
 
 	options := types.ContainerListOptions{All: true}
 	containers, err := cli.ContainerList(ctx, options)
 	if err != nil {
-		panic(err)
+		log.Error(err)
 	}
 
 	for _, container := range containers {
@@ -111,7 +110,7 @@ func StartContainers() bool {
 		if container.State != "running" {
 
 			if err := cli.ContainerStart(ctx, container.ID, types.ContainerStartOptions{}); err != nil {
-				panic(err)
+				log.Error(err)
 			}
 		}
 		fmt.Println("Success")
@@ -123,7 +122,7 @@ func StartContainer(containerId string) bool {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		panic(err)
+		log.Error(err)
 	}
 
 	err = cli.ContainerStart(ctx, containerId, types.ContainerStartOptions{})
@@ -137,7 +136,7 @@ func StartContainer(containerId string) bool {
 	// select {
 	// case err := <-errCh:
 	// 	if err != nil {
-	// 		log.Error(err)
+	// log.Error(err)
 	// 		return false
 	// 	}
 	// case <-statusCh:
@@ -158,11 +157,11 @@ func StopContainer(containerId string) bool {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		panic(err)
+		log.Error(err)
 	}
 
 	if err := cli.ContainerStop(ctx, containerId, nil); err != nil {
-		panic(err)
+		log.Error(err)
 	}
 
 	return true
@@ -174,7 +173,7 @@ func CreateContainerOptsArgs(containerName string, imageName string, imageTag st
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
-		// panic(err)
+		// log.Error(err)
 		return false
 	}
 
@@ -217,7 +216,7 @@ func CreateContainer(containerName string, imageName string) bool {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
-		// panic(err)
+		// log.Error(err)
 		return false
 	}
 
@@ -242,12 +241,12 @@ func CreateContainer1(containerName string, imageName string) string {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		panic(err)
+		log.Error(err)
 	}
 
 	reader, err := cli.ImagePull(ctx, "docker.io/library/"+imageName, types.ImagePullOptions{})
 	if err != nil {
-		panic(err)
+		log.Error(err)
 	}
 	io.Copy(os.Stdout, reader)
 
@@ -256,25 +255,25 @@ func CreateContainer1(containerName string, imageName string) string {
 		Cmd:   []string{"echo", "Container " + containerName + " created"},
 	}, &container.HostConfig{}, &network.NetworkingConfig{}, nil, containerName)
 	if err != nil {
-		panic(err)
+		log.Error(err)
 	}
 
 	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-		panic(err)
+		log.Error(err)
 	}
 
 	statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
 	select {
 	case err := <-errCh:
 		if err != nil {
-			panic(err)
+			log.Error(err)
 		}
 	case <-statusCh:
 	}
 
 	out, err := cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true})
 	if err != nil {
-		panic(err)
+		log.Error(err)
 	}
 
 	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
@@ -287,7 +286,7 @@ func StopAndRemoveContainer(containerName string) error {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		panic(err)
+		log.Error(err)
 	}
 
 	if err := cli.ContainerStop(ctx, containerName, nil); err != nil {
@@ -311,12 +310,12 @@ func StopAndRemoveContainer(containerName string) error {
 func ContainerExists(containerName string) bool {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		panic(err)
+		log.Error(err)
 	}
 	options := types.ContainerListOptions{All: true}
 	containers, err := cli.ContainerList(context.Background(), options)
 	if err != nil {
-		panic(err)
+		log.Error(err)
 	}
 
 	for _, container := range containers {

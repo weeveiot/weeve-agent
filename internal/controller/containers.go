@@ -40,6 +40,8 @@ func GETcontainers(w http.ResponseWriter, r *http.Request) {
 	log.Debug(len(containers), " containers found")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	// w.Write([]byte("200 - Request processed successfully!"))
+	log.Info("GET /containers response >> ", containers)
 	json.NewEncoder(w).Encode(containers)
 }
 
@@ -170,7 +172,6 @@ func POSTcontainersDeploy(w http.ResponseWriter, r *http.Request) {
 
 // 	json.NewEncoder(w).Encode(key)
 // }
-
 
 //TODO: Not implemented!
 func DELETEcontainersID(w http.ResponseWriter, r *http.Request) {

@@ -16,7 +16,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	//Get the manifest as a []byte
 	manifestBodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		panic(err)
+		log.Error(err)
 	}
 
 	man, err := model.ParseJSONManifest(manifestBodyBytes)
@@ -90,4 +90,3 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("200 - Request processed successfully!"))
 	return
 }
-
