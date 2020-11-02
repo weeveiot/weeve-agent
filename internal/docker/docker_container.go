@@ -185,12 +185,18 @@ func CreateContainerOptsArgs(startCmd model.StartCommand) bool {
 		AttachStderr: false,
 		Cmd:          startCmd.EntryPointArgs,
 		Tty:          false,
+		ExposedPorts: startCmd.ExposedPorts,
 	}
+
+	hostConfig := &container.HostConfig{
+		PortBindings: startCmd.PortBinding,
+	}
+
 
 	// resp, err := cli.ContainerCreate(ctx,
 	resp, err := cli.ContainerCreate(ctx,
 		containerConfig,
-		&container.HostConfig{},
+		hostConfig,
 		&network.NetworkingConfig{},
 		nil,
 		startCmd.ContainerName)
