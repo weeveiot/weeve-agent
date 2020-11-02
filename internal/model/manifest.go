@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/docker/go-connections/nat"
@@ -116,12 +115,12 @@ func (m Manifest) GetContainerStart() []StartCommand {
 
 		var theseOptions []OptionKeyVal
 		for _, opt := range mod.Search("options").Children() {
-			log.Debug(opt)
+			// log.Debug(opt)
 			var thisOption OptionKeyVal
 			thisOption.key = opt.Search("opt").Data().(string)
 			thisOption.val = opt.Search("val").Data().(string)
 			theseOptions = append(theseOptions, thisOption)
-			fmt.Println(thisOption)
+			// fmt.Println(thisOption)
 		}
 		thisStartCommand.Options = theseOptions
 
@@ -133,19 +132,52 @@ func (m Manifest) GetContainerStart() []StartCommand {
 		thisStartCommand.EntryPointArgs = strArgs
 
 		// Handle the ExposedPorts option
+		var ExposedPorts string
 		for _, option := range thisStartCommand.Options {
-			fmt.Println("THIS OPTION", option)
+			// fmt.Println("THIS OPTION", option)
 			if option.key == "ExposedPorts" {
-				fmt.Println("EXP", option)
-				res := strings.Split(option.val, ":")
-				fmt.Println(res)
+				ExposedPorts = option.val
+				// res := strings.Split(option.val, ":")
+				// fmt.Println(res)
 				thisStartCommand.ExposedPorts = nat.PortSet{
-					"4140/tcp": struct{}{},
+					nat.Port(option.val): struct{}{},
 				}
 			}
-			if option.key == "network" {
-				fmt.Println("Networ", option)
+
+			// fmt.Printf("ExposedPorts %v TYPE: %T\n", thisStartCommand.ExposedPorts, thisStartCommand.ExposedPorts)
+			// HostIP
+			// HostPort
+
+			if option.key == "HostIP" {
+				HostIP := option.val
+				HostPort := ""
+				for _, subOpt := range thisStartCommand.Options {
+					if subOpt.key == "HostPort" {
+						HostPort = subOpt.val
+					}
+				}
+				if HostPort == "" {
+					panic("Need to define HostPort in options!")
+				}
+				// fmt.Println("HOST PORT SET: ", HostIP, HostPort)
+
+				// var newww string
+
+				thisStartCommand.PortBinding = nat.PortMap{
+					nat.Port(ExposedPorts): []nat.PortBinding{
+						{
+							HostIP: HostIP,
+							HostPort: HostPort,
+						},
+					},
+				}
+				// fmt.Println("THIS PORT BINDING", thisStartCommand.PortBinding)
+				// fmt.Printf("THIS PORT BINDING %T\n", thisStartCommand.PortBinding)
 			}
+
+			// if option.key == "network" {
+			// 	fmt.Println("Networ", option)
+			// }
 		}
 
 		startCommands = append(startCommands, thisStartCommand)

@@ -66,7 +66,7 @@
 		"ImageID": "sha256:a99a6700a30478ce4af059543a0aaac139eea3c85ff62b2603c9d53b4cc42657",
 		"ImageName": "eclipse-mosquitto",
         "options": [
-            {"opt":"ExposedPorts", "val":"1883"},
+            {"opt":"ExposedPorts", "val":"1883/tcp"},
             {"opt":"HostIP", "val":"0.0.0.0"},
             {"opt":"HostPort", "val":"1883"}
             ],

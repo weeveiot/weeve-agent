@@ -10,6 +10,7 @@ import (
 
 	// "gitlab.com/weeve/poc-festo/poc-festo-mqtts-ethereum-gateway/internal/parser"
 
+	"github.com/docker/go-connections/nat"
 	"github.com/stretchr/testify/assert"
 	_ "gitlab.com/weeve/edge-server/edge-pipeline-service/testing"
 )
@@ -93,15 +94,36 @@ func TestGetStartCommands(t *testing.T) {
 	}
 }
 
+// The simple -p "1883:1883" in a docker run command
+// Expands to multiple complex objects, basic assertions are done in this unittest
 func TestStartOptionsComplex(t *testing.T) {
 	manifest, err := ParseJSONManifest(manifestBytes3nodesBroker)
 	if err != nil {
 		panic(err)
 	}
 	startCommands := manifest.GetContainerStart()
-	for i, command := range startCommands {
-		fmt.Println("Start", i, command)
-		PrintStartCommand(command)
-		fmt.Println("Options:", command.Options)
+	flgMosquitto := false
+	for _, command := range startCommands {
+		// fmt.Println("Start", i, command)
+		// PrintStartCommand(command)
+		// fmt.Println("Options:", command.Options)
+		if command.ImageName == "eclipse-mosquitto" {
+			flgMosquitto = true
+			assert.Equal(t, nat.PortSet{
+				nat.Port("1883/tcp"): struct{}{},
+			}, command.ExposedPorts, "Exposed Ports do not match")
+			assert.Equal(t,
+				nat.PortMap{
+					nat.Port("1883/tcp"): []nat.PortBinding{
+						{
+							HostIP: "0.0.0.0",
+							HostPort: "1883",
+						},
+					},
+				},
+				command.PortBinding,
+				"Port binding does not match")
+		}
 	}
+	assert.True(t, flgMosquitto, "The manifest MUST include the mosquitto image definition with ports!")
 }
