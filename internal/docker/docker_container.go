@@ -15,6 +15,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	log "github.com/sirupsen/logrus"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
 )
 
@@ -168,7 +169,7 @@ func StopContainer(containerId string) bool {
 }
 
 // func CreateContainerOptsArgs(containerName string, imageName string, argsString model.Argument) bool {
-func CreateContainerOptsArgs(containerName string, imageName string, imageTag string, args []string) bool {
+func CreateContainerOptsArgs(startCmd model.StartCommand) bool {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -178,11 +179,11 @@ func CreateContainerOptsArgs(containerName string, imageName string, imageTag st
 	}
 
 	containerConfig := &container.Config{
-		Image:        imageName + ":" + imageTag,
+		Image:        startCmd.ImageName + ":" + startCmd.ImageTag,
 		AttachStdin:  false,
 		AttachStdout: false,
 		AttachStderr: false,
-		Cmd:          args,
+		Cmd:          startCmd.EntryPointArgs,
 		Tty:          false,
 	}
 
@@ -192,14 +193,14 @@ func CreateContainerOptsArgs(containerName string, imageName string, imageTag st
 		&container.HostConfig{},
 		&network.NetworkingConfig{},
 		nil,
-		containerName)
+		startCmd.ContainerName)
 	// fmt.Println(resp)
 	if err != nil {
 		log.Error(err)
 		// return "CreateFailed"
 		return false
 	}
-	log.Debug("Created container " + containerName)
+	log.Debug("Created container " + startCmd.ContainerName)
 
 	containerStarted := StartContainer(resp.ID)
 
