@@ -7,6 +7,8 @@ import (
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/docker/go-connections/nat"
+
+	"github.com/docker/docker/api/types/container"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -25,6 +27,7 @@ type StartCommand struct {
 	Options        []OptionKeyVal
 	ExposedPorts   nat.PortSet // This must be set for the container create
 	PortBinding    nat.PortMap // This must be set for the containerStart
+	NetworkMode	   container.NetworkMode
 }
 
 type OptionKeyVal struct {
@@ -109,6 +112,8 @@ func (m Manifest) GetContainerStart() []StartCommand {
 	for _, mod := range m.Manifest.Search("Modules").Children() {
 		var thisStartCommand StartCommand
 
+		thisStartCommand.NetworkMode = "" // This is the default setting
+
 		thisStartCommand.ContainerName = GetContainerName(m.Manifest.Search("ID").Data().(string), mod.Search("Name").Data().(string))
 		thisStartCommand.ImageName = mod.Search("ImageName").Data().(string)
 		thisStartCommand.ImageTag = mod.Search("Tag").Data().(string)
@@ -131,23 +136,18 @@ func (m Manifest) GetContainerStart() []StartCommand {
 
 		thisStartCommand.EntryPointArgs = strArgs
 
-		// Handle the ExposedPorts option
+		// Handle the options
 		var ExposedPorts string
 		for _, option := range thisStartCommand.Options {
-			// fmt.Println("THIS OPTION", option)
+			// ExposedPorts is a simple option, just apply it to the struct
 			if option.key == "ExposedPorts" {
 				ExposedPorts = option.val
-				// res := strings.Split(option.val, ":")
-				// fmt.Println(res)
 				thisStartCommand.ExposedPorts = nat.PortSet{
 					nat.Port(option.val): struct{}{},
 				}
 			}
-
-			// fmt.Printf("ExposedPorts %v TYPE: %T\n", thisStartCommand.ExposedPorts, thisStartCommand.ExposedPorts)
-			// HostIP
-			// HostPort
-
+			// HostIP is always found with HostPort
+			// TODO: Refactor!
 			if option.key == "HostIP" {
 				HostIP := option.val
 				HostPort := ""
@@ -156,13 +156,12 @@ func (m Manifest) GetContainerStart() []StartCommand {
 						HostPort = subOpt.val
 					}
 				}
+				// Make sure HostPort was seen in the options!
 				if HostPort == "" {
 					panic("Need to define HostPort in options!")
 				}
-				// fmt.Println("HOST PORT SET: ", HostIP, HostPort)
 
-				// var newww string
-
+				// Finally, build the PortBindings struct
 				thisStartCommand.PortBinding = nat.PortMap{
 					nat.Port(ExposedPorts): []nat.PortBinding{
 						{
@@ -171,13 +170,12 @@ func (m Manifest) GetContainerStart() []StartCommand {
 						},
 					},
 				}
-				// fmt.Println("THIS PORT BINDING", thisStartCommand.PortBinding)
-				// fmt.Printf("THIS PORT BINDING %T\n", thisStartCommand.PortBinding)
 			}
 
-			// if option.key == "network" {
-			// 	fmt.Println("Networ", option)
-			// }
+			if option.key == "network" {
+				thisStartCommand.NetworkMode = container.NetworkMode(option.val)
+
+			}
 		}
 
 		startCommands = append(startCommands, thisStartCommand)

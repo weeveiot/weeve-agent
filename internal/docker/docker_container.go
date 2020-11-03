@@ -190,8 +190,8 @@ func CreateContainerOptsArgs(startCmd model.StartCommand) bool {
 
 	hostConfig := &container.HostConfig{
 		PortBindings: startCmd.PortBinding,
+		NetworkMode: startCmd.NetworkMode,
 	}
-
 
 	// resp, err := cli.ContainerCreate(ctx,
 	resp, err := cli.ContainerCreate(ctx,

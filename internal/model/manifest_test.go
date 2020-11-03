@@ -124,6 +124,9 @@ func TestStartOptionsComplex(t *testing.T) {
 				command.PortBinding,
 				"Port binding does not match")
 		}
+		if command.ImageName == "weevenetwork/go-mqtt-gobot" {
+			assert.Equal(t, "host", command.NetworkMode)
+		}
 	}
 	assert.True(t, flgMosquitto, "The manifest MUST include the mosquitto image definition with ports!")
 }
