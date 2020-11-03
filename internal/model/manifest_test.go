@@ -10,6 +10,7 @@ import (
 
 	// "gitlab.com/weeve/poc-festo/poc-festo-mqtts-ethereum-gateway/internal/parser"
 
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/go-connections/nat"
 	"github.com/stretchr/testify/assert"
 	_ "gitlab.com/weeve/edge-server/edge-pipeline-service/testing"
@@ -125,7 +126,7 @@ func TestStartOptionsComplex(t *testing.T) {
 				"Port binding does not match")
 		}
 		if command.ImageName == "weevenetwork/go-mqtt-gobot" {
-			assert.Equal(t, "host", command.NetworkMode)
+			assert.Equal(t, container.NetworkMode("host"), command.NetworkMode)
 		}
 	}
 	assert.True(t, flgMosquitto, "The manifest MUST include the mosquitto image definition with ports!")
