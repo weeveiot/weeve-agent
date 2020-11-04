@@ -17,6 +17,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 func ReadAllContainers() []types.Container {
@@ -169,7 +171,11 @@ func StopContainer(containerId string) bool {
 }
 
 // func CreateContainerOptsArgs(containerName string, imageName string, argsString model.Argument) bool {
-func CreateContainerOptsArgs(startCmd model.StartCommand) bool {
+func CreateContainerOptsArgs(startCmd model.StartCommand, networkName string) bool {
+
+
+	// fmt.Println(startCmd)
+	spew.Dump(startCmd)
 
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -216,6 +222,30 @@ func CreateContainerOptsArgs(startCmd model.StartCommand) bool {
 		log.Debug("Did not start container")
 		return false
 	}
+
+	// statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
+	// select {
+	// case err := <-errCh:
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// case <-statusCh:
+	// }
+
+	// out, err := cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true})
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// stdcopy.StdCopy(os.Stdout, os.Stderr, out)
+
+	// cli.NetworkConnect(ctx, "TEST", resp.ID, config *network.EndpointSettings)
+	var netConfig network.EndpointSettings
+	err = cli.NetworkConnect(ctx, networkName, resp.ID, &netConfig)
+	if err != nil {
+		panic(err)
+	}
+	log.Debug("Connected ", resp.ID, "to network", networkName)
 
 	return true
 }

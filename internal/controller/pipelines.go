@@ -77,6 +77,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 
 	//******** STEP 3 - Create the network *************//
 	log.Debug("Create the network")
+	var networkName = "my-net5"
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -86,17 +87,20 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	networkCreateOptions.CheckDuplicate = true
 	// var networkCreateOptions = &NetworkCreate
 
-	fmt.Println(networkCreateOptions)
-	cli.NetworkCreate(ctx, "test", networkCreateOptions)
-	fmt.Println("CREATED NETWORK")
-	return
+	// fmt.Println(networkCreateOptions)
+	resp, err := cli.NetworkCreate(ctx, networkName, networkCreateOptions)
+	if err != nil {
+		panic(err)
+	}
+	log.Debug("Created network", networkName)
+	log.Debug(resp.ID, resp.Warning)
 
 	//******** STEP 4 - Start all containers *************//
 	log.Debug("Start all containers")
 
 	for _, startCommand := range man.GetContainerStart() {
 		log.Info("\tCreating ", startCommand.ContainerName, " from ", startCommand.ImageName, ":", startCommand.ImageTag)
-		docker.CreateContainerOptsArgs(startCommand)
+		docker.CreateContainerOptsArgs(startCommand, networkName)
 		// docker.CreateContainerOptsArgs(
 		// 	startCommand.ContainerName,
 		// 	startCommand.ImageName,
