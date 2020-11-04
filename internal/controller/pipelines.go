@@ -1,14 +1,20 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
+	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/docker"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
+
+	"github.com/docker/docker/api/types"
 )
+
+
 
 func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	log.Info("POST /pipeline")
@@ -69,7 +75,23 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	//******** STEP 3 - Start all containers *************//
+	//******** STEP 3 - Create the network *************//
+	log.Debug("Create the network")
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Error(err)
+	}
+	var networkCreateOptions types.NetworkCreate
+	networkCreateOptions.CheckDuplicate = true
+	// var networkCreateOptions = &NetworkCreate
+
+	fmt.Println(networkCreateOptions)
+	cli.NetworkCreate(ctx, "test", networkCreateOptions)
+	fmt.Println("CREATED NETWORK")
+	return
+
+	//******** STEP 4 - Start all containers *************//
 	log.Debug("Start all containers")
 
 	for _, startCommand := range man.GetContainerStart() {

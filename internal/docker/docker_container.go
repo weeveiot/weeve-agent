@@ -170,6 +170,7 @@ func StopContainer(containerId string) bool {
 
 // func CreateContainerOptsArgs(containerName string, imageName string, argsString model.Argument) bool {
 func CreateContainerOptsArgs(startCmd model.StartCommand) bool {
+
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -197,7 +198,8 @@ func CreateContainerOptsArgs(startCmd model.StartCommand) bool {
 	resp, err := cli.ContainerCreate(ctx,
 		containerConfig,
 		hostConfig,
-		&network.NetworkingConfig{},
+		&startCmd.NetworkConfig,
+		// &network.NetworkingConfig{},
 		nil,
 		startCmd.ContainerName)
 	// fmt.Println(resp)

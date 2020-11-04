@@ -9,6 +9,7 @@ import (
 	"github.com/docker/go-connections/nat"
 
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/network"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -28,6 +29,7 @@ type StartCommand struct {
 	ExposedPorts   nat.PortSet // This must be set for the container create
 	PortBinding    nat.PortMap // This must be set for the containerStart
 	NetworkMode	   container.NetworkMode
+	NetworkConfig	network.NetworkingConfig
 }
 
 type OptionKeyVal struct {
@@ -174,8 +176,20 @@ func (m Manifest) GetContainerStart() []StartCommand {
 
 			if option.key == "network" {
 				thisStartCommand.NetworkMode = container.NetworkMode(option.val)
-
 			}
+
+			// Define Network config (why isn't PORT in here...?:
+			// https://godoc.org/github.com/docker/docker/api/types/network#NetworkingConfig
+			networkConfig := &network.NetworkingConfig{
+				EndpointsConfig: map[string]*network.EndpointSettings{},
+			}
+
+			// gatewayConfig := &network.EndpointSettings{
+			// 	Gateway: "gatewayname",
+			// }
+			// networkConfig.EndpointsConfig["bridge"] = gatewayConfig
+
+			thisStartCommand.NetworkConfig = *networkConfig
 		}
 
 		startCommands = append(startCommands, thisStartCommand)
