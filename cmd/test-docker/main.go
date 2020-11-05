@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -12,39 +11,39 @@ import (
 )
 
 
-func main( ) {
-	networkName := "bridge-net-test"
-	imageName := "eclipse-mosquitto:latest"
-	containerName := "c1"
 
-	// CLIENT
+func main( ) {
+	log.SetLevel(log.DebugLevel)
+	networkName := "bridge-net-test"
+	// imageName := "eclipse-mosquitto:latest"
+	// containerName := "c1"
+	imageName := "nginx"
+	containerName := "c2"
+
+	// DOCKER CLIENT //////////
 	log.Debug("Build context and client")
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
 		// log.Error(err)
-		return false
 	}
 
-	// CREATE THE NETWORK
-	log.Debug("Create the network", networkName)
+	// CREATE THE NETWORK ////
 	// Network options
 	var networkCreateOptions types.NetworkCreate
 	networkCreateOptions.CheckDuplicate = true
 	networkCreateOptions.Attachable = true
-	fmt.Println(networkCreateOptions)
 	// Create it
 	resp, err := cli.NetworkCreate(ctx, networkName, networkCreateOptions)
 	if err != nil {
-		panic(err)
+		log.Debug("Network ", networkName, " already exists")
+	} else {
+		log.Debug("Created network", networkName)
 	}
-	log.Debug("Created network", networkName)
-	log.Debug(resp.ID, resp.Warning)
 
-
-	// CONFIG CONTAINER
-	log.Debug("Container configuration object for ContainerCreate()")
+	// CREATE THE CONTAINER //////
+	// Config
 	containerConfig := &container.Config{
 		Image:        imageName,
 		AttachStdin:  false,
@@ -55,17 +54,15 @@ func main( ) {
 		ExposedPorts: nil,
 	}
 
-	log.Debug("Host configuration object for ContainerCreate()")
 	hostConfig := &container.HostConfig{
 		PortBindings: nil,
 		NetworkMode: "bridge",
 	}
 
-	log.Debug("Network configuration object for ContainerCreate()")
 	networkConfig := &network.NetworkingConfig{
 		EndpointsConfig: map[string]*network.EndpointSettings{},
 	}
-	// CREATE THE CONTAINER
+	// Create it
 	containerCreateResponse, err := cli.ContainerCreate(ctx,
 		containerConfig,
 		hostConfig,
@@ -73,9 +70,17 @@ func main( ) {
 		nil,
 		containerName)
 	if err != nil {
-		log.Error(err)
+		panic(err)
 	}
 	log.Debug("Created container " + containerName)
+
+	// START CONTAINER /////
+	err = cli.ContainerStart(ctx, containerCreateResponse.ID, types.ContainerStartOptions{})
+	if err != nil {
+		log.Error(err)
+		panic("Failed to start container")
+	}
+	log.Debug("Started container " + containerName)
 
 	// ATTACH TO NETWORK
 	var netConfig network.EndpointSettings
