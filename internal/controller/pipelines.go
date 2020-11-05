@@ -85,15 +85,18 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	}
 	var networkCreateOptions types.NetworkCreate
 	networkCreateOptions.CheckDuplicate = true
+	networkCreateOptions.Attachable = true
 	// var networkCreateOptions = &NetworkCreate
 
+	_ = ctx
+	_ = cli
 	// fmt.Println(networkCreateOptions)
-	resp, err := cli.NetworkCreate(ctx, networkName, networkCreateOptions)
-	if err != nil {
-		panic(err)
-	}
-	log.Debug("Created network", networkName)
-	log.Debug(resp.ID, resp.Warning)
+	// resp, err := cli.NetworkCreate(ctx, networkName, networkCreateOptions)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// log.Debug("Created network", networkName)
+	// log.Debug(resp.ID, resp.Warning)
 
 	//******** STEP 4 - Start all containers *************//
 	log.Debug("Start all containers")
