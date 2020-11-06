@@ -1,14 +1,18 @@
-# Edge Pipeline service
-Edge pipeline service is responsible to handle manifest requests with "/pipelines" endpoint, and pulls images from docker hub if not exist on local, then create and start containers based on request manifest.
-It also provides enpoints to get/create/start/stop/remove docker containers, and get/pull/remove docker images.
+# Weeve Node Service
+The Weeve Node Service is a lightweight service to orchestrate data pipelines. A data pipeline is defined in a manifest file and consists of several interconnected docker containers. The data pipeline is instantiated by POST request to the "/pipelines" endpoint. The logic of the service then pulls images from docker hub if they do not exist on the machine. The Weeve Node Service then creates and starts containers based on request manifest. A bridge networks can be instantiated to facilitate container communication. Several resources exist and are exposed in a RESTful API;
+- Docker images
+- Docker containers
+- Data pipelines
+
+## Getting Started for Users
+
+The compiled binary found as a release can be executed by specifying the port to be exposed;
+
+go run ./cmd/node-service.go -v -p 8030
+
+The `-v` verbose flag is optional and will present the Debug level logging messages.
 
 
-## Getting Started
-Instructions to run this project.
-
-Run Compiled binary
-
-`main --port 8030`
 
 Go to project root path and rub below commands to build and run code in development enviroment,
 
