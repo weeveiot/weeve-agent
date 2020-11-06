@@ -1,0 +1,1 @@
+reflex -r '\.go$' -s -- sh -c 'go run ./cmd/node-service.go -v -p 8030'

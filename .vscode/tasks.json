@@ -1,0 +1,19 @@
+{
+	"version": "2.0.0",
+	"type": "shell",
+	"echoCommand": true,
+	"cwd": "${workspaceFolder}",
+	"tasks": [
+        {
+            "label": "rungo",
+            "command": "go run ./cmd/node-service.go -v -p 8030",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [
+                "$go"
+            ]
+        }
+    ]
+}

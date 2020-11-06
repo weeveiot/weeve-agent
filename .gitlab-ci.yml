@@ -1,0 +1,36 @@
+image: golang:latest
+
+variables:
+  REPO_NAME: gitlab.com/weeve/edge-server/edge-pipeline-service
+
+cache:
+  paths:
+    - /apt-cache
+    - /go/src/github.com
+    - /go/src/golang.org
+    - /go/src/google.golang.org
+    - /go/src/gopkg.in
+
+stages:
+  - test
+  - build
+  - deploy
+
+before_script:
+  - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
+  - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
+  - cd $GOPATH/src/$REPO_NAME
+
+validate:
+  stage: test
+  script:
+    - go vet $(dirname $REPO_NAME)/edge-pipeline-service
+
+compile:
+  stage: build
+  script:
+    - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/edge-pipeline-service ./cmd/node-service.go
+    # - env GOOS=linux go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/edge-pipeline-service ./cmd/main.go
+  artifacts:
+    paths:
+      - edge-pipeline-service
