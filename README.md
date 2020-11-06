@@ -15,6 +15,8 @@ The `-v` verbose flag is optional and will present the Debug level logging messa
 ### Docker container
 Currently, running the project with Docker is not supported. Since the main function of the Weeve Node Service is to orchestrate a set of docker containers, running the project inside docker presents additional complexities due to the interaction with the host machine. A docker file is present to facilitate unit testing only.
 
+## Documentation
+A postman collection is found in the /docs folder. The collection is (published)[https://documenter.getpostman.com/view/12141960/TVYQ3ubM].
 
 ## Getting started for Developers
 
@@ -44,24 +46,18 @@ Several developer features are supported in the project.
 ### Enhanced golang terminal
 The `go` command may be replaced with the `richgo` command to provide more colorful output at the terminal. The project is found at [richgo](https://github.com/kyoh86/richgo) and installed with `go get -u github.com/kyoh86/richgo
 `.
-### File watcher reflex
 
+### File watcher reflex
 A file watcher is employed to automate the restart of the server and run tests on code change.
 The file selected watcher is [reflex](https://github.com/cespare/reflex), and is installed with `go get -u github.com/cespare/reflex`.
 
-The server can be started with
+The server can be started with;
 `reflex -r '\.go$' -s -- sh -c 'go run ./cmd/node-service.go -v -p 8030'`
 
-Running the server;
-`go run ./cmd/node-service.go --port 8030`
-
-make build
-
-## Docker notes
-`docker container rm $(docker container ls -aq)   `
+Similarly for unit tests;
+`reflex -r '\.go$' -s -- sh -c 'richgo test -v ./...'`
 
 
-##
 **Endpoint**
 
 POST: {EDGE_PIPELINE_URL}/pipelines
