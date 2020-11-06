@@ -1,24 +1,69 @@
-# Edge Pipeline service
-Edge pipeline service is responsible to handle manifest requests with "/pipelines" endpoint, and pulls images from docker hub if not exist on local, then create and start containers based on request manifest.
-It also provides enpoints to get/create/start/stop/remove docker containers, and get/pull/remove docker images.
+# Weeve Node Service
+The Weeve Node Service is a lightweight service to orchestrate data pipelines. A data pipeline is defined in a manifest file and consists of several interconnected docker containers. The data pipeline is instantiated by POST request to the "/pipelines" endpoint. The logic of the service then pulls images from docker hub if they do not exist on the machine. The Weeve Node Service then creates and starts containers based on request manifest. A bridge networks can be instantiated to facilitate container communication. Several resources exist and are exposed in a RESTful API;
+- Docker images
+- Docker containers
+- Data pipelines
 
+## Architecture
+The Weeve Node Service can be considered as a Docker orchestration layer with a purpose built RESTful API. As such, the project relies on the [Golang Docker SDK](https://godoc.org/github.com/docker/docker).
 
-## Getting Started
-Instructions to run this project.
+The main entry command initiates logging, parses flags, and passes control to the web server. The web server is implemented with the [Gorilla MUX package](github.com/gorilla/mux).
 
-Run Compiled binary
+A data model for the manifest object and supporting structures is found in the internal library.
 
-`main --port 8030`
+## Getting started for Users
 
-Go to project root path and rub below commands to build and run code in development enviroment,
+### Compiled binary
+The compiled binary found as a release can be executed by specifying the port to be exposed;
 
-`go build ./cmd/node-service.go`
+`./node-service -v -p 8030`
+The `-v` verbose flag is optional and will present the Debug level logging messages.
 
-`go run ./cmd/node-service.go -p 8030`
+### Docker container
+Currently, running the project with Docker is not supported. Since the main function of the Weeve Node Service is to orchestrate a set of docker containers, running the project inside docker presents additional complexities due to the interaction with the host machine. A docker file is present to facilitate unit testing only.
 
-## Test pipelines endpoint
+## Documentation
+A postman collection is found in the /docs folder. The collection is (published)[https://documenter.getpostman.com/view/12141960/TVYQ3ubM].
 
-To test pipelines endpoint use below sample request,
+## Getting started for Developers
+
+### Build the Golang project
+The project can be compiled and run from source. The root of the command is the project root directory.
+`go build -o ./build/node-service ./cmd/node-service.go`
+
+### Run the Golang project
+`go run ./cmd/node-service.go -v -p 8030`
+
+The root of the command is the project root directory.
+
+The `-v` verbose flag is optional and will present the Debug level logging messages.
+
+### Unit-test the Golang project
+
+`go test -v ./...`
+
+Currently, unit testing does not cover the project.
+
+## Developer environment
+
+Several developer features are supported in the project.
+
+### Dependencies
+
+### Enhanced golang terminal
+The `go` command may be replaced with the `richgo` command to provide more colorful output at the terminal. The project is found at [richgo](https://github.com/kyoh86/richgo) and installed with `go get -u github.com/kyoh86/richgo
+`.
+
+### File watcher reflex
+A file watcher is employed to automate the restart of the server and run tests on code change.
+The file selected watcher is [reflex](https://github.com/cespare/reflex), and is installed with `go get -u github.com/cespare/reflex`.
+
+The server can be started with;
+`reflex -r '\.go$' -s -- sh -c 'go run ./cmd/node-service.go -v -p 8030'`
+
+Similarly for unit tests;
+`reflex -r '\.go$' -s -- sh -c 'richgo test -v ./...'`
+
 
 **Endpoint**
 
@@ -53,19 +98,4 @@ Request Body:
     ]
 }
 ```
-
-
-# Dev
-## reflex
-Using the [reflex](https://github.com/cespare/reflex) file watcher;
-(Install with `go get github.com/cespare/reflex`)
-`reflex -r '\.go$' -s -- sh -c 'go run ./cmd/node-service.go -v -p 8030'`
-
-Running the server;
-`go run ./cmd/node-service.go --port 8030`
-
-make build
-
-## Docker notes
-`docker container rm $(docker container ls -aq)   `
 
