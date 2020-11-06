@@ -13,7 +13,7 @@ func Status(w http.ResponseWriter, r *http.Request) {
 	json.Set("status", "ok")
 	json.Set("name", "Edge Pipeline Service")
 	json.Set("location", "SIMULATION")
-	json.Set("version", "0.0.1")
+	json.Set("version", "0.1.0")
 	payload, err := json.MarshalJSON()
 	if err != nil {
 		log.Println(err)
