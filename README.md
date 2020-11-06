@@ -4,6 +4,13 @@ The Weeve Node Service is a lightweight service to orchestrate data pipelines. A
 - Docker containers
 - Data pipelines
 
+## Architecture
+The Weeve Node Service can be considered as a Docker orchestration layer with a purpose built RESTful API. As such, the project relies on the [Golang Docker SDK](https://godoc.org/github.com/docker/docker).
+
+The main entry command initiates logging, parses flags, and passes control to the web server. The web server is implemented with the [Gorilla MUX package](github.com/gorilla/mux).
+
+A data model for the manifest object and supporting structures is found in the internal library.
+
 ## Getting started for Users
 
 ### Compiled binary
