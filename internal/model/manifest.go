@@ -133,7 +133,7 @@ func (m Manifest) GetContainerStart() []StartCommand {
 
 		var strArgs []string
 		for _, arg := range mod.Search("arguments").Children() {
-			strArgs = append(strArgs, "--"+arg.Search("arg").Data().(string)+"="+arg.Search("val").Data().(string))
+			strArgs = append(strArgs, "-"+arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
 		}
 
 		thisStartCommand.EntryPointArgs = strArgs

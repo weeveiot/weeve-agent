@@ -170,9 +170,7 @@ func StopContainer(containerId string) bool {
 	return true
 }
 
-// func CreateContainerOptsArgs(containerName string, imageName string, argsString model.Argument) bool {
 func CreateContainerOptsArgs(startCmd model.StartCommand, networkName string) bool {
-
 
 	// fmt.Println(startCmd)
 	spew.Dump(startCmd)

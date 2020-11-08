@@ -10,7 +10,61 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func startCreateContainer(imageName string, containerName string, entryArgs []string) (container.ContainerCreateCreatedBody, error) {
+	// DOCKER CLIENT //////////
+	log.Debug("Build context and client")
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Error(err)
+		panic(err)
+	}
 
+	containerConfig := &container.Config{
+		Image:        imageName,
+		AttachStdin:  false,
+		AttachStdout: false,
+		AttachStderr: false,
+		Cmd:          entryArgs,
+		Tty:          false,
+		ExposedPorts: nil,
+	}
+
+
+	hostConfig := &container.HostConfig{
+		PortBindings: nil,
+		NetworkMode: "bridge",
+		RestartPolicy: container.RestartPolicy{
+			Name: "on-failure",
+			MaximumRetryCount: 100,
+		},
+	}
+
+	networkConfig := &network.NetworkingConfig{
+		EndpointsConfig: map[string]*network.EndpointSettings{},
+	}
+
+	containerCreateResponse, err := cli.ContainerCreate(ctx,
+		containerConfig,
+		hostConfig,
+		networkConfig,
+		nil,
+		containerName)
+	if err != nil {
+		panic(err)
+	}
+	log.Debug("Created container " + containerName)
+
+	// Start container
+	err = cli.ContainerStart(ctx, containerCreateResponse.ID, types.ContainerStartOptions{})
+	if err != nil {
+		log.Error(err)
+		panic("Failed to start container")
+	}
+	log.Debug("Started container")
+
+	return containerCreateResponse, nil
+}
 
 func main( ) {
 	log.SetLevel(log.DebugLevel)
@@ -27,7 +81,6 @@ func main( ) {
 	imageName3 := "weevenetwork/mosquitto_pub"
 	containerName3 := "mosquitto_pub"
 	EntryPointArgs3 := []string{"-h mosquitto_broker", "-p 1883", "-t hello/hello"}
-
 
 	// DOCKER CLIENT //////////
 	log.Debug("Build context and client")
@@ -51,51 +104,8 @@ func main( ) {
 		log.Debug("Created network", networkName)
 	}
 
-	///////////////////////////////////////
 	// CREATE AND ATTACH CONTAINER 1 //////
-	///////////////////////////////////////
-	// Config
-	containerConfig := &container.Config{
-		Image:        imageName1,
-		AttachStdin:  false,
-		AttachStdout: false,
-		AttachStderr: false,
-		Cmd:          EntryPointArgs1,
-		Tty:          false,
-		ExposedPorts: nil,
-	}
-
-	hostConfig := &container.HostConfig{
-		PortBindings: nil,
-		NetworkMode: "bridge",
-		RestartPolicy: container.RestartPolicy{
-			Name: "on-failure",
-			MaximumRetryCount: 100,
-		},
-	}
-
-	networkConfig := &network.NetworkingConfig{
-		EndpointsConfig: map[string]*network.EndpointSettings{},
-	}
-	// Create it
-	containerCreateResponse, err := cli.ContainerCreate(ctx,
-		containerConfig,
-		hostConfig,
-		networkConfig,
-		nil,
-		containerName1)
-	if err != nil {
-		panic(err)
-	}
-	log.Debug("Created container " + containerName1)
-
-	// Start container
-	err = cli.ContainerStart(ctx, containerCreateResponse.ID, types.ContainerStartOptions{})
-	if err != nil {
-		log.Error(err)
-		panic("Failed to start container")
-	}
-	log.Debug("Started container")
+	containerCreateResponse, err := startCreateContainer(imageName1, containerName1, EntryPointArgs1)
 
 	// Attach to network
 	var netConfig network.EndpointSettings
@@ -105,53 +115,9 @@ func main( ) {
 	}
 	log.Debug("Connected ", resp.ID, "to network", networkName)
 
-
-
-	///////////////////////////////////////
 	// CREATE AND ATTACH CONTAINER 2 //////
-	///////////////////////////////////////
-	// Config
-	containerConfig = &container.Config{
-		Image:        imageName2,
-		AttachStdin:  false,
-		AttachStdout: false,
-		AttachStderr: false,
-		Cmd:          EntryPointArgs2,
-		Tty:          false,
-		ExposedPorts: nil,
-	}
 
-	hostConfig = &container.HostConfig{
-		PortBindings: nil,
-		NetworkMode: "bridge",
-		RestartPolicy: container.RestartPolicy{
-			Name: "on-failure",
-			MaximumRetryCount: 100,
-		},
-	}
-
-	networkConfig = &network.NetworkingConfig{
-		EndpointsConfig: map[string]*network.EndpointSettings{},
-	}
-	// Create it
-	containerCreateResponse, err = cli.ContainerCreate(ctx,
-		containerConfig,
-		hostConfig,
-		networkConfig,
-		nil,
-		containerName2)
-	if err != nil {
-		panic(err)
-	}
-	log.Debug("Created container " + containerName1)
-
-	// Start container
-	err = cli.ContainerStart(ctx, containerCreateResponse.ID, types.ContainerStartOptions{})
-	if err != nil {
-		log.Error(err)
-		panic("Failed to start container")
-	}
-	log.Debug("Started container 2")
+	containerCreateResponse, err = startCreateContainer(imageName2, containerName2, EntryPointArgs2)
 
 	// Attach to network
 	// var netConfig network.EndpointSettings
@@ -162,52 +128,8 @@ func main( ) {
 	log.Debug("Connected ", resp.ID, "to network", networkName)
 
 
-
-	///////////////////////////////////////
 	// CREATE AND ATTACH CONTAINER 3 //////
-	///////////////////////////////////////
-	// Config
-	containerConfig = &container.Config{
-		Image:        imageName3,
-		AttachStdin:  false,
-		AttachStdout: false,
-		AttachStderr: false,
-		Cmd:          EntryPointArgs3,
-		Tty:          false,
-		ExposedPorts: nil,
-	}
-
-	hostConfig = &container.HostConfig{
-		PortBindings: nil,
-		NetworkMode: "bridge",
-		RestartPolicy: container.RestartPolicy{
-			Name: "on-failure",
-			MaximumRetryCount: 100,
-		},
-	}
-
-	networkConfig = &network.NetworkingConfig{
-		EndpointsConfig: map[string]*network.EndpointSettings{},
-	}
-	// Create it
-	containerCreateResponse, err = cli.ContainerCreate(ctx,
-		containerConfig,
-		hostConfig,
-		networkConfig,
-		nil,
-		containerName3)
-	if err != nil {
-		panic(err)
-	}
-	log.Debug("Created container " + containerName1)
-
-	// Start container
-	err = cli.ContainerStart(ctx, containerCreateResponse.ID, types.ContainerStartOptions{})
-	if err != nil {
-		log.Error(err)
-		panic("Failed to start container")
-	}
-	log.Debug("Started container 3")
+	containerCreateResponse, err = startCreateContainer(imageName3, containerName3, EntryPointArgs3)
 
 	// Attach to network
 	// var netConfig network.EndpointSettings
