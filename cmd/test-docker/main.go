@@ -15,10 +15,9 @@ import (
 func main( ) {
 	log.SetLevel(log.DebugLevel)
 	networkName := "bridge-net-test"
-	// imageName := "eclipse-mosquitto:latest"
-	// containerName := "c1"
-	imageName := "nginx"
-	containerName := "c2"
+	imageName1 := "weevenetwork/mosquitto_broker"
+	containerName1 := "mosquitto_broker"
+
 
 	// DOCKER CLIENT //////////
 	log.Debug("Build context and client")
@@ -26,7 +25,7 @@ func main( ) {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
-		// log.Error(err)
+		panic(err)
 	}
 
 	// CREATE THE NETWORK ////
@@ -42,10 +41,13 @@ func main( ) {
 		log.Debug("Created network", networkName)
 	}
 
-	// CREATE THE CONTAINER //////
+	///////////////////////////////////////
+	// CREATE AND ATTACH CONTAINER 1 //////
+	///////////////////////////////////////
+
 	// Config
 	containerConfig := &container.Config{
-		Image:        imageName,
+		Image:        imageName1,
 		AttachStdin:  false,
 		AttachStdout: false,
 		AttachStderr: false,
@@ -68,11 +70,11 @@ func main( ) {
 		hostConfig,
 		networkConfig,
 		nil,
-		containerName)
+		containerName1)
 	if err != nil {
 		panic(err)
 	}
-	log.Debug("Created container " + containerName)
+	log.Debug("Created container " + containerName1)
 
 	// START CONTAINER /////
 	err = cli.ContainerStart(ctx, containerCreateResponse.ID, types.ContainerStartOptions{})
@@ -80,7 +82,7 @@ func main( ) {
 		log.Error(err)
 		panic("Failed to start container")
 	}
-	log.Debug("Started container " + containerName)
+	log.Debug("Started container")
 
 	// ATTACH TO NETWORK
 	var netConfig network.EndpointSettings
