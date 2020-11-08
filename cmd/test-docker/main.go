@@ -68,6 +68,10 @@ func main( ) {
 	hostConfig := &container.HostConfig{
 		PortBindings: nil,
 		NetworkMode: "bridge",
+		RestartPolicy: container.RestartPolicy{
+			Name: "on-failure",
+			MaximumRetryCount: 100,
+		},
 	}
 
 	networkConfig := &network.NetworkingConfig{
@@ -120,6 +124,10 @@ func main( ) {
 	hostConfig = &container.HostConfig{
 		PortBindings: nil,
 		NetworkMode: "bridge",
+		RestartPolicy: container.RestartPolicy{
+			Name: "on-failure",
+			MaximumRetryCount: 100,
+		},
 	}
 
 	networkConfig = &network.NetworkingConfig{
@@ -173,9 +181,9 @@ func main( ) {
 		PortBindings: nil,
 		NetworkMode: "bridge",
 		RestartPolicy: container.RestartPolicy{
-			Name: "simple",
+			Name: "on-failure",
 			MaximumRetryCount: 100,
-		}
+		},
 	}
 
 	networkConfig = &network.NetworkingConfig{
