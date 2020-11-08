@@ -11,8 +11,7 @@ import (
 )
 
 func startCreateContainer(imageName string, containerName string, entryArgs []string) (container.ContainerCreateCreatedBody, error) {
-	// DOCKER CLIENT //////////
-	log.Debug("Build context and client")
+	// Docker Client
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -20,6 +19,7 @@ func startCreateContainer(imageName string, containerName string, entryArgs []st
 		panic(err)
 	}
 
+	// Configuration of a container
 	containerConfig := &container.Config{
 		Image:        imageName,
 		AttachStdin:  false,
@@ -29,7 +29,6 @@ func startCreateContainer(imageName string, containerName string, entryArgs []st
 		Tty:          false,
 		ExposedPorts: nil,
 	}
-
 
 	hostConfig := &container.HostConfig{
 		PortBindings: nil,
@@ -44,6 +43,7 @@ func startCreateContainer(imageName string, containerName string, entryArgs []st
 		EndpointsConfig: map[string]*network.EndpointSettings{},
 	}
 
+	// Create the container
 	containerCreateResponse, err := cli.ContainerCreate(ctx,
 		containerConfig,
 		hostConfig,
@@ -51,7 +51,8 @@ func startCreateContainer(imageName string, containerName string, entryArgs []st
 		nil,
 		containerName)
 	if err != nil {
-		panic(err)
+		log.Error(err)
+		return container.ContainerCreateCreatedBody{}, err
 	}
 	log.Debug("Created container " + containerName)
 
@@ -59,7 +60,8 @@ func startCreateContainer(imageName string, containerName string, entryArgs []st
 	err = cli.ContainerStart(ctx, containerCreateResponse.ID, types.ContainerStartOptions{})
 	if err != nil {
 		log.Error(err)
-		panic("Failed to start container")
+		// panic("Failed to start container")
+		return container.ContainerCreateCreatedBody{}, err
 	}
 	log.Debug("Started container")
 

@@ -103,6 +103,80 @@ func StopContainer(containerId string) bool {
 
 	return true
 }
+func AttachContainerNetwork(containerID string, networkName string) (error) {
+	// DOCKER CLIENT //////////
+	log.Debug("Build context and client")
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Error(err)
+		panic(err)
+	}
+
+	var netConfig network.EndpointSettings
+	err = cli.NetworkConnect(ctx, networkName, containerID, &netConfig)
+	if err != nil {
+		panic(err)
+	}
+	log.Debug("Connected ", containerID, "to network", networkName)
+	return nil
+
+}
+func StartCreateContainer(imageName string, containerName string, entryArgs []string) (container.ContainerCreateCreatedBody, error) {
+	// DOCKER CLIENT //////////
+	log.Debug("Build context and client")
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Error(err)
+		panic(err)
+	}
+
+	containerConfig := &container.Config{
+		Image:        imageName,
+		AttachStdin:  false,
+		AttachStdout: false,
+		AttachStderr: false,
+		Cmd:          entryArgs,
+		Tty:          false,
+		ExposedPorts: nil,
+	}
+
+
+	hostConfig := &container.HostConfig{
+		PortBindings: nil,
+		NetworkMode: "bridge",
+		RestartPolicy: container.RestartPolicy{
+			Name: "on-failure",
+			MaximumRetryCount: 100,
+		},
+	}
+
+	networkConfig := &network.NetworkingConfig{
+		EndpointsConfig: map[string]*network.EndpointSettings{},
+	}
+
+	containerCreateResponse, err := cli.ContainerCreate(ctx,
+		containerConfig,
+		hostConfig,
+		networkConfig,
+		nil,
+		containerName)
+	if err != nil {
+		panic(err)
+	}
+	log.Debug("Created container " + containerName)
+
+	// Start container
+	err = cli.ContainerStart(ctx, containerCreateResponse.ID, types.ContainerStartOptions{})
+	if err != nil {
+		log.Error(err)
+		panic("Failed to start container")
+	}
+	log.Debug("Started container")
+
+	return containerCreateResponse, nil
+}
 
 func CreateContainerOptsArgs(startCmd model.StartCommand, networkName string) bool {
 
@@ -147,12 +221,12 @@ func CreateContainerOptsArgs(startCmd model.StartCommand, networkName string) bo
 	}
 	log.Debug("Created container " + startCmd.ContainerName)
 
-	containerStarted := StartContainer(resp.ID)
+	// containerStarted := StartContainer(resp.ID)
 
-	if !containerStarted {
-		log.Debug("Did not start container")
-		return false
-	}
+	// if !containerStarted {
+	// 	log.Debug("Did not start container")
+	// 	return false
+	// }
 
 	// statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
 	// select {

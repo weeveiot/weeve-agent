@@ -103,7 +103,8 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 
 	for _, startCommand := range man.GetContainerStart() {
 		log.Info("\tCreating ", startCommand.ContainerName, " from ", startCommand.ImageName, ":", startCommand.ImageTag)
-		docker.CreateContainerOptsArgs(startCommand, networkName)
+		// docker.CreateContainerOptsArgs(startCommand, networkName)
+		docker.StartCreateContainer(startCommand.ImageName, startCommand.ContainerName, startCommand.EntryPointArgs)
 		// docker.CreateContainerOptsArgs(
 		// 	startCommand.ContainerName,
 		// 	startCommand.ImageName,
