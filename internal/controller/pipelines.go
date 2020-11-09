@@ -6,7 +6,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/network"
+
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/docker"
@@ -80,13 +82,20 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//******** STEP 3 - Create the network *************//
-	log.Debug("Create the network")
 	// var networkName = "my-net5"
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
 	}
+
+	log.Debug("Pruning networks")
+	filter := filters.NewArgs()
+
+	pruneReport, err := cli.NetworksPrune(ctx, filter)
+	log.Debug(pruneReport)
+		// var report types.NetworksPruneReport
+	log.Debug("Create the network")
 	var networkCreateOptions types.NetworkCreate
 	networkCreateOptions.CheckDuplicate = true
 	networkCreateOptions.Attachable = true
