@@ -177,7 +177,6 @@ func StopContainer(containerId string) bool {
 // 6) Start the container
 // 7) Return containerStart response
 func StartCreateContainer(imageName string, containerName string, entryArgs []string) (container.ContainerCreateCreatedBody, error) {
-	log.Debug("Build context and client")
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -217,7 +216,7 @@ func StartCreateContainer(imageName string, containerName string, entryArgs []st
 	if err != nil {
 		panic(err)
 	}
-	log.Debug("Created container " + containerName)
+	log.Debug("\tCreated container " + containerName)
 
 	// Start container
 	err = cli.ContainerStart(ctx, containerCreateResponse.ID, types.ContainerStartOptions{})
@@ -225,7 +224,7 @@ func StartCreateContainer(imageName string, containerName string, entryArgs []st
 		log.Error(err)
 		panic("Failed to start container")
 	}
-	log.Debug("Started container")
+	log.Debug("\tStarted container")
 
 	return containerCreateResponse, nil
 }

@@ -109,13 +109,15 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	log.Debug("Created network", man.NetworkName)
+
+	_ = resp
 	// log.Debug(resp.ID, resp.Warning)
 
 	//******** STEP 4 - Create, Start, attach all containers *************//
 	log.Debug("Start all containers")
 
 	for _, startCommand := range man.GetContainerStart() {
-		log.Info("\tCreating ", startCommand.ContainerName, " from ", startCommand.ImageName, ":", startCommand.ImageTag)
+		log.Info("Creating ", startCommand.ContainerName, " from ", startCommand.ImageName, ":", startCommand.ImageTag)
 		containerCreateResponse, err := docker.StartCreateContainer(startCommand.ImageName, startCommand.ContainerName, startCommand.EntryPointArgs)
 		log.Info("\tSuccessfully created with args: ", startCommand.EntryPointArgs)
 		if err != nil {
@@ -128,8 +130,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			panic(err)
 		}
-		log.Debug("Connected ", resp.ID, "to network", startCommand.NetworkName)
-
+		log.Debug("\tConnected to network", startCommand.NetworkName)
 	}
 
 	// Finally, return 200
