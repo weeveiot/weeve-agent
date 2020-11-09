@@ -3,6 +3,7 @@ package docker
 
 import (
 	"fmt"
+	"os"
 
 	"bytes"
 	"context"
@@ -11,12 +12,76 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
 
 	"github.com/davecgh/go-spew/spew"
 )
+
+func StartContainers() bool {
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Error(err)
+	}
+
+	options := types.ContainerListOptions{All: true}
+	containers, err := cli.ContainerList(ctx, options)
+	if err != nil {
+		log.Error(err)
+	}
+
+	for _, container := range containers {
+		fmt.Print("Startings container ", container.ID[:10], "... ", container.State)
+		// if "State": "running"
+
+		if container.State != "running" {
+
+			if err := cli.ContainerStart(ctx, container.ID, types.ContainerStartOptions{}); err != nil {
+				log.Error(err)
+			}
+		}
+		fmt.Println("Success")
+	}
+	return true
+}
+
+func StartContainer(containerId string) bool {
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Error(err)
+	}
+
+	err = cli.ContainerStart(ctx, containerId, types.ContainerStartOptions{})
+	if err != nil {
+		log.Error(err)
+		return false
+	}
+
+	//TODO: Wait for containers
+	// statusCh, errCh := cli.ContainerWait(ctx, containerId, container.WaitConditionNotRunning)
+	// select {
+	// case err := <-errCh:
+	// 	if err != nil {
+	// log.Error(err)
+	// 		return false
+	// 	}
+	// case <-statusCh:
+	// }
+
+	out, err := cli.ContainerLogs(ctx, containerId, types.ContainerLogsOptions{ShowStdout: true})
+	if err != nil {
+		log.Error(err)
+		return false
+	}
+
+	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
+
+	return true
+}
 
 func ReadAllContainers() []types.Container {
 	log.Debug("Docker_container -> ReadAllContainers")
@@ -103,25 +168,7 @@ func StopContainer(containerId string) bool {
 
 	return true
 }
-func AttachContainerNetwork(containerID string, networkName string) (error) {
-	// DOCKER CLIENT //////////
-	log.Debug("Build context and client")
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(err)
-		panic(err)
-	}
 
-	var netConfig network.EndpointSettings
-	err = cli.NetworkConnect(ctx, networkName, containerID, &netConfig)
-	if err != nil {
-		panic(err)
-	}
-	log.Debug("Connected ", containerID, "to network", networkName)
-	return nil
-
-}
 func StartCreateContainer(imageName string, containerName string, entryArgs []string) (container.ContainerCreateCreatedBody, error) {
 	// DOCKER CLIENT //////////
 	log.Debug("Build context and client")
@@ -142,12 +189,11 @@ func StartCreateContainer(imageName string, containerName string, entryArgs []st
 		ExposedPorts: nil,
 	}
 
-
 	hostConfig := &container.HostConfig{
 		PortBindings: nil,
-		NetworkMode: "bridge",
+		NetworkMode:  "bridge",
 		RestartPolicy: container.RestartPolicy{
-			Name: "on-failure",
+			Name:              "on-failure",
 			MaximumRetryCount: 100,
 		},
 	}
@@ -203,7 +249,7 @@ func CreateContainerOptsArgs(startCmd model.StartCommand, networkName string) bo
 
 	hostConfig := &container.HostConfig{
 		PortBindings: startCmd.PortBinding,
-		NetworkMode: startCmd.NetworkMode,
+		NetworkMode:  startCmd.NetworkMode,
 	}
 
 	resp, err := cli.ContainerCreate(ctx,
