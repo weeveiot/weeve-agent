@@ -170,8 +170,16 @@ func StopContainer(containerId string) bool {
 	return true
 }
 
+// StartCreateContainer is a utility function based on the Docker SDK
+// The flow of logic;
+// 1) Instantiate the docker client object
+// 2) Configure the container with imageName and entryArgs
+// 3) Configure the host with the network configuration and restart policy
+// 4) Configure the network with endpoints
+// 5) Create the container with the above 3 configurations, and the container name
+// 6) Start the container
+// 7) Return containerStart response
 func StartCreateContainer(imageName string, containerName string, entryArgs []string) (container.ContainerCreateCreatedBody, error) {
-	// DOCKER CLIENT //////////
 	log.Debug("Build context and client")
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
