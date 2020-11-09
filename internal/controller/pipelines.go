@@ -93,7 +93,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	filter := filters.NewArgs()
 
 	pruneReport, err := cli.NetworksPrune(ctx, filter)
-	log.Debug(pruneReport)
+	log.Debug("Pruned:", pruneReport)
 		// var report types.NetworksPruneReport
 	log.Debug("Create the network")
 	var networkCreateOptions types.NetworkCreate
@@ -101,15 +101,15 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	networkCreateOptions.Attachable = true
 	// var networkCreateOptions = &NetworkCreate
 
-	_ = ctx
-	_ = cli
-	fmt.Println(networkCreateOptions)
+	// _ = ctx
+	// _ = cli
+	// fmt.Println(networkCreateOptions)
 	resp, err := cli.NetworkCreate(ctx, man.NetworkName, networkCreateOptions)
 	if err != nil {
 		panic(err)
 	}
 	log.Debug("Created network", man.NetworkName)
-	log.Debug(resp.ID, resp.Warning)
+	// log.Debug(resp.ID, resp.Warning)
 
 	//******** STEP 4 - Create, Start, attach all containers *************//
 	log.Debug("Start all containers")

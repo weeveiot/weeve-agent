@@ -60,8 +60,8 @@ func ParseJSONManifest(data []byte) (Manifest, error) {
 	}
 
 	thisManifest.Manifest = *jsonParsed
-	thisManifest.ID = thisManifest.Manifest.Search("ID").Data().(string)
-	thisManifest.NetworkName = thisManifest.Manifest.Search("ID").Data().(string)
+	thisManifest.ID 			= thisManifest.Manifest.Search("ID").Data().(string)
+	thisManifest.NetworkName 	= thisManifest.Manifest.Search("Name").Data().(string)
 	thisManifest.NumModules = thisManifest.CountNumModules()
 	if thisManifest.NumModules == 0 {
 		msg := "No modules found in manifest"
@@ -145,7 +145,8 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 
 		var strArgs []string
 		for _, arg := range mod.Search("arguments").Children() {
-			strArgs = append(strArgs, "-"+arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
+			// strArgs = append(strArgs, "-"+arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
+			strArgs = append(strArgs, arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
 		}
 
 		thisStartCommand.EntryPointArgs = strArgs
