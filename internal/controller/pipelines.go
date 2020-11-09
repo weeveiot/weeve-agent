@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/docker"
@@ -31,7 +32,10 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 	// res := util.PrintManifestDetails(body)
-	// util.PrettyPrintJson(body)
+	// util.PrettyPrintJson(manifestBodyBytes)
+	// man.PrintManifest()
+	// man.SpewManifest()
+	// return
 
 	//******** STEP 1 - Pull all *************//
 	// Pull all images as required
@@ -77,7 +81,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 
 	//******** STEP 3 - Create the network *************//
 	log.Debug("Create the network")
-	var networkName = "my-net5"
+	// var networkName = "my-net5"
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -91,27 +95,32 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	_ = ctx
 	_ = cli
 	fmt.Println(networkCreateOptions)
-	resp, err := cli.NetworkCreate(ctx, networkName, networkCreateOptions)
+	resp, err := cli.NetworkCreate(ctx, man.NetworkName, networkCreateOptions)
 	if err != nil {
 		panic(err)
 	}
-	log.Debug("Created network", networkName)
+	log.Debug("Created network", man.NetworkName)
 	log.Debug(resp.ID, resp.Warning)
 
-	//******** STEP 4 - Start all containers *************//
+	//******** STEP 4 - Create, Start, attach all containers *************//
 	log.Debug("Start all containers")
 
 	for _, startCommand := range man.GetContainerStart() {
 		log.Info("\tCreating ", startCommand.ContainerName, " from ", startCommand.ImageName, ":", startCommand.ImageTag)
-		// docker.CreateContainerOptsArgs(startCommand, networkName)
-		docker.StartCreateContainer(startCommand.ImageName, startCommand.ContainerName, startCommand.EntryPointArgs)
-		// docker.CreateContainerOptsArgs(
-		// 	startCommand.ContainerName,
-		// 	startCommand.ImageName,
-		// 	startCommand.ImageTag,
-		// 	startCommand.EntryPointArgs,
-		// )
+		containerCreateResponse, err := docker.StartCreateContainer(startCommand.ImageName, startCommand.ContainerName, startCommand.EntryPointArgs)
 		log.Info("\tSuccessfully created with args: ", startCommand.EntryPointArgs)
+		if err != nil {
+			panic(err)
+		}
+
+		// Attach to network
+		var netConfig network.EndpointSettings
+		err = cli.NetworkConnect(ctx, startCommand.NetworkName, containerCreateResponse.ID, &netConfig)
+		if err != nil {
+			panic(err)
+		}
+		log.Debug("Connected ", resp.ID, "to network", startCommand.NetworkName)
+
 	}
 
 	// Finally, return 200

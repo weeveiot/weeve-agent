@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/Jeffail/gabs/v2"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/docker/go-connections/nat"
 
 	"github.com/docker/docker/api/types/container"
@@ -17,19 +18,22 @@ type Manifest struct {
 	data       []byte
 	Manifest   gabs.Container
 	ID         string
+	NetworkName string
 	NumModules int
 }
 
-type StartCommand struct {
+type ContainerConfig struct {
+	PipelineName   string
 	ContainerName  string
 	ImageName      string
 	ImageTag       string
 	EntryPointArgs []string
 	Options        []OptionKeyVal
+	NetworkName	string
 	ExposedPorts   nat.PortSet // This must be set for the container create
 	PortBinding    nat.PortMap // This must be set for the containerStart
 	NetworkMode	   container.NetworkMode
-	NetworkConfig	network.NetworkingConfig
+	NetworkConfig  network.NetworkingConfig
 }
 
 type OptionKeyVal struct {
@@ -37,7 +41,7 @@ type OptionKeyVal struct {
 	val string
 }
 
-func PrintStartCommand(sc StartCommand) {
+func PrintStartCommand(sc ContainerConfig) {
 	empJSON, err := json.MarshalIndent(sc, "", "  ")
 	if err != nil {
 		log.Fatalf(err.Error())
@@ -57,6 +61,7 @@ func ParseJSONManifest(data []byte) (Manifest, error) {
 
 	thisManifest.Manifest = *jsonParsed
 	thisManifest.ID = thisManifest.Manifest.Search("ID").Data().(string)
+	thisManifest.NetworkName = thisManifest.Manifest.Search("ID").Data().(string)
 	thisManifest.NumModules = thisManifest.CountNumModules()
 	if thisManifest.NumModules == 0 {
 		msg := "No modules found in manifest"
@@ -93,6 +98,11 @@ func (m Manifest) PrintManifest() {
 	}
 }
 
+func (m Manifest) SpewManifest() {
+	spew.Dump(m)
+	// spew.Printf("%v", m)
+}
+
 func (m Manifest) ContainerNamesList() []string {
 	var containerNamesList []string
 	for _, mod := range m.Manifest.Search("Modules").Children() {
@@ -109,11 +119,13 @@ func GetContainerName(pipelineID string, containerName string) string {
 	return pipelineID + "_" + containerName
 }
 
-func (m Manifest) GetContainerStart() []StartCommand {
-	var startCommands []StartCommand
+// Return a list of container start objects
+func (m Manifest) GetContainerStart() []ContainerConfig {
+	var startCommands []ContainerConfig
 	for _, mod := range m.Manifest.Search("Modules").Children() {
-		var thisStartCommand StartCommand
-
+		var thisStartCommand ContainerConfig
+		thisStartCommand.PipelineName = m.Manifest.Search("Name").Data().(string)
+		thisStartCommand.NetworkName = m.Manifest.Search("Name").Data().(string)
 		thisStartCommand.NetworkMode = "" // This is the default setting
 
 		thisStartCommand.ContainerName = GetContainerName(m.Manifest.Search("ID").Data().(string), mod.Search("Name").Data().(string))
