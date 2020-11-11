@@ -1,14 +1,23 @@
 package controller
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
+	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/network"
+
+	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/docker"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
+
+	"github.com/docker/docker/api/types"
 )
+
+
 
 func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	log.Info("POST /pipeline")
@@ -25,7 +34,10 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 	// res := util.PrintManifestDetails(body)
-	// util.PrettyPrintJson(body)
+	// util.PrettyPrintJson(manifestBodyBytes)
+	// man.PrintManifest()
+	// man.SpewManifest()
+	// return
 
 	//******** STEP 1 - Pull all *************//
 	// Pull all images as required
@@ -69,18 +81,56 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	//******** STEP 3 - Start all containers *************//
+	//******** STEP 3 - Create the network *************//
+	// var networkName = "my-net5"
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Error(err)
+	}
+
+	log.Debug("Pruning networks")
+	filter := filters.NewArgs()
+
+	pruneReport, err := cli.NetworksPrune(ctx, filter)
+	log.Debug("Pruned:", pruneReport)
+		// var report types.NetworksPruneReport
+	log.Debug("Create the network")
+	var networkCreateOptions types.NetworkCreate
+	networkCreateOptions.CheckDuplicate = true
+	networkCreateOptions.Attachable = true
+	// var networkCreateOptions = &NetworkCreate
+
+	// _ = ctx
+	// _ = cli
+	// fmt.Println(networkCreateOptions)
+	resp, err := cli.NetworkCreate(ctx, man.NetworkName, networkCreateOptions)
+	if err != nil {
+		panic(err)
+	}
+	log.Debug("Created network", man.NetworkName)
+
+	_ = resp
+	// log.Debug(resp.ID, resp.Warning)
+
+	//******** STEP 4 - Create, Start, attach all containers *************//
 	log.Debug("Start all containers")
 
 	for _, startCommand := range man.GetContainerStart() {
-		log.Info("\tCreating ", startCommand.ContainerName, " from ", startCommand.ImageName, ":", startCommand.ImageTag)
-		docker.CreateContainerOptsArgs(
-			startCommand.ContainerName,
-			startCommand.ImageName,
-			startCommand.ImageTag,
-			startCommand.EntryPointArgs,
-		)
+		log.Info("Creating ", startCommand.ContainerName, " from ", startCommand.ImageName, ":", startCommand.ImageTag)
+		containerCreateResponse, err := docker.StartCreateContainer(startCommand.ImageName, startCommand.ContainerName, startCommand.EntryPointArgs)
 		log.Info("\tSuccessfully created with args: ", startCommand.EntryPointArgs)
+		if err != nil {
+			panic(err)
+		}
+
+		// Attach to network
+		var netConfig network.EndpointSettings
+		err = cli.NetworkConnect(ctx, startCommand.NetworkName, containerCreateResponse.ID, &netConfig)
+		if err != nil {
+			panic(err)
+		}
+		log.Debug("\tConnected to network", startCommand.NetworkName)
 	}
 
 	// Finally, return 200
