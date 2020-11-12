@@ -11,9 +11,9 @@ func Status(w http.ResponseWriter, r *http.Request) {
 	log.Debug("GET / (status)")
 	json := simplejson.New()
 	json.Set("status", "ok")
-	json.Set("name", "Edge Pipeline Service")
+	json.Set("name", "Node Service")
 	json.Set("location", "SIMULATION")
-	json.Set("version", "0.1.0")
+	json.Set("version", "0.1.1")
 	payload, err := json.MarshalJSON()
 	if err != nil {
 		log.Println(err)
