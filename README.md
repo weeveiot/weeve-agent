@@ -14,6 +14,9 @@ A data model for the manifest object and supporting structures is found in the i
 ## Getting started for Users
 
 ### Compiled binary
+The latest binary can be downloaded from S3 bucket : 
+https://weeve-binaries-release.s3.eu-central-1.amazonaws.com/node-service/node-service-0-1-1
+
 The compiled binary found as a release can be executed by specifying the port to be exposed;
 
 `./node-service -v -p 8030`
