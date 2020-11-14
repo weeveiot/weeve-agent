@@ -59,7 +59,8 @@ func PullImage(imageName string) bool {
 	}
 	// defer out.Close()
 
-	// io.Copy(os.Stdout, out)
+	// To write all
+	//io.Copy(os.Stdout, out)
 
     d := json.NewDecoder(events)
 
@@ -81,11 +82,7 @@ func PullImage(imageName string) bool {
             }
             panic(err)
 		}
-        // fmt.Printf(".")
-		// fmt.Printf("EVENT: %+v\n", event)
-        // fmt.Printf(".\n")
 	}
-	// fmt.Printf("\n")
 
     // Latest event for new image
     // EVENT: {Status:Status: Downloaded newer image for busybox:latest Error: Progress:[==================================================>]  699.2kB/699.2kB ProgressDetail:{Current:699243 Total:699243}}
