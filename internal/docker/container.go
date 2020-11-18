@@ -177,6 +177,7 @@ func StopContainer(containerId string) bool {
 // 6) Start the container
 // 7) Return containerStart response
 func StartCreateContainer(imageName string, containerName string, entryArgs []string) (container.ContainerCreateCreatedBody, error) {
+	log.Debug("\tCreating from " + imageName + " container " + containerName)
 	ctx := context.Background()
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {

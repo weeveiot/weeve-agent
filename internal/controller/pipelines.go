@@ -119,7 +119,8 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 
 	for _, startCommand := range man.GetContainerStart() {
 		log.Info("Creating ", startCommand.ContainerName, " from ", startCommand.ImageName, ":", startCommand.ImageTag)
-		containerCreateResponse, err := docker.StartCreateContainer(startCommand.ImageName, startCommand.ContainerName, startCommand.EntryPointArgs)
+		imageAndTag :=  startCommand.ImageName + ":" + startCommand.ImageTag
+		containerCreateResponse, err := docker.StartCreateContainer(imageAndTag, startCommand.ContainerName, startCommand.EntryPointArgs)
 		log.Info("\tSuccessfully created with args: ", startCommand.EntryPointArgs)
 		if err != nil {
 			panic(err)
