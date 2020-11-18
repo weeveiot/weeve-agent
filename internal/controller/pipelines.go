@@ -17,8 +17,6 @@ import (
 	"github.com/docker/docker/api/types"
 )
 
-
-
 func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	log.Info("POST /pipeline")
 
@@ -94,7 +92,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 
 	pruneReport, err := cli.NetworksPrune(ctx, filter)
 	log.Debug("Pruned:", pruneReport)
-		// var report types.NetworksPruneReport
+	// var report types.NetworksPruneReport
 	log.Debug("Create the network")
 	var networkCreateOptions types.NetworkCreate
 	networkCreateOptions.CheckDuplicate = true
@@ -106,9 +104,12 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	// fmt.Println(networkCreateOptions)
 	resp, err := cli.NetworkCreate(ctx, man.NetworkName, networkCreateOptions)
 	if err != nil {
+		log.Error(err)
+		log.Error("Error trying to create network " + man.NetworkName)
 		panic(err)
+
 	}
-	log.Debug("Created network", man.NetworkName)
+	log.Debug("Created network named ", man.NetworkName)
 
 	_ = resp
 	// log.Debug(resp.ID, resp.Warning)
