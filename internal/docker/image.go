@@ -62,39 +62,42 @@ func PullImage(imageName string) bool {
 	// To write all
 	//io.Copy(os.Stdout, out)
 
-    d := json.NewDecoder(events)
+	d := json.NewDecoder(events)
 
-    type Event struct {
-        Status         string `json:"status"`
-        Error          string `json:"error"`
-        Progress       string `json:"progress"`
-        ProgressDetail struct {
-            Current int `json:"current"`
-            Total   int `json:"total"`
-        } `json:"progressDetail"`
-    }
-
-    var event *Event
-    for {
-        if err := d.Decode(&event); err != nil {
-            if err == io.EOF {
-                break
-            }
-            panic(err)
-		}
+	type Event struct {
+		Status         string `json:"status"`
+		Error          string `json:"error"`
+		Progress       string `json:"progress"`
+		ProgressDetail struct {
+			Current int `json:"current"`
+			Total   int `json:"total"`
+		} `json:"progressDetail"`
 	}
 
-    // Latest event for new image
-    // EVENT: {Status:Status: Downloaded newer image for busybox:latest Error: Progress:[==================================================>]  699.2kB/699.2kB ProgressDetail:{Current:699243 Total:699243}}
-    // Latest event for up-to-date image
-    // EVENT: {Status:Status: Image is up to date for busybox:latest Error: Progress: ProgressDetail:{Current:0 Total:0}}
-    if event != nil {
-        if strings.Contains(event.Status, fmt.Sprintf("Downloaded newer image for %s", imageName)) {
+	var event *Event
+	for {
+		if err := d.Decode(&event); err != nil {
+			if err == io.EOF {
+				break
+			}
+			panic(err)
+		}
+		// fmt.Printf(".")
+		// fmt.Printf("EVENT: %+v\n", event)
+		// fmt.Printf(".\n")
+	}
+
+	// Latest event for new image
+	// EVENT: {Status:Status: Downloaded newer image for busybox:latest Error: Progress:[==================================================>]  699.2kB/699.2kB ProgressDetail:{Current:699243 Total:699243}}
+	// Latest event for up-to-date image
+	// EVENT: {Status:Status: Image is up to date for busybox:latest Error: Progress: ProgressDetail:{Current:0 Total:0}}
+	if event != nil {
+		if strings.Contains(event.Status, fmt.Sprintf("Downloaded newer image for %s", imageName)) {
 			log.Info("Pulled image " + imageName + " into host")
-        }
-        if strings.Contains(event.Status, fmt.Sprintf("Image is up to date for %s", imageName)) {
+		}
+		if strings.Contains(event.Status, fmt.Sprintf("Image is up to date for %s", imageName)) {
 			log.Info("Updated image " + imageName + " into host")
-        }
+		}
 	}
 
 	return true
@@ -205,6 +208,7 @@ func SearchImages(term string, id string, tag string) []registry.SearchResult {
 }
 
 func CreateImage(id string, dataMap map[string]string) io.ReadCloser {
+	panic("TODO - Refactor this")
 	// For internal images created with our sources
 	// https://github.com/moby/moby/blob/master/client/image_build.go#L20
 
