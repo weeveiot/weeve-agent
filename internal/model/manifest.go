@@ -15,11 +15,11 @@ import (
 )
 
 type Manifest struct {
-	data       []byte
-	Manifest   gabs.Container
-	ID         string
+	data        []byte
+	Manifest    gabs.Container
+	ID          string
 	NetworkName string
-	NumModules int
+	NumModules  int
 }
 
 type ContainerConfig struct {
@@ -29,10 +29,10 @@ type ContainerConfig struct {
 	ImageTag       string
 	EntryPointArgs []string
 	Options        []OptionKeyVal
-	NetworkName	string
+	NetworkName    string
 	ExposedPorts   nat.PortSet // This must be set for the container create
 	PortBinding    nat.PortMap // This must be set for the containerStart
-	NetworkMode	   container.NetworkMode
+	NetworkMode    container.NetworkMode
 	NetworkConfig  network.NetworkingConfig
 }
 
@@ -56,12 +56,13 @@ func ParseJSONManifest(data []byte) (Manifest, error) {
 	thisManifest.data = data
 	jsonParsed, err := gabs.ParseJSON(thisManifest.data)
 	if err != nil {
+		log.Error(err)
 		return Manifest{}, err
 	}
 
 	thisManifest.Manifest = *jsonParsed
-	thisManifest.ID 			= thisManifest.Manifest.Search("ID").Data().(string)
-	thisManifest.NetworkName 	= thisManifest.Manifest.Search("Name").Data().(string)
+	thisManifest.ID = thisManifest.Manifest.Search("ID").Data().(string)
+	thisManifest.NetworkName = thisManifest.Manifest.Search("Name").Data().(string)
 	thisManifest.NumModules = thisManifest.CountNumModules()
 	if thisManifest.NumModules == 0 {
 		msg := "No modules found in manifest"
@@ -146,7 +147,8 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 		var strArgs []string
 		for _, arg := range mod.Search("arguments").Children() {
 			// strArgs = append(strArgs, "-"+arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
-			strArgs = append(strArgs, arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
+			// strArgs = append(strArgs, arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
+			strArgs = append(strArgs, arg.Search("arg").Data().(string)+"="+arg.Search("val").Data().(string))
 		}
 
 		thisStartCommand.EntryPointArgs = strArgs
@@ -180,7 +182,7 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 				thisStartCommand.PortBinding = nat.PortMap{
 					nat.Port(ExposedPorts): []nat.PortBinding{
 						{
-							HostIP: HostIP,
+							HostIP:   HostIP,
 							HostPort: HostPort,
 						},
 					},

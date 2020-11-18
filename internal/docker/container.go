@@ -178,7 +178,7 @@ func StopContainer(containerId string) bool {
 // 7) Return containerStart response
 func StartCreateContainer(imageName string, containerName string, entryArgs []string) (container.ContainerCreateCreatedBody, error) {
 	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
 		panic(err)
@@ -207,7 +207,7 @@ func StartCreateContainer(imageName string, containerName string, entryArgs []st
 		EndpointsConfig: map[string]*network.EndpointSettings{},
 	}
 
-	containerCreateResponse, err := cli.ContainerCreate(ctx,
+	containerCreateResponse, err := dockerClient.ContainerCreate(ctx,
 		containerConfig,
 		hostConfig,
 		networkConfig,
@@ -219,7 +219,7 @@ func StartCreateContainer(imageName string, containerName string, entryArgs []st
 	log.Debug("\tCreated container " + containerName)
 
 	// Start container
-	err = cli.ContainerStart(ctx, containerCreateResponse.ID, types.ContainerStartOptions{})
+	err = dockerClient.ContainerStart(ctx, containerCreateResponse.ID, types.ContainerStartOptions{})
 	if err != nil {
 		log.Error(err)
 		panic("Failed to start container")
@@ -256,12 +256,12 @@ func StopAndRemoveContainer(containerName string) error {
 
 // ContainerExists returns status of container existance as true or false
 func ContainerExists(containerName string) bool {
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
 	}
 	options := types.ContainerListOptions{All: true}
-	containers, err := cli.ContainerList(context.Background(), options)
+	containers, err := dockerClient.ContainerList(context.Background(), options)
 	if err != nil {
 		log.Error(err)
 	}
@@ -279,14 +279,14 @@ func ContainerExists(containerName string) bool {
 
 func CreateContainer(containerName string, imageName string) bool {
 	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
 		// log.Error(err)
 		return false
 	}
 
-	resp, err := cli.ContainerCreate(ctx, &container.Config{
+	resp, err := dockerClient.ContainerCreate(ctx, &container.Config{
 		Image: imageName,
 		Cmd:   []string{"echo", "Container " + containerName + " created"},
 	}, &container.HostConfig{}, &network.NetworkingConfig{}, nil, containerName)
