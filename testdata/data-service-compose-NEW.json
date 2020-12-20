@@ -1,0 +1,14 @@
+{
+    "networks": {
+        "mosquitto-net": null
+      },
+    "services": {
+        "broker":{
+            "image": "weevenetwork/mosquitto_broker",
+            "network":"mosquitto-net",
+            "command": [
+                "-p=1880"
+            ]
+        }
+    }
+}
