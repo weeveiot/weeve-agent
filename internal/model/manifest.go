@@ -2,7 +2,6 @@ package model
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	"github.com/Jeffail/gabs/v2"
@@ -17,9 +16,9 @@ import (
 type Manifest struct {
 	data        []byte
 	Manifest    gabs.Container
-	ID          string
-	NetworkName string
-	NumModules  int
+	Name          string `json:"name"`
+	NetworkName string `json:"name"`
+	// NumModules  int
 }
 
 type ContainerConfig struct {
@@ -61,14 +60,18 @@ func ParseJSONManifest(data []byte) (Manifest, error) {
 	}
 
 	thisManifest.Manifest = *jsonParsed
-	thisManifest.ID = thisManifest.Manifest.Search("ID").Data().(string)
-	thisManifest.NetworkName = thisManifest.Manifest.Search("Name").Data().(string)
-	thisManifest.NumModules = thisManifest.CountNumModules()
-	if thisManifest.NumModules == 0 {
-		msg := "No modules found in manifest"
-		log.Error(msg)
-		return Manifest{}, errors.New(msg)
-	}
+	thisManifest.Name = thisManifest.Manifest.Search("name").Data().(string)
+	// thisManifest.Manifest.Search("compose").Search("network")
+	// thisManifest.Manifest.Search("compose").Search("network").Search("name").Data().(string)
+	thisManifest.NetworkName = thisManifest.Manifest.Search("compose").Search("network").Search("name").Data().(string)
+	// .Data().Search("name").(string)
+	// thisManifest.NetworkName = thisManifest.Manifest.Search("Name").Data().(string)
+	// thisManifest.NumModules = thisManifest.CountNumModules()
+	// if thisManifest.NumModules == 0 {
+	// 	msg := "No modules found in manifest"
+	// 	log.Error(msg)
+	// 	return Manifest{}, errors.New(msg)
+	// }
 	return thisManifest, nil
 }
 
