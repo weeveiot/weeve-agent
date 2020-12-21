@@ -18,9 +18,7 @@
                 "name": "broker",
                 "description": "Standard Mosquitto broker",
                 "version": "1.0.0",
-                "network": [
-                    "mosquitto-net"
-                ],
+                "network": "mosquitto-net",
                 "image": {
                     "name": "weevenetwork/mosquitto_broker",
                     "tag": "latest"
