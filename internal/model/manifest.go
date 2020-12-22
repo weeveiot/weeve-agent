@@ -16,7 +16,7 @@ import (
 type Manifest struct {
 	data        []byte
 	Manifest    gabs.Container
-	Name          string `json:"name"`
+	Name        string `json:"name"`
 	NetworkName string `json:"name"`
 	// NumModules  int
 }
@@ -81,8 +81,8 @@ func (m Manifest) CountNumModules() int {
 
 func (m Manifest) ImageNamesList() []string {
 	var imageNamesList []string
-	for _, mod := range m.Manifest.Search("Modules").Children() {
-		imageNamesList = append(imageNamesList, mod.Search("ImageName").Data().(string)+":"+mod.Search("Tag").Data().(string))
+	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
+		imageNamesList = append(imageNamesList, mod.Search("image").Search("name").Data().(string)+":"+mod.Search("image").Search("tag").Data().(string))
 	}
 	return imageNamesList
 }
