@@ -17,7 +17,7 @@ var manifestBytesMVP []byte
 
 func TestMain(m *testing.M) {
 
-	manifestBytesMVP = LoadJsonBytes("data-service-compose-NEW.json")
+	manifestBytesMVP = LoadJsonBytes("testdata/data-service-compose-NEW.json")
 	// manifestBytesSimple = LoadJsonBytes("test_manifest1.json")
 	// manifestBytesNoModules = LoadJsonBytes("test_manifest_no_modules.json")
 	// manifestBytes3nodesBroker = LoadJsonBytes("test_manifest_3broker.json")
@@ -43,7 +43,6 @@ func LoadJsonBytes(manName string) []byte {
 	return manifestBytes
 }
 func TestManifestCreate(t *testing.T) {
-
 	manifest, err := ParseJSONManifest(manifestBytesMVP)
 	if err != nil {
 		panic(err)
@@ -52,6 +51,21 @@ func TestManifestCreate(t *testing.T) {
 	fmt.Println("Manifest", manifest.Name)
 
 	// assert.Equal(t, manifest.ID, "test-manifest-1")
+}
+
+func TestEmptyServices(t *testing.T) {
+	// Parse the JSON, returns error
+	// Assert failure
+}
+
+func TestInvalidJSON(t *testing.T) {
+	// Parse the JSON, returns error
+	// Assert failure
+}
+
+func TestMissingImageName(t *testing.T) {
+	// Parse the JSON, returns error
+	// Assert failure
 }
 
 // func TestManifestFailNoModules(t *testing.T) {

@@ -18,7 +18,7 @@ type Manifest struct {
 	Manifest    gabs.Container
 	Name        string `json:"name"`
 	NetworkName string `json:"name"`
-	// NumModules  int
+	NumModules  int
 }
 
 type ContainerConfig struct {
@@ -49,6 +49,14 @@ func PrintStartCommand(sc ContainerConfig) {
 }
 
 // Create a Manifest type
+/* The manifest type holds the parsed JSON of a manifest file, as well as
+several convenience attributes.
+
+The manifest JSON object itself is parsed into a golang 'gabs' object.
+(see https://github.com/Jeffail/gabs)
+
+Additionally,
+*/
 func ParseJSONManifest(data []byte) (Manifest, error) {
 	log.Debug("Parsing data into arbitrary JSON")
 	var thisManifest = Manifest{}
@@ -66,7 +74,7 @@ func ParseJSONManifest(data []byte) (Manifest, error) {
 	thisManifest.NetworkName = thisManifest.Manifest.Search("compose").Search("network").Search("name").Data().(string)
 	// .Data().Search("name").(string)
 	// thisManifest.NetworkName = thisManifest.Manifest.Search("Name").Data().(string)
-	// thisManifest.NumModules = thisManifest.CountNumModules()
+	thisManifest.NumModules = thisManifest.CountNumModules()
 	// if thisManifest.NumModules == 0 {
 	// 	msg := "No modules found in manifest"
 	// 	log.Error(msg)
@@ -75,9 +83,15 @@ func ParseJSONManifest(data []byte) (Manifest, error) {
 	return thisManifest, nil
 }
 
-func (m Manifest) CountNumModules() int {
-	return len(m.Manifest.Search("Modules").Children())
-}
+// func (m Manifest) CountNumModules() int {
+// 	// t.Logf("%d", i)
+// 	// t.Logf("COUNT")
+// 	fmt.Println("COUNT")
+
+
+// 	// return len(m.Manifest.Search("compose")
+// 	// return len(m.Manifest.Search("Modules").Children())
+// }
 
 func (m Manifest) ImageNamesList() []string {
 	var imageNamesList []string
