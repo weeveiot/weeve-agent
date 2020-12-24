@@ -2,7 +2,9 @@ package model
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/davecgh/go-spew/spew"
@@ -69,29 +71,10 @@ func ParseJSONManifest(data []byte) (Manifest, error) {
 
 	thisManifest.Manifest = *jsonParsed
 	thisManifest.Name = thisManifest.Manifest.Search("name").Data().(string)
-	// thisManifest.Manifest.Search("compose").Search("network")
-	// thisManifest.Manifest.Search("compose").Search("network").Search("name").Data().(string)
 	thisManifest.NetworkName = thisManifest.Manifest.Search("compose").Search("network").Search("name").Data().(string)
-	// .Data().Search("name").(string)
-	// thisManifest.NetworkName = thisManifest.Manifest.Search("Name").Data().(string)
-	thisManifest.NumModules = thisManifest.CountNumModules()
-	// if thisManifest.NumModules == 0 {
-	// 	msg := "No modules found in manifest"
-	// 	log.Error(msg)
-	// 	return Manifest{}, errors.New(msg)
-	// }
+
 	return thisManifest, nil
 }
-
-// func (m Manifest) CountNumModules() int {
-// 	// t.Logf("%d", i)
-// 	// t.Logf("COUNT")
-// 	fmt.Println("COUNT")
-
-
-// 	// return len(m.Manifest.Search("compose")
-// 	// return len(m.Manifest.Search("Modules").Children())
-// }
 
 func (m Manifest) ImageNamesList() []string {
 	var imageNamesList []string
@@ -99,6 +82,26 @@ func (m Manifest) ImageNamesList() []string {
 		imageNamesList = append(imageNamesList, mod.Search("image").Search("name").Data().(string)+":"+mod.Search("image").Search("tag").Data().(string))
 	}
 	return imageNamesList
+}
+
+// func (m Manifest) CountNumModules() int {
+// 	// t.Logf("%d", i)
+// 	// t.Logf("COUNT")
+// 	fmt.Println("COUNT")
+
+// 	// return len(m.Manifest.Search("compose")
+// 	// return len(m.Manifest.Search("Modules").Children())
+// }
+
+func (m Manifest) ValidateManifest() error {
+	var errorList []string
+	mod := m.Manifest.Search("compose").Search("services").Children()
+
+	if mod == nil || len(mod) < 1 {
+		errorList = append(errorList, "Please provide at least one service")
+	}
+
+	return errors.New(strings.Join(errorList[:], ","))
 }
 
 func (m Manifest) PrintManifest() {

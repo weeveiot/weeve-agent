@@ -17,7 +17,7 @@ var manifestBytesMVP []byte
 
 func TestMain(m *testing.M) {
 
-	manifestBytesMVP = LoadJsonBytes("testdata/data-service-compose-NEW.json")
+	manifestBytesMVP = LoadJsonBytes("newFormat020/workingMVP.json")
 	// manifestBytesSimple = LoadJsonBytes("test_manifest1.json")
 	// manifestBytesNoModules = LoadJsonBytes("test_manifest_no_modules.json")
 	// manifestBytes3nodesBroker = LoadJsonBytes("test_manifest_3broker.json")
@@ -42,6 +42,15 @@ func LoadJsonBytes(manName string) []byte {
 	}
 	return manifestBytes
 }
+
+func TestInvalidJson(t *testing.T) {
+	json := LoadJsonBytes("newFormat020/failInvalidJSON.json")
+	_, err := ParseJSONManifest(json)
+	if err == nil {
+		t.Error("Json parsing should fail")
+	}
+}
+
 func TestManifestCreate(t *testing.T) {
 	manifest, err := ParseJSONManifest(manifestBytesMVP)
 	if err != nil {
