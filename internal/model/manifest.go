@@ -2,9 +2,7 @@ package model
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/davecgh/go-spew/spew"
@@ -92,17 +90,6 @@ func (m Manifest) ImageNamesList() []string {
 // 	// return len(m.Manifest.Search("compose")
 // 	// return len(m.Manifest.Search("Modules").Children())
 // }
-
-func (m Manifest) ValidateManifest() error {
-	var errorList []string
-	mod := m.Manifest.Search("compose").Search("services").Children()
-
-	if mod == nil || len(mod) < 1 {
-		errorList = append(errorList, "Please provide at least one service")
-	}
-
-	return errors.New(strings.Join(errorList[:], ","))
-}
 
 func (m Manifest) PrintManifest() {
 	for _, mod := range m.Manifest.Search("Modules").Children() {

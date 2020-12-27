@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func (m Manifest) validatemanifest() error {
+func ValidateManifest(m Manifest) error {
 	var errorList []string
 	mod := m.Manifest.Search("compose").Children()
 	if mod == nil {

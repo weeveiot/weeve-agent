@@ -14,6 +14,8 @@ import (
 )
 
 var manifestBytesMVP []byte
+var filePath string
+var errMsg string
 
 func TestMain(m *testing.M) {
 
@@ -43,6 +45,19 @@ func LoadJsonBytes(manName string) []byte {
 	return manifestBytes
 }
 
+func ExecuteTest(t *testing.T, throwsError bool) {
+	json := LoadJsonBytes(filePath)
+	m, err := ParseJSONManifest(json)
+	if err != nil {
+		t.Error("Json parsing failed")
+	}
+
+	err = ValidateManifest(m)
+	if (err != nil) == throwsError {
+		t.Error(errMsg)
+	}
+}
+
 func TestInvalidJson(t *testing.T) {
 	json := LoadJsonBytes("newFormat020/failInvalidJSON.json")
 	_, err := ParseJSONManifest(json)
@@ -51,30 +66,22 @@ func TestInvalidJson(t *testing.T) {
 	}
 }
 
-func TestManifestCreate(t *testing.T) {
-	manifest, err := ParseJSONManifest(manifestBytesMVP)
-	if err != nil {
-		panic(err)
-	}
-	// fmt.Println("Manifest", manifest.ID, "with", manifest.NumModules, "modules")
-	fmt.Println("Manifest", manifest.Name)
-
-	// assert.Equal(t, manifest.ID, "test-manifest-1")
-}
-
 func TestEmptyServices(t *testing.T) {
-	// Parse the JSON, returns error
-	// Assert failure
-}
-
-func TestInvalidJSON(t *testing.T) {
-	// Parse the JSON, returns error
-	// Assert failure
+	filePath = "newFormat020/failEmptyServices.json"
+	errMsg = "Should throw validation error: Please provide at least one service"
+	ExecuteTest(t, true)
 }
 
 func TestMissingImageName(t *testing.T) {
-	// Parse the JSON, returns error
-	// Assert failure
+	filePath = "newFormat020/failMissingImageName.json"
+	errMsg = "Should throw validation error: Please provide image name"
+	ExecuteTest(t, true)
+}
+
+func TestWorkingManifest(t *testing.T) {
+	filePath = "newFormat020/workingMVP.json"
+	errMsg = "Should not throw any error"
+	ExecuteTest(t, false)
 }
 
 // func TestManifestFailNoModules(t *testing.T) {
