@@ -25,12 +25,17 @@ func ValidateManifest(m Manifest) error {
 				errorList = append(errorList, "Please provide name for all services")
 			}
 
-			imageName := srv.Search("image").Search("name").Data().(string)
-			if imageName == "" {
+			imageName := srv.Search("image").Search("name").Data()
+			if imageName == nil {
 				errorList = append(errorList, "Please provide image name for all services")
 			}
 		}
 	}
 
-	return errors.New(strings.Join(errorList[:], ","))
+	if len(errorList) > 0 {
+		return errors.New(strings.Join(errorList[:], ","))
+	} else {
+		return nil
+	}
+
 }
