@@ -12,6 +12,16 @@ func ValidateManifest(m Manifest) error {
 		errorList = append(errorList, "Please provide compose")
 	}
 
+	net := m.Manifest.Search("compose").Search("network").Children()
+	if net == nil {
+		errorList = append(errorList, "Please provide network details")
+	}
+
+	netName := m.Manifest.Search("compose").Search("network").Search("name").Data()
+	if netName == nil {
+		errorList = append(errorList, "Please provide network name")
+	}
+
 	mod = m.Manifest.Search("compose").Search("services").Children()
 
 	// Check if manifest contains services
@@ -20,9 +30,13 @@ func ValidateManifest(m Manifest) error {
 	} else {
 		for _, srv := range m.Manifest.Search("compose").Search("services").Children() {
 
-			serviceName := srv.Search("name").Data().(string)
-			if serviceName == "" {
-				errorList = append(errorList, "Please provide name for all services")
+			moduleID := srv.Search("moduelId").Data()
+			if moduleID == nil {
+				errorList = append(errorList, "Please provide moduleId for all services")
+			}
+			serviceName := srv.Search("name").Data()
+			if serviceName == nil {
+				errorList = append(errorList, "Please provide service name for all services")
 			}
 
 			imageName := srv.Search("image").Search("name").Data()
