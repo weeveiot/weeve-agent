@@ -6,11 +6,13 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
+	"runtime"
 	"testing"
+
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 	// _ "gitlab.com/weeve/edge-server/edge-pipeline-service/testing"
 )
-
 
 var manifestBytesMVP []byte
 var filePath string
@@ -18,8 +20,7 @@ var errMsg string
 
 func TestMain(m *testing.M) {
 
-	fullManifestPath, err := os.Getwd() + "./testdata/newFormat020/workingMVP.json"
-	t.Error(fullManifestPath)
+	fullManifestPath := "/testdata/newFormat020/workingMVP.json"
 	manifestBytesMVP = LoadJsonBytes(fullManifestPath)
 	// manifestBytesMVP = LoadJsonBytes("./testdata/newFormat020/workingMVP.json")
 	code := m.Run()
@@ -30,11 +31,14 @@ func TestMain(m *testing.M) {
 	// fmt.Println(manifest
 }
 
-func LoadJsonBytes(manName string) []byte {
-	wd, _ := os.Getwd()
-	fmt.Println()
-	manifestPath := path.Join(wd, "testdata", manName)
-	// fmt.Println("Loading manifest from ", manifestPath)
+func LoadJsonBytes(filePath string) []byte {
+	var (
+		_, b, _, _ = runtime.Caller(0)
+	)
+	root := filepath.Join(filepath.Dir(b), "../..")
+
+	manifestPath := path.Join(root, filePath)
+	//fmt.Println("Loading manifest from ", manifestPath)
 
 	var err error = nil
 	manifestBytes, err := ioutil.ReadFile(manifestPath)
@@ -46,7 +50,7 @@ func LoadJsonBytes(manName string) []byte {
 
 // Unit function to validate negative tests
 func TestImageExists(t *testing.T) {
-	thisFilePath := "newFormat020/failEmptyServices.json"
+	thisFilePath := "/testdata/newFormat020/failEmptyServices.json"
 	json := LoadJsonBytes(thisFilePath)
 	m, err := model.ParseJSONManifest(json)
 	if err != nil {
@@ -61,7 +65,6 @@ func TestImageExists(t *testing.T) {
 
 		fmt.Println("Service:", moduleID, serviceName, imageName, imageTag)
 	}
-
 
 	// ImageExists()
 	// err = ValidateManifest(m)
