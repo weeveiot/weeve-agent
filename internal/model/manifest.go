@@ -68,8 +68,6 @@ func ParseJSONManifest(data []byte) (Manifest, error) {
 	}
 
 	thisManifest.Manifest = *jsonParsed
-	thisManifest.Name = thisManifest.Manifest.Search("name").Data().(string)
-	thisManifest.NetworkName = thisManifest.Manifest.Search("compose").Search("network").Search("name").Data().(string)
 
 	return thisManifest, nil
 }

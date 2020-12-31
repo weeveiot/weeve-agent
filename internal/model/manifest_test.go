@@ -83,9 +83,45 @@ func TestInvalidJson(t *testing.T) {
 	}
 }
 
+func TestMissingCompose(t *testing.T) {
+	filePath = "newFormat020/failMissingCompose.json"
+	errMsg = "Should throw validation error: Please provide compose"
+	ExecuteFailTest(t)
+}
+
+func TestMissingNetwork(t *testing.T) {
+	filePath = "newFormat020/failMissingNetwork.json"
+	errMsg = "Should throw validation error: Please provide network details"
+	ExecuteFailTest(t)
+}
+
+func TestMissingNetworkName(t *testing.T) {
+	filePath = "newFormat020/failMissingNetworkName.json"
+	errMsg = "Should throw validation error: Please provide network name"
+	ExecuteFailTest(t)
+}
+
 func TestEmptyServices(t *testing.T) {
 	filePath = "newFormat020/failEmptyServices.json"
 	errMsg = "Should throw validation error: Please provide at least one service"
+	ExecuteFailTest(t)
+}
+
+// func TestEmptyServiceModuleId(t *testing.T) {
+// 	filePath = "newFormat020/failMissingModuleId.json"
+// 	errMsg = "Should throw validation error: Please provide module id for service"
+// 	ExecuteFailTest(t)
+// }
+
+func TestEmptyServiceName(t *testing.T) {
+	filePath = "newFormat020/failMissingServiceName.json"
+	errMsg = "Should throw validation error: Please provide name for service"
+	ExecuteFailTest(t)
+}
+
+func TestMissingImage(t *testing.T) {
+	filePath = "newFormat020/failMissingImage.json"
+	errMsg = "Should throw validation error: Please provide image details"
 	ExecuteFailTest(t)
 }
 
