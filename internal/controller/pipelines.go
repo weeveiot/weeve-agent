@@ -31,6 +31,12 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		log.Error(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
+
+	err = model.ValidateManifest(man)
+	if err == nil {
+		log.Error(err)
+	}
+
 	// res := util.PrintManifestDetails(body)
 	// util.PrettyPrintJson(manifestBodyBytes)
 	// man.PrintManifest()
@@ -102,14 +108,15 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	// _ = ctx
 	// _ = cli
 	// fmt.Println(networkCreateOptions)
-	resp, err := cli.NetworkCreate(ctx, man.NetworkName, networkCreateOptions)
+	networkName := man.GetNetworkName()
+	resp, err := cli.NetworkCreate(ctx, networkName, networkCreateOptions)
 	if err != nil {
 		log.Error(err)
-		log.Error("Error trying to create network " + man.NetworkName)
+		log.Error("Error trying to create network " + networkName)
 		panic(err)
 
 	}
-	log.Debug("Created network named ", man.NetworkName)
+	log.Debug("Created network named ", networkName)
 
 	_ = resp
 	// log.Debug(resp.ID, resp.Warning)
@@ -119,7 +126,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 
 	for _, startCommand := range man.GetContainerStart() {
 		log.Info("Creating ", startCommand.ContainerName, " from ", startCommand.ImageName, ":", startCommand.ImageTag)
-		imageAndTag :=  startCommand.ImageName + ":" + startCommand.ImageTag
+		imageAndTag := startCommand.ImageName + ":" + startCommand.ImageTag
 		containerCreateResponse, err := docker.StartCreateContainer(imageAndTag, startCommand.ContainerName, startCommand.EntryPointArgs)
 		log.Info("\tSuccessfully created with args: ", startCommand.EntryPointArgs)
 		if err != nil {

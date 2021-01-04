@@ -75,7 +75,12 @@ func ParseJSONManifest(data []byte) (Manifest, error) {
 func (m Manifest) ImageNamesList() []string {
 	var imageNamesList []string
 	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
-		imageNamesList = append(imageNamesList, mod.Search("image").Search("name").Data().(string)+":"+mod.Search("image").Search("tag").Data().(string))
+		imageName := mod.Search("image").Search("name").Data().(string)
+		if mod.Search("image").Search("tag").Data() != nil {
+			imageName = imageName + ":" + mod.Search("image").Search("tag").Data().(string)
+		}
+
+		imageNamesList = append(imageNamesList, imageName)
 	}
 	return imageNamesList
 }
@@ -111,12 +116,16 @@ func (m Manifest) SpewManifest() {
 
 func (m Manifest) ContainerNamesList() []string {
 	var containerNamesList []string
-	for _, mod := range m.Manifest.Search("Modules").Children() {
+	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
 		_ = mod
-		containerName := GetContainerName(m.Manifest.Search("ID").Data().(string), mod.Search("Name").Data().(string))
+		containerName := GetContainerName(m.Manifest.Search("moduleId").Data().(string), mod.Search("name").Data().(string))
 		containerNamesList = append(containerNamesList, containerName)
 	}
 	return containerNamesList
+}
+
+func (m Manifest) GetNetworkName() string {
+	return m.Manifest.Search("compose").Search("network").Search("name").Data().(string)
 }
 
 // GetContainerName is a simple utility to return a standard container name
@@ -128,7 +137,7 @@ func GetContainerName(pipelineID string, containerName string) string {
 // Return a list of container start objects
 func (m Manifest) GetContainerStart() []ContainerConfig {
 	var startCommands []ContainerConfig
-	for _, mod := range m.Manifest.Search("Modules").Children() {
+	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
 		var thisStartCommand ContainerConfig
 		thisStartCommand.PipelineName = m.Manifest.Search("Name").Data().(string)
 		thisStartCommand.NetworkName = m.Manifest.Search("Name").Data().(string)
