@@ -55,7 +55,6 @@ func ExecuteFailTest(t *testing.T) {
 
 	err = ValidateManifest(m)
 	if err == nil {
-		t.Error(err.Error())
 		t.Error(errMsg)
 	}
 }
@@ -107,11 +106,11 @@ func TestEmptyServices(t *testing.T) {
 	ExecuteFailTest(t)
 }
 
-// func TestEmptyServiceModuleId(t *testing.T) {
-// 	filePath = "newFormat020/failMissingModuleId.json"
-// 	errMsg = "Should throw validation error: Please provide module id for service"
-// 	ExecuteFailTest(t)
-// }
+func TestEmptyServiceModuleId(t *testing.T) {
+	filePath = "newFormat020/failMissingModuleId.json"
+	errMsg = "Should throw validation error: Please provide module id for service"
+	ExecuteFailTest(t)
+}
 
 func TestEmptyServiceName(t *testing.T) {
 	filePath = "newFormat020/failMissingServiceName.json"

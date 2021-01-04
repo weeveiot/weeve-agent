@@ -14,7 +14,6 @@
             },
         "services": [
             {
-                "moduleId": "245536acb08b0958f1aa78d391d5efc773e60fa2c39d942318aa04d6085bef42",
                 "name": "broker",
                 "description": "Standard Mosquitto broker",
                 "version": "1.0.0",
