@@ -139,13 +139,13 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 	var startCommands []ContainerConfig
 	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
 		var thisStartCommand ContainerConfig
-		thisStartCommand.PipelineName = m.Manifest.Search("Name").Data().(string)
-		thisStartCommand.NetworkName = m.Manifest.Search("Name").Data().(string)
+		thisStartCommand.PipelineName = m.Manifest.Search("compose").Search("network").Search("name").Data().(string)
+		thisStartCommand.NetworkName = m.Manifest.Search("compose").Search("network").Search("name").Data().(string)
 		thisStartCommand.NetworkMode = "" // This is the default setting
 
-		thisStartCommand.ContainerName = GetContainerName(m.Manifest.Search("ID").Data().(string), mod.Search("Name").Data().(string))
-		thisStartCommand.ImageName = mod.Search("ImageName").Data().(string)
-		thisStartCommand.ImageTag = mod.Search("Tag").Data().(string)
+		thisStartCommand.ContainerName = GetContainerName(m.Manifest.Search("moduleId").Data().(string), mod.Search("name").Data().(string))
+		thisStartCommand.ImageName = mod.Search("image").Search("name").Data().(string)
+		thisStartCommand.ImageTag = mod.Search("image").Search("tag").Data().(string)
 
 		var theseOptions []OptionKeyVal
 		for _, opt := range mod.Search("options").Children() {
@@ -159,10 +159,10 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 		thisStartCommand.Options = theseOptions
 
 		var strArgs []string
-		for _, arg := range mod.Search("arguments").Children() {
+		for _, arg := range mod.Search("command").Children() {
 			// strArgs = append(strArgs, "-"+arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
 			// strArgs = append(strArgs, arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
-			strArgs = append(strArgs, arg.Search("arg").Data().(string)+"="+arg.Search("val").Data().(string))
+			strArgs = append(strArgs, arg.Search("key").Data().(string)+"="+arg.Search("value").Data().(string))
 		}
 
 		thisStartCommand.EntryPointArgs = strArgs
