@@ -33,8 +33,9 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = model.ValidateManifest(man)
-	if err == nil {
+	if err != nil {
 		log.Error(err)
+		panic(err)
 	}
 
 	// res := util.PrintManifestDetails(body)

@@ -117,8 +117,7 @@ func (m Manifest) SpewManifest() {
 func (m Manifest) ContainerNamesList() []string {
 	var containerNamesList []string
 	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
-		_ = mod
-		containerName := GetContainerName(m.Manifest.Search("moduleId").Data().(string), mod.Search("name").Data().(string))
+		containerName := GetContainerName(mod.Search("moduleId").Data().(string), mod.Search("name").Data().(string))
 		containerNamesList = append(containerNamesList, containerName)
 	}
 	return containerNamesList
@@ -143,20 +142,20 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 		thisStartCommand.NetworkName = m.Manifest.Search("compose").Search("network").Search("name").Data().(string)
 		thisStartCommand.NetworkMode = "" // This is the default setting
 
-		thisStartCommand.ContainerName = GetContainerName(m.Manifest.Search("moduleId").Data().(string), mod.Search("name").Data().(string))
+		thisStartCommand.ContainerName = GetContainerName(mod.Search("moduleId").Data().(string), mod.Search("name").Data().(string))
 		thisStartCommand.ImageName = mod.Search("image").Search("name").Data().(string)
 		thisStartCommand.ImageTag = mod.Search("image").Search("tag").Data().(string)
 
-		var theseOptions []OptionKeyVal
-		for _, opt := range mod.Search("options").Children() {
-			// log.Debug(opt)
-			var thisOption OptionKeyVal
-			thisOption.key = opt.Search("opt").Data().(string)
-			thisOption.val = opt.Search("val").Data().(string)
-			theseOptions = append(theseOptions, thisOption)
-			// fmt.Println(thisOption)
-		}
-		thisStartCommand.Options = theseOptions
+		// var theseOptions []OptionKeyVal
+		// for _, opt := range mod.Search("options").Children() {
+		// 	// log.Debug(opt)
+		// 	var thisOption OptionKeyVal
+		// 	thisOption.key = opt.Search("opt").Data().(string)
+		// 	thisOption.val = opt.Search("val").Data().(string)
+		// 	theseOptions = append(theseOptions, thisOption)
+		// 	// fmt.Println(thisOption)
+		// }
+		// thisStartCommand.Options = theseOptions
 
 		var strArgs []string
 		for _, arg := range mod.Search("command").Children() {
