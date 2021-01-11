@@ -3,7 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
-
+	"strings"
 	"github.com/Jeffail/gabs/v2"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/docker/go-connections/nat"
@@ -21,6 +21,7 @@ type Manifest struct {
 	NumModules  int
 }
 
+// This struct holds information for starting a container
 type ContainerConfig struct {
 	PipelineName   string
 	ContainerName  string
@@ -133,7 +134,11 @@ func GetContainerName(pipelineID string, containerName string) string {
 	return pipelineID + "_" + containerName
 }
 
-// Return a list of container start objects
+// Based on an existing Manifest object, build a new object
+// The new object is used to start a container
+// The new object has all information required to execute 'docker run':
+// 		- Bridge Network information
+// 		- Arguments to pass into entrypoint
 func (m Manifest) GetContainerStart() []ContainerConfig {
 	var startCommands []ContainerConfig
 	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
@@ -158,10 +163,13 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 		// thisStartCommand.Options = theseOptions
 
 		var strArgs []string
+		log.Debug("Processing arguments")
 		for _, arg := range mod.Search("command").Children() {
 			// strArgs = append(strArgs, "-"+arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
 			// strArgs = append(strArgs, arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
-			strArgs = append(strArgs, arg.Search("key").Data().(string)+"="+arg.Search("value").Data().(string))
+			// strArgs = append(strArgs, arg.Search("key").Data().(string)+"="+arg.Search("value").Data().(string))
+			strArgs = append(strArgs, arg.Search("key").Data().(string)+" "+arg.Search("value").Data().(string))
+			log.Debug("String arguments: " + strings.Join(strArgs[:], ","))
 		}
 
 		thisStartCommand.EntryPointArgs = strArgs
