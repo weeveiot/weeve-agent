@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
 	"github.com/Jeffail/gabs/v2"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/docker/go-connections/nat"
@@ -171,8 +172,14 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 			// strArgs = append(strArgs, arg.Search("key").Data().(string)+" "+arg.Search("value").Data().(string))
 
 			//TODO: IF we receive only a key or only a value, THEN do not append any empty string
-			strArgs = append(strArgs, arg.Search("key").Data().(string))
-			strArgs = append(strArgs, arg.Search("value").Data().(string))
+			if arg.Search("key").Data().(string) != "" {
+				strArgs = append(strArgs, arg.Search("key").Data().(string))
+			}
+
+			if arg.Search("value").Data().(string) != "" {
+				strArgs = append(strArgs, arg.Search("value").Data().(string))
+			}
+
 			log.Debug("String arguments: " + strings.Join(strArgs[:], ","))
 
 			for _, thisArg := range strArgs {
