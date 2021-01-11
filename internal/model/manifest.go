@@ -168,8 +168,16 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 			// strArgs = append(strArgs, "-"+arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
 			// strArgs = append(strArgs, arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
 			// strArgs = append(strArgs, arg.Search("key").Data().(string)+"="+arg.Search("value").Data().(string))
-			strArgs = append(strArgs, arg.Search("key").Data().(string)+" "+arg.Search("value").Data().(string))
+			// strArgs = append(strArgs, arg.Search("key").Data().(string)+" "+arg.Search("value").Data().(string))
+
+			//TODO: IF we receive only a key or only a value, THEN do not append any empty string
+			strArgs = append(strArgs, arg.Search("key").Data().(string))
+			strArgs = append(strArgs, arg.Search("value").Data().(string))
 			log.Debug("String arguments: " + strings.Join(strArgs[:], ","))
+
+			for _, thisArg := range strArgs {
+				log.Debug(fmt.Sprintf("%v %T", thisArg, thisArg))
+			}
 		}
 
 		thisStartCommand.EntryPointArgs = strArgs

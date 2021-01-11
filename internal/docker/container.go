@@ -191,9 +191,27 @@ func StartCreateContainer(imageName string, containerName string, entryArgs []st
 		AttachStdout: false,
 		AttachStderr: false,
 		Cmd:          entryArgs,
+		// Cmd:          []string{"-p", "2000"},
 		Tty:          false,
 		ExposedPorts: nil,
 	}
+
+	// The following works:
+		// Cmd:          []string{"p", "2000"},
+
+	// The following breaks:
+
+		//	Cmd:          []string{"p", "2000"},]
+		// Fails with "Error: Unknown option 'p'."
+
+		// Cmd:          []string{"-p 2000"},
+		// Fails with "Error: Unknown option '-p 2000'."
+
+		// Cmd:          []string{"-p=2000"}
+		// Fails with "Error: Unknown option '-p=2000'."
+
+
+
 
 	hostConfig := &container.HostConfig{
 		PortBindings: nil,
