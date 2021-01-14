@@ -21,14 +21,12 @@
                 "network": "mosquitto-net",
                 "image": {
                     "name": "weevenetwork/mosquitto_broker",
-                    "tag": "latest"
+                    "tag": "demo"
                 },
                 "command": [
-                    {
-                        "key": "p",
-                        "value": "1880"
-                    }
-                ]
+                    {"key": "-p", "value": "2000"},
+                    {"key": "-v", "value": ""}
+                    ]
             }
         ]
     }
