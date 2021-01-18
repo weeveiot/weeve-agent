@@ -24,18 +24,22 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	manifestBodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	man, err := model.ParseJSONManifest(manifestBodyBytes)
 	if err != nil {
 		log.Error(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	err = model.ValidateManifest(man)
 	if err != nil {
 		log.Error(err)
-		panic(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	// Check if process is failed and needs to return
@@ -62,7 +66,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 			exists = docker.PullImage(imgName)
 			if exists == false {
 				failed = true
-				msg := "Unable to pull image " + imgName
+				msg := "404 - Unable to pull image " + imgName
 				log.Error(msg)
 				http.Error(w, msg, http.StatusNotFound)
 				break

@@ -2,6 +2,7 @@ package controller
 
 import (
 	"bytes"
+	"context"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -11,7 +12,10 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
 	"github.com/sirupsen/logrus"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 )
 
 var apiURL = "http://localhost:8030/pipelines"
@@ -30,7 +34,34 @@ func TestPostPipeline(t *testing.T) {
 		t.Errorf("got status %d but wanted %d", res.Code, http.StatusTeapot)
 	}
 
-	logrus.Debug("Called post pipeline")
+	// Cleanup resources creaetd by test
+
+	man, err := model.ParseJSONManifest(json)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	// Delete containers
+	for _, containerName := range man.ContainerNamesList() {
+		ctx := context.Background()
+		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+		if err != nil {
+			logrus.Error(err)
+		}
+
+		if err := cli.ContainerStop(ctx, containerName, nil); err != nil {
+			log.Printf("Unable to stop container %s: %s", containerName, err)
+		}
+
+		removeOptions := types.ContainerRemoveOptions{
+			RemoveVolumes: true,
+			Force:         true,
+		}
+
+		if err := cli.ContainerRemove(ctx, containerName, removeOptions); err != nil {
+			log.Printf("Unable to remove container: %s", err)
+		}
+	}
 }
 
 func TestImageNotFound(t *testing.T) {
