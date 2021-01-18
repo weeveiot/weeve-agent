@@ -197,21 +197,18 @@ func StartCreateContainer(imageName string, containerName string, entryArgs []st
 	}
 
 	// The following works:
-		// Cmd:          []string{"p", "2000"},
+	// Cmd:          []string{"p", "2000"},
 
 	// The following breaks:
 
-		//	Cmd:          []string{"p", "2000"},]
-		// Fails with "Error: Unknown option 'p'."
+	//	Cmd:          []string{"p", "2000"},]
+	// Fails with "Error: Unknown option 'p'."
 
-		// Cmd:          []string{"-p 2000"},
-		// Fails with "Error: Unknown option '-p 2000'."
+	// Cmd:          []string{"-p 2000"},
+	// Fails with "Error: Unknown option '-p 2000'."
 
-		// Cmd:          []string{"-p=2000"}
-		// Fails with "Error: Unknown option '-p=2000'."
-
-
-
+	// Cmd:          []string{"-p=2000"}
+	// Fails with "Error: Unknown option '-p=2000'."
 
 	hostConfig := &container.HostConfig{
 		PortBindings: nil,
@@ -233,7 +230,8 @@ func StartCreateContainer(imageName string, containerName string, entryArgs []st
 		nil,
 		containerName)
 	if err != nil {
-		panic(err)
+		log.Error(err)
+		return containerCreateResponse, err
 	}
 	log.Debug("\tCreated container " + containerName)
 

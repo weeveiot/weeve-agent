@@ -14,18 +14,37 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var apiURL = "http://localhost:8030/pipelines"
+
 func TestPostPipeline(t *testing.T) {
 	logrus.Debug("Running test Pipeline POST")
 	filePath := "testdata/newFormat020/workingMVP.json"
 	json := LoadJSONBytes(filePath)
 
-	req := httptest.NewRequest(http.MethodPost, "http://localhost:8030/pipelines", bytes.NewBuffer([]byte(json)))
+	req := httptest.NewRequest(http.MethodPost, apiURL, bytes.NewBuffer([]byte(json)))
 	res := httptest.NewRecorder()
 
 	POSTpipelines(res, req)
 
 	if res.Code != http.StatusOK {
 		t.Errorf("got status %d but wanted %d", res.Code, http.StatusTeapot)
+	}
+
+	logrus.Debug("Called post pipeline")
+}
+
+func TestImageNotFound(t *testing.T) {
+	logrus.Debug("Running test Pipeline POST")
+	filePath := "testdata/newFormat020/failImageNotFound.json"
+	json := LoadJSONBytes(filePath)
+
+	req := httptest.NewRequest(http.MethodPost, apiURL, bytes.NewBuffer([]byte(json)))
+	res := httptest.NewRecorder()
+
+	POSTpipelines(res, req)
+
+	if res.Code != http.StatusNotFound {
+		t.Errorf("got status %d but wanted %d", res.Code, http.StatusNotFound)
 	}
 
 	logrus.Debug("Called post pipeline")

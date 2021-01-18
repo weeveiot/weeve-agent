@@ -38,6 +38,9 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
+	// Check if process is failed and needs to return
+	failed := false
+
 	// res := util.PrintManifestDetails(body)
 	// util.PrettyPrintJson(manifestBodyBytes)
 	// man.PrintManifest()
@@ -58,11 +61,17 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 			log.Debug("\t\tPulling ", imgName)
 			exists = docker.PullImage(imgName)
 			if exists == false {
+				failed = true
 				msg := "Unable to pull image " + imgName
 				log.Error(msg)
-				http.Error(w, msg, http.StatusInternalServerError)
+				http.Error(w, msg, http.StatusNotFound)
+				break
 			}
 		}
+	}
+
+	if failed {
+		return
 	}
 
 	//******** STEP 2 - Check containers, stop and remove *************//
@@ -79,11 +88,16 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 			// Stop and delete container
 			err := docker.StopAndRemoveContainer(containerName)
 			if err != nil {
+				failed = true
 				log.Error(err)
 				http.Error(w, string(err.Error()), http.StatusInternalServerError)
 			}
 			log.Debug("\tContainer ", containerName, " removed")
 		}
+	}
+
+	if failed {
+		return
 	}
 
 	//******** STEP 3 - Create the network *************//
@@ -131,7 +145,10 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		containerCreateResponse, err := docker.StartCreateContainer(imageAndTag, startCommand.ContainerName, startCommand.EntryPointArgs)
 		log.Info("\tSuccessfully created with args: ", startCommand.EntryPointArgs)
 		if err != nil {
-			panic(err)
+			failed = true
+			log.Info("Started")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("500 - Failed to create container!"))
 		}
 
 		// Attach to network
@@ -141,6 +158,10 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 		log.Debug("\tConnected to network", startCommand.NetworkName)
+	}
+
+	if failed {
+		return
 	}
 
 	// Finally, return 200
