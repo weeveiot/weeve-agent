@@ -35,37 +35,10 @@ func TestPostPipeline(t *testing.T) {
 	}
 
 	// Cleanup resources creaetd by test
-
-	man, err := model.ParseJSONManifest(json)
-	if err != nil {
-		t.Errorf(err.Error())
-	}
-
-	// Delete containers
-	for _, containerName := range man.ContainerNamesList() {
-		ctx := context.Background()
-		cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-		if err != nil {
-			logrus.Error(err)
-		}
-
-		if err := cli.ContainerStop(ctx, containerName, nil); err != nil {
-			log.Printf("Unable to stop container %s: %s", containerName, err)
-		}
-
-		removeOptions := types.ContainerRemoveOptions{
-			RemoveVolumes: true,
-			Force:         true,
-		}
-
-		if err := cli.ContainerRemove(ctx, containerName, removeOptions); err != nil {
-			log.Printf("Unable to remove container: %s", err)
-		}
-	}
+	CleanDockerResources(json)
 }
 
 func TestImageNotFound(t *testing.T) {
-	logrus.Debug("Running test Pipeline POST")
 	filePath := "testdata/newFormat020/failImageNotFound.json"
 	json := LoadJSONBytes(filePath)
 
@@ -79,6 +52,55 @@ func TestImageNotFound(t *testing.T) {
 	}
 
 	logrus.Debug("Called post pipeline")
+}
+
+func CleanDockerResources(manifest []byte) {
+	logrus.Info("Cleaning docker resources")
+
+	man, err := model.ParseJSONManifest(manifest)
+	if err != nil {
+		log.Printf("Unable to stop container: %s", err)
+	}
+
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		logrus.Error(err)
+	}
+
+	// Delete containers
+	for _, containerName := range man.ContainerNamesList() {
+		if err := cli.ContainerStop(ctx, containerName, nil); err != nil {
+			log.Printf("Unable to stop container %s: %s", containerName, err)
+		}
+
+		removeOptions := types.ContainerRemoveOptions{
+			RemoveVolumes: true,
+			Force:         true,
+		}
+
+		if err := cli.ContainerRemove(ctx, containerName, removeOptions); err != nil {
+			log.Printf("Unable to remove container: %s", err)
+		}
+	}
+
+	// Delete images
+	for _, imgName := range man.ImageNamesList() {
+		removeOptions := types.ImageRemoveOptions{
+			Force: true,
+		}
+
+		if _, err := cli.ImageRemove(ctx, imgName, removeOptions); err != nil {
+			log.Printf("Unable to remove image: %s", err)
+		}
+	}
+
+	// Delete network
+	networkName := man.GetNetworkName()
+	errN := cli.NetworkRemove(ctx, networkName)
+	if errN != nil {
+		log.Printf("Unable to remove image: %s", errN)
+	}
 }
 
 // LoadJsonBytes reads file containts into byte[]
