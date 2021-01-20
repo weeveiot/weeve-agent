@@ -23,22 +23,7 @@
                     "tag": "demo"
                 },
                 "command": [
-                    {"key": "-p", "value": "2000"},
-                    {"key": "-v", "value": ""}
-                    ]
-            },
-            {
-                "moduleId": "245536acb08b0958f1aa78d391d5efc773e60fa2c39d942318aa04d6085bef40",
-                "name": "broker_1",
-                "description": "Standard Mosquitto broker 1",
-                "version": "1.0.0",
-                "network": "mosquitto-net-1",
-                "image": {
-                    "name": "weevenetwork/mosquitto_broker",
-                    "tag": "demo"
-                },
-                "command": [
-                    {"key": "-p", "value": "2000"},
+                    {"key": "-p", "value": "2020"},
                     {"key": "-v", "value": ""}
                     ]
             }

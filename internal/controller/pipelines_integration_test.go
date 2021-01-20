@@ -38,6 +38,35 @@ func TestPostPipeline(t *testing.T) {
 	CleanDockerResources(json)
 }
 
+func TestContinerRemoveCreate(t *testing.T) {
+	filePath1 := "testdata/newFormat020/recreateContainer1.json"
+	json1 := LoadJSONBytes(filePath1)
+
+	req1 := httptest.NewRequest(http.MethodPost, apiURL, bytes.NewBuffer([]byte(json1)))
+	res1 := httptest.NewRecorder()
+
+	POSTpipelines(res1, req1)
+
+	if res1.Code != http.StatusOK {
+		t.Errorf("got status %d but wanted %d", res1.Code, http.StatusTeapot)
+	}
+
+	filePath2 := "testdata/newFormat020/recreateContainer2.json"
+	json2 := LoadJSONBytes(filePath2)
+
+	req2 := httptest.NewRequest(http.MethodPost, apiURL, bytes.NewBuffer([]byte(json2)))
+	res2 := httptest.NewRecorder()
+
+	POSTpipelines(res2, req2)
+
+	if res2.Code != http.StatusOK {
+		t.Errorf("got status %d but wanted %d", res2.Code, http.StatusTeapot)
+	}
+
+	// Cleanup resources creaetd by test
+	CleanDockerResources(json2)
+}
+
 func TestImageNotFound(t *testing.T) {
 	filePath := "testdata/newFormat020/failImageNotFound.json"
 	json := LoadJSONBytes(filePath)
