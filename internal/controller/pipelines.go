@@ -53,7 +53,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 
 	//******** STEP 1 - Pull all *************//
 	// Pull all images as required
-	log.Debug("Iterating modules, pulling image into host if missing")
+	log.Info("Iterating modules, pulling image into host if missing")
 
 	for i, imgName := range man.ImageNamesList() {
 		// Check if image exist in local
@@ -79,7 +79,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//******** STEP 2 - Check containers, stop and remove *************//
-	log.Debug("Checking containers, stopping and removing")
+	log.Info("Checking containers, stopping and removing")
 
 	for _, containerName := range man.ContainerNamesList() {
 
@@ -88,7 +88,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 
 		// Stop + remove container if exists, start fresh
 		if containerExists {
-			log.Debug("\tStopAndRemoveContainer - ", containerName)
+			log.Info("\tStopAndRemoveContainer - ", containerName)
 			// Stop and delete container
 			err := docker.StopAndRemoveContainer(containerName)
 			if err != nil {
@@ -96,7 +96,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 				log.Error(err)
 				http.Error(w, string(err.Error()), http.StatusInternalServerError)
 			}
-			log.Debug("\tContainer ", containerName, " removed")
+			log.Info("\tContainer ", containerName, " removed")
 		}
 	}
 
@@ -112,13 +112,13 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		log.Error(err)
 	}
 
-	log.Debug("Pruning networks")
+	log.Info("Pruning networks")
 	filter := filters.NewArgs()
 
 	pruneReport, err := cli.NetworksPrune(ctx, filter)
-	log.Debug("Pruned:", pruneReport)
+	log.Info("Pruned:", pruneReport)
 	// var report types.NetworksPruneReport
-	log.Debug("Create the network")
+	log.Info("Create the network")
 	var networkCreateOptions types.NetworkCreate
 	networkCreateOptions.CheckDuplicate = true
 	networkCreateOptions.Attachable = true
@@ -135,13 +135,13 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 
 	}
-	log.Debug("Created network named ", networkName)
+	log.Info("Created network named ", networkName)
 
 	_ = resp
-	// log.Debug(resp.ID, resp.Warning)
+	// log.Info(resp.ID, resp.Warning)
 
 	//******** STEP 4 - Create, Start, attach all containers *************//
-	log.Debug("Start all containers")
+	log.Info("Start all containers")
 
 	for _, startCommand := range man.GetContainerStart() {
 		log.Info("Creating ", startCommand.ContainerName, " from ", startCommand.ImageName, ":", startCommand.ImageTag)
@@ -161,7 +161,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			panic(err)
 		}
-		log.Debug("\tConnected to network", startCommand.NetworkName)
+		log.Info("\tConnected to network", startCommand.NetworkName)
 	}
 
 	if failed {

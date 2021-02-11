@@ -38,6 +38,24 @@ func TestPostPipeline(t *testing.T) {
 	CleanDockerResources(json)
 }
 
+func TestPostInterCommunicationPipeline(t *testing.T) {
+	logrus.Debug("Running test Pipeline POST")
+	filePath := "testdata/newFormat020/workingInterCommunicationMVP.json"
+	json := LoadJSONBytes(filePath)
+
+	req := httptest.NewRequest(http.MethodPost, apiURL, bytes.NewBuffer([]byte(json)))
+	res := httptest.NewRecorder()
+
+	POSTpipelines(res, req)
+
+	if res.Code != http.StatusOK {
+		t.Errorf("got status %d but wanted %d", res.Code, http.StatusTeapot)
+	}
+
+	// Cleanup resources creaetd by test
+	CleanDockerResources(json)
+}
+
 func TestContinerRemoveCreate(t *testing.T) {
 	filePath1 := "testdata/newFormat020/recreateContainer1.json"
 	json1 := LoadJSONBytes(filePath1)
@@ -45,6 +63,7 @@ func TestContinerRemoveCreate(t *testing.T) {
 	req1 := httptest.NewRequest(http.MethodPost, apiURL, bytes.NewBuffer([]byte(json1)))
 	res1 := httptest.NewRecorder()
 
+	// Step-1: This will create containers
 	POSTpipelines(res1, req1)
 
 	if res1.Code != http.StatusOK {
@@ -57,6 +76,7 @@ func TestContinerRemoveCreate(t *testing.T) {
 	req2 := httptest.NewRequest(http.MethodPost, apiURL, bytes.NewBuffer([]byte(json2)))
 	res2 := httptest.NewRecorder()
 
+	// Step-2: It will remove containers created in Step-1 and creates again
 	POSTpipelines(res2, req2)
 
 	if res2.Code != http.StatusOK {
