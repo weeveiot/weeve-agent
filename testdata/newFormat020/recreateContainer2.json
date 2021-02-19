@@ -22,6 +22,12 @@
                     "name": "weevenetwork/mosquitto_broker",
                     "tag": "demo"
                 },
+                "registry": {
+                    "url": "registry.hub.docker.com/library",
+                    "port": "",
+                    "userName":"weevenetwork",
+                    "password":"vrU(#3JQ12p3"
+                },
                 "command": [
                     {"key": "-p", "value": "2020"},
                     {"key": "-v", "value": ""}

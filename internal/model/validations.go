@@ -42,6 +42,11 @@ func ValidateManifest(m Manifest) error {
 					if imageName == nil {
 						errorList = append(errorList, "Please provide image name for all services")
 					}
+
+					regUrl := srv.Search("registry").Search("url").Data()
+					if regUrl == nil {
+						errorList = append(errorList, "Please provide registry URL for all services")
+					}
 				}
 			}
 		}

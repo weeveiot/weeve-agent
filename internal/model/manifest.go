@@ -42,6 +42,13 @@ type OptionKeyVal struct {
 	val string
 }
 
+type RegistryDetails struct {
+	ImageName     string
+	ServerAddress string
+	UserName      string
+	Password      string
+}
+
 func PrintStartCommand(sc ContainerConfig) {
 	empJSON, err := json.MarshalIndent(sc, "", "  ")
 	if err != nil {
@@ -83,6 +90,27 @@ func (m Manifest) ImageNamesList() []string {
 		}
 
 		imageNamesList = append(imageNamesList, imageName)
+	}
+	return imageNamesList
+}
+
+func (m Manifest) ImageNamesWithRegList() []RegistryDetails {
+	var imageNamesList []RegistryDetails
+	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
+		imageName := mod.Search("image").Search("name").Data().(string)
+		if mod.Search("image").Search("tag").Data() != nil {
+			imageName = imageName + ":" + mod.Search("image").Search("tag").Data().(string)
+		}
+
+		regUrl := mod.Search("registry").Search("url").Data().(string)
+		if mod.Search("registry").Search("port").Data() != nil {
+			regUrl = regUrl + ":" + mod.Search("registry").Search("port").Data().(string)
+		}
+
+		userName := mod.Search("registry").Search("userName").Data().(string)
+		password := mod.Search("registry").Search("password").Data().(string)
+
+		imageNamesList = append(imageNamesList, RegistryDetails{imageName, regUrl, userName, password})
 	}
 	return imageNamesList
 }

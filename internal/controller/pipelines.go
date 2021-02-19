@@ -55,18 +55,18 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	// Pull all images as required
 	log.Info("Iterating modules, pulling image into host if missing")
 
-	for i, imgName := range man.ImageNamesList() {
+	for i, imgDetails := range man.ImageNamesWithRegList() {
 		// Check if image exist in local
-		exists := docker.ImageExists(imgName)
+		exists := docker.ImageExists(imgDetails.ImageName)
 		if exists { // Image already exists, continue
-			log.Info(fmt.Sprintf("\tImage %v %v, already exists on host", i, imgName))
+			log.Info(fmt.Sprintf("\tImage %v %v, already exists on host", i, imgDetails.ImageName))
 		} else { // Pull this image
-			log.Info(fmt.Sprintf("\tImage %v %v, does not exist on host", i, imgName))
-			log.Info("\t\tPulling ", imgName)
-			exists = docker.PullImage(imgName)
+			log.Info(fmt.Sprintf("\tImage %v %v, does not exist on host", i, imgDetails.ImageName))
+			log.Info("\t\tPulling ", imgDetails.ImageName)
+			exists = docker.PullImage(imgDetails)
 			if exists == false {
 				failed = true
-				msg := "404 - Unable to pull image " + imgName
+				msg := "404 - Unable to pull image " + imgDetails.ImageName
 				log.Error(msg)
 				http.Error(w, msg, http.StatusNotFound)
 				break

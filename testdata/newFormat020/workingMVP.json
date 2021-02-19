@@ -22,10 +22,16 @@
                     "name": "weevenetwork/mosquitto_broker",
                     "tag": "demo"
                 },
+                "registry": {
+                    "url": "registry.hub.docker.com/library",
+                    "port": "",
+                    "userName":"weevenetwork",
+                    "password":"vrU(#3JQ12p3"
+                },
                 "command": [
                     {"key": "-p", "value": "2000"},
                     {"key": "-v", "value": ""}
-                    ]
+                ]
             },
             {
                 "moduleId": "245536acb08b0958f1aa78d391d5efc773e60fa2c39d942318aa04d6085bef40",
@@ -37,10 +43,16 @@
                     "name": "weevenetwork/mosquitto_broker",
                     "tag": "demo"
                 },
+                "registry": {
+                    "url": "registry.hub.docker.com/library",
+                    "port": "",
+                    "userName":"weevenetwork",
+                    "password":"vrU(#3JQ12p3"
+                },
                 "command": [
                     {"key": "-p", "value": "2000"},
                     {"key": "-v", "value": ""}
-                    ]
+                ]
             }
         ]
     }

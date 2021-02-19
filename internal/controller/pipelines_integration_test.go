@@ -38,23 +38,23 @@ func TestPostPipeline(t *testing.T) {
 	CleanDockerResources(json)
 }
 
-func TestPostInterCommunicationPipeline(t *testing.T) {
-	logrus.Debug("Running test Pipeline POST")
-	filePath := "testdata/newFormat020/workingInterCommunicationMVP.json"
-	json := LoadJSONBytes(filePath)
+// func TestPostInterCommunicationPipeline(t *testing.T) {
+// 	logrus.Debug("Running test Pipeline POST")
+// 	filePath := "testdata/newFormat020/workingInterCommunicationMVP.json"
+// 	json := LoadJSONBytes(filePath)
 
-	req := httptest.NewRequest(http.MethodPost, apiURL, bytes.NewBuffer([]byte(json)))
-	res := httptest.NewRecorder()
+// 	req := httptest.NewRequest(http.MethodPost, apiURL, bytes.NewBuffer([]byte(json)))
+// 	res := httptest.NewRecorder()
 
-	POSTpipelines(res, req)
+// 	POSTpipelines(res, req)
 
-	if res.Code != http.StatusOK {
-		t.Errorf("got status %d but wanted %d", res.Code, http.StatusTeapot)
-	}
+// 	if res.Code != http.StatusOK {
+// 		t.Errorf("got status %d but wanted %d", res.Code, http.StatusTeapot)
+// 	}
 
-	// Cleanup resources creaetd by test
-	CleanDockerResources(json)
-}
+// 	// Cleanup resources creaetd by test
+// 	CleanDockerResources(json)
+// }
 
 func TestContinerRemoveCreate(t *testing.T) {
 	filePath1 := "testdata/newFormat020/recreateContainer1.json"
