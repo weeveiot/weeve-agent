@@ -103,6 +103,24 @@ func TestImageNotFound(t *testing.T) {
 	logrus.Debug("Called post pipeline")
 }
 
+func TestPartialImagesPull(t *testing.T) {
+	logrus.Debug("Running test Pipeline POST")
+	filePath := "testdata/newFormat020/failPartialImagesAvail.json"
+	json := LoadJSONBytes(filePath)
+
+	req := httptest.NewRequest(http.MethodPost, apiURL, bytes.NewBuffer([]byte(json)))
+	res := httptest.NewRecorder()
+
+	POSTpipelines(res, req)
+
+	if res.Code != http.StatusNotFound {
+		t.Errorf("got status %d but wanted %d", res.Code, http.StatusNotFound)
+	}
+
+	// Cleanup resources creaetd by test
+	CleanDockerResources(json)
+}
+
 func CleanDockerResources(manifest []byte) {
 	logrus.Info("Cleaning docker resources")
 
