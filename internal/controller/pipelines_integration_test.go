@@ -22,7 +22,7 @@ var apiURL = "http://localhost:8030/pipelines"
 
 func TestPostPipeline(t *testing.T) {
 	logrus.Debug("Running test Pipeline POST")
-	filePath := "testdata/newFormat020/workingMVP.json"
+	filePath := "testdata/pipeline_integration_private/workingMVP.json"
 	json := LoadJSONBytes(filePath)
 
 	req := httptest.NewRequest(http.MethodPost, apiURL, bytes.NewBuffer([]byte(json)))
@@ -40,7 +40,7 @@ func TestPostPipeline(t *testing.T) {
 
 // func TestPostInterCommunicationPipeline(t *testing.T) {
 // 	logrus.Debug("Running test Pipeline POST")
-// 	filePath := "testdata/newFormat020/workingInterCommunicationMVP.json"
+// 	filePath := "testdata/pipeline_integration_private/workingInterCommunicationMVP.json"
 // 	json := LoadJSONBytes(filePath)
 
 // 	req := httptest.NewRequest(http.MethodPost, apiURL, bytes.NewBuffer([]byte(json)))
@@ -57,7 +57,7 @@ func TestPostPipeline(t *testing.T) {
 // }
 
 func TestContinerRemoveCreate(t *testing.T) {
-	filePath1 := "testdata/newFormat020/recreateContainer1.json"
+	filePath1 := "testdata/pipeline_integration_private/recreateContainer1.json"
 	json1 := LoadJSONBytes(filePath1)
 
 	req1 := httptest.NewRequest(http.MethodPost, apiURL, bytes.NewBuffer([]byte(json1)))
@@ -70,7 +70,7 @@ func TestContinerRemoveCreate(t *testing.T) {
 		t.Errorf("got status %d but wanted %d", res1.Code, http.StatusTeapot)
 	}
 
-	filePath2 := "testdata/newFormat020/recreateContainer2.json"
+	filePath2 := "testdata/pipeline_integration_private/recreateContainer2.json"
 	json2 := LoadJSONBytes(filePath2)
 
 	req2 := httptest.NewRequest(http.MethodPost, apiURL, bytes.NewBuffer([]byte(json2)))
@@ -88,7 +88,7 @@ func TestContinerRemoveCreate(t *testing.T) {
 }
 
 func TestImageNotFound(t *testing.T) {
-	filePath := "testdata/newFormat020/failImageNotFound.json"
+	filePath := "testdata/pipeline_integration_private/failImageNotFound.json"
 	json := LoadJSONBytes(filePath)
 
 	req := httptest.NewRequest(http.MethodPost, apiURL, bytes.NewBuffer([]byte(json)))
@@ -105,7 +105,7 @@ func TestImageNotFound(t *testing.T) {
 
 func TestPartialImagesPull(t *testing.T) {
 	logrus.Debug("Running test Pipeline POST")
-	filePath := "testdata/newFormat020/failPartialImagesAvail.json"
+	filePath := "testdata/pipeline_integration_private/failPartialImagesAvail.json"
 	json := LoadJSONBytes(filePath)
 
 	req := httptest.NewRequest(http.MethodPost, apiURL, bytes.NewBuffer([]byte(json)))

@@ -19,7 +19,7 @@ var errMsg string
 
 func TestMain(m *testing.M) {
 
-	manifestBytesMVP = LoadJsonBytes("newFormat020/workingMVP.json")
+	manifestBytesMVP = LoadJsonBytes("pipeline_unit_private/workingMVP.json")
 	// manifestBytesSimple = LoadJsonBytes("test_manifest1.json")
 	// manifestBytesNoModules = LoadJsonBytes("test_manifest_no_modules.json")
 	// manifestBytes3nodesBroker = LoadJsonBytes("test_manifest_3broker.json")
@@ -75,7 +75,7 @@ func ExecutePassTest(t *testing.T) {
 }
 
 func TestInvalidJson(t *testing.T) {
-	json := LoadJsonBytes("newFormat020/failInvalidJSON.json")
+	json := LoadJsonBytes("pipeline_unit_private/failInvalidJSON.json")
 	_, err := ParseJSONManifest(json)
 	if err == nil {
 		t.Error("Json parsing should fail")
@@ -83,55 +83,55 @@ func TestInvalidJson(t *testing.T) {
 }
 
 func TestMissingCompose(t *testing.T) {
-	filePath = "newFormat020/failMissingCompose.json"
+	filePath = "pipeline_unit_private/failMissingCompose.json"
 	errMsg = "Should throw validation error: Please provide compose"
 	ExecuteFailTest(t)
 }
 
 func TestMissingNetwork(t *testing.T) {
-	filePath = "newFormat020/failMissingNetwork.json"
+	filePath = "pipeline_unit_private/failMissingNetwork.json"
 	errMsg = "Should throw validation error: Please provide network details"
 	ExecuteFailTest(t)
 }
 
 func TestMissingNetworkName(t *testing.T) {
-	filePath = "newFormat020/failMissingNetworkName.json"
+	filePath = "pipeline_unit_private/failMissingNetworkName.json"
 	errMsg = "Should throw validation error: Please provide network name"
 	ExecuteFailTest(t)
 }
 
 func TestEmptyServices(t *testing.T) {
-	filePath = "newFormat020/failEmptyServices.json"
+	filePath = "pipeline_unit_private/failEmptyServices.json"
 	errMsg = "Should throw validation error: Please provide at least one service"
 	ExecuteFailTest(t)
 }
 
 func TestEmptyServiceModuleId(t *testing.T) {
-	filePath = "newFormat020/failMissingModuleId.json"
+	filePath = "pipeline_unit_private/failMissingModuleId.json"
 	errMsg = "Should throw validation error: Please provide module id for service"
 	ExecuteFailTest(t)
 }
 
 func TestEmptyServiceName(t *testing.T) {
-	filePath = "newFormat020/failMissingServiceName.json"
+	filePath = "pipeline_unit_private/failMissingServiceName.json"
 	errMsg = "Should throw validation error: Please provide name for service"
 	ExecuteFailTest(t)
 }
 
 func TestMissingImage(t *testing.T) {
-	filePath = "newFormat020/failMissingImage.json"
+	filePath = "pipeline_unit_private/failMissingImage.json"
 	errMsg = "Should throw validation error: Please provide image details"
 	ExecuteFailTest(t)
 }
 
 func TestMissingImageName(t *testing.T) {
-	filePath = "newFormat020/failMissingImageName.json"
+	filePath = "pipeline_unit_private/failMissingImageName.json"
 	errMsg = "Should throw validation error: Please provide image name"
 	ExecuteFailTest(t)
 }
 
 func TestWorkingManifest(t *testing.T) {
-	filePath = "newFormat020/workingMVP.json"
+	filePath = "pipeline_unit_private/workingMVP.json"
 	errMsg = "Should not throw any error"
 	ExecutePassTest(t)
 }
