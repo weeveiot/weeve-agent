@@ -1,4 +1,4 @@
-// container
+// Package controller container
 package controller
 
 import (
@@ -14,6 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// GETcontainersID get all containers IDs
 func GETcontainersID(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint: getContainer")
 	// vars := mux.Vars(r)
@@ -23,7 +24,7 @@ func GETcontainersID(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(containers[0])
 }
 
-// Get All Containers returns all created (started & stopped) contianers
+// GETcontainers get All Containers returns all created (started & stopped) contianers
 // @Summary Get all containers
 // @Description Get all containers
 // @Tags containers
@@ -45,6 +46,7 @@ func GETcontainers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(containers)
 }
 
+// GETcontainersIDlogs returns container logs
 func GETcontainersIDlogs(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint: returnAll logs of Container")
 	vars := mux.Vars(r)
@@ -53,7 +55,7 @@ func GETcontainersIDlogs(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(logs)
 }
 
-// Start all stopped containers
+// POSTcontainersStart starts all stopped containers
 // @Summary Start all stopped containers
 // @Description Start all stopped containers
 // @Tags containers
@@ -72,7 +74,7 @@ func POSTcontainersStart(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
-// Stop all started containers
+// POSTcontainersStop stops all started containers
 // @Summary Stop all started containers
 // @Description Stop all started containers
 // @Tags containers
@@ -91,7 +93,7 @@ func POSTcontainersStop(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
-// Start single stopped container by ID
+// POSTcontainersStartID starts single stopped container by ID
 // @Summary Start single stopped container by ID
 // @Description Start single stopped container by ID
 // @Tags containers
@@ -111,7 +113,7 @@ func POSTcontainersStartID(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
-// Stop single started container by ID
+// POSTcontainersStopID stops single started container by ID
 // @Summary Stop single started container by ID
 // @Description Stop single started container by ID
 // @Tags containers
@@ -173,7 +175,7 @@ func POSTcontainersDeploy(w http.ResponseWriter, r *http.Request) {
 // 	json.NewEncoder(w).Encode(key)
 // }
 
-//TODO: Not implemented!
+// DELETEcontainersID TODO: Not implemented!
 func DELETEcontainersID(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint: Delete Container")
 	w.WriteHeader(http.StatusNotImplemented)

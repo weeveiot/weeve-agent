@@ -17,6 +17,7 @@ import (
 	"github.com/docker/docker/api/types"
 )
 
+// POSTpipelines creates pipeline based on input manifest
 func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	log.Info("POST /pipeline")
 

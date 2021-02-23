@@ -43,10 +43,9 @@ type OptionKeyVal struct {
 }
 
 type RegistryDetails struct {
-	ImageName     string
-	ServerAddress string
-	UserName      string
-	Password      string
+	ImageName string
+	UserName  string
+	Password  string
 }
 
 func PrintStartCommand(sc ContainerConfig) {
@@ -102,16 +101,16 @@ func (m Manifest) ImageNamesWithRegList() []RegistryDetails {
 			imageName = imageName + ":" + mod.Search("image").Search("tag").Data().(string)
 		}
 
-		regUrl := mod.Search("registry").Search("url").Data().(string)
-		if mod.Search("registry").Search("port").Data() != nil {
-			regUrl = regUrl + ":" + mod.Search("registry").Search("port").Data().(string)
+		var userName string
+		var password string
+		if mod.Search("registry").Search("userName").Data() != nil && mod.Search("registry").Search("password").Data() != nil {
+			userName = mod.Search("registry").Search("userName").Data().(string)
+			password = mod.Search("registry").Search("password").Data().(string)
 		}
 
-		userName := mod.Search("registry").Search("userName").Data().(string)
-		password := mod.Search("registry").Search("password").Data().(string)
-
-		imageNamesList = append(imageNamesList, RegistryDetails{imageName, regUrl, userName, password})
+		imageNamesList = append(imageNamesList, RegistryDetails{imageName, userName, password})
 	}
+
 	return imageNamesList
 }
 

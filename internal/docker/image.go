@@ -53,19 +53,21 @@ func PullImage(imgDetails model.RegistryDetails) bool {
 	}
 
 	authConfig := types.AuthConfig{
-		Username:      imgDetails.UserName,
-		Password:      imgDetails.Password,
-		ServerAddress: imgDetails.ServerAddress,
+		Username: imgDetails.UserName,
+		Password: imgDetails.Password,
 	}
+
 	encodedJSON, err := json.Marshal(authConfig)
 	if err != nil {
 		panic(err)
 	}
+
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
 
 	// Imager pull returns a Reader object, see:
 	// https://stackoverflow.com/questions/44452679/golang-docker-api-parse-result-of-imagepull
 	// log.Info("\t\tPulling image " + imageName)
+
 	events, err := cli.ImagePull(ctx, imgDetails.ImageName, types.ImagePullOptions{RegistryAuth: authStr})
 	if err != nil {
 		log.Error(err)
