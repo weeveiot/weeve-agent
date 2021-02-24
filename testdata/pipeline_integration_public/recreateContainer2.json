@@ -8,30 +8,20 @@
     "description": "Minimum Viable Manifest",
     "compose": {
         "network": {
-            "name": "mosquitto-net",
+            "name": "alpine",
             "driver": "bridge"
         },
         "services": [
             {
                 "moduleId": "245536acb08b0958f1aa78d391d5efc773e60fa2c39d942318aa04d6085bef42",
-                "name": "broker",
-                "description": "Standard Mosquitto broker",
+                "name": "test_service",
+                "description": "aline image",
                 "version": "1.0.0",
-                "network": "mosquitto-net",
+                "network": "alpine",
                 "image": {
-                    "name": "weevenetwork/mosquitto_broker",
-                    "tag": "demo"
-                },
-                "registry": {
-                    "url": "registry.hub.docker.com/library",
-                    "port": "",
-                    "userName":"weevenetwork",
-                    "password":"vrU(#3JQ12p3"
-                },
-                "command": [
-                    {"key": "-p", "value": "2020"},
-                    {"key": "-v", "value": ""}
-                    ]
+                    "name": "alpine",
+                    "tag": "latest"
+                }
             }
         ]
     }

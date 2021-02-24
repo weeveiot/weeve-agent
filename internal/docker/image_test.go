@@ -20,9 +20,9 @@ var errMsg string
 
 func TestMain(m *testing.M) {
 
-	fullManifestPath := "/testdata/pipeline_integration_private/workingMVP.json"
+	fullManifestPath := "/testdata/pipeline_integration_public/workingMVP.json"
 	manifestBytesMVP = LoadJsonBytes(fullManifestPath)
-	// manifestBytesMVP = LoadJsonBytes("./testdata/pipeline_integration_private/workingMVP.json")
+	// manifestBytesMVP = LoadJsonBytes("./testdata/pipeline_integration_public/workingMVP.json")
 	code := m.Run()
 
 	os.Exit(code)
@@ -50,7 +50,7 @@ func LoadJsonBytes(filePath string) []byte {
 
 // Unit function to validate negative tests
 func TestImageExists(t *testing.T) {
-	thisFilePath := "/testdata/pipeline_integration_private/failEmptyServices.json"
+	thisFilePath := "/testdata/pipeline_integration_public/failEmptyServices.json"
 	json := LoadJsonBytes(thisFilePath)
 	m, err := model.ParseJSONManifest(json)
 	if err != nil {
