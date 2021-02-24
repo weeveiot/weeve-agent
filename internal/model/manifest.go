@@ -2,8 +2,8 @@ package model
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/davecgh/go-spew/spew"
@@ -17,11 +17,12 @@ import (
 type Manifest struct {
 	data        []byte
 	Manifest    gabs.Container
-	ID          string
-	NetworkName string
+	Name        string `json:"name"`
+	NetworkName string `json:"name"`
 	NumModules  int
 }
 
+// This struct holds information for starting a container
 type ContainerConfig struct {
 	PipelineName   string
 	ContainerName  string
@@ -41,6 +42,12 @@ type OptionKeyVal struct {
 	val string
 }
 
+type RegistryDetails struct {
+	ImageName string
+	UserName  string
+	Password  string
+}
+
 func PrintStartCommand(sc ContainerConfig) {
 	empJSON, err := json.MarshalIndent(sc, "", "  ")
 	if err != nil {
@@ -50,6 +57,14 @@ func PrintStartCommand(sc ContainerConfig) {
 }
 
 // Create a Manifest type
+/* The manifest type holds the parsed JSON of a manifest file, as well as
+several convenience attributes.
+
+The manifest JSON object itself is parsed into a golang 'gabs' object.
+(see https://github.com/Jeffail/gabs)
+
+Additionally,
+*/
 func ParseJSONManifest(data []byte) (Manifest, error) {
 	log.Debug("Parsing data into arbitrary JSON")
 	var thisManifest = Manifest{}
@@ -61,28 +76,52 @@ func ParseJSONManifest(data []byte) (Manifest, error) {
 	}
 
 	thisManifest.Manifest = *jsonParsed
-	thisManifest.ID = thisManifest.Manifest.Search("ID").Data().(string)
-	thisManifest.NetworkName = thisManifest.Manifest.Search("Name").Data().(string)
-	thisManifest.NumModules = thisManifest.CountNumModules()
-	if thisManifest.NumModules == 0 {
-		msg := "No modules found in manifest"
-		log.Error(msg)
-		return Manifest{}, errors.New(msg)
-	}
-	return thisManifest, nil
-}
 
-func (m Manifest) CountNumModules() int {
-	return len(m.Manifest.Search("Modules").Children())
+	return thisManifest, nil
 }
 
 func (m Manifest) ImageNamesList() []string {
 	var imageNamesList []string
-	for _, mod := range m.Manifest.Search("Modules").Children() {
-		imageNamesList = append(imageNamesList, mod.Search("ImageName").Data().(string)+":"+mod.Search("Tag").Data().(string))
+	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
+		imageName := mod.Search("image").Search("name").Data().(string)
+		if mod.Search("image").Search("tag").Data() != nil {
+			imageName = imageName + ":" + mod.Search("image").Search("tag").Data().(string)
+		}
+
+		imageNamesList = append(imageNamesList, imageName)
 	}
 	return imageNamesList
 }
+
+func (m Manifest) ImageNamesWithRegList() []RegistryDetails {
+	var imageNamesList []RegistryDetails
+	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
+		imageName := mod.Search("image").Search("name").Data().(string)
+		if mod.Search("image").Search("tag").Data() != nil {
+			imageName = imageName + ":" + mod.Search("image").Search("tag").Data().(string)
+		}
+
+		var userName string
+		var password string
+		if mod.Search("registry").Search("userName").Data() != nil && mod.Search("registry").Search("password").Data() != nil {
+			userName = mod.Search("registry").Search("userName").Data().(string)
+			password = mod.Search("registry").Search("password").Data().(string)
+		}
+
+		imageNamesList = append(imageNamesList, RegistryDetails{imageName, userName, password})
+	}
+
+	return imageNamesList
+}
+
+// func (m Manifest) CountNumModules() int {
+// 	// t.Logf("%d", i)
+// 	// t.Logf("COUNT")
+// 	fmt.Println("COUNT")
+
+// 	// return len(m.Manifest.Search("compose")
+// 	// return len(m.Manifest.Search("Modules").Children())
+// }
 
 func (m Manifest) PrintManifest() {
 	for _, mod := range m.Manifest.Search("Modules").Children() {
@@ -106,12 +145,15 @@ func (m Manifest) SpewManifest() {
 
 func (m Manifest) ContainerNamesList() []string {
 	var containerNamesList []string
-	for _, mod := range m.Manifest.Search("Modules").Children() {
-		_ = mod
-		containerName := GetContainerName(m.Manifest.Search("ID").Data().(string), mod.Search("Name").Data().(string))
+	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
+		containerName := GetContainerName(mod.Search("moduleId").Data().(string), mod.Search("name").Data().(string))
 		containerNamesList = append(containerNamesList, containerName)
 	}
 	return containerNamesList
+}
+
+func (m Manifest) GetNetworkName() string {
+	return m.Manifest.Search("compose").Search("network").Search("name").Data().(string)
 }
 
 // GetContainerName is a simple utility to return a standard container name
@@ -120,35 +162,56 @@ func GetContainerName(pipelineID string, containerName string) string {
 	return pipelineID + "_" + containerName
 }
 
-// Return a list of container start objects
+// Based on an existing Manifest object, build a new object
+// The new object is used to start a container
+// The new object has all information required to execute 'docker run':
+// 		- Bridge Network information
+// 		- Arguments to pass into entrypoint
 func (m Manifest) GetContainerStart() []ContainerConfig {
 	var startCommands []ContainerConfig
-	for _, mod := range m.Manifest.Search("Modules").Children() {
+	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
 		var thisStartCommand ContainerConfig
-		thisStartCommand.PipelineName = m.Manifest.Search("Name").Data().(string)
-		thisStartCommand.NetworkName = m.Manifest.Search("Name").Data().(string)
+		thisStartCommand.PipelineName = m.Manifest.Search("compose").Search("network").Search("name").Data().(string)
+		thisStartCommand.NetworkName = m.Manifest.Search("compose").Search("network").Search("name").Data().(string)
 		thisStartCommand.NetworkMode = "" // This is the default setting
 
-		thisStartCommand.ContainerName = GetContainerName(m.Manifest.Search("ID").Data().(string), mod.Search("Name").Data().(string))
-		thisStartCommand.ImageName = mod.Search("ImageName").Data().(string)
-		thisStartCommand.ImageTag = mod.Search("Tag").Data().(string)
+		thisStartCommand.ContainerName = GetContainerName(mod.Search("moduleId").Data().(string), mod.Search("name").Data().(string))
+		thisStartCommand.ImageName = mod.Search("image").Search("name").Data().(string)
+		thisStartCommand.ImageTag = mod.Search("image").Search("tag").Data().(string)
 
-		var theseOptions []OptionKeyVal
-		for _, opt := range mod.Search("options").Children() {
-			// log.Debug(opt)
-			var thisOption OptionKeyVal
-			thisOption.key = opt.Search("opt").Data().(string)
-			thisOption.val = opt.Search("val").Data().(string)
-			theseOptions = append(theseOptions, thisOption)
-			// fmt.Println(thisOption)
-		}
-		thisStartCommand.Options = theseOptions
+		// var theseOptions []OptionKeyVal
+		// for _, opt := range mod.Search("options").Children() {
+		// 	// log.Debug(opt)
+		// 	var thisOption OptionKeyVal
+		// 	thisOption.key = opt.Search("opt").Data().(string)
+		// 	thisOption.val = opt.Search("val").Data().(string)
+		// 	theseOptions = append(theseOptions, thisOption)
+		// 	// fmt.Println(thisOption)
+		// }
+		// thisStartCommand.Options = theseOptions
 
 		var strArgs []string
-		for _, arg := range mod.Search("arguments").Children() {
+		log.Debug("Processing arguments")
+		for _, arg := range mod.Search("command").Children() {
 			// strArgs = append(strArgs, "-"+arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
 			// strArgs = append(strArgs, arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
-			strArgs = append(strArgs, arg.Search("arg").Data().(string)+"="+arg.Search("val").Data().(string))
+			// strArgs = append(strArgs, arg.Search("key").Data().(string)+"="+arg.Search("value").Data().(string))
+			// strArgs = append(strArgs, arg.Search("key").Data().(string)+" "+arg.Search("value").Data().(string))
+
+			//TODO: IF we receive only a key or only a value, THEN do not append any empty string
+			if arg.Search("key").Data().(string) != "" {
+				strArgs = append(strArgs, arg.Search("key").Data().(string))
+			}
+
+			if arg.Search("value").Data().(string) != "" {
+				strArgs = append(strArgs, arg.Search("value").Data().(string))
+			}
+
+			log.Debug("String arguments: " + strings.Join(strArgs[:], ","))
+
+			for _, thisArg := range strArgs {
+				log.Debug(fmt.Sprintf("%v %T", thisArg, thisArg))
+			}
 		}
 
 		thisStartCommand.EntryPointArgs = strArgs
