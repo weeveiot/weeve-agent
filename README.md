@@ -43,7 +43,16 @@ The `-v` verbose flag is optional and will present the Debug level logging messa
 
 ### Unit-test the Golang project
 
-`go test -v ./...`
+TO clear all docker resoures before running tests, run below command,
+
+>docker system prune -a
+
+To get latest test result first clear cached result if any, using below command,
+
+>go clean --testcache
+
+Then run below command to run tests,
+`go test -v ./...` OR 'watchtests.sh'
 
 Currently, unit testing does not cover the project.
 
