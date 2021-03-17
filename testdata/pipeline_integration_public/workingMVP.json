@@ -14,7 +14,7 @@
         "services": [
             {
                 "moduleId": "245536acb08b0958f1aa78d391d5efc773e60fa2c39d942318aa04d6085bef42",
-                "name": "test_service_1",
+                "name": "test_alpine",
                 "description": "alpine image",
                 "version": "1.0.0",
                 "network": "alpine",
@@ -25,14 +25,30 @@
             },
             {
                 "moduleId": "245536acb08b0958f1aa78d391d5efc773e60fa2c39d942318aa04d6085bef40",
-                "name": "test_service_2",
-                "description": "parse send image",
+                "name": "broker_1",
+                "description": "Standard Mosquitto broker 1",
                 "version": "1.0.0",
-                "network": "parse",
+                "network": "mosquitto-net-1",
                 "image": {
-                    "name": "weevenetwork/parse-send",
+                    "name": "weevenetwork/mosquitto_broker",
                     "tag": "demo"
-                }
+                },
+                "registry": {
+                    "url": "registry.hub.docker.com/library",
+                    "port": "",
+                    "userName": "weevenetwork",
+                    "password": "vrU(#3JQ12p3"
+                },
+                "command": [
+                    {
+                        "key": "-p",
+                        "value": "2000"
+                    },
+                    {
+                        "key": "-v",
+                        "value": ""
+                    }
+                ]
             }
         ]
     }
