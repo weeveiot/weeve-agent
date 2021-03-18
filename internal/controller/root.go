@@ -7,6 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Status retruns status
 func Status(w http.ResponseWriter, r *http.Request) {
 	log.Debug("GET / (status)")
 	json := simplejson.New()

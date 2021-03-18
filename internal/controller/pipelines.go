@@ -17,6 +17,7 @@ import (
 	"github.com/docker/docker/api/types"
 )
 
+// POSTpipelines creates pipeline based on input manifest
 func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	log.Info("POST /pipeline")
 
@@ -24,13 +25,27 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	manifestBodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	man, err := model.ParseJSONManifest(manifestBodyBytes)
 	if err != nil {
 		log.Error(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
+
+	err = model.ValidateManifest(man)
+	if err != nil {
+		log.Error(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Check if process is failed and needs to return
+	failed := false
+
 	// res := util.PrintManifestDetails(body)
 	// util.PrettyPrintJson(manifestBodyBytes)
 	// man.PrintManifest()
@@ -39,27 +54,33 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 
 	//******** STEP 1 - Pull all *************//
 	// Pull all images as required
-	log.Debug("Iterating modules, pulling image into host if missing")
+	log.Info("Iterating modules, pulling image into host if missing")
 
-	for i, imgName := range man.ImageNamesList() {
+	for i, imgDetails := range man.ImageNamesWithRegList() {
 		// Check if image exist in local
-		exists := docker.ImageExists(imgName)
+		exists := docker.ImageExists(imgDetails.ImageName)
 		if exists { // Image already exists, continue
-			log.Debug(fmt.Sprintf("\tImage %v %v, already exists on host", i, imgName))
+			log.Info(fmt.Sprintf("\tImage %v %v, already exists on host", i, imgDetails.ImageName))
 		} else { // Pull this image
-			log.Debug(fmt.Sprintf("\tImage %v %v, does not exist on host", i, imgName))
-			log.Debug("\t\tPulling ", imgName)
-			exists = docker.PullImage(imgName)
+			log.Info(fmt.Sprintf("\tImage %v %v, does not exist on host", i, imgDetails.ImageName))
+			log.Info("\t\tPulling ", imgDetails.ImageName)
+			exists = docker.PullImage(imgDetails)
 			if exists == false {
-				msg := "Unable to pull image " + imgName
+				failed = true
+				msg := "404 - Unable to pull image " + imgDetails.ImageName
 				log.Error(msg)
-				http.Error(w, msg, http.StatusInternalServerError)
+				http.Error(w, msg, http.StatusNotFound)
+				break
 			}
 		}
 	}
 
+	if failed {
+		return
+	}
+
 	//******** STEP 2 - Check containers, stop and remove *************//
-	log.Debug("Checking containers, stopping and removing")
+	log.Info("Checking containers, stopping and removing")
 
 	for _, containerName := range man.ContainerNamesList() {
 
@@ -68,15 +89,20 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 
 		// Stop + remove container if exists, start fresh
 		if containerExists {
-			log.Debug("\tStopAndRemoveContainer - ", containerName)
+			log.Info("\tStopAndRemoveContainer - ", containerName)
 			// Stop and delete container
 			err := docker.StopAndRemoveContainer(containerName)
 			if err != nil {
+				failed = true
 				log.Error(err)
 				http.Error(w, string(err.Error()), http.StatusInternalServerError)
 			}
-			log.Debug("\tContainer ", containerName, " removed")
+			log.Info("\tContainer ", containerName, " removed")
 		}
+	}
+
+	if failed {
+		return
 	}
 
 	//******** STEP 3 - Create the network *************//
@@ -87,13 +113,13 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		log.Error(err)
 	}
 
-	log.Debug("Pruning networks")
+	log.Info("Pruning networks")
 	filter := filters.NewArgs()
 
 	pruneReport, err := cli.NetworksPrune(ctx, filter)
-	log.Debug("Pruned:", pruneReport)
+	log.Info("Pruned:", pruneReport)
 	// var report types.NetworksPruneReport
-	log.Debug("Create the network")
+	log.Info("Create the network")
 	var networkCreateOptions types.NetworkCreate
 	networkCreateOptions.CheckDuplicate = true
 	networkCreateOptions.Attachable = true
@@ -102,27 +128,32 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	// _ = ctx
 	// _ = cli
 	// fmt.Println(networkCreateOptions)
-	resp, err := cli.NetworkCreate(ctx, man.NetworkName, networkCreateOptions)
+	networkName := man.GetNetworkName()
+	resp, err := cli.NetworkCreate(ctx, networkName, networkCreateOptions)
 	if err != nil {
 		log.Error(err)
-		log.Error("Error trying to create network " + man.NetworkName)
+		log.Error("Error trying to create network " + networkName)
 		panic(err)
 
 	}
-	log.Debug("Created network named ", man.NetworkName)
+	log.Info("Created network named ", networkName)
 
 	_ = resp
-	// log.Debug(resp.ID, resp.Warning)
+	// log.Info(resp.ID, resp.Warning)
 
 	//******** STEP 4 - Create, Start, attach all containers *************//
-	log.Debug("Start all containers")
+	log.Info("Start all containers")
 
 	for _, startCommand := range man.GetContainerStart() {
 		log.Info("Creating ", startCommand.ContainerName, " from ", startCommand.ImageName, ":", startCommand.ImageTag)
-		containerCreateResponse, err := docker.StartCreateContainer(startCommand.ImageName, startCommand.ContainerName, startCommand.EntryPointArgs)
+		imageAndTag := startCommand.ImageName + ":" + startCommand.ImageTag
+		containerCreateResponse, err := docker.StartCreateContainer(imageAndTag, startCommand.ContainerName, startCommand.EntryPointArgs)
 		log.Info("\tSuccessfully created with args: ", startCommand.EntryPointArgs)
 		if err != nil {
-			panic(err)
+			failed = true
+			log.Info("Started")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("500 - Failed to create container!"))
 		}
 
 		// Attach to network
@@ -131,7 +162,11 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			panic(err)
 		}
-		log.Debug("\tConnected to network", startCommand.NetworkName)
+		log.Info("\tConnected to network", startCommand.NetworkName)
+	}
+
+	if failed {
+		return
 	}
 
 	// Finally, return 200

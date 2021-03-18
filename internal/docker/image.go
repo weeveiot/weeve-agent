@@ -3,6 +3,7 @@ package docker
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,54 +13,70 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 
 	log "github.com/sirupsen/logrus"
 )
 
 // PullImages iterates modules and pulls images
 // func PullImagesNew(manifest model.ManifestReq) bool {
-func PullImagesNew(imageNames []string) bool {
-	for i := range imageNames {
-		log.Debug("IMAGE NAMES:", imageNames)
-		// Check if image exist in local
-		exists := ImageExists(imageNames[i])
-		if exists {
-			log.Debug(fmt.Sprintf("\tImage %v %v, already exists on host", i, imageNames[i]))
-		} else {
-			log.Debug(fmt.Sprintf("\tImage %v %v, does not exist on host", i, imageNames[i]))
-		}
+// func PullImagesNew(imageNames []string) bool {
+// 	for i := range imageNames {
+// 		log.Debug("IMAGE NAMES:", imageNames)
+// 		// Check if image exist in local
+// 		exists := ImageExists(imageNames[i])
+// 		if exists {
+// 			log.Debug(fmt.Sprintf("\tImage %v %v, already exists on host", i, imageNames[i]))
+// 		} else {
+// 			log.Debug(fmt.Sprintf("\tImage %v %v, does not exist on host", i, imageNames[i]))
+// 		}
 
-		if exists == false {
-			// Pull image if not exist in local
-			log.Debug("\t\tPulling ", imageNames[i])
-			exists = PullImage(imageNames[i])
-			if exists == false {
-				return false
-			}
-		}
-	}
+// 		if exists == false {
+// 			// Pull image if not exist in local
+// 			log.Debug("\t\tPulling ", imageNames[i])
+// 			exists = PullImage(imageNames[i])
+// 			if exists == false {
+// 				return false
+// 			}
+// 		}
+// 	}
 
-	return true
-}
+// 	return true
+// }
 
-func PullImage(imageName string) bool {
+func PullImage(imgDetails model.RegistryDetails) bool {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
 		return false
 	}
+
+	authConfig := types.AuthConfig{
+		Username: imgDetails.UserName,
+		Password: imgDetails.Password,
+	}
+
+	encodedJSON, err := json.Marshal(authConfig)
+	if err != nil {
+		panic(err)
+	}
+
+	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
+
 	// Imager pull returns a Reader object, see:
 	// https://stackoverflow.com/questions/44452679/golang-docker-api-parse-result-of-imagepull
 	// log.Info("\t\tPulling image " + imageName)
-	events, err := cli.ImagePull(ctx, imageName, types.ImagePullOptions{})
+
+	events, err := cli.ImagePull(ctx, imgDetails.ImageName, types.ImagePullOptions{RegistryAuth: authStr})
 	if err != nil {
 		log.Error(err)
 		return false
 	}
 	// defer out.Close()
 
-	// io.Copy(os.Stdout, out)
+	// To write all
+	//io.Copy(os.Stdout, out)
 
 	d := json.NewDecoder(events)
 
@@ -85,18 +102,17 @@ func PullImage(imageName string) bool {
 		// fmt.Printf("EVENT: %+v\n", event)
 		// fmt.Printf(".\n")
 	}
-	// fmt.Printf("\n")
 
 	// Latest event for new image
 	// EVENT: {Status:Status: Downloaded newer image for busybox:latest Error: Progress:[==================================================>]  699.2kB/699.2kB ProgressDetail:{Current:699243 Total:699243}}
 	// Latest event for up-to-date image
 	// EVENT: {Status:Status: Image is up to date for busybox:latest Error: Progress: ProgressDetail:{Current:0 Total:0}}
 	if event != nil {
-		if strings.Contains(event.Status, fmt.Sprintf("Downloaded newer image for %s", imageName)) {
-			log.Info("Pulled image " + imageName + " into host")
+		if strings.Contains(event.Status, fmt.Sprintf("Downloaded newer image for %s", imgDetails.ImageName)) {
+			log.Info("Pulled image " + imgDetails.ImageName + " into host")
 		}
-		if strings.Contains(event.Status, fmt.Sprintf("Image is up to date for %s", imageName)) {
-			log.Info("Updated image " + imageName + " into host")
+		if strings.Contains(event.Status, fmt.Sprintf("Image is up to date for %s", imgDetails.ImageName)) {
+			log.Info("Updated image " + imgDetails.ImageName + " into host")
 		}
 	}
 

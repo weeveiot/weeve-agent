@@ -177,6 +177,7 @@ func StopContainer(containerId string) bool {
 // 6) Start the container
 // 7) Return containerStart response
 func StartCreateContainer(imageName string, containerName string, entryArgs []string) (container.ContainerCreateCreatedBody, error) {
+	log.Debug("\tCreating from " + imageName + " container " + containerName)
 	ctx := context.Background()
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -190,9 +191,24 @@ func StartCreateContainer(imageName string, containerName string, entryArgs []st
 		AttachStdout: false,
 		AttachStderr: false,
 		Cmd:          entryArgs,
+		// Cmd:          []string{"-p", "2000"},
 		Tty:          false,
 		ExposedPorts: nil,
 	}
+
+	// The following works:
+	// Cmd:          []string{"p", "2000"},
+
+	// The following breaks:
+
+	//	Cmd:          []string{"p", "2000"},]
+	// Fails with "Error: Unknown option 'p'."
+
+	// Cmd:          []string{"-p 2000"},
+	// Fails with "Error: Unknown option '-p 2000'."
+
+	// Cmd:          []string{"-p=2000"}
+	// Fails with "Error: Unknown option '-p=2000'."
 
 	hostConfig := &container.HostConfig{
 		PortBindings: nil,
@@ -214,7 +230,8 @@ func StartCreateContainer(imageName string, containerName string, entryArgs []st
 		nil,
 		containerName)
 	if err != nil {
-		panic(err)
+		log.Error(err)
+		return containerCreateResponse, err
 	}
 	log.Debug("\tCreated container " + containerName)
 
