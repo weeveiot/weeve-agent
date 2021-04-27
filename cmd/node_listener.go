@@ -6,8 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
+
+	// "os/signal"
+	// "syscall"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/jessevdk/go-flags"
@@ -31,11 +32,16 @@ type Options struct {
 }
 
 type Message struct {
-	Status          string
+	Status    string
+	Manifests []Manifest
+	Time      int64
+	HostUrl   string
+}
+
+type Manifest struct {
 	ManifestId      string
 	ManifestVersion string
-	Time            int64
-	HostUrl         string
+	Status          string
 }
 
 var opt Options
@@ -110,16 +116,43 @@ func main() {
 	opts.SetDefaultPublishHandler(f)
 	log.Info(opts)
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-
-	log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
 	cl := mqtt.NewClient(opts)
-	if token := cl.Connect(); token.Wait() && token.Error() != nil {
-		log.Fatalf("failed to create connection: %v", token.Error())
-	}
 
-	m := Message{"Available", "1", "1", 1294706395881547000, opt.HostUrl}
+	done := make(chan bool)
+	go func() {
+		for {
+			if !cl.IsConnected() {
+				log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
+
+				if token := cl.Connect(); token.Wait() && token.Error() != nil {
+					log.Fatalf("failed to create connection: %v", token.Error())
+				}
+
+				fmt.Println("Listening for new events.")
+				if token := cl.Subscribe(ClientId+"/"+NodeId+"/#", 0, nil); token.Wait() && token.Error() != nil {
+					log.Fatalf("failed to create subscription: %v", token.Error())
+				}
+			}
+
+			PublishMessages(cl)
+
+			log.Info("Sleeping..... 30 * ", time.Second)
+			time.Sleep(time.Second * 10)
+			log.Info("waken..... 30 * ", time.Second)
+		}
+	}()
+	<-done
+	if cl.IsConnected() {
+		log.Info("Disconnecting.....")
+		cl.Disconnect(250)
+	}
+}
+
+func PublishMessages(cl mqtt.Client) {
+	var mani = []Manifest{
+		Manifest{"1211446464", "1.0", "Running"},
+	}
+	m := Message{"Available", mani, 1294706395881547000, opt.HostUrl}
 	b, err := json.Marshal(m)
 	if err != nil {
 		log.Fatalf("Marshall error: %v", err)
@@ -130,15 +163,4 @@ func main() {
 		log.Fatalf("failed to send update: %v", token.Error())
 	}
 
-	// fmt.Println("Listening for new events.")
-	// if token := cl.Subscribe(ClientId+"/"+NodeId+"/#", 0, nil); token.Wait() && token.Error() != nil {
-	// 	log.Fatalf("failed to create subscription: %v", token.Error())
-	// }
-	log.Info("Disconnecting.....")
-	cl.Disconnect(250)
-
-	log.Info("Sleeping..... 30 * ", time.Second)
-	time.Sleep(time.Second * 30)
-
-	<-c
 }
