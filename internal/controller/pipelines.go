@@ -11,8 +11,10 @@ import (
 
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/constants"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/docker"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util/jsonlines"
 
 	"github.com/docker/docker/api/types"
 )
@@ -45,6 +47,8 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 
 	// Check if process is failed and needs to return
 	failed := false
+
+	jsonlines.Insert(constants.ManifestFile, string(manifestBodyBytes))
 
 	// res := util.PrintManifestDetails(body)
 	// util.PrettyPrintJson(manifestBodyBytes)
