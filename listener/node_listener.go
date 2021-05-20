@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Jeffail/gabs/v2"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
@@ -37,8 +38,8 @@ type StatusMessage struct {
 	Id                 string           `json:"ID"`
 	Timestamp          int64            `json:"timestamp"`
 	Connectivity       string           `json:"connectivity"`
-	ActiveServiceCount int64            `json:"activeServiceCount"`
-	ServiceCount       int64            `json:"serviceCount"`
+	ActiveServiceCount int              `json:"activeServiceCount"`
+	ServiceCount       int              `json:"serviceCount"`
 	DeployStatus       []ManifestStatus `json:"deployStatus"`
 	DeviceParams       DeviceParams     `json:"deviceParams"`
 }
@@ -103,7 +104,15 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 
 	if topic_rcvd == "CheckVersion" {
 
-	} else if topic_rcvd == "Deploy" {
+	} else if topic_rcvd == "deploy" {
+
+		jsonParsed, err := gabs.ParseJSON(msg.Payload())
+		if err != nil {
+			log.Error(err)
+		} else {
+			log.Debug(jsonParsed)
+		}
+
 		post([]byte(msg.Payload()), "http://localhost:"+opt.NodeApiPort+"/pipelines")
 	}
 }
@@ -203,7 +212,7 @@ func main() {
 			PublishMessages(p_cl)
 
 			log.Info("Sleeping..... 30 * ", time.Second)
-			time.Sleep(time.Second * 30)
+			time.Sleep(time.Second * 300)
 			log.Info("waken..... 30 * ", time.Second)
 		}
 	}()
@@ -226,16 +235,26 @@ func PublishMessages(cl mqtt.Client) {
 	var filter = map[string]string{"ID": "10"}
 
 	statuses := jsonlines.Read(constants.StatusFile, "", "", filter, false)
+	manifests := jsonlines.Read(constants.ManifestFile, "", "", nil, false)
 
 	var mani []ManifestStatus
 	var deviceParams = DeviceParams{"10", "10", "20"}
 
-	mani = append(mani, ManifestStatus{"1211446464", "1.0", "Running"})
+	actv_cnt := 0
+	serv_cnt := 0
+	for _, rec := range manifests {
+		log.Info(rec)
+		mani = append(mani, ManifestStatus{rec["id"].(string), rec["version"].(string), rec["status"].(string)})
+		serv_cnt = serv_cnt + 1
+		if "SUCCESS" == rec["status"].(string) {
+			actv_cnt = actv_cnt + 1
+		}
+	}
 
 	now := time.Now()
 	nanos := now.UnixNano()
 	millis := nanos / 1000000
-	msg := StatusMessage{NodeId, millis, "Available", 0, 0, mani, deviceParams}
+	msg := StatusMessage{NodeId, millis, "Available", actv_cnt, serv_cnt, mani, deviceParams}
 
 	b_msg, err := json.Marshal(msg)
 	if err != nil {
@@ -260,5 +279,5 @@ func post(jsonReq []byte, nextHost string) {
 
 	// Convert response body to string
 	bodyString := string(bodyBytes)
-	fmt.Println(bodyString)
+	log.Info(bodyString)
 }

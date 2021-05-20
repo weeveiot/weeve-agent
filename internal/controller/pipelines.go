@@ -9,14 +9,13 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/network"
 
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/constants"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/docker"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util/jsonlines"
-
-	"github.com/docker/docker/api/types"
 )
 
 // POSTpipelines creates pipeline based on input manifest
@@ -30,7 +29,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
+	// man := gabs.New()
 	man, err := model.ParseJSONManifest(manifestBodyBytes)
 	if err != nil {
 		log.Error(err)
@@ -48,7 +47,12 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	// Check if process is failed and needs to return
 	failed := false
 
-	jsonlines.Insert(constants.ManifestFile, string(manifestBodyBytes))
+	jsonlines.Insert(constants.ManifestLogFile, man.Manifest.String())
+
+	jsonlines.Delete(constants.ManifestFile, "id", man.Manifest.Search("id").Data().(string))
+
+	// man.Manifest.Set("SUCCESS", "status")
+	// jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
 
 	// res := util.PrintManifestDetails(body)
 	// util.PrettyPrintJson(manifestBodyBytes)
@@ -80,6 +84,8 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if failed {
+		man.Manifest.Set("FAILED", "status")
+		jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
 		return
 	}
 
@@ -106,6 +112,8 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if failed {
+		man.Manifest.Set("FAILED", "status")
+		jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
 		return
 	}
 
@@ -170,8 +178,12 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if failed {
+		man.Manifest.Set("FAILED", "status")
+		jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
 		return
 	}
+	man.Manifest.Set("SUCCESS", "status")
+	jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
 
 	// Finally, return 200
 	// Return payload: pipeline started / list of container IDs
