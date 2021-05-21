@@ -5,3 +5,4 @@
 /src/*.exe
 *.exe
 build/
+.vscode/launch.json

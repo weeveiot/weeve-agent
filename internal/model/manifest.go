@@ -146,7 +146,8 @@ func (m Manifest) SpewManifest() {
 func (m Manifest) ContainerNamesList() []string {
 	var containerNamesList []string
 	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
-		containerName := GetContainerName(mod.Search("moduleId").Data().(string), mod.Search("name").Data().(string))
+		containerName := GetContainerName(m.Manifest.Search("id").Data().(string), mod.Search("name").Data().(string))
+		// containerName := GetContainerName(mod.Search("moduleId").Data().(string), mod.Search("name").Data().(string))
 		containerNamesList = append(containerNamesList, containerName)
 	}
 	return containerNamesList
