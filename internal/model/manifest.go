@@ -176,7 +176,7 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 		thisStartCommand.NetworkName = m.Manifest.Search("compose").Search("network").Search("name").Data().(string)
 		thisStartCommand.NetworkMode = "" // This is the default setting
 
-		thisStartCommand.ContainerName = GetContainerName(mod.Search("moduleId").Data().(string), mod.Search("name").Data().(string))
+		thisStartCommand.ContainerName = GetContainerName(m.Manifest.Search("id").Data().(string), mod.Search("name").Data().(string))
 		thisStartCommand.ImageName = mod.Search("image").Search("name").Data().(string)
 		thisStartCommand.ImageTag = mod.Search("image").Search("tag").Data().(string)
 
