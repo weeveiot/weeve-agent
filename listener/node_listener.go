@@ -271,13 +271,14 @@ func post(jsonReq []byte, nextHost string) {
 	fmt.Printf("Next host %s", nextHost)
 	resp, err := http.Post(nextHost, "application/json; charset=utf-8", bytes.NewBuffer(jsonReq))
 	if err != nil {
-		log.Fatalf("Post API Connection error: %v", err)
+		log.Info("Post API Connection error: %v", err)
+	} else {
+
+		defer resp.Body.Close()
+		bodyBytes, _ := ioutil.ReadAll(resp.Body)
+
+		// Convert response body to string
+		bodyString := string(bodyBytes)
+		log.Info(bodyString)
 	}
-
-	defer resp.Body.Close()
-	bodyBytes, _ := ioutil.ReadAll(resp.Body)
-
-	// Convert response body to string
-	bodyString := string(bodyBytes)
-	log.Info(bodyString)
 }
