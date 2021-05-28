@@ -160,7 +160,7 @@ func (m Manifest) GetNetworkName() string {
 // GetContainerName is a simple utility to return a standard container name
 // This function appends the pipelineID and containerName with _
 func GetContainerName(pipelineID string, containerName string) string {
-	return pipelineID + "_" + containerName
+	return strings.ReplaceAll(pipelineID+"_"+containerName, " ", "-")
 }
 
 // Based on an existing Manifest object, build a new object
