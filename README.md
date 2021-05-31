@@ -111,3 +111,4 @@ Request Body:
 }
 ```
 
+go run ./listener/node_listener.go -v -i demo_edge_node1 -b tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883 -f efbb87beed -s nodes/awsdev -c manager/awsdev -t CheckVersion -u hssss -p 8030
