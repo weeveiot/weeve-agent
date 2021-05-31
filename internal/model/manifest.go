@@ -160,7 +160,7 @@ func (m Manifest) GetNetworkName() string {
 // GetContainerName is a simple utility to return a standard container name
 // This function appends the pipelineID and containerName with _
 func GetContainerName(pipelineID string, containerName string) string {
-	return pipelineID + "_" + containerName
+	return strings.ReplaceAll(pipelineID+"_"+containerName, " ", "-")
 }
 
 // Based on an existing Manifest object, build a new object
@@ -176,7 +176,7 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 		thisStartCommand.NetworkName = m.Manifest.Search("compose").Search("network").Search("name").Data().(string)
 		thisStartCommand.NetworkMode = "" // This is the default setting
 
-		thisStartCommand.ContainerName = GetContainerName(mod.Search("moduleId").Data().(string), mod.Search("name").Data().(string))
+		thisStartCommand.ContainerName = GetContainerName(m.Manifest.Search("id").Data().(string), mod.Search("name").Data().(string))
 		thisStartCommand.ImageName = mod.Search("image").Search("name").Data().(string)
 		thisStartCommand.ImageTag = mod.Search("image").Search("tag").Data().(string)
 
