@@ -30,7 +30,7 @@ func ValidateManifest(m Manifest) error {
 		} else {
 			for _, srv := range m.Manifest.Search("compose").Search("services").Children() {
 
-				moduleID := srv.Search("moduleId").Data()
+				moduleID := srv.Search("id").Data()
 				if moduleID == nil {
 					errorList = append(errorList, "Please provide moduleId for all services")
 				}
