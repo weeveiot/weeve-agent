@@ -14,7 +14,7 @@ A data model for the manifest object and supporting structures is found in the i
 ## Getting started for Users
 
 ### Compiled binary
-The latest binary can be downloaded from S3 bucket : 
+The latest binary can be downloaded from S3 bucket :
 https://weeve-binaries-release.s3.eu-central-1.amazonaws.com/node-service/node-service-0-1-1
 
 The compiled binary found as a release can be executed by specifying the port to be exposed;
@@ -29,6 +29,9 @@ Currently, running the project with Docker is not supported. Since the main func
 A postman collection is found in the /docs folder. The collection is (published)[https://documenter.getpostman.com/view/12141960/TVYQ3ubM].
 
 ## Getting started for Developers
+
+### Prerequisites
+GoLang is installed https://golang.org/doc/install
 
 ### Build the Golang project
 The project can be compiled and run from source. The root of the command is the project root directory.
