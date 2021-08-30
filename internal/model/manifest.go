@@ -193,12 +193,9 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 		// }
 		// thisStartCommand.Options = theseOptions
 
-		var vol_maps []map[string]struct{}
-		vol_map := make(map[string]struct{})
-
 		var doc_data = mod.Search("document").Data()
 		if doc_data != nil {
-			ParseDocumentTag(mod.Search("document").Data(), thisStartCommand, vol_maps, vol_map)
+			ParseDocumentTag(mod.Search("document").Data(), &thisStartCommand)
 		}
 
 		var strArgs []string
@@ -287,7 +284,9 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 	return startCommands
 }
 
-func ParseDocumentTag(doc_data interface{}, thisStartCommand ContainerConfig, vol_maps []map[string]struct{}, vol_map map[string]struct{}) {
+func ParseDocumentTag(doc_data interface{}, thisStartCommand *ContainerConfig) {
+	var vol_maps []map[string]struct{}
+	vol_map := make(map[string]struct{})
 	var document = doc_data.(string)
 	document = strings.ReplaceAll(document, "'", "\"")
 
