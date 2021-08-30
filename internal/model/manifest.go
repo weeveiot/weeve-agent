@@ -35,6 +35,7 @@ type ContainerConfig struct {
 	PortBinding    nat.PortMap // This must be set for the containerStart
 	NetworkMode    container.NetworkMode
 	NetworkConfig  network.NetworkingConfig
+	Volumes        map[string]struct{}
 }
 
 type OptionKeyVal struct {
@@ -170,6 +171,7 @@ func GetContainerName(pipelineID string, containerName string) string {
 // 		- Arguments to pass into entrypoint
 func (m Manifest) GetContainerStart() []ContainerConfig {
 	var startCommands []ContainerConfig
+
 	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
 		var thisStartCommand ContainerConfig
 		thisStartCommand.PipelineName = m.Manifest.Search("compose").Search("network").Search("name").Data().(string)
@@ -190,6 +192,14 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 		// 	// fmt.Println(thisOption)
 		// }
 		// thisStartCommand.Options = theseOptions
+
+		var vol_maps []map[string]struct{}
+		vol_map := make(map[string]struct{})
+
+		var doc_data = mod.Search("document").Data()
+		if doc_data != nil {
+			ParseDocumentTag(mod.Search("document").Data(), thisStartCommand, vol_maps, vol_map)
+		}
 
 		var strArgs []string
 		log.Debug("Processing arguments")
@@ -275,4 +285,33 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 	}
 
 	return startCommands
+}
+
+func ParseDocumentTag(doc_data interface{}, thisStartCommand ContainerConfig, vol_maps []map[string]struct{}, vol_map map[string]struct{}) {
+	var document = doc_data.(string)
+	document = strings.ReplaceAll(document, "'", "\"")
+
+	man_doc, err := gabs.ParseJSON([]byte(document))
+	if err != nil {
+		log.Error("Error on parsing document tag ", err)
+		return
+	}
+
+	log.Info("man_doc ", document, man_doc)
+
+	for _, vols := range man_doc.Search("volumes").Children() {
+
+		vol_maps = append(vol_maps, map[string]struct{}{
+			vols.Search("host").Data().(string): {},
+		})
+	}
+
+	if len(vol_maps) >= 0 {
+		for _, vol := range vol_maps {
+			for k, v := range vol {
+				vol_map[k] = v
+			}
+		}
+		thisStartCommand.Volumes = vol_map
+	}
 }
