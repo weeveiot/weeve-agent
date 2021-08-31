@@ -5,7 +5,6 @@
 /src/*.exe
 *.exe
 build/
-.vscode/launch.json
 *.pem
 *.pem.crt
 *.pem.key
