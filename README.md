@@ -100,3 +100,13 @@ Request Body:
 ```
 
 go run ./listener/node_listener.go -v -i demo_edge_node1 -b tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883 -f efbb87beed -s nodes/awsdev -c manager/awsdev -t CheckVersion -u hssss -p 8030
+
+go run ./listener/node_listener.go -v \
+    --nodeId demo_edge_node1 \ # ID of this node \
+    --broker tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883 \ # Broker to connect to \
+    --cert adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c \ # Certificate to connect Broker \
+    --subClientId nodes/awsdev \ # Subscriber ClientId \
+    --pubClientId manager/awsdev \ # Publisher ClientId \
+    --publish CheckVersion \ # Topic Name \
+    --publicurl hssss \ # Public URL to connect from public \
+    --nodeport 8030 \ # Port where edge node api is listening

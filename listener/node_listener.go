@@ -146,70 +146,78 @@ func main() {
 	log.Info("Logging level set to ", log.GetLevel())
 
 	Broker = opt.Broker
+	log.Debug("Broker: ", Broker)
 	NodeId = opt.NodeId
+	log.Debug("NodeId: ", NodeId)
 	CertPrefix = opt.Cert
+	log.Debug("CertPrefix: ", CertPrefix)
 	TopicName = opt.TopicName
+	log.Debug("TopicName: ", TopicName)
 
 	tlsconfig, err := NewTLSConfig()
 	if err != nil {
 		log.Fatalf("failed to create TLS configuration: %v", err)
 	}
 
-	pub_opts := mqtt.NewClientOptions()
-	pub_opts.AddBroker(Broker)
-	pub_opts.SetClientID(opt.PubClientId).SetTLSConfig(tlsconfig)
-	pub_opts.SetDefaultPublishHandler(messagePubHandler)
-	pub_opts.OnConnectionLost = connectLostHandler
+	// Build the options for the publish client
+	publisherOptions := mqtt.NewClientOptions()
+	publisherOptions.AddBroker(Broker)
+	publisherOptions.SetClientID(opt.PubClientId).SetTLSConfig(tlsconfig)
+	publisherOptions.SetDefaultPublishHandler(messagePubHandler)
+	publisherOptions.OnConnectionLost = connectLostHandler
+	// log.Debug(fmt.Sprintf("Publisher options: %+v\n", publisherOptions))
 
-	sub_opts := mqtt.NewClientOptions()
-	sub_opts.AddBroker(Broker)
-	sub_opts.SetClientID(opt.SubClientId).SetTLSConfig(tlsconfig)
-	sub_opts.SetDefaultPublishHandler(messagePubHandler)
-	sub_opts.OnConnectionLost = connectLostHandler
+	// Build the options for the subscribe client
+	subscriberOptions := mqtt.NewClientOptions()
+	subscriberOptions.AddBroker(Broker)
+	subscriberOptions.SetClientID(opt.SubClientId).SetTLSConfig(tlsconfig)
+	subscriberOptions.SetDefaultPublishHandler(messagePubHandler)
+	subscriberOptions.OnConnectionLost = connectLostHandler
 
 	// opts.SetReconnectingHandler(messagePubHandler, opts)
 	// opts.OnConnect = connectHandler
 
-	sub_opts.OnConnect = func(c mqtt.Client) {
+	subscriberOptions.OnConnect = func(c mqtt.Client) {
 		log.Info("ON connect ")
 		if token := c.Subscribe(opt.SubClientId+"/"+NodeId+"/+", 0, messagePubHandler); token.Wait() && token.Error() != nil {
 			log.Fatalf("subscribe connection: %v", token.Error())
 		}
 	}
+	// log.Debug(fmt.Sprintf("Subscriber options: %+v\n", subscriberOptions))
 
-	log.Info(sub_opts, pub_opts)
-
-	p_cl := mqtt.NewClient(pub_opts)
-	if token := p_cl.Connect(); token.Wait() && token.Error() != nil {
+	publisher := mqtt.NewClient(publisherOptions)
+	if token := publisher.Connect(); token.Wait() && token.Error() != nil {
 		log.Fatalf("failed to create publisher connection: %v", token.Error())
 	}
+	log.Debug(fmt.Sprintf("MQTT publisher client: %+v\n", publisher))
 
-	s_cl := mqtt.NewClient(sub_opts)
-	if token := s_cl.Connect(); token.Wait() && token.Error() != nil {
+	subscriber := mqtt.NewClient(subscriberOptions)
+	if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
 		log.Fatalf("failed to create subscriber connection: %v", token.Error())
 	}
+	log.Debug(fmt.Sprintf("MQTT subscriber client: %+v\n", subscriber))
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		for {
-			if !p_cl.IsConnected() {
+			if !publisher.IsConnected() {
 				log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
 
-				if token := p_cl.Connect(); token.Wait() && token.Error() != nil {
+				if token := publisher.Connect(); token.Wait() && token.Error() != nil {
 					log.Fatalf("failed to create publisher connection: %v", token.Error())
 				}
 			}
 
-			if !s_cl.IsConnected() {
+			if !subscriber.IsConnected() {
 				log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
 
-				if token := s_cl.Connect(); token.Wait() && token.Error() != nil {
+				if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
 					log.Fatalf("failed to create subscriber connection: %v", token.Error())
 				}
 			}
 
-			PublishMessages(p_cl)
+			PublishMessages(publisher)
 
 			log.Info("Sleeping..... 30 * ", time.Second)
 			time.Sleep(time.Second * 300)
@@ -219,14 +227,14 @@ func main() {
 	<-done
 
 	<-c
-	if p_cl.IsConnected() {
+	if publisher.IsConnected() {
 		log.Info("Disconnecting.....")
-		p_cl.Disconnect(250)
+		publisher.Disconnect(250)
 	}
 
-	if s_cl.IsConnected() {
+	if subscriber.IsConnected() {
 		log.Info("Disconnecting.....")
-		s_cl.Disconnect(250)
+		subscriber.Disconnect(250)
 	}
 }
 
