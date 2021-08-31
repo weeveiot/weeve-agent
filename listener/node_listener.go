@@ -32,6 +32,7 @@ type Params struct {
 	Cert        string `long:"cert" short:"f" description:"Certificate to connect Broker" required:"false"`
 	HostUrl     string `long:"publicurl" short:"u" description:"Public URL to connect from public" required:"false"`
 	NodeApiPort string `long:"nodeport" short:"p" description:"Port where edge node api is listening" required:"true"`
+	NoTLS       bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
 }
 
 type StatusMessage struct {
@@ -145,14 +146,16 @@ func main() {
 	}
 	log.Info("Logging level set to ", log.GetLevel())
 
-	Broker = opt.Broker
-	log.Debug("Broker: ", Broker)
-	NodeId = opt.NodeId
-	log.Debug("NodeId: ", NodeId)
-	CertPrefix = opt.Cert
-	log.Debug("CertPrefix: ", CertPrefix)
-	TopicName = opt.TopicName
-	log.Debug("TopicName: ", TopicName)
+	// Broker = opt.Broker
+	log.Debug("Broker: ", opt.Broker)
+	// NodeId = opt.NodeId
+	log.Debug("NodeId: ", opt.NodeId)
+	// CertPrefix = opt.Cert
+	log.Debug("CertPrefix: ", opt.Cert)
+	// TopicName = opt.TopicName
+	log.Debug("TopicName: ", opt.TopicName)
+	log.Debug("TLS: ", opt.NoTLS)
+	fmt.Printf("%T\n", opt.NoTLS)
 
 	tlsconfig, err := NewTLSConfig()
 	if err != nil {
@@ -161,7 +164,7 @@ func main() {
 
 	// Build the options for the publish client
 	publisherOptions := mqtt.NewClientOptions()
-	publisherOptions.AddBroker(Broker)
+	publisherOptions.AddBroker(opt.Broker)
 	publisherOptions.SetClientID(opt.PubClientId).SetTLSConfig(tlsconfig)
 	publisherOptions.SetDefaultPublishHandler(messagePubHandler)
 	publisherOptions.OnConnectionLost = connectLostHandler
@@ -179,7 +182,7 @@ func main() {
 
 	subscriberOptions.OnConnect = func(c mqtt.Client) {
 		log.Info("ON connect ")
-		if token := c.Subscribe(opt.SubClientId+"/"+NodeId+"/+", 0, messagePubHandler); token.Wait() && token.Error() != nil {
+		if token := c.Subscribe(opt.SubClientId+"/"+opt.NodeId+"/+", 0, messagePubHandler); token.Wait() && token.Error() != nil {
 			log.Fatalf("subscribe connection: %v", token.Error())
 		}
 	}
@@ -190,6 +193,11 @@ func main() {
 		log.Fatalf("failed to create publisher connection: %v", token.Error())
 	}
 	log.Debug(fmt.Sprintf("MQTT publisher client: %+v\n", publisher))
+	// fmt.Println("***")
+	// fmt.Println(publisher)
+	// b, err := json.Marshal(publisher)
+	// fmt.Println(b)
+	// log.Debug(fmt.Sprintf("!!! MQTT publisher client: %+v\n", &publisher))
 
 	subscriber := mqtt.NewClient(subscriberOptions)
 	if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
