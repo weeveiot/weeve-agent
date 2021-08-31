@@ -119,7 +119,7 @@ var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
 }
 
 var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
-	log.Info(fmt.Printf("Connect lost: %v", err))
+	log.Info(fmt.Printf("Connect lost: %v\n", err))
 }
 
 // var reconnectHandler mqtt.ReconnectHandler = func(client mqtt.Client, opts mqtt.ClientOptions) {
@@ -150,27 +150,42 @@ func main() {
 		log.Info("TLS disabled!")
 	}
 
-	tlsconfig, err := NewTLSConfig(opt.Cert)
-	if err != nil {
-		log.Fatalf("failed to create TLS configuration: %v", err)
-	}
 	// log.Debug(tlsconfig)
 	// fmt.Println(tlsconfig)
 
 	// Build the options for the publish client
 	publisherOptions := mqtt.NewClientOptions()
 	publisherOptions.AddBroker(opt.Broker)
-	publisherOptions.SetClientID(opt.PubClientId).SetTLSConfig(tlsconfig)
+	publisherOptions.SetClientID(opt.PubClientId)
 	publisherOptions.SetDefaultPublishHandler(messagePubHandler)
 	publisherOptions.OnConnectionLost = connectLostHandler
+	// if !opt.NoTLS {
+	// 	publisherOptions.SetTLSConfig(tlsconfig)
+	// }
 	// log.Debug(fmt.Sprintf("Publisher options: %+v\n", publisherOptions))
 
 	// Build the options for the subscribe client
 	subscriberOptions := mqtt.NewClientOptions()
 	subscriberOptions.AddBroker(opt.Broker)
-	subscriberOptions.SetClientID(opt.SubClientId).SetTLSConfig(tlsconfig)
+	subscriberOptions.SetClientID(opt.SubClientId)
 	subscriberOptions.SetDefaultPublishHandler(messagePubHandler)
 	subscriberOptions.OnConnectionLost = connectLostHandler
+	// if !opt.NoTLS {
+	// 	subscriberOptions.SetTLSConfig(tlsconfig)
+	// }
+
+	if !opt.NoTLS {
+		tlsconfig, err := NewTLSConfig(opt.Cert)
+		if err != nil {
+			log.Fatalf("failed to create TLS configuration: %v", err)
+		}
+		log.Debug(tlsconfig)
+		subscriberOptions.SetTLSConfig(tlsconfig)
+		publisherOptions.SetTLSConfig(tlsconfig)
+	}
+	// } else {
+	// 	tlsconfig := nil
+	// }
 
 	// opts.SetReconnectingHandler(messagePubHandler, opts)
 	// opts.OnConnect = connectHandler
