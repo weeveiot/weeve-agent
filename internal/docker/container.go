@@ -15,6 +15,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	log "github.com/sirupsen/logrus"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
 )
 
@@ -176,7 +177,12 @@ func StopContainer(containerId string) bool {
 // 5) Create the container with the above 3 configurations, and the container name
 // 6) Start the container
 // 7) Return containerStart response
-func StartCreateContainer(imageName string, containerName string, entryArgs []string, vols map[string]struct{}) (container.ContainerCreateCreatedBody, error) {
+func StartCreateContainer(imageName string, startCommand model.ContainerConfig) (container.ContainerCreateCreatedBody, error) {
+	var containerName = startCommand.ContainerName
+	var entryArgs = startCommand.EntryPointArgs
+	var vols = startCommand.Volumes
+	var envArgs = startCommand.EnvArgs
+
 	log.Debug("\tCreating from " + imageName + " container " + containerName)
 	ctx := context.Background()
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -191,6 +197,7 @@ func StartCreateContainer(imageName string, containerName string, entryArgs []st
 		AttachStdout: false,
 		AttachStderr: false,
 		Cmd:          entryArgs,
+		Env:          envArgs,
 		Tty:          false,
 		ExposedPorts: nil,
 		Volumes:      vols,

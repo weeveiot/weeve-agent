@@ -29,6 +29,7 @@ type ContainerConfig struct {
 	ImageName      string
 	ImageTag       string
 	EntryPointArgs []string
+	EnvArgs 	   []string
 	Options        []OptionKeyVal
 	NetworkName    string
 	ExposedPorts   nat.PortSet // This must be set for the container create
@@ -198,8 +199,29 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 			ParseDocumentTag(mod.Search("document").Data(), &thisStartCommand)
 		}
 
+		var envArgs []string
+		log.Debug("Processing environments arguments")
+		for _, arg := range mod.Search("environments").Children() {
+			//TODO: IF we receive only a key or only a value, THEN do not append any empty string
+			if arg.Search("key").Data().(string) != "" {
+				envArgs = append(envArgs, arg.Search("key").Data().(string))
+			}
+
+			if arg.Search("value").Data().(string) != "" {
+				envArgs = append(envArgs, arg.Search("value").Data().(string))
+			}
+
+			log.Debug("String arguments: " + strings.Join(envArgs[:], ","))
+
+			for _, thisArg := range envArgs {
+				log.Debug(fmt.Sprintf("%v %T", thisArg, thisArg))
+			}
+		}
+
+		thisStartCommand.EnvArgs = envArgs
+
 		var strArgs []string
-		log.Debug("Processing arguments")
+		log.Debug("Processing cmd arguments")
 		for _, arg := range mod.Search("command").Children() {
 			// strArgs = append(strArgs, "-"+arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
 			// strArgs = append(strArgs, arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
