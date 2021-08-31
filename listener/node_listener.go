@@ -59,10 +59,11 @@ type DeviceParams struct {
 
 var opt Params
 var parser = flags.NewParser(&opt, flags.Default)
-var Broker string
-var NodeId string
-var CertPrefix string
-var TopicName string
+
+// var Broker string
+// var NodeId string
+// var CertPrefix string
+// var TopicName string
 
 func init() {
 	log.SetFormatter(&log.TextFormatter{})
@@ -72,7 +73,7 @@ func init() {
 	log.Info("Started logging")
 }
 
-func NewTLSConfig() (config *tls.Config, err error) {
+func NewTLSConfig(CertPrefix string) (config *tls.Config, err error) {
 	certpool := x509.NewCertPool()
 	pemCerts, err := ioutil.ReadFile("AmazonRootCA1.pem")
 	if err != nil {
@@ -99,8 +100,8 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 
 	topic_rcvd := ""
 
-	if strings.HasPrefix(msg.Topic(), opt.SubClientId+"/"+NodeId+"/") {
-		topic_rcvd = strings.Replace(msg.Topic(), opt.SubClientId+"/"+NodeId+"/", "", 1)
+	if strings.HasPrefix(msg.Topic(), opt.SubClientId+"/"+opt.NodeId+"/") {
+		topic_rcvd = strings.Replace(msg.Topic(), opt.SubClientId+"/"+opt.NodeId+"/", "", 1)
 	}
 
 	if topic_rcvd == "CheckVersion" {
@@ -157,7 +158,7 @@ func main() {
 	log.Debug("TLS: ", opt.NoTLS)
 	fmt.Printf("%T\n", opt.NoTLS)
 
-	tlsconfig, err := NewTLSConfig()
+	tlsconfig, err := NewTLSConfig(opt.Cert)
 	if err != nil {
 		log.Fatalf("failed to create TLS configuration: %v", err)
 	}
@@ -172,7 +173,7 @@ func main() {
 
 	// Build the options for the subscribe client
 	subscriberOptions := mqtt.NewClientOptions()
-	subscriberOptions.AddBroker(Broker)
+	subscriberOptions.AddBroker(opt.Broker)
 	subscriberOptions.SetClientID(opt.SubClientId).SetTLSConfig(tlsconfig)
 	subscriberOptions.SetDefaultPublishHandler(messagePubHandler)
 	subscriberOptions.OnConnectionLost = connectLostHandler
@@ -270,7 +271,7 @@ func PublishMessages(cl mqtt.Client) {
 	now := time.Now()
 	nanos := now.UnixNano()
 	millis := nanos / 1000000
-	msg := StatusMessage{NodeId, millis, "Available", actv_cnt, serv_cnt, mani, deviceParams}
+	msg := StatusMessage{opt.NodeId, millis, "Available", actv_cnt, serv_cnt, mani, deviceParams}
 
 	b_msg, err := json.Marshal(msg)
 	if err != nil {
@@ -278,7 +279,7 @@ func PublishMessages(cl mqtt.Client) {
 	}
 
 	log.Info("Sending update.", opt.TopicName, statuses, msg, string(b_msg))
-	if token := cl.Publish(opt.PubClientId+"/"+NodeId+"/"+opt.TopicName, 0, false, b_msg); token.Wait() && token.Error() != nil {
+	if token := cl.Publish(opt.PubClientId+"/"+opt.NodeId+"/"+opt.TopicName, 0, false, b_msg); token.Wait() && token.Error() != nil {
 		log.Fatalf("failed to send update: %v", token.Error())
 	}
 }
