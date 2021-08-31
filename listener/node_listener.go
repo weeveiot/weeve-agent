@@ -60,11 +60,6 @@ type DeviceParams struct {
 var opt Params
 var parser = flags.NewParser(&opt, flags.Default)
 
-// var Broker string
-// var NodeId string
-// var CertPrefix string
-// var TopicName string
-
 func init() {
 	log.SetFormatter(&log.TextFormatter{})
 	log.SetOutput(os.Stdout)
@@ -147,16 +142,14 @@ func main() {
 	}
 	log.Info("Logging level set to ", log.GetLevel())
 
-	// Broker = opt.Broker
 	log.Debug("Broker: ", opt.Broker)
-	// NodeId = opt.NodeId
 	log.Debug("NodeId: ", opt.NodeId)
-	// CertPrefix = opt.Cert
 	log.Debug("CertPrefix: ", opt.Cert)
-	// TopicName = opt.TopicName
 	log.Debug("TopicName: ", opt.TopicName)
-	log.Debug("TLS: ", opt.NoTLS)
-	fmt.Printf("%T\n", opt.NoTLS)
+	if opt.NoTLS {
+		log.Info("TLS disabled!")
+	}
+	// log.Debug("TLS: ", opt.NoTLS)
 
 	tlsconfig, err := NewTLSConfig(opt.Cert)
 	if err != nil {
