@@ -114,6 +114,8 @@ go run ./listener/node_listener.go -v \
 
 ### Test with Mosquitto local
 
+Run the broker, check with `service mosquitto status `
+
 go run ./listener/node_listener.go -v --notls \
     --nodeId demo_edge_node1 \ # ID of this node \
     --broker localhost:1883 \ # Broker to connect to \
