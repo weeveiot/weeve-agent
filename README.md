@@ -1,11 +1,8 @@
-# Weeve Node Service
-The Weeve Node Service is a lightweight service to orchestrate data pipelines. A data pipeline is defined in a manifest file and consists of several interconnected docker containers. The data pipeline is instantiated by POST request to the "/pipelines" endpoint. The logic of the service then pulls images from docker hub if they do not exist on the machine. The Weeve Node Service then creates and starts containers based on request manifest. A bridge networks can be instantiated to facilitate container communication. Several resources exist and are exposed in a RESTful API;
-- Docker images
-- Docker containers
-- Data pipelines
+# weeve agent
+The weeve agent is a lightweight service to orchestrate data pipelines. A data pipeline is defined in a manifest file and consists of several interconnected docker containers. The data pipeline is instantiated by subscription to an MQTT topic for the stage and node. The logic of the service then pulls images from docker hub if they do not exist on the machine. The weeve agent then creates and starts containers based on request manifest. A bridge networks can be instantiated to facilitate container communication. The agent publishes status messages on a defined interval to monitor the state of the IOT edge comprised of multiple edge nodes running weeve agents.
 
 ## Architecture
-The Weeve Node Service can be considered as a Docker orchestration layer with a purpose built RESTful API. As such, the project relies on the [Golang Docker SDK](https://godoc.org/github.com/docker/docker).
+The weeve agent can be considered as a Docker orchestration layer with a purpose built business logic for a data service - multiple containers in communication with each other. As such, the project relies on the [Golang Docker SDK](https://godoc.org/github.com/docker/docker).
 
 The main entry command initiates logging, parses flags, and passes control to the web server. The web server is implemented with the [Gorilla MUX package](github.com/gorilla/mux).
 
@@ -14,7 +11,7 @@ A data model for the manifest object and supporting structures is found in the i
 ## Getting started for Users
 
 ### Compiled binary
-The latest binary can be downloaded from S3 bucket : 
+The latest binary can be downloaded from S3 bucket :
 https://weeve-binaries-release.s3.eu-central-1.amazonaws.com/node-service/node-service-0-1-1
 
 The compiled binary found as a release can be executed by specifying the port to be exposed;
