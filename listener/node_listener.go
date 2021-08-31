@@ -32,6 +32,7 @@ type Params struct {
 	Cert        string `long:"cert" short:"f" description:"Certificate to connect Broker" required:"false"`
 	HostUrl     string `long:"publicurl" short:"u" description:"Public URL to connect from public" required:"false"`
 	NodeApiPort string `long:"nodeport" short:"p" description:"Port where edge node api is listening" required:"true"`
+	Heartbeat   int    `long:"heartbeat" description:"Heartbeat time in seconds" required:"false" default:"30"`
 	NoTLS       bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
 }
 
@@ -146,6 +147,7 @@ func main() {
 	log.Debug("NodeId: ", opt.NodeId)
 	log.Debug("CertPrefix: ", opt.Cert)
 	log.Debug("TopicName: ", opt.TopicName)
+	log.Debug("Heartbeat time: ", opt.Heartbeat)
 	if opt.NoTLS {
 		log.Info("TLS disabled!")
 	}
@@ -232,9 +234,8 @@ func main() {
 
 			PublishMessages(publisher)
 
-			log.Info("Sleeping..... 30 * ", time.Second)
-			time.Sleep(time.Second * 300)
-			log.Info("waken..... 30 * ", time.Second)
+			log.Info("Sleeping ", opt.Heartbeat)
+			time.Sleep(time.Second * time.Duration(opt.Heartbeat))
 		}
 	}()
 	<-done
