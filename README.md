@@ -110,3 +110,16 @@ go run ./listener/node_listener.go -v \
     --publish CheckVersion \ # Topic Name \
     --publicurl hssss \ # Public URL to connect from public \
     --nodeport 8030 \ # Port where edge node api is listening
+
+
+### Test with Mosquitto local
+
+go run ./listener/node_listener.go -v --notls \
+    --nodeId demo_edge_node1 \ # ID of this node \
+    --broker localhost:1883 \ # Broker to connect to \
+    --cert adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c \ # Certificate to connect Broker \
+    --subClientId nodes/awsdev \ # Subscriber ClientId \
+    --pubClientId manager/awsdev \ # Publisher ClientId \
+    --publish CheckVersion \ # Topic Name \
+    --publicurl hssss \ # Public URL to connect from public \
+    --nodeport 8030 \ # Port where edge node api is listening
