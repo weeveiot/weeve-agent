@@ -72,13 +72,13 @@ func NewTLSConfig(CertPrefix string) (config *tls.Config, err error) {
 	certpool := x509.NewCertPool()
 	pemCerts, err := ioutil.ReadFile("AmazonRootCA1.pem")
 	if err != nil {
-		return
+		return nil, err
 	}
 	certpool.AppendCertsFromPEM(pemCerts)
 
 	cert, err := tls.LoadX509KeyPair(CertPrefix+"-certificate.pem.crt", CertPrefix+"-private.pem.key")
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	config = &tls.Config{
@@ -87,7 +87,7 @@ func NewTLSConfig(CertPrefix string) (config *tls.Config, err error) {
 		ClientCAs:    nil,
 		Certificates: []tls.Certificate{cert},
 	}
-	return
+	return config, nil
 }
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
@@ -149,12 +149,13 @@ func main() {
 	if opt.NoTLS {
 		log.Info("TLS disabled!")
 	}
-	// log.Debug("TLS: ", opt.NoTLS)
 
 	tlsconfig, err := NewTLSConfig(opt.Cert)
 	if err != nil {
 		log.Fatalf("failed to create TLS configuration: %v", err)
 	}
+	// log.Debug(tlsconfig)
+	// fmt.Println(tlsconfig)
 
 	// Build the options for the publish client
 	publisherOptions := mqtt.NewClientOptions()
@@ -187,11 +188,6 @@ func main() {
 		log.Fatalf("failed to create publisher connection: %v", token.Error())
 	}
 	log.Debug(fmt.Sprintf("MQTT publisher client: %+v\n", publisher))
-	// fmt.Println("***")
-	// fmt.Println(publisher)
-	// b, err := json.Marshal(publisher)
-	// fmt.Println(b)
-	// log.Debug(fmt.Sprintf("!!! MQTT publisher client: %+v\n", &publisher))
 
 	subscriber := mqtt.NewClient(subscriberOptions)
 	if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
