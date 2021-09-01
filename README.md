@@ -151,3 +151,76 @@ mosquitto_pub \
 
 
 mosquitto_pub -h asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com -p 8883 --cafile AmazonRootCA1.pem -t test -m testing
+
+
+## Testing the manifest
+```bash
+NODE_URL_AWS='http://ec2-52-59-184-236.eu-central-1.compute.amazonaws.com:8030/pipelines'
+
+NODE_URL_LOCAL='http://localhost:8030/pipelines'
+
+MANIFEST='{
+	"id": "e1b09fb4-ce02-4cbd-a7e1-e4f717b62b18",
+	"version": "1.0.0",
+	"compose": {
+		"network": {
+			"driver": "bridge",
+			"name": "tick-network"
+		},
+		"services": [{
+            "name": "MQTT Ingress",
+            "id": "e0569c1d-380b-43cb-b38c-2ddaf52d75b3",
+			"image": {
+				"name": "weevenetwork/weeve-ingress-mqtt",
+				"tag": "latest"
+			},
+			"environments": [{
+				"default": "",
+				"name": "MQTT Broker",
+				"options": null,
+				"description": "Broker to subscribe from",
+				"type": "string",
+				"value": "mqtt://18.193.133.162/",
+				"key": "MQTT_BROKER"
+			}, {
+				"default": "1883",
+				"name": "Port",
+				"options": null,
+				"description": "Port on which the broker is listening",
+				"type": "integer",
+				"value": "",
+				"key": "PORT"
+			}, {
+				"default": "mqtt",
+				"name": "Protocol",
+				"options": ["mqtt", "ws"],
+				"description": "Protocol used for connection",
+				"type": "enum",
+				"value": "",
+				"key": "PROTOCOL"
+			}, {
+				"default": "",
+				"name": "Topic",
+				"options": null,
+				"description": "Topic to subscribe",
+				"type": "string",
+				"value": "weeve/airquality",
+				"key": "TOPIC"
+			}, {
+				"default": "0",
+				"name": "QOS",
+				"options": ["0", "1", "2"],
+				"description": "Quality of service for the connection",
+				"type": "enum",
+				"value": "",
+				"key": "QOS"
+			}],
+			"document": "{'\''ports'\'': [],'\''volumes'\'': [{'\''host'\'': '\''/dev/tty10'\'','\''container'\'': '\''/dev/tty10'\''},{'\''host'\'': '\''/documents'\'','\''container'\'': '\''/app'\''}]}"
+		}]
+	}
+}'
+
+curl --location --request POST $NODE_URL_LOCAL \
+--header 'Content-Type: application/json' \
+--data-raw $MANIFEST
+```
