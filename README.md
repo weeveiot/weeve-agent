@@ -121,7 +121,7 @@ In a second terminal, subscribe to all topics for that broker; `mosquitto_sub -t
 Run the weeve agent in a third terminal, with the local broker as the target. Disable TLS with the `--notls` flag.
 
 ```bash
-go run ./listener/node_listener.go -v --notls --heartbeat 3 \
+go run ./cmd/node_listener.go -v --notls --heartbeat 3 \
     --nodeId local-test-node-1 \ # ID of this node \
     --broker localhost:8080 \ # Broker to connect to \
     --cert adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c \ # Certificate to connect Broker \
@@ -134,7 +134,7 @@ go run ./listener/node_listener.go -v --notls --heartbeat 3 \
 
 ## Testing with TLS to IOT core
 
-go run ./listener/node_listener.go -v  --heartbeat 10 \
+go run ./cmd/node_listener.go -v  --heartbeat 10 \
     --nodeId awsdev-test-node-1 \ # ID of this node \
     --broker tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883 \ # Broker to connect to \
     --cert adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c \ # Certificate to connect Broker \
