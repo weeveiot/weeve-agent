@@ -106,9 +106,9 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 
 		jsonParsed, err := gabs.ParseJSON(msg.Payload())
 		if err != nil {
-			log.Error(err)
+			log.Error("Error on parsing message: ", err)
 		} else {
-			log.Debug(jsonParsed)
+			log.Debug("Parsed JSON >> ", jsonParsed)
 		}
 
 		post([]byte(msg.Payload()), "http://localhost:"+opt.NodeApiPort+"/pipelines")
@@ -120,7 +120,7 @@ var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
 }
 
 var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
-	log.Info(fmt.Printf("Connect lost: %v\n", err))
+	log.Info("Connection lost", err)
 }
 
 // var reconnectHandler mqtt.ReconnectHandler = func(client mqtt.Client, opts mqtt.ClientOptions) {
@@ -132,7 +132,7 @@ func main() {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 	if _, err := parser.Parse(); err != nil {
-		log.Error(err)
+		log.Error("Error on flgas parser ", err)
 		os.Exit(1)
 	}
 
@@ -153,65 +153,51 @@ func main() {
 		log.Debug("CertPrefix: ", opt.Cert)
 	}
 
-	// log.Debug(tlsconfig)
-	// fmt.Println(tlsconfig)
-
 	// Build the options for the publish client
 	publisherOptions := mqtt.NewClientOptions()
 	publisherOptions.AddBroker(opt.Broker)
-	publisherOptions.SetClientID(opt.PubClientId)
+	publisherOptions.SetClientID(opt.PubClientId + "/" + opt.NodeId)
 	publisherOptions.SetDefaultPublishHandler(messagePubHandler)
 	publisherOptions.OnConnectionLost = connectLostHandler
-	// if !opt.NoTLS {
-	// 	publisherOptions.SetTLSConfig(tlsconfig)
-	// }
-	// log.Debug(fmt.Sprintf("Publisher options: %+v\n", publisherOptions))
 
 	// Build the options for the subscribe client
 	subscriberOptions := mqtt.NewClientOptions()
 	subscriberOptions.AddBroker(opt.Broker)
-	subscriberOptions.SetClientID(opt.SubClientId)
+	subscriberOptions.SetClientID(opt.SubClientId + "/" + opt.NodeId)
 	subscriberOptions.SetDefaultPublishHandler(messagePubHandler)
 	subscriberOptions.OnConnectionLost = connectLostHandler
-	// if !opt.NoTLS {
-	// 	subscriberOptions.SetTLSConfig(tlsconfig)
-	// }
+	// sub_opts.SetReconnectingHandler(messagePubHandler, opts)
+
+	subscriberOptions.OnConnect = func(c mqtt.Client) {
+		log.Info("ON connect >> connected")
+		if token := c.Subscribe(opt.SubClientId+"/"+opt.NodeId+"/+", 0, messagePubHandler); token.Wait() && token.Error() != nil {
+			log.Error("subscribe connection: %v", token.Error())
+		}
+	}
 
 	if !opt.NoTLS {
 		tlsconfig, err := NewTLSConfig(opt.Cert)
 		if err != nil {
 			log.Fatalf("failed to create TLS configuration: %v", err)
 		}
-		log.Debug(tlsconfig)
+		// log.Debug("Tls Config >> ", tlsconfig)
 		subscriberOptions.SetTLSConfig(tlsconfig)
 		publisherOptions.SetTLSConfig(tlsconfig)
 	}
-	// } else {
-	// 	tlsconfig := nil
-	// }
 
-	// opts.SetReconnectingHandler(messagePubHandler, opts)
-	// opts.OnConnect = connectHandler
-
-	subscriberOptions.OnConnect = func(c mqtt.Client) {
-		log.Info("ON connect ")
-		if token := c.Subscribe(opt.SubClientId+"/"+opt.NodeId+"/+", 0, messagePubHandler); token.Wait() && token.Error() != nil {
-			log.Fatalf("subscribe connection: %v", token.Error())
-		}
-	}
-	// log.Debug(fmt.Sprintf("Subscriber options: %+v\n", subscriberOptions))
+	log.Debug("Info on Sub & Pub >> ", subscriberOptions, publisherOptions)
 
 	publisher := mqtt.NewClient(publisherOptions)
 	if token := publisher.Connect(); token.Wait() && token.Error() != nil {
-		log.Fatalf("failed to create publisher connection: %v", token.Error())
+		log.Error("failed to create publisher connection: %v", token.Error())
 	}
-	log.Debug(fmt.Sprintf("MQTT publisher client: %+v\n", publisher))
+	log.Debug("MQTT publisher client: \n", publisher)
 
 	subscriber := mqtt.NewClient(subscriberOptions)
 	if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
-		log.Fatalf("failed to create subscriber connection: %v", token.Error())
+		log.Error("failed to create subscriber connection: %v", token.Error())
 	}
-	log.Debug(fmt.Sprintf("MQTT subscriber client: %+v\n", subscriber))
+	log.Debug("MQTT subscriber client: \n", subscriber)
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
@@ -221,7 +207,7 @@ func main() {
 				log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
 
 				if token := publisher.Connect(); token.Wait() && token.Error() != nil {
-					log.Fatalf("failed to create publisher connection: %v", token.Error())
+					log.Error("failed to create publisher connection: %v", token.Error())
 				}
 			}
 
@@ -229,7 +215,7 @@ func main() {
 				log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
 
 				if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
-					log.Fatalf("failed to create subscriber connection: %v", token.Error())
+					log.Error("failed to create subscriber connection: %v", token.Error())
 				}
 			}
 
@@ -255,9 +241,9 @@ func main() {
 
 func PublishMessages(cl mqtt.Client) {
 
-	var filter = map[string]string{"ID": "10"}
+	// var filter = map[string]string{"ID": "10"}
 
-	statuses := jsonlines.Read(constants.StatusFile, "", "", filter, false)
+	// statuses := jsonlines.Read(constants.ManifestFile, "", "", filter, false)
 	manifests := jsonlines.Read(constants.ManifestFile, "", "", nil, false)
 
 	var mani []ManifestStatus
@@ -266,7 +252,7 @@ func PublishMessages(cl mqtt.Client) {
 	actv_cnt := 0
 	serv_cnt := 0
 	for _, rec := range manifests {
-		log.Info(rec)
+		log.Info("Record on manifests >> ", rec)
 		mani = append(mani, ManifestStatus{rec["id"].(string), rec["version"].(string), rec["status"].(string)})
 		serv_cnt = serv_cnt + 1
 		if "SUCCESS" == rec["status"].(string) {
@@ -284,7 +270,7 @@ func PublishMessages(cl mqtt.Client) {
 		log.Fatalf("Marshall error: %v", err)
 	}
 
-	log.Info("Sending update.", opt.TopicName, statuses, msg, string(b_msg))
+	log.Info("Sending update.", opt.TopicName, msg, string(b_msg))
 	if token := cl.Publish(opt.PubClientId+"/"+opt.NodeId+"/"+opt.TopicName, 0, false, b_msg); token.Wait() && token.Error() != nil {
 		log.Fatalf("failed to send update: %v", token.Error())
 	}

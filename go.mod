@@ -22,7 +22,7 @@ require (
 	github.com/moby/term v0.0.0-20201101124115-0c0b3e1a3e1f // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
-	github.com/opencontainers/image-spec v1.0.1 // indirect
+	github.com/opencontainers/image-spec v1.0.1
 	github.com/sirupsen/logrus v1.7.0
 	github.com/ssimunic/gosensors v0.0.0-20170414000417-e7ab9a4e799b // indirect
 	github.com/stretchr/testify v1.6.1 // indirect
