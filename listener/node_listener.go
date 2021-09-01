@@ -145,11 +145,12 @@ func main() {
 
 	log.Debug("Broker: ", opt.Broker)
 	log.Debug("NodeId: ", opt.NodeId)
-	log.Debug("CertPrefix: ", opt.Cert)
 	log.Debug("TopicName: ", opt.TopicName)
 	log.Debug("Heartbeat time: ", opt.Heartbeat)
 	if opt.NoTLS {
 		log.Info("TLS disabled!")
+	} else {
+		log.Debug("CertPrefix: ", opt.Cert)
 	}
 
 	// log.Debug(tlsconfig)
