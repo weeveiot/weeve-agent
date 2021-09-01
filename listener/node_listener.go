@@ -115,8 +115,11 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 	}
 }
 
-var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
-	log.Info(fmt.Println("Connected"))
+var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
+	log.Info("ON connect >> connected")
+	if token := c.Subscribe(opt.SubClientId+"/"+opt.NodeId+"/+", 0, messagePubHandler); token.Wait() && token.Error() != nil {
+		log.Error("subscribe connection: %v", token.Error())
+	}
 }
 
 var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
@@ -167,13 +170,7 @@ func main() {
 	subscriberOptions.SetDefaultPublishHandler(messagePubHandler)
 	subscriberOptions.OnConnectionLost = connectLostHandler
 	// sub_opts.SetReconnectingHandler(messagePubHandler, opts)
-
-	subscriberOptions.OnConnect = func(c mqtt.Client) {
-		log.Info("ON connect >> connected")
-		if token := c.Subscribe(opt.SubClientId+"/"+opt.NodeId+"/+", 0, messagePubHandler); token.Wait() && token.Error() != nil {
-			log.Error("subscribe connection: %v", token.Error())
-		}
-	}
+	subscriberOptions.OnConnect = connectHandler
 
 	if !opt.NoTLS {
 		tlsconfig, err := NewTLSConfig(opt.Cert)

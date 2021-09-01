@@ -8,3 +8,5 @@ build/
 *.pem
 *.pem.crt
 *.pem.key
+*.zip
+*.jsonl
