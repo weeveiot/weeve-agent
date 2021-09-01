@@ -32,7 +32,7 @@ type Params struct {
 	Cert        string `long:"cert" short:"f" description:"Certificate to connect Broker" required:"false"`
 	HostUrl     string `long:"publicurl" short:"u" description:"Public URL to connect from public" required:"false"`
 	NodeApiPort string `long:"nodeport" short:"p" description:"Port where edge node api is listening" required:"true"`
-	Heartbeat   int    `long:"heartbeat" description:"Heartbeat time in seconds" required:"false" default:"30"`
+	Heartbeat   int    `long:"heartbeat" short:"h" description:"Heartbeat time in seconds" required:"false" default:"30"`
 	NoTLS       bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
 }
 
