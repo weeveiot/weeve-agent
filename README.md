@@ -112,16 +112,22 @@ go run ./listener/node_listener.go -v \
     --nodeport 8030 \ # Port where edge node api is listening
 
 
-### Test with Mosquitto local
+# [WIP] Developer testing - listener
 
-Run the broker, check with `service mosquitto status `
+In one terminal, run a local broker with logs enabled to confirm subscription and publish; `mosquitto -v -p 8080`.
 
-go run ./listener/node_listener.go -v --notls \
-    --nodeId demo_edge_node1 \ # ID of this node \
-    --broker localhost:1883 \ # Broker to connect to \
+In a second terminal, subscribe to all topics for that broker; `mosquitto_sub -t '#' -p 8080`.
+
+Run the weeve agent in a third terminal, with the local broker as the target. Disable TLS with the `--notls` flag.
+
+```bash
+go run ./listener/node_listener.go -v --notls --heartbeat 3 \
+    --nodeId local-test-node-1 \ # ID of this node \
+    --broker localhost:8080 \ # Broker to connect to \
     --cert adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c \ # Certificate to connect Broker \
-    --subClientId nodes/awsdev \ # Subscriber ClientId \
-    --pubClientId manager/awsdev \ # Publisher ClientId \
+    --subClientId nodes/localtest \ # Subscriber ClientId \
+    --pubClientId manager/localtest \ # Publisher ClientId \
     --publish CheckVersion \ # Topic Name \
     --publicurl hssss \ # Public URL to connect from public \
     --nodeport 8030 \ # Port where edge node api is listening
+```
