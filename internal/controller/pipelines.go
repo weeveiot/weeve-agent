@@ -155,12 +155,19 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 
 	//******** STEP 4 - Create, Start, attach all containers *************//
 	log.Info("Start all containers")
+	var contianers_cmd = man.GetContainerStart()
 
-	for _, startCommand := range man.GetContainerStart() {
-		log.Info("Creating ", startCommand.ContainerName, " from ", startCommand.ImageName, ":", startCommand.ImageTag)
+	if contianers_cmd == nil || len(contianers_cmd) <= 0 {
+		log.Error("No valid contianers in Manifest")
+		man.Manifest.Set("FAILED", "No valid contianers in Manifest")
+		jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
+		return
+	}
+	for _, startCommand := range contianers_cmd {
+		log.Info("Creating ", startCommand.ContainerName, " from ", startCommand.ImageName, ":", startCommand.ImageTag, startCommand)
 		imageAndTag := startCommand.ImageName + ":" + startCommand.ImageTag
-		containerCreateResponse, err := docker.StartCreateContainer(imageAndTag, startCommand.ContainerName, startCommand.EntryPointArgs)
-		log.Info("\tSuccessfully created with args: ", startCommand.EntryPointArgs)
+		containerCreateResponse, err := docker.StartCreateContainer(imageAndTag, startCommand)
+		log.Info("\tSuccessfully created with args: ", startCommand.EntryPointArgs, containerCreateResponse)
 		if err != nil {
 			failed = true
 			log.Info("Started")

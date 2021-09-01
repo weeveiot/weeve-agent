@@ -15,6 +15,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	log "github.com/sirupsen/logrus"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
 )
 
@@ -176,7 +177,12 @@ func StopContainer(containerId string) bool {
 // 5) Create the container with the above 3 configurations, and the container name
 // 6) Start the container
 // 7) Return containerStart response
-func StartCreateContainer(imageName string, containerName string, entryArgs []string) (container.ContainerCreateCreatedBody, error) {
+func StartCreateContainer(imageName string, startCommand model.ContainerConfig) (container.ContainerCreateCreatedBody, error) {
+	var containerName = startCommand.ContainerName
+	var entryArgs = startCommand.EntryPointArgs
+	var vols = startCommand.Volumes
+	var envArgs = startCommand.EnvArgs
+
 	log.Debug("\tCreating from " + imageName + " container " + containerName)
 	ctx := context.Background()
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -191,22 +197,19 @@ func StartCreateContainer(imageName string, containerName string, entryArgs []st
 		AttachStdout: false,
 		AttachStderr: false,
 		Cmd:          entryArgs,
-		// Cmd:          []string{"-p", "2000"},
+		Env:          envArgs,
 		Tty:          false,
 		ExposedPorts: nil,
+		Volumes:      vols,
 	}
 
 	// The following works:
 	// Cmd:          []string{"p", "2000"},
-
 	// The following breaks:
-
 	//	Cmd:          []string{"p", "2000"},]
 	// Fails with "Error: Unknown option 'p'."
-
 	// Cmd:          []string{"-p 2000"},
 	// Fails with "Error: Unknown option '-p 2000'."
-
 	// Cmd:          []string{"-p=2000"}
 	// Fails with "Error: Unknown option '-p=2000'."
 
@@ -222,6 +225,10 @@ func StartCreateContainer(imageName string, containerName string, entryArgs []st
 	networkConfig := &network.NetworkingConfig{
 		EndpointsConfig: map[string]*network.EndpointSettings{},
 	}
+
+	// platform := &specs.Platform{
+
+	// }
 
 	containerCreateResponse, err := dockerClient.ContainerCreate(ctx,
 		containerConfig,

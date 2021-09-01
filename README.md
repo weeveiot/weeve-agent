@@ -1,11 +1,8 @@
-# Weeve Node Service
-The Weeve Node Service is a lightweight service to orchestrate data pipelines. A data pipeline is defined in a manifest file and consists of several interconnected docker containers. The data pipeline is instantiated by POST request to the "/pipelines" endpoint. The logic of the service then pulls images from docker hub if they do not exist on the machine. The Weeve Node Service then creates and starts containers based on request manifest. A bridge networks can be instantiated to facilitate container communication. Several resources exist and are exposed in a RESTful API;
-- Docker images
-- Docker containers
-- Data pipelines
+# weeve agent
+The weeve agent is a lightweight service to orchestrate data pipelines. A data pipeline is defined in a manifest file and consists of several interconnected docker containers. The data pipeline is instantiated by subscription to an MQTT topic for the stage and node. The logic of the service then pulls images from docker hub if they do not exist on the machine. The weeve agent then creates and starts containers based on request manifest. A bridge networks can be instantiated to facilitate container communication. The agent publishes status messages on a defined interval to monitor the state of the IOT edge comprised of multiple edge nodes running weeve agents.
 
 ## Architecture
-The Weeve Node Service can be considered as a Docker orchestration layer with a purpose built RESTful API. As such, the project relies on the [Golang Docker SDK](https://godoc.org/github.com/docker/docker).
+The weeve agent can be considered as a Docker orchestration layer with a purpose built business logic for a data service - multiple containers in communication with each other. As such, the project relies on the [Golang Docker SDK](https://godoc.org/github.com/docker/docker).
 
 The main entry command initiates logging, parses flags, and passes control to the web server. The web server is implemented with the [Gorilla MUX package](github.com/gorilla/mux).
 
@@ -14,7 +11,7 @@ A data model for the manifest object and supporting structures is found in the i
 ## Getting started for Users
 
 ### Compiled binary
-The latest binary can be downloaded from S3 bucket : 
+The latest binary can be downloaded from S3 bucket :
 https://weeve-binaries-release.s3.eu-central-1.amazonaws.com/node-service/node-service-0-1-1
 
 The compiled binary found as a release can be executed by specifying the port to be exposed;
@@ -112,3 +109,54 @@ Request Body:
 ```
 
 go run ./listener/node_listener.go -v -i demo_edge_node1 -b tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883 -f efbb87beed -s nodes/awsdev -c manager/awsdev -t CheckVersion -u hssss -p 8030
+
+go run ./listener/node_listener.go -v \
+    --nodeId demo_edge_node1 \ # ID of this node \
+    --broker tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883 \ # Broker to connect to \
+    --cert adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c \ # Certificate to connect Broker \
+    --subClientId nodes/awsdev \ # Subscriber ClientId \
+    --pubClientId manager/awsdev \ # Publisher ClientId \
+    --publish CheckVersion \ # Topic Name \
+    --publicurl hssss \ # Public URL to connect from public \
+    --nodeport 8030 \ # Port where edge node api is listening
+
+
+# [WIP] Developer testing - listener
+
+In one terminal, run a local broker with logs enabled to confirm subscription and publish; `mosquitto -v -p 8080`.
+
+In a second terminal, subscribe to all topics for that broker; `mosquitto_sub -t '#' -p 8080`.
+
+Run the weeve agent in a third terminal, with the local broker as the target. Disable TLS with the `--notls` flag.
+
+```bash
+go run ./listener/node_listener.go -v --notls --heartbeat 3 \
+    --nodeId local-test-node-1 \ # ID of this node \
+    --broker localhost:8080 \ # Broker to connect to \
+    --cert adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c \ # Certificate to connect Broker \
+    --subClientId nodes/localtest \ # Subscriber ClientId \
+    --pubClientId manager/localtest \ # Publisher ClientId \
+    --publish CheckVersion \ # Topic Name \
+    --publicurl hssss \ # Public URL to connect from public \
+    --nodeport 8030 \ # Port where edge node api is listening
+```
+
+## Testing with TLS to IOT core
+
+go run ./listener/node_listener.go -v  --heartbeat 10 \
+    --nodeId awsdev-test-node-1 \ # ID of this node \
+    --broker tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883 \ # Broker to connect to \
+    --cert adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c \ # Certificate to connect Broker \
+    --subClientId nodes/awsdev \ # Subscriber ClientId \
+    --pubClientId manager/awsdev \ # Publisher ClientId \
+    --publish CheckVersion \ # Topic Name \
+    --publicurl hssss \ # Public URL to connect from public \
+    --nodeport 8030 \ # Port where edge node api is listening
+
+mosquitto_pub \
+    -h asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com -p 8883 \
+    --cafile ~/weeve/edge-pipeline-service/adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-certificate.pem.crt \
+    -t test -m testing
+
+
+mosquitto_pub -h asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com -p 8883 --cafile AmazonRootCA1.pem -t test -m testing

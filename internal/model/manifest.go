@@ -29,12 +29,14 @@ type ContainerConfig struct {
 	ImageName      string
 	ImageTag       string
 	EntryPointArgs []string
+	EnvArgs 	   []string
 	Options        []OptionKeyVal
 	NetworkName    string
 	ExposedPorts   nat.PortSet // This must be set for the container create
 	PortBinding    nat.PortMap // This must be set for the containerStart
 	NetworkMode    container.NetworkMode
 	NetworkConfig  network.NetworkingConfig
+	Volumes        map[string]struct{}
 }
 
 type OptionKeyVal struct {
@@ -170,6 +172,7 @@ func GetContainerName(pipelineID string, containerName string) string {
 // 		- Arguments to pass into entrypoint
 func (m Manifest) GetContainerStart() []ContainerConfig {
 	var startCommands []ContainerConfig
+
 	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
 		var thisStartCommand ContainerConfig
 		thisStartCommand.PipelineName = m.Manifest.Search("compose").Search("network").Search("name").Data().(string)
@@ -191,8 +194,34 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 		// }
 		// thisStartCommand.Options = theseOptions
 
+		var doc_data = mod.Search("document").Data()
+		if doc_data != nil {
+			ParseDocumentTag(mod.Search("document").Data(), &thisStartCommand)
+		}
+
+		var envArgs []string
+		log.Debug("Processing environments arguments")
+		for _, arg := range mod.Search("environments").Children() {
+			//TODO: IF we receive only a key or only a value, THEN do not append any empty string
+			if arg.Search("key").Data().(string) != "" {
+				envArgs = append(envArgs, arg.Search("key").Data().(string))
+			}
+
+			if arg.Search("value").Data().(string) != "" {
+				envArgs = append(envArgs, arg.Search("value").Data().(string))
+			}
+
+			log.Debug("String arguments: " + strings.Join(envArgs[:], ","))
+
+			for _, thisArg := range envArgs {
+				log.Debug(fmt.Sprintf("%v %T", thisArg, thisArg))
+			}
+		}
+
+		thisStartCommand.EnvArgs = envArgs
+
 		var strArgs []string
-		log.Debug("Processing arguments")
+		log.Debug("Processing cmd arguments")
 		for _, arg := range mod.Search("command").Children() {
 			// strArgs = append(strArgs, "-"+arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
 			// strArgs = append(strArgs, arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
@@ -275,4 +304,35 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 	}
 
 	return startCommands
+}
+
+func ParseDocumentTag(doc_data interface{}, thisStartCommand *ContainerConfig) {
+	var vol_maps []map[string]struct{}
+	vol_map := make(map[string]struct{})
+	var document = doc_data.(string)
+	document = strings.ReplaceAll(document, "'", "\"")
+
+	man_doc, err := gabs.ParseJSON([]byte(document))
+	if err != nil {
+		log.Error("Error on parsing document tag ", err)
+		return
+	}
+
+	log.Info("man_doc ", document, man_doc)
+
+	for _, vols := range man_doc.Search("volumes").Children() {
+
+		vol_maps = append(vol_maps, map[string]struct{}{
+			vols.Search("host").Data().(string): {},
+		})
+	}
+
+	if len(vol_maps) >= 0 {
+		for _, vol := range vol_maps {
+			for k, v := range vol {
+				vol_map[k] = v
+			}
+		}
+		thisStartCommand.Volumes = vol_map
+	}
 }

@@ -32,6 +32,8 @@ type Params struct {
 	Cert        string `long:"cert" short:"f" description:"Certificate to connect Broker" required:"false"`
 	HostUrl     string `long:"publicurl" short:"u" description:"Public URL to connect from public" required:"false"`
 	NodeApiPort string `long:"nodeport" short:"p" description:"Port where edge node api is listening" required:"true"`
+	Heartbeat   int    `long:"heartbeat" short:"h" description:"Heartbeat time in seconds" required:"false" default:"30"`
+	NoTLS       bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
 }
 
 type StatusMessage struct {
@@ -58,10 +60,6 @@ type DeviceParams struct {
 
 var opt Params
 var parser = flags.NewParser(&opt, flags.Default)
-var Broker string
-var NodeId string
-var CertPrefix string
-var TopicName string
 
 func init() {
 	log.SetFormatter(&log.TextFormatter{})
@@ -71,17 +69,17 @@ func init() {
 	log.Info("Started logging")
 }
 
-func NewTLSConfig() (config *tls.Config, err error) {
+func NewTLSConfig(CertPrefix string) (config *tls.Config, err error) {
 	certpool := x509.NewCertPool()
 	pemCerts, err := ioutil.ReadFile("AmazonRootCA1.pem")
 	if err != nil {
-		return
+		return nil, err
 	}
 	certpool.AppendCertsFromPEM(pemCerts)
 
 	cert, err := tls.LoadX509KeyPair(CertPrefix+"-certificate.pem.crt", CertPrefix+"-private.pem.key")
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	config = &tls.Config{
@@ -90,7 +88,7 @@ func NewTLSConfig() (config *tls.Config, err error) {
 		ClientCAs:    nil,
 		Certificates: []tls.Certificate{cert},
 	}
-	return
+	return config, nil
 }
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
@@ -98,8 +96,8 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 
 	topic_rcvd := ""
 
-	if strings.HasPrefix(msg.Topic(), opt.SubClientId+"/"+NodeId+"/") {
-		topic_rcvd = strings.Replace(msg.Topic(), opt.SubClientId+"/"+NodeId+"/", "", 1)
+	if strings.HasPrefix(msg.Topic(), opt.SubClientId+"/"+opt.NodeId+"/") {
+		topic_rcvd = strings.Replace(msg.Topic(), opt.SubClientId+"/"+opt.NodeId+"/", "", 1)
 	}
 
 	if topic_rcvd == "CheckVersion" {
@@ -108,21 +106,24 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 
 		jsonParsed, err := gabs.ParseJSON(msg.Payload())
 		if err != nil {
-			log.Error(err)
+			log.Error("Error on parsing message: ", err)
 		} else {
-			log.Debug(jsonParsed)
+			log.Debug("Parsed JSON >> ", jsonParsed)
 		}
 
 		post([]byte(msg.Payload()), "http://localhost:"+opt.NodeApiPort+"/pipelines")
 	}
 }
 
-var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
-	log.Info(fmt.Println("Connected"))
+var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
+	log.Info("ON connect >> connected")
+	if token := c.Subscribe(opt.SubClientId+"/"+opt.NodeId+"/+", 0, messagePubHandler); token.Wait() && token.Error() != nil {
+		log.Error("subscribe connection: %v", token.Error())
+	}
 }
 
 var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
-	log.Info(fmt.Printf("Connect lost: %v", err))
+	log.Info("Connection lost", err)
 }
 
 // var reconnectHandler mqtt.ReconnectHandler = func(client mqtt.Client, opts mqtt.ClientOptions) {
@@ -134,7 +135,7 @@ func main() {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 	if _, err := parser.Parse(); err != nil {
-		log.Error(err)
+		log.Error("Error on flgas parser ", err)
 		os.Exit(1)
 	}
 
@@ -145,96 +146,101 @@ func main() {
 	}
 	log.Info("Logging level set to ", log.GetLevel())
 
-	Broker = opt.Broker
-	NodeId = opt.NodeId
-	CertPrefix = opt.Cert
-	TopicName = opt.TopicName
-
-	tlsconfig, err := NewTLSConfig()
-	if err != nil {
-		log.Fatalf("failed to create TLS configuration: %v", err)
+	log.Debug("Broker: ", opt.Broker)
+	log.Debug("NodeId: ", opt.NodeId)
+	log.Debug("TopicName: ", opt.TopicName)
+	log.Debug("Heartbeat time: ", opt.Heartbeat)
+	if opt.NoTLS {
+		log.Info("TLS disabled!")
+	} else {
+		log.Debug("CertPrefix: ", opt.Cert)
 	}
 
-	pub_opts := mqtt.NewClientOptions()
-	pub_opts.AddBroker(Broker)
-	pub_opts.SetClientID(opt.PubClientId).SetTLSConfig(tlsconfig)
-	pub_opts.SetDefaultPublishHandler(messagePubHandler)
-	pub_opts.OnConnectionLost = connectLostHandler
+	// Build the options for the publish client
+	publisherOptions := mqtt.NewClientOptions()
+	publisherOptions.AddBroker(opt.Broker)
+	publisherOptions.SetClientID(opt.PubClientId + "/" + opt.NodeId)
+	publisherOptions.SetDefaultPublishHandler(messagePubHandler)
+	publisherOptions.OnConnectionLost = connectLostHandler
 
-	sub_opts := mqtt.NewClientOptions()
-	sub_opts.AddBroker(Broker)
-	sub_opts.SetClientID(opt.SubClientId).SetTLSConfig(tlsconfig)
-	sub_opts.SetDefaultPublishHandler(messagePubHandler)
-	sub_opts.OnConnectionLost = connectLostHandler
+	// Build the options for the subscribe client
+	subscriberOptions := mqtt.NewClientOptions()
+	subscriberOptions.AddBroker(opt.Broker)
+	subscriberOptions.SetClientID(opt.SubClientId + "/" + opt.NodeId)
+	subscriberOptions.SetDefaultPublishHandler(messagePubHandler)
+	subscriberOptions.OnConnectionLost = connectLostHandler
+	// sub_opts.SetReconnectingHandler(messagePubHandler, opts)
+	subscriberOptions.OnConnect = connectHandler
 
-	// opts.SetReconnectingHandler(messagePubHandler, opts)
-	// opts.OnConnect = connectHandler
-
-	sub_opts.OnConnect = func(c mqtt.Client) {
-		log.Info("ON connect ")
-		if token := c.Subscribe(opt.SubClientId+"/"+NodeId+"/+", 0, messagePubHandler); token.Wait() && token.Error() != nil {
-			log.Fatalf("subscribe connection: %v", token.Error())
+	if !opt.NoTLS {
+		tlsconfig, err := NewTLSConfig(opt.Cert)
+		if err != nil {
+			log.Fatalf("failed to create TLS configuration: %v", err)
 		}
+		// log.Debug("Tls Config >> ", tlsconfig)
+		subscriberOptions.SetTLSConfig(tlsconfig)
+		publisherOptions.SetTLSConfig(tlsconfig)
 	}
 
-	log.Info(sub_opts, pub_opts)
+	log.Debug("Info on Sub & Pub >> ", subscriberOptions, publisherOptions)
 
-	p_cl := mqtt.NewClient(pub_opts)
-	if token := p_cl.Connect(); token.Wait() && token.Error() != nil {
-		log.Fatalf("failed to create publisher connection: %v", token.Error())
+	publisher := mqtt.NewClient(publisherOptions)
+	if token := publisher.Connect(); token.Wait() && token.Error() != nil {
+		log.Error("failed to create publisher connection: %v", token.Error())
 	}
+	log.Debug("MQTT publisher client: \n", publisher)
 
-	s_cl := mqtt.NewClient(sub_opts)
-	if token := s_cl.Connect(); token.Wait() && token.Error() != nil {
-		log.Fatalf("failed to create subscriber connection: %v", token.Error())
+	subscriber := mqtt.NewClient(subscriberOptions)
+	if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
+		log.Error("failed to create subscriber connection: %v", token.Error())
 	}
+	log.Debug("MQTT subscriber client: \n", subscriber)
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		for {
-			if !p_cl.IsConnected() {
+			if !publisher.IsConnected() {
 				log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
 
-				if token := p_cl.Connect(); token.Wait() && token.Error() != nil {
-					log.Fatalf("failed to create publisher connection: %v", token.Error())
+				if token := publisher.Connect(); token.Wait() && token.Error() != nil {
+					log.Error("failed to create publisher connection: %v", token.Error())
 				}
 			}
 
-			if !s_cl.IsConnected() {
+			if !subscriber.IsConnected() {
 				log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
 
-				if token := s_cl.Connect(); token.Wait() && token.Error() != nil {
-					log.Fatalf("failed to create subscriber connection: %v", token.Error())
+				if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
+					log.Error("failed to create subscriber connection: %v", token.Error())
 				}
 			}
 
-			PublishMessages(p_cl)
+			PublishMessages(publisher)
 
-			log.Info("Sleeping..... 30 * ", time.Second)
-			time.Sleep(time.Second * 300)
-			log.Info("waken..... 30 * ", time.Second)
+			log.Info("Sleeping ", opt.Heartbeat)
+			time.Sleep(time.Second * time.Duration(opt.Heartbeat))
 		}
 	}()
 	<-done
 
 	<-c
-	if p_cl.IsConnected() {
+	if publisher.IsConnected() {
 		log.Info("Disconnecting.....")
-		p_cl.Disconnect(250)
+		publisher.Disconnect(250)
 	}
 
-	if s_cl.IsConnected() {
+	if subscriber.IsConnected() {
 		log.Info("Disconnecting.....")
-		s_cl.Disconnect(250)
+		subscriber.Disconnect(250)
 	}
 }
 
 func PublishMessages(cl mqtt.Client) {
 
-	var filter = map[string]string{"ID": "10"}
+	// var filter = map[string]string{"ID": "10"}
 
-	statuses := jsonlines.Read(constants.StatusFile, "", "", filter, false)
+	// statuses := jsonlines.Read(constants.ManifestFile, "", "", filter, false)
 	manifests := jsonlines.Read(constants.ManifestFile, "", "", nil, false)
 
 	var mani []ManifestStatus
@@ -243,7 +249,7 @@ func PublishMessages(cl mqtt.Client) {
 	actv_cnt := 0
 	serv_cnt := 0
 	for _, rec := range manifests {
-		log.Info(rec)
+		log.Info("Record on manifests >> ", rec)
 		mani = append(mani, ManifestStatus{rec["id"].(string), rec["version"].(string), rec["status"].(string)})
 		serv_cnt = serv_cnt + 1
 		if "SUCCESS" == rec["status"].(string) {
@@ -254,15 +260,15 @@ func PublishMessages(cl mqtt.Client) {
 	now := time.Now()
 	nanos := now.UnixNano()
 	millis := nanos / 1000000
-	msg := StatusMessage{NodeId, millis, "Available", actv_cnt, serv_cnt, mani, deviceParams}
+	msg := StatusMessage{opt.NodeId, millis, "Available", actv_cnt, serv_cnt, mani, deviceParams}
 
 	b_msg, err := json.Marshal(msg)
 	if err != nil {
 		log.Fatalf("Marshall error: %v", err)
 	}
 
-	log.Info("Sending update.", opt.TopicName, statuses, msg, string(b_msg))
-	if token := cl.Publish(opt.PubClientId+"/"+NodeId+"/"+opt.TopicName, 0, false, b_msg); token.Wait() && token.Error() != nil {
+	log.Info("Sending update.", opt.TopicName, msg, string(b_msg))
+	if token := cl.Publish(opt.PubClientId+"/"+opt.NodeId+"/"+opt.TopicName, 0, false, b_msg); token.Wait() && token.Error() != nil {
 		log.Fatalf("failed to send update: %v", token.Error())
 	}
 }
