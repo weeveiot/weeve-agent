@@ -8,3 +8,6 @@ build/
 *.pem
 *.pem.crt
 *.pem.key
+manifests.jsonl
+manifests_log.jsonl
+
