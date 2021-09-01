@@ -20,6 +20,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/constants"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util/jsonlines"
+
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/controller"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 )
 
 type Params struct {
@@ -109,9 +112,14 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 			log.Error("Error on parsing message: ", err)
 		} else {
 			log.Debug("Parsed JSON >> ", jsonParsed)
-		}
 
-		post([]byte(msg.Payload()), "http://localhost:"+opt.NodeApiPort+"/pipelines")
+			var thisManifest = model.Manifest{}
+
+			thisManifest.Manifest = *jsonParsed
+
+			controller.DeployManifest(thisManifest)
+		}
+		// post([]byte(msg.Payload()), "http://localhost:"+opt.NodeApiPort+"/pipelines")
 	}
 }
 
