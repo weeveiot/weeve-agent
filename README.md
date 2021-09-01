@@ -131,3 +131,23 @@ go run ./listener/node_listener.go -v --notls --heartbeat 3 \
     --publicurl hssss \ # Public URL to connect from public \
     --nodeport 8030 \ # Port where edge node api is listening
 ```
+
+## Testing with TLS to IOT core
+
+go run ./listener/node_listener.go -v  --heartbeat 10 \
+    --nodeId awsdev-test-node-1 \ # ID of this node \
+    --broker tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883 \ # Broker to connect to \
+    --cert adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c \ # Certificate to connect Broker \
+    --subClientId nodes/awsdev \ # Subscriber ClientId \
+    --pubClientId manager/awsdev \ # Publisher ClientId \
+    --publish CheckVersion \ # Topic Name \
+    --publicurl hssss \ # Public URL to connect from public \
+    --nodeport 8030 \ # Port where edge node api is listening
+
+mosquitto_pub \
+    -h asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com -p 8883 \
+    --cafile ~/weeve/edge-pipeline-service/adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-certificate.pem.crt \
+    -t test -m testing
+
+
+mosquitto_pub -h asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com -p 8883 --cafile AmazonRootCA1.pem -t test -m testing
