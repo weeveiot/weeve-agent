@@ -14,7 +14,7 @@ require (
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200915235308-f99814d749d7+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0 // indirect
-	github.com/eclipse/paho.mqtt.golang v1.3.2 // indirect
+	github.com/eclipse/paho.mqtt.golang v1.3.2
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/golang/gddo v0.0.0-20200831202555-721e228c7686
 	github.com/gorilla/mux v1.8.0

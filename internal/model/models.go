@@ -53,3 +53,25 @@ type Option []struct {
 	Arg string `json:"arg"`
 	Val bool   `json:"val"`
 }
+
+type StatusMessage struct {
+	Id                 string           `json:"ID"`
+	Timestamp          int64            `json:"timestamp"`
+	Connectivity       string           `json:"connectivity"`
+	ActiveServiceCount int              `json:"activeServiceCount"`
+	ServiceCount       int              `json:"serviceCount"`
+	DeployStatus       []ManifestStatus `json:"deployStatus"`
+	DeviceParams       DeviceParams     `json:"deviceParams"`
+}
+
+type ManifestStatus struct {
+	ManifestId      string `json:"manifestId"`
+	ManifestVersion string `json:"manifestVersion"`
+	Status          string `json:"status"`
+}
+
+type DeviceParams struct {
+	Sensors string `json:"sensors"`
+	Uptime  string `json:"uptime"`
+	CpuTemp string `json:"cputemp"`
+}

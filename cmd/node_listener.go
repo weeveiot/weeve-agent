@@ -14,14 +14,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Jeffail/gabs/v2"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/constants"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util/jsonlines"
 
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/controller"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 )
 
@@ -37,28 +36,6 @@ type Params struct {
 	NodeApiPort string `long:"nodeport" short:"p" description:"Port where edge node api is listening" required:"true"`
 	Heartbeat   int    `long:"heartbeat" short:"h" description:"Heartbeat time in seconds" required:"false" default:"30"`
 	NoTLS       bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
-}
-
-type StatusMessage struct {
-	Id                 string           `json:"ID"`
-	Timestamp          int64            `json:"timestamp"`
-	Connectivity       string           `json:"connectivity"`
-	ActiveServiceCount int              `json:"activeServiceCount"`
-	ServiceCount       int              `json:"serviceCount"`
-	DeployStatus       []ManifestStatus `json:"deployStatus"`
-	DeviceParams       DeviceParams     `json:"deviceParams"`
-}
-
-type ManifestStatus struct {
-	ManifestId      string `json:"manifestId"`
-	ManifestVersion string `json:"manifestVersion"`
-	Status          string `json:"status"`
-}
-
-type DeviceParams struct {
-	Sensors string `json:"sensors"`
-	Uptime  string `json:"uptime"`
-	CpuTemp string `json:"cputemp"`
 }
 
 var opt Params
@@ -103,24 +80,26 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 		topic_rcvd = strings.Replace(msg.Topic(), opt.SubClientId+"/"+opt.NodeId+"/", "", 1)
 	}
 
-	if topic_rcvd == "CheckVersion" {
+	internal.ProcessMessage(topic_rcvd, msg.Payload())
 
-	} else if topic_rcvd == "deploy" {
+	// if topic_rcvd == "CheckVersion" {
 
-		jsonParsed, err := gabs.ParseJSON(msg.Payload())
-		if err != nil {
-			log.Error("Error on parsing message: ", err)
-		} else {
-			log.Debug("Parsed JSON >> ", jsonParsed)
+	// } else if topic_rcvd == "deploy" {
 
-			var thisManifest = model.Manifest{}
+	// 	jsonParsed, err := gabs.ParseJSON(msg.Payload())
+	// 	if err != nil {
+	// 		log.Error("Error on parsing message: ", err)
+	// 	} else {
+	// 		log.Debug("Parsed JSON >> ", jsonParsed)
 
-			thisManifest.Manifest = *jsonParsed
+	// 		var thisManifest = model.Manifest{}
 
-			controller.DeployManifest(thisManifest)
-		}
-		// post([]byte(msg.Payload()), "http://localhost:"+opt.NodeApiPort+"/pipelines")
-	}
+	// 		thisManifest.Manifest = *jsonParsed
+
+	// 		controller.DeployManifest(thisManifest)
+	// 	}
+	// 	// post([]byte(msg.Payload()), "http://localhost:"+opt.NodeApiPort+"/pipelines")
+	// }
 }
 
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
@@ -251,14 +230,14 @@ func PublishMessages(cl mqtt.Client) {
 	// statuses := jsonlines.Read(constants.ManifestFile, "", "", filter, false)
 	manifests := jsonlines.Read(constants.ManifestFile, "", "", nil, false)
 
-	var mani []ManifestStatus
-	var deviceParams = DeviceParams{"10", "10", "20"}
+	var mani []model.ManifestStatus
+	var deviceParams = model.DeviceParams{"10", "10", "20"}
 
 	actv_cnt := 0
 	serv_cnt := 0
 	for _, rec := range manifests {
 		log.Info("Record on manifests >> ", rec)
-		mani = append(mani, ManifestStatus{rec["id"].(string), rec["version"].(string), rec["status"].(string)})
+		mani = append(mani, model.ManifestStatus{rec["id"].(string), rec["version"].(string), rec["status"].(string)})
 		serv_cnt = serv_cnt + 1
 		if "SUCCESS" == rec["status"].(string) {
 			actv_cnt = actv_cnt + 1
@@ -268,7 +247,7 @@ func PublishMessages(cl mqtt.Client) {
 	now := time.Now()
 	nanos := now.UnixNano()
 	millis := nanos / 1000000
-	msg := StatusMessage{opt.NodeId, millis, "Available", actv_cnt, serv_cnt, mani, deviceParams}
+	msg := model.StatusMessage{opt.NodeId, millis, "Available", actv_cnt, serv_cnt, mani, deviceParams}
 
 	b_msg, err := json.Marshal(msg)
 	if err != nil {
