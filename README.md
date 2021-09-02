@@ -133,7 +133,6 @@ Run the weeve agent in a third terminal, with the local broker as the target. Di
 go run ./cmd/node_listener.go -v --notls --heartbeat 3 \
     --nodeId local-test-node-1 \ # ID of this node \
     --broker localhost:8080 \ # Broker to connect to \
-    --cert adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c \ # Certificate to connect Broker \
     --subClientId nodes/localtest \ # Subscriber ClientId \
     --pubClientId manager/localtest \ # Publisher ClientId \
     --publish CheckVersion \ # Topic Name \
