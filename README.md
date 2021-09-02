@@ -27,6 +27,9 @@ A postman collection is found in the /docs folder. The collection is (published)
 
 ## Getting started for Developers
 
+### Prerequisites
+GoLang is installed https://golang.org/doc/install
+
 ### Build the Golang project
 The project can be compiled and run from source. The root of the command is the project root directory.
 `go build -o ./build/node-service ./cmd/node-service.go`
