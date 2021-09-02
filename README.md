@@ -32,7 +32,11 @@ GoLang is installed https://golang.org/doc/install
 
 ### Build the Golang project
 The project can be compiled and run from source. The root of the command is the project root directory.
+Build Node API Service mode
 `go build -o ./build/node-service ./cmd/node-service.go`
+
+Build Node MQTT listener mode
+`go build ./cmd/node_listener.go`
 
 ### Run the Golang project
 `go run ./cmd/node-service.go -v -p 8030`
