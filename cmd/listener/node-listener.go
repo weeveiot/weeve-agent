@@ -32,7 +32,6 @@ type Params struct {
 	SubClientId string `long:"subClientId" short:"s" description:"Subscriber ClientId" required:"true"`
 	TopicName   string `long:"publish" short:"t" description:"Topic Name" required:"true"`
 	Cert        string `long:"cert" short:"f" description:"Certificate to connect Broker" required:"false"`
-	HostUrl     string `long:"publicurl" short:"u" description:"Public URL to connect from public" required:"false"`
 	NoTLS       bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
 }
 
