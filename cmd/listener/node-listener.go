@@ -114,9 +114,21 @@ func main() {
 	if opt.NoTLS {
 		log.Info("TLS disabled!")
 	} else {
-		log.Debug("Root server certificate: ", opt.RootCertPath)
-		log.Debug("Client certificate: ", opt.CertPath)
-		log.Debug("Client private key: ", opt.KeyPath)
+		if _, err := os.Stat(opt.RootCertPath); os.IsNotExist(err) {
+			log.Fatalf("Root certificate path does not exist: %v", opt.RootCertPath)
+		} else {
+			log.Debug("Root server certificate: ", opt.RootCertPath)
+		}
+		if _, err := os.Stat(opt.CertPath); os.IsNotExist(err) {
+			log.Fatalf("Client certificate path does not exist: %v", opt.CertPath)
+		} else {
+			log.Debug("Client certificate: ", opt.CertPath)
+		}
+		if _, err := os.Stat(opt.KeyPath); os.IsNotExist(err) {
+			log.Fatalf("Client private key path does not exist: %v", opt.KeyPath)
+		} else {
+			log.Debug("Client private key: ", opt.KeyPath)
+		}
 	}
 
 	statusPublishTopic := opt.PubClientId + "/" + opt.NodeId
