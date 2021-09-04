@@ -142,9 +142,8 @@ go run ./cmd/listener/node-listener.go -v --notls --heartbeat 3 \
     --broker localhost:8080 \ # Broker to connect to \
     --subClientId nodes/localtest \ # Subscriber ClientId \
     --pubClientId manager/localtest \ # Publisher ClientId \
-    --publish CheckVersion \ # Topic Name \
-    --publicurl hssss \ # Public URL to connect from public \
-    --nodeport 8030 \ # Port where edge node api is listening
+    --publish CheckVersion  \ # Topic Name \
+	--heartbeat 3 # Status message publishing interval
 ```
 
 ## Testing with TLS to IOT core
@@ -156,8 +155,6 @@ go run ./cmd/listener/node-listener.go -v  --heartbeat 10 \
     --subClientId nodes/awsdev \ # Subscriber ClientId \
     --pubClientId manager/awsdev \ # Publisher ClientId \
     --publish CheckVersion \ # Topic Name \
-    --publicurl hssss \ # Public URL to connect from public \
-    --nodeport 8030 \ # Port where edge node api is listening
 
 mosquitto_pub \
     -h asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com -p 8883 \

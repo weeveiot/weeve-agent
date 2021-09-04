@@ -31,7 +31,8 @@ type Params struct {
 	PubClientId string `long:"pubClientId" short:"c" description:"Publisher ClientId" required:"true"`
 	SubClientId string `long:"subClientId" short:"s" description:"Subscriber ClientId" required:"true"`
 	TopicName   string `long:"publish" short:"t" description:"Topic Name" required:"true"`
-	Cert        string `long:"cert" short:"f" description:"Certificate to connect Broker" required:"false"`
+	CertPath    string `long:"cert" short:"f" description:"Path to certificate to connect Broker" required:"false"`
+	Heartbeat   int    `long:"heartbeat" short:"h" description:"Heartbeat time in seconds" required:"false" default:"30"`
 	NoTLS       bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
 }
 
@@ -46,7 +47,7 @@ func init() {
 	log.Info("Started logging")
 }
 
-func NewTLSConfig(CertPrefix string) (config *tls.Config, err error) {
+func NewTLSConfig(CertPath string) (config *tls.Config, err error) {
 	certpool := x509.NewCertPool()
 	pemCerts, err := ioutil.ReadFile("AmazonRootCA1.pem")
 	if err != nil {
@@ -54,7 +55,7 @@ func NewTLSConfig(CertPrefix string) (config *tls.Config, err error) {
 	}
 	certpool.AppendCertsFromPEM(pemCerts)
 
-	cert, err := tls.LoadX509KeyPair(CertPrefix+"-certificate.pem.crt", CertPrefix+"-private.pem.key")
+	cert, err := tls.LoadX509KeyPair(CertPath+"-certificate.pem.crt", CertPath+"-private.pem.key")
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +138,7 @@ func main() {
 	if opt.NoTLS {
 		log.Info("TLS disabled!")
 	} else {
-		log.Debug("CertPrefix: ", opt.Cert)
+		log.Debug("CertPrefix: ", opt.CertPath)
 	}
 
 	// Build the options for the publish client
@@ -157,7 +158,7 @@ func main() {
 	subscriberOptions.OnConnect = connectHandler
 
 	if !opt.NoTLS {
-		tlsconfig, err := NewTLSConfig(opt.Cert)
+		tlsconfig, err := NewTLSConfig(opt.CertPath)
 		if err != nil {
 			log.Fatalf("failed to create TLS configuration: %v", err)
 		}
