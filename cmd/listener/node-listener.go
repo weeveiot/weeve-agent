@@ -80,24 +80,6 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 
 	internal.ProcessMessage(topic_rcvd, msg.Payload())
 
-	// if topic_rcvd == "CheckVersion" {
-
-	// } else if topic_rcvd == "deploy" {
-
-	// 	jsonParsed, err := gabs.ParseJSON(msg.Payload())
-	// 	if err != nil {
-	// 		log.Error("Error on parsing message: ", err)
-	// 	} else {
-	// 		log.Debug("Parsed JSON >> ", jsonParsed)
-
-	// 		var thisManifest = model.Manifest{}
-
-	// 		thisManifest.Manifest = *jsonParsed
-
-	// 		controller.DeployManifest(thisManifest)
-	// 	}
-	// 	// post([]byte(msg.Payload()), "http://localhost:"+opt.NodeApiPort+"/pipelines")
-	// }
 }
 
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
@@ -110,10 +92,6 @@ var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
 var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
 	log.Info("Connection lost", err)
 }
-
-// var reconnectHandler mqtt.ReconnectHandler = func(client mqtt.Client, opts mqtt.ClientOptions) {
-// 	fmt.Printf("ReConnect lost:")
-// }
 
 func main() {
 	c := make(chan os.Signal, 1)
@@ -223,9 +201,6 @@ func main() {
 
 func PublishMessages(cl mqtt.Client) {
 
-	// var filter = map[string]string{"ID": "10"}
-
-	// statuses := jsonlines.Read(constants.ManifestFile, "", "", filter, false)
 	manifests := jsonlines.Read(constants.ManifestFile, "", "", nil, false)
 
 	var mani []model.ManifestStatus
