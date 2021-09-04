@@ -1,13 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -25,15 +22,17 @@ import (
 )
 
 type Params struct {
-	NodeId      string `long:"nodeId" short:"i" description:"ID of this node" required:"true"`
-	Verbose     []bool `long:"verbose" short:"v" description:"Show verbose debug information"`
-	Broker      string `long:"broker" short:"b" description:"Broker to connect" required:"true"`
-	PubClientId string `long:"pubClientId" short:"c" description:"Publisher ClientId" required:"true"`
-	SubClientId string `long:"subClientId" short:"s" description:"Subscriber ClientId" required:"true"`
-	TopicName   string `long:"publish" short:"t" description:"Topic Name" required:"true"`
-	CertPath    string `long:"cert" short:"f" description:"Path to certificate to connect Broker" required:"false"`
-	Heartbeat   int    `long:"heartbeat" short:"h" description:"Heartbeat time in seconds" required:"false" default:"30"`
-	NoTLS       bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
+	NodeId       string `long:"nodeId" short:"i" description:"ID of this node" required:"true"`
+	Verbose      []bool `long:"verbose" short:"v" description:"Show verbose debug information"`
+	Broker       string `long:"broker" short:"b" description:"Broker to connect" required:"true"`
+	PubClientId  string `long:"pubClientId" short:"c" description:"Publisher ClientId" required:"true"`
+	SubClientId  string `long:"subClientId" short:"s" description:"Subscriber ClientId" required:"true"`
+	TopicName    string `long:"publish" short:"t" description:"Topic Name" required:"true"`
+	RootCertPath string `long:"rootcert" short:"r" description:"Path to MQTT broker (server) certificate" required:"false"`
+	CertPath     string `long:"cert" short:"f" description:"Path to certificate to authenticate to Broker" required:"false"`
+	KeyPath      string `long:"key" short:"k" description:"Path to private key to authenticate to Broker" required:"false"`
+	Heartbeat    int    `long:"heartbeat" short:"h" description:"Heartbeat time in seconds" required:"false" default:"30"`
+	NoTLS        bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
 }
 
 var opt Params
@@ -49,13 +48,13 @@ func init() {
 
 func NewTLSConfig(CertPath string) (config *tls.Config, err error) {
 	certpool := x509.NewCertPool()
-	pemCerts, err := ioutil.ReadFile("AmazonRootCA1.pem")
+	pemCerts, err := ioutil.ReadFile(opt.RootCertPath)
 	if err != nil {
 		return nil, err
 	}
 	certpool.AppendCertsFromPEM(pemCerts)
 
-	cert, err := tls.LoadX509KeyPair(CertPath+"-certificate.pem.crt", CertPath+"-private.pem.key")
+	cert, err := tls.LoadX509KeyPair(opt.CertPath, opt.KeyPath)
 	if err != nil {
 		return nil, err
 	}
@@ -111,25 +110,32 @@ func main() {
 
 	log.Debug("Broker: ", opt.Broker)
 	log.Debug("NodeId: ", opt.NodeId)
-	log.Debug("TopicName: ", opt.TopicName)
 	log.Debug("Heartbeat time: ", opt.Heartbeat)
 	if opt.NoTLS {
 		log.Info("TLS disabled!")
 	} else {
-		log.Debug("CertPrefix: ", opt.CertPath)
+		log.Debug("Root server certificate: ", opt.RootCertPath)
+		log.Debug("Client certificate: ", opt.CertPath)
+		log.Debug("Client private key: ", opt.KeyPath)
 	}
+
+	statusPublishTopic := opt.PubClientId + "/" + opt.NodeId
+	log.Debug("Status heartbeat publishing to topic: ", opt.TopicName)
+
+	nodeSubscribeTopic := opt.SubClientId + "/" + opt.NodeId
+	log.Debug("This node is subscribed to topic: ", nodeSubscribeTopic)
 
 	// Build the options for the publish client
 	publisherOptions := mqtt.NewClientOptions()
 	publisherOptions.AddBroker(opt.Broker)
-	publisherOptions.SetClientID(opt.PubClientId + "/" + opt.NodeId)
+	publisherOptions.SetClientID(statusPublishTopic)
 	publisherOptions.SetDefaultPublishHandler(messagePubHandler)
 	publisherOptions.OnConnectionLost = connectLostHandler
 
 	// Build the options for the subscribe client
 	subscriberOptions := mqtt.NewClientOptions()
 	subscriberOptions.AddBroker(opt.Broker)
-	subscriberOptions.SetClientID(opt.SubClientId + "/" + opt.NodeId)
+	subscriberOptions.SetClientID(nodeSubscribeTopic)
 	subscriberOptions.SetDefaultPublishHandler(messagePubHandler)
 	subscriberOptions.OnConnectionLost = connectLostHandler
 	// sub_opts.SetReconnectingHandler(messagePubHandler, opts)
@@ -141,23 +147,25 @@ func main() {
 			log.Fatalf("failed to create TLS configuration: %v", err)
 		}
 		// log.Debug("Tls Config >> ", tlsconfig)
-		subscriberOptions.SetTLSConfig(tlsconfig)
+		// subscriberOptions.SetTLSConfig(tlsconfig)
 		publisherOptions.SetTLSConfig(tlsconfig)
 	}
 
-	log.Debug("Info on Sub & Pub >> ", subscriberOptions, publisherOptions)
+	// log.Debug("Info on Sub & Pub >> ", subscriberOptions, publisherOptions)
 
 	publisher := mqtt.NewClient(publisherOptions)
 	if token := publisher.Connect(); token.Wait() && token.Error() != nil {
 		log.Error("failed to create publisher connection: %v", token.Error())
 	}
-	log.Debug("MQTT publisher client: \n", publisher)
+	// log.Debug("MQTT publisher client: \n", publisher)
+	log.Debug("MQTT publisher connected")
 
 	subscriber := mqtt.NewClient(subscriberOptions)
 	if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
 		log.Error("failed to create subscriber connection: %v", token.Error())
 	}
-	log.Debug("MQTT subscriber client: \n", subscriber)
+	log.Debug("MQTT subscriber connected")
+	// log.Debug("MQTT subscriber client: \n", subscriber)
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
@@ -233,18 +241,18 @@ func PublishMessages(cl mqtt.Client) {
 	}
 }
 
-func post(jsonReq []byte, nextHost string) {
-	fmt.Printf("Next host %s", nextHost)
-	resp, err := http.Post(nextHost, "application/json; charset=utf-8", bytes.NewBuffer(jsonReq))
-	if err != nil {
-		log.Info("Post API Connection error: %v", err)
-	} else {
+// func post(jsonReq []byte, nextHost string) {
+// 	fmt.Printf("Next host %s", nextHost)
+// 	resp, err := http.Post(nextHost, "application/json; charset=utf-8", bytes.NewBuffer(jsonReq))
+// 	if err != nil {
+// 		log.Info("Post API Connection error: %v", err)
+// 	} else {
 
-		defer resp.Body.Close()
-		bodyBytes, _ := ioutil.ReadAll(resp.Body)
+// 		defer resp.Body.Close()
+// 		bodyBytes, _ := ioutil.ReadAll(resp.Body)
 
-		// Convert response body to string
-		bodyString := string(bodyBytes)
-		log.Info(bodyString)
-	}
-}
+// 		// Convert response body to string
+// 		bodyString := string(bodyBytes)
+// 		log.Info(bodyString)
+// 	}
+// }

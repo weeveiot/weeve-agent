@@ -147,15 +147,43 @@ go run ./cmd/listener/node-listener.go -v --notls --heartbeat 3 \
 ```
 
 ## Testing with TLS to IOT core
+Traffic between the weeve agent and the MQTT broker is encrypted with TLS.
 
+
+PEM or Privacy Enhanced Mail is a Base64 encoded DER certificate.
+
+### Server authentication
+The MQTT broker presents it's certificate, which the device validates against the a
+
+### Client authentication
+
+The server.key is likely your private key, and the .crt file is the returned, signed, x509 certificate.
+(openssl x509 -noout -modulus -in certificate.pem.crt | openssl md5 ; openssl rsa -noout -modulus -in private.pem.key | openssl md5) | uniq
+### TLS recipe
+
+```bash
+SERVER_CERTIFICATE=AmazonRootCA1.pem
+CLIENT_CERTIFICATE=adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-certificate.pem.crt
+CLIENT_PRIVATE_KEY=adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-private.pem.key
 go run ./cmd/listener/node-listener.go -v  --heartbeat 10 \
     --nodeId awsdev-test-node-1 \ # ID of this node \
     --broker tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883 \ # Broker to connect to \
-    --cert adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c \ # Certificate to connect Broker \
+	--rootcert $SERVER_CERTIFICATE \ #\
+	--cert $CLIENT_CERTIFICATE \ #\
+	--key $CLIENT_PRIVATE_KEY \ #\
     --subClientId nodes/awsdev \ # Subscriber ClientId \
     --pubClientId manager/awsdev \ # Publisher ClientId \
-    --publish CheckVersion \ # Topic Name \
+    --publish status \ # Topic bame for publishing status messages \
+	--heartbeat 3 # Status message publishing interval
+```
 
+#### Testing with IOT core
+
+Status heartbeat messages can be confirmed by subscribing to the NodeID topic. A test subscription [can be viewed](https://console.aws.amazon.com/iot/home?region=us-east-1#/test) if using AWS IOT Core.
+
+The same testing UI can be used to publish back to the agent.
+
+### Testing with mosquitto
 mosquitto_pub \
     -h asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com -p 8883 \
     --cafile ~/weeve/edge-pipeline-service/adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-certificate.pem.crt \
