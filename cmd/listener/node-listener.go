@@ -167,14 +167,14 @@ func main() {
 
 	publisher := mqtt.NewClient(publisherOptions)
 	if token := publisher.Connect(); token.Wait() && token.Error() != nil {
-		log.Error("failed to create publisher connection: %v", token.Error())
+		log.Errorf("failed to create publisher connection: %v", token.Error())
 	}
 	// log.Debug("MQTT publisher client: \n", publisher)
 	log.Debug("MQTT publisher connected")
 
 	subscriber := mqtt.NewClient(subscriberOptions)
 	if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
-		log.Error("failed to create subscriber connection: %v", token.Error())
+		log.Errorf("failed to create subscriber connection: %v", token.Error())
 	}
 	log.Debug("MQTT subscriber connected")
 	// log.Debug("MQTT subscriber client: \n", subscriber)
@@ -195,7 +195,7 @@ func main() {
 				log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
 
 				if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
-					log.Error("failed to create subscriber connection: %v", token.Error())
+					log.Errorf("failed to create subscriber connection: %v", token.Error())
 				}
 			}
 
