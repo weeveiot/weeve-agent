@@ -12,10 +12,50 @@ A data model for the manifest object and supporting structures is found in the i
 
 ## Getting started
 
-### Compiled binary
-With the binary available,
+### Without TLS
+The binary or the source code, (with `go run`) the agent can be started with the following options;
 
-### [WIP]
+```bash
+go run ./cmd/listener/node-listener.go -v --notls \
+    --nodeId local-test-node-1 \ # ID of this node \
+    --broker http://localhost:8080 \ # Broker to connect to \
+    --subClientId nodes/localtest \ # Subscriber ClientId \
+    --pubClientId manager/localtest \ # Publisher ClientId \
+    --publish CheckVersion  \ # Topic Name \
+	--heartbeat 3 # Status message publishing interval
+```
+
+The `-v` flag enables debug logs, and the `--notls` flag disables TLS configuation. Further logs from the `paho` MQTT client can be enabled with the `--mqttlogs` flag.
+
+This recipe requires a local MQTT broker, for example, the Mosquitto broker with logs enabled to confirm subscription and publish; `mosquitto -v -p 8080`.
+
+In a second terminal, subscribe to all topics for that broker; `mosquitto_sub -t '#' -p 8080`.
+
+Run the weeve agent in a third terminal.
+
+### With TLS
+TLS configuration requires the full path to all secrets and certificates as follows;
+
+```bash
+SERVER_CERTIFICATE=AmazonRootCA1.pem
+CLIENT_CERTIFICATE=adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-certificate.pem.crt
+CLIENT_PRIVATE_KEY=adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-private.pem.key
+go run ./cmd/listener/node-listener.go -v \
+    --nodeId awsdev-test-node-1 \ # ID of this node \
+    --broker tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883 \ # Broker to connect to \
+	--rootcert $SERVER_CERTIFICATE \ #\
+	--cert $CLIENT_CERTIFICATE \ #\
+	--key $CLIENT_PRIVATE_KEY \ #\
+    --subClientId nodes/awsdev \ # Subscriber ClientId \
+    --pubClientId manager/awsdev \ # Publisher ClientId \
+    --publish status \ # Topic bame for publishing status messages \
+	--heartbeat 10   # Status message publishing interval \
+	# --mqttlogs # Enable detailed debug logs for the MQTT connection
+```
+
+The `tls` protocol is strictly checked in the Broker url.
+
+# [BELOW IS WIP]
 
 The latest binary can be downloaded from S3 bucket :
 https://weeve-binaries-release.s3.eu-central-1.amazonaws.com/node-service/node-service-0-1-1
@@ -136,25 +176,9 @@ go run ./listener/node_listener.go -v \
 
 # [WIP] Developer testing - listener
 
-In one terminal, run a local broker with logs enabled to confirm subscription and publish; `mosquitto -v -p 8080`.
-
-In a second terminal, subscribe to all topics for that broker; `mosquitto_sub -t '#' -p 8080`.
-
-Run the weeve agent in a third terminal, with the local broker as the target. Disable TLS with the `--notls` flag.
-
-```bash
-go run ./cmd/listener/node-listener.go -v --notls \
-    --nodeId local-test-node-1 \ # ID of this node \
-    --broker http://localhost:8080 \ # Broker to connect to \
-    --subClientId nodes/localtest \ # Subscriber ClientId \
-    --pubClientId manager/localtest \ # Publisher ClientId \
-    --publish CheckVersion  \ # Topic Name \
-	--heartbeat 3 # Status message publishing interval
-```
 
 ## Testing with TLS to IOT core
 Traffic between the weeve agent and the MQTT broker is encrypted with TLS.
-
 
 PEM or Privacy Enhanced Mail is a Base64 encoded DER certificate.
 
@@ -165,25 +189,6 @@ The MQTT broker presents it's certificate, which the device validates against th
 
 The server.key is likely your private key, and the .crt file is the returned, signed, x509 certificate.
 (openssl x509 -noout -modulus -in certificate.pem.crt | openssl md5 ; openssl rsa -noout -modulus -in private.pem.key | openssl md5) | uniq
-### TLS recipe
-
-```bash
-SERVER_CERTIFICATE=AmazonRootCA1.pem
-CLIENT_CERTIFICATE=adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-certificate.pem.crt
-CLIENT_PRIVATE_KEY=adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-private.pem.key
-go run ./cmd/listener/node-listener.go -v \
-    --nodeId awsdev-test-node-1 \ # ID of this node \
-    --broker tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883 \ # Broker to connect to \
-	--rootcert $SERVER_CERTIFICATE \ #\
-	--cert $CLIENT_CERTIFICATE \ #\
-	--key $CLIENT_PRIVATE_KEY \ #\
-    --subClientId nodes/awsdev \ # Subscriber ClientId \
-    --pubClientId manager/awsdev \ # Publisher ClientId \
-    --publish status \ # Topic bame for publishing status messages \
-	--heartbeat 10   # Status message publishing interval \
-	# --mqttlogs # Enable detailed debug logs for the MQTT connection
-```
-
 #### Testing with IOT core
 
 Status heartbeat messages can be confirmed by subscribing to the NodeID topic. A test subscription [can be viewed](https://console.aws.amazon.com/iot/home?region=us-east-1#/test) if using AWS IOT Core.
