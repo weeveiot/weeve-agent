@@ -166,17 +166,17 @@ SERVER_CERTIFICATE=AmazonRootCA1.pem
 CLIENT_CERTIFICATE=adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-certificate.pem.crt
 CLIENT_PRIVATE_KEY=adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-private.pem.key
 go run ./cmd/listener/node-listener.go -v -m \
-    --nodeId awsdev-test-node-1 \ # ID of this node \
+    --nodeId awsdev-test-node-4 \ # ID of this node \
     --broker tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883 \ # Broker to connect to \
 	--rootcert $SERVER_CERTIFICATE \ #\
 	--cert $CLIENT_CERTIFICATE \ #\
 	--key $CLIENT_PRIVATE_KEY \ #\
     --subClientId nodes/awsdev \ # Subscriber ClientId \
     --pubClientId manager/awsdev \ # Publisher ClientId \
-    --publish status \ # Topic bame for publishing status messages \
-	--heartbeat 3  # Status message publishing interval \
-```
+    --publish status2 \ # Topic bame for publishing status messages \
+	--heartbeat 3  \ # Status message publishing interval \
 	--mqttlogs # Enable detailed debug logs for the MQTT connection
+```
 
 #### Testing with IOT core
 
@@ -193,6 +193,10 @@ mosquitto_pub \
 
 mosquitto_pub -h asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com -p 8883 --cafile AmazonRootCA1.pem -t test -m testing
 
+## Testing with Wireshark
+
+nslookup
+ifconfig
 
 ## Testing the manifest
 ```bash
@@ -265,3 +269,5 @@ curl --location --request POST $NODE_URL_LOCAL \
 --header 'Content-Type: application/json' \
 --data-raw $MANIFEST
 ```
+
+aws --region us-east-1 iot list-things | jq '.things[] | .thingName, .attributes.nodeId'
