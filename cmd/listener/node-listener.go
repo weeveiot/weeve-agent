@@ -183,6 +183,7 @@ func main() {
 		// log.Debug("MQTT publisher client: \n", publisher)
 		log.Debug("MQTT publisher connected")
 	}
+	log.Debug("Subscriber options:\n", subscriberOptions)
 	subscriber := mqtt.NewClient(subscriberOptions)
 	if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
 		log.Errorf("failed to create subscriber connection: %v", token.Error())
