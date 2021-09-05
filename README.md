@@ -137,7 +137,7 @@ In a second terminal, subscribe to all topics for that broker; `mosquitto_sub -t
 Run the weeve agent in a third terminal, with the local broker as the target. Disable TLS with the `--notls` flag.
 
 ```bash
-go run ./cmd/listener/node-listener.go -v --notls --heartbeat 3 \
+go run ./cmd/listener/node-listener.go -v --notls \ #
     --nodeId local-test-node-1 \ # ID of this node \
     --broker localhost:8080 \ # Broker to connect to \
     --subClientId nodes/localtest \ # Subscriber ClientId \
@@ -165,7 +165,7 @@ The server.key is likely your private key, and the .crt file is the returned, si
 SERVER_CERTIFICATE=AmazonRootCA1.pem
 CLIENT_CERTIFICATE=adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-certificate.pem.crt
 CLIENT_PRIVATE_KEY=adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-private.pem.key
-go run ./cmd/listener/node-listener.go -v  --heartbeat 10 \
+go run ./cmd/listener/node-listener.go -v -m \
     --nodeId awsdev-test-node-1 \ # ID of this node \
     --broker tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883 \ # Broker to connect to \
 	--rootcert $SERVER_CERTIFICATE \ #\
@@ -174,8 +174,9 @@ go run ./cmd/listener/node-listener.go -v  --heartbeat 10 \
     --subClientId nodes/awsdev \ # Subscriber ClientId \
     --pubClientId manager/awsdev \ # Publisher ClientId \
     --publish status \ # Topic bame for publishing status messages \
-	--heartbeat 3 # Status message publishing interval
+	--heartbeat 3  # Status message publishing interval \
 ```
+	--mqttlogs # Enable detailed debug logs for the MQTT connection
 
 #### Testing with IOT core
 

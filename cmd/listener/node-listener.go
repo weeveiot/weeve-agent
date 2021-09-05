@@ -14,6 +14,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
+
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/constants"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util/jsonlines"
@@ -32,6 +33,7 @@ type Params struct {
 	CertPath     string `long:"cert" short:"f" description:"Path to certificate to authenticate to Broker" required:"false"`
 	KeyPath      string `long:"key" short:"k" description:"Path to private key to authenticate to Broker" required:"false"`
 	Heartbeat    int    `long:"heartbeat" short:"h" description:"Heartbeat time in seconds" required:"false" default:"30"`
+	MqttLogs     bool   `long:"mqttlogs" short:"m" description:"For developer - Display detailed MQTT logging messages" required:"false"`
 	NoTLS        bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
 }
 
@@ -93,13 +95,21 @@ var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err
 }
 
 func main() {
+
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 	if _, err := parser.Parse(); err != nil {
-		log.Error("Error on flgas parser ", err)
+		log.Error("Error on command line parser ", err)
 		os.Exit(1)
 	}
+
+	// if opt.mqttLogs {
+	// 	mqtt.ERROR = syslog.New(os.Stdout, "[ERROR] ", 0)
+	// 	mqtt.CRITICAL = syslog.New(os.Stdout, "[CRIT] ", 0)
+	// 	mqtt.WARN = syslog.New(os.Stdout, "[WARN]  ", 0)
+	// 	mqtt.DEBUG = syslog.New(os.Stdout, "[DEBUG] ", 0)
+	// }
 
 	if len(opt.Verbose) >= 1 {
 		log.SetLevel(log.DebugLevel)
