@@ -166,7 +166,7 @@ SERVER_CERTIFICATE=AmazonRootCA1.pem
 CLIENT_CERTIFICATE=adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-certificate.pem.crt
 CLIENT_PRIVATE_KEY=adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-private.pem.key
 go run ./cmd/listener/node-listener.go -v -m \
-    --nodeId demo_edge_node1 \ # ID of this node \
+    --nodeId awsdev-test-node-1 \ # ID of this node \
     --broker tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883 \ # Broker to connect to \
 	--rootcert $SERVER_CERTIFICATE \ #\
 	--cert $CLIENT_CERTIFICATE \ #\
