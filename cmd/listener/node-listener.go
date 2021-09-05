@@ -4,7 +4,11 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	golog "log"
+	"net"
+	"net/url"
 	"os"
 	"os/signal"
 	"strings"
@@ -104,12 +108,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	// if opt.mqttLogs {
-	// 	mqtt.ERROR = syslog.New(os.Stdout, "[ERROR] ", 0)
-	// 	mqtt.CRITICAL = syslog.New(os.Stdout, "[CRIT] ", 0)
-	// 	mqtt.WARN = syslog.New(os.Stdout, "[WARN]  ", 0)
-	// 	mqtt.DEBUG = syslog.New(os.Stdout, "[DEBUG] ", 0)
-	// }
+	// Show the logs from the Paho package at STDOUT
+	if opt.MqttLogs {
+		mqtt.ERROR = golog.New(os.Stdout, "[ERROR] ", 0)
+		mqtt.CRITICAL = golog.New(os.Stdout, "[CRIT] ", 0)
+		mqtt.WARN = golog.New(os.Stdout, "[WARN]  ", 0)
+		mqtt.DEBUG = golog.New(os.Stdout, "[DEBUG] ", 0)
+	}
 
 	if len(opt.Verbose) >= 1 {
 		log.SetLevel(log.DebugLevel)
@@ -118,12 +123,31 @@ func main() {
 	}
 	log.Info("Logging level set to ", log.GetLevel())
 
+	// Parse the Broker url
+	u, err := url.Parse(opt.Broker)
+	if err != nil {
+		panic(err)
+	}
+
+	host, port, _ := net.SplitHostPort(u.Host)
+
+	// Strictly require protocol and host in Broker specification
+	if (len(strings.TrimSpace(host)) == 0) || (len(strings.TrimSpace(u.Scheme)) == 0) {
+		log.Fatalf("Error in --broker option: Specify both protocol:\\\\host in the Broker URL")
+	}
+
+	log.Info(fmt.Sprintf("Broker host %v at port %v over %v\n", host, port, u.Scheme))
+
 	log.Debug("Broker: ", opt.Broker)
 	log.Debug("NodeId: ", opt.NodeId)
 	log.Debug("Heartbeat time: ", opt.Heartbeat)
+
 	if opt.NoTLS {
 		log.Info("TLS disabled!")
 	} else {
+		if u.Scheme != "tls" {
+			log.Fatalf("Incorrect protocol, TLS is required unless --notls is set. You specified protocol in broker to: %v", u.Scheme)
+		}
 		if _, err := os.Stat(opt.RootCertPath); os.IsNotExist(err) {
 			log.Fatalf("Root certificate path does not exist: %v", opt.RootCertPath)
 		} else {
