@@ -16,7 +16,7 @@ A data model for the manifest object and supporting structures is found in the i
 The binary or the source code, (with `go run`) the agent can be started with the following options;
 
 ```bash
-go run ./cmd/listener/node-listener.go -v --notls \
+go run ./cmd/agent/agent.go -v --notls \
     --nodeId local-test-node-1 \ # ID of this node \
     --broker http://localhost:8080 \ # Broker to connect to \
     --subClientId nodes/localtest \ # Subscriber ClientId \
@@ -40,7 +40,7 @@ TLS configuration requires the full path to all secrets and certificates as foll
 SERVER_CERTIFICATE=AmazonRootCA1.pem
 CLIENT_CERTIFICATE=adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-certificate.pem.crt
 CLIENT_PRIVATE_KEY=adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-private.pem.key
-go run ./cmd/listener/node-listener.go -v \
+go run ./cmd/agent/agent.go -v \
     --nodeId awsdev-test-node-1 \ # ID of this node \
     --broker tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883 \ # Broker to connect to \
 	--rootcert $SERVER_CERTIFICATE \ #\
