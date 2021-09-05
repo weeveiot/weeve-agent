@@ -169,8 +169,10 @@ func main() {
 			log.Fatalf("failed to create TLS configuration: %v", err)
 		}
 		// log.Debug("Tls Config >> ", tlsconfig)
-		// subscriberOptions.SetTLSConfig(tlsconfig)
+		subscriberOptions.SetTLSConfig(tlsconfig)
+		log.Debug("TLS set on subscriber options")
 		publisherOptions.SetTLSConfig(tlsconfig)
+		log.Debug("TLS set on publisher options")
 	}
 
 	// log.Debug("Info on Sub & Pub >> ", subscriberOptions, publisherOptions)
@@ -183,6 +185,7 @@ func main() {
 		// log.Debug("MQTT publisher client: \n", publisher)
 		log.Debug("MQTT publisher connected")
 	}
+
 	log.Debug("Subscriber options:\n", subscriberOptions)
 	subscriber := mqtt.NewClient(subscriberOptions)
 	if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
