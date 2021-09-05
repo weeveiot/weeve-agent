@@ -177,6 +177,7 @@ go run ./cmd/listener/node-listener.go -v -m \
 	--heartbeat 3  \ # Status message publishing interval \
 	--mqttlogs # Enable detailed debug logs for the MQTT connection
 ```
+	--mqttlogs # Enable detailed debug logs for the MQTT connection
 
 #### Testing with IOT core
 
@@ -269,5 +270,3 @@ curl --location --request POST $NODE_URL_LOCAL \
 --header 'Content-Type: application/json' \
 --data-raw $MANIFEST
 ```
-
-aws --region us-east-1 iot list-things | jq '.things[] | .thingName, .attributes.nodeId'
