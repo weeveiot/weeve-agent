@@ -1,16 +1,22 @@
 # weeve agent
-The weeve agent is a lightweight service to orchestrate data pipelines. A data pipeline is defined in a manifest file and consists of several interconnected docker containers. The data pipeline is instantiated by subscription to an MQTT topic for the stage and node. The logic of the service then pulls images from docker hub if they do not exist on the machine. The weeve agent then creates and starts containers based on request manifest. A bridge networks can be instantiated to facilitate container communication. The agent publishes status messages on a defined interval to monitor the state of the IOT edge comprised of multiple edge nodes running weeve agents.
+The weeve agent is a lightweight service to orchestrate data pipelines. A data pipeline is defined in a manifest file and consists of several interconnected docker containers. The data pipeline is instantiated by subscription to an MQTT topic for the stage and node. The logic of the service then pulls images from docker hub if they do not exist on the machine. The weeve agent creates and starts containers based on a specified manifest. A bridge network is instantiated to facilitate container communication. The agent publishes status messages over MQTT on a defined interval to monitor the state of the IOT edge comprised of multiple edge nodes running weeve agents.
 
 ## Architecture
 The weeve agent can be considered as a Docker orchestration layer with a purpose built business logic for a data service - multiple containers in communication with each other. As such, the project relies on the [Golang Docker SDK](https://godoc.org/github.com/docker/docker).
 
-The main entry command initiates logging, parses flags, and passes control to the web server. The web server is implemented with the [Gorilla MUX package](github.com/gorilla/mux).
+The main entry command initiates logging, parses flags, and passes control to the publish and subscribe MQTT client software. The [paho](github.com/eclipse/paho.mqtt.golang) MQTT client is used for MQTT communication. TLS is optionally configurable, and has both server and client authentication, and therefore requires the private and public key of the device as well as the certificate of the server.
 
 A data model for the manifest object and supporting structures is found in the internal library.
 
-## Getting started for Users
+[WIP] A simple web server is implemented with the [Gorilla MUX package](github.com/gorilla/mux) for debugging and inspection of the weeve agent and the device.
+
+## Getting started
 
 ### Compiled binary
+With the binary available,
+
+### [WIP]
+
 The latest binary can be downloaded from S3 bucket :
 https://weeve-binaries-release.s3.eu-central-1.amazonaws.com/node-service/node-service-0-1-1
 
