@@ -142,7 +142,7 @@ func main() {
 	}
 
 	statusPublishTopic := opt.PubClientId + "/" + opt.NodeId
-	log.Debug("Status heartbeat publishing to topic: ", opt.TopicName)
+	log.Debug("Status heartbeat publishing to topic: ", statusPublishTopic)
 
 	nodeSubscribeTopic := opt.SubClientId + "/" + opt.NodeId
 	log.Debug("This node is subscribed to topic: ", nodeSubscribeTopic)
@@ -175,7 +175,6 @@ func main() {
 		log.Debug("TLS set on publisher options")
 	}
 
-	// log.Debug("Info on Sub & Pub >> ", subscriberOptions, publisherOptions)
 	log.Debug("Publisher options:\n", publisherOptions)
 
 	publisher := mqtt.NewClient(publisherOptions)

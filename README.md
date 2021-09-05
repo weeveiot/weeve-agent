@@ -167,13 +167,13 @@ CLIENT_CERTIFICATE=adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b1
 CLIENT_PRIVATE_KEY=adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-private.pem.key
 go run ./cmd/listener/node-listener.go -v -m \
     --nodeId awsdev-test-node-1 \ # ID of this node \
-    --broker tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883 \ # Broker to connect to \
+    --broker asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883 \ # Broker to connect to \
 	--rootcert $SERVER_CERTIFICATE \ #\
 	--cert $CLIENT_CERTIFICATE \ #\
 	--key $CLIENT_PRIVATE_KEY \ #\
     --subClientId nodes/awsdev \ # Subscriber ClientId \
     --pubClientId manager/awsdev \ # Publisher ClientId \
-    --publish status2 \ # Topic bame for publishing status messages \
+    --publish status \ # Topic bame for publishing status messages \
 	--heartbeat 3  \ # Status message publishing interval \
 	--mqttlogs # Enable detailed debug logs for the MQTT connection
 ```
