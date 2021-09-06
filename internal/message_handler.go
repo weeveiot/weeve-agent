@@ -10,12 +10,8 @@ import (
 
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/deploy"
 
-	log "github.com/sirupsen/logrus"
-
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/constants"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util/jsonlines"
-
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 )
 
 func ProcessMessage(topic_rcvd string, payload []byte) {
