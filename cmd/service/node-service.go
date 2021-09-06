@@ -19,7 +19,7 @@ type Options struct {
 }
 
 var options Options
-var parser = flags.NewParser(&options, flags.Default)
+var parser1 = flags.NewParser(&options, flags.Default)
 
 func init() {
 	// log.SetFormatter(&log.JSONFormatter{})
@@ -38,7 +38,7 @@ func init() {
 // @in header
 // @name Token
 func main() {
-	if _, err := parser.Parse(); err != nil {
+	if _, err := parser1.Parse(); err != nil {
 		log.Error(err)
 		os.Exit(1)
 	}

@@ -29,7 +29,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	// man := gabs.New()
+
 	man, err := model.ParseJSONManifest(manifestBodyBytes)
 	if err != nil {
 		log.Error(err)
@@ -37,11 +37,23 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = model.ValidateManifest(man)
+	resp := DeployManifest(man)
+	if resp == "SUCCESS" {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("200 - Request processed successfully!"))
+	} else {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - Failed to create container!"))
+	}
+
+}
+
+func DeployManifest(man model.Manifest) string {
+
+	var err = model.ValidateManifest(man)
 	if err != nil {
 		log.Error(err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return "FAILED"
 	}
 
 	// Check if process is failed and needs to return
@@ -77,8 +89,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 				failed = true
 				msg := "404 - Unable to pull image " + imgDetails.ImageName
 				log.Error(msg)
-				http.Error(w, msg, http.StatusNotFound)
-				break
+				return "FAILED"
 			}
 		}
 	}
@@ -86,7 +97,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	if failed {
 		man.Manifest.Set("FAILED", "status")
 		jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
-		return
+		return "FAILED"
 	}
 
 	//******** STEP 2 - Check containers, stop and remove *************//
@@ -105,7 +116,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				failed = true
 				log.Error(err)
-				http.Error(w, string(err.Error()), http.StatusInternalServerError)
+				return "FAILED"
 			}
 			log.Info("\tContainer ", containerName, " removed")
 		}
@@ -114,7 +125,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	if failed {
 		man.Manifest.Set("FAILED", "status")
 		jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
-		return
+		return "FAILED"
 	}
 
 	//******** STEP 3 - Create the network *************//
@@ -161,7 +172,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		log.Error("No valid contianers in Manifest")
 		man.Manifest.Set("FAILED", "No valid contianers in Manifest")
 		jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
-		return
+		return "FAILED"
 	}
 	for _, startCommand := range contianers_cmd {
 		log.Info("Creating ", startCommand.ContainerName, " from ", startCommand.ImageName, ":", startCommand.ImageTag, startCommand)
@@ -171,8 +182,8 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			failed = true
 			log.Info("Started")
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("500 - Failed to create container!"))
+			return "FAILED"
+
 		}
 
 		// Attach to network
@@ -187,7 +198,7 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	if failed {
 		man.Manifest.Set("FAILED", "status")
 		jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
-		return
+		return "FAILED"
 	}
 	man.Manifest.Set("SUCCESS", "status")
 	jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
@@ -195,7 +206,6 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	// Finally, return 200
 	// Return payload: pipeline started / list of container IDs
 	log.Info("Started")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("200 - Request processed successfully!"))
-	return
+
+	return "SUCCESS"
 }
