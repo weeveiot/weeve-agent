@@ -74,11 +74,48 @@ func NewTLSConfig(CertPath string) (config *tls.Config, err error) {
 	return config, nil
 }
 
+func PublishMessages(cl mqtt.Client) {
+
+	manifests := jsonlines.Read(constants.ManifestFile, "", "", nil, false)
+
+	var mani []model.ManifestStatus
+	var deviceParams = model.DeviceParams{"10", "10", "20"}
+
+	actv_cnt := 0
+	serv_cnt := 0
+	for _, rec := range manifests {
+		log.Info("Record on manifests >> ", rec)
+		mani = append(mani, model.ManifestStatus{rec["id"].(string), rec["version"].(string), rec["status"].(string)})
+		serv_cnt = serv_cnt + 1
+		if "SUCCESS" == rec["status"].(string) {
+			actv_cnt = actv_cnt + 1
+		}
+	}
+
+	now := time.Now()
+	nanos := now.UnixNano()
+	millis := nanos / 1000000
+	msg := model.StatusMessage{opt.NodeId, millis, "Available", actv_cnt, serv_cnt, mani, deviceParams}
+
+	b_msg, err := json.Marshal(msg)
+	if err != nil {
+		log.Fatalf("Marshall error: %v", err)
+	}
+
+	log.Info("Sending update.", opt.TopicName, msg, string(b_msg))
+	if token := cl.Publish(opt.PubClientId+"/"+opt.NodeId+"/"+opt.TopicName, 0, false, b_msg); token.Wait() && token.Error() != nil {
+		log.Fatalf("failed to send update: %v", token.Error())
+	}
+}
+
+// The message fallback handler used for incoming messages
+
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	log.Info(" messagePubHandler Received message on topic: ", msg.Topic(), "\nMessage: %s\n", msg.Payload())
+	log.Info("Received message on topic: ", msg.Topic(), "\nMessage: %s\n", msg.Payload())
 
 	topic_rcvd := ""
 
+// TODO: Refactor this , we already hwave a proper subscription in the connectHandler!
 	if strings.HasPrefix(msg.Topic(), opt.SubClientId+"/"+opt.NodeId+"/") {
 		topic_rcvd = strings.Replace(msg.Topic(), opt.SubClientId+"/"+opt.NodeId+"/", "", 1)
 	}
@@ -90,7 +127,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
 	log.Info("ON connect >> connected")
 	if token := c.Subscribe(opt.SubClientId+"/"+opt.NodeId+"/+", 0, messagePubHandler); token.Wait() && token.Error() != nil {
-		log.Error("subscribe connection: %v", token.Error())
+		log.Error("Error on subscribe connection: %v", token.Error())
 	}
 }
 
@@ -272,53 +309,3 @@ func main() {
 		subscriber.Disconnect(250)
 	}
 }
-
-func PublishMessages(cl mqtt.Client) {
-
-	manifests := jsonlines.Read(constants.ManifestFile, "", "", nil, false)
-
-	var mani []model.ManifestStatus
-	var deviceParams = model.DeviceParams{"10", "10", "20"}
-
-	actv_cnt := 0
-	serv_cnt := 0
-	for _, rec := range manifests {
-		log.Info("Record on manifests >> ", rec)
-		mani = append(mani, model.ManifestStatus{rec["id"].(string), rec["version"].(string), rec["status"].(string)})
-		serv_cnt = serv_cnt + 1
-		if "SUCCESS" == rec["status"].(string) {
-			actv_cnt = actv_cnt + 1
-		}
-	}
-
-	now := time.Now()
-	nanos := now.UnixNano()
-	millis := nanos / 1000000
-	msg := model.StatusMessage{opt.NodeId, millis, "Available", actv_cnt, serv_cnt, mani, deviceParams}
-
-	b_msg, err := json.Marshal(msg)
-	if err != nil {
-		log.Fatalf("Marshall error: %v", err)
-	}
-
-	log.Info("Sending update.", opt.TopicName, msg, string(b_msg))
-	if token := cl.Publish(opt.PubClientId+"/"+opt.NodeId+"/"+opt.TopicName, 0, false, b_msg); token.Wait() && token.Error() != nil {
-		log.Fatalf("failed to send update: %v", token.Error())
-	}
-}
-
-// func post(jsonReq []byte, nextHost string) {
-// 	fmt.Printf("Next host %s", nextHost)
-// 	resp, err := http.Post(nextHost, "application/json; charset=utf-8", bytes.NewBuffer(jsonReq))
-// 	if err != nil {
-// 		log.Info("Post API Connection error: %v", err)
-// 	} else {
-
-// 		defer resp.Body.Close()
-// 		bodyBytes, _ := ioutil.ReadAll(resp.Body)
-
-// 		// Convert response body to string
-// 		bodyString := string(bodyBytes)
-// 		log.Info(bodyString)
-// 	}
-// }
