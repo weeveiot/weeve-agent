@@ -84,7 +84,6 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 	}
 
 	internal.ProcessMessage(topic_rcvd, msg.Payload())
-
 }
 
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
@@ -291,19 +290,3 @@ func PublishMessages(cl mqtt.Client) {
 		log.Fatalf("failed to send update: %v", token.Error())
 	}
 }
-
-// func post(jsonReq []byte, nextHost string) {
-// 	fmt.Printf("Next host %s", nextHost)
-// 	resp, err := http.Post(nextHost, "application/json; charset=utf-8", bytes.NewBuffer(jsonReq))
-// 	if err != nil {
-// 		log.Info("Post API Connection error: %v", err)
-// 	} else {
-
-// 		defer resp.Body.Close()
-// 		bodyBytes, _ := ioutil.ReadAll(resp.Body)
-
-// 		// Convert response body to string
-// 		bodyString := string(bodyBytes)
-// 		log.Info(bodyString)
-// 	}
-// }
