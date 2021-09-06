@@ -98,17 +98,19 @@ var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err
 	log.Info("Connection lost", err)
 }
 
+
+var mainLoop()
+
 func main() {
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
+	// Parse the CLI options
 	if _, err := parser.Parse(); err != nil {
 		log.Error("Error on command line parser ", err)
 		os.Exit(1)
 	}
 
-	// Show the logs from the Paho package at STDOUT
+	// FLAG: Show the logs from the Paho package at STDOUT
 	if opt.MqttLogs {
 		mqtt.ERROR = golog.New(os.Stdout, "[ERROR] ", 0)
 		mqtt.CRITICAL = golog.New(os.Stdout, "[CRIT] ", 0)
@@ -116,6 +118,7 @@ func main() {
 		mqtt.DEBUG = golog.New(os.Stdout, "[DEBUG] ", 0)
 	}
 
+	// FLAG: Verbose
 	if len(opt.Verbose) >= 1 {
 		log.SetLevel(log.DebugLevel)
 	} else {
@@ -123,7 +126,7 @@ func main() {
 	}
 	log.Info("Logging level set to ", log.GetLevel())
 
-	// Parse the Broker url
+	// OPTION: Parse and validated the Broker url
 	u, err := url.Parse(opt.Broker)
 	if err != nil {
 		panic(err)
@@ -139,9 +142,9 @@ func main() {
 	log.Info(fmt.Sprintf("Broker host %v at port %v over %v\n", host, port, u.Scheme))
 
 	log.Debug("Broker: ", opt.Broker)
-	log.Debug("NodeId: ", opt.NodeId)
-	log.Debug("Heartbeat time: ", opt.Heartbeat)
 
+
+	// FLAG: Optionally disable TLS
 	if opt.NoTLS {
 		log.Info("TLS disabled!")
 	} else {
@@ -165,6 +168,10 @@ func main() {
 		}
 	}
 
+
+	// OPTIONS: ID and topics
+	log.Debug("NodeId: ", opt.NodeId)
+	log.Debug("Heartbeat time: ", opt.Heartbeat)
 	statusPublishTopic := opt.PubClientId + "/" + opt.NodeId
 	log.Debug("Status heartbeat publishing to topic: ", statusPublishTopic)
 
@@ -187,6 +194,7 @@ func main() {
 	// sub_opts.SetReconnectingHandler(messagePubHandler, opts)
 	subscriberOptions.OnConnect = connectHandler
 
+	// Optionally add the TLS configuration to the 2 client options
 	if !opt.NoTLS {
 		tlsconfig, err := NewTLSConfig(opt.CertPath)
 		if err != nil {
@@ -200,28 +208,34 @@ func main() {
 	}
 
 	log.Debug("Publisher options:\n", publisherOptions)
+	log.Debug("Subscriber options:\n", subscriberOptions)
+
+	log.Debug("Finished parsing and MQTT configuration")
+
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 	publisher := mqtt.NewClient(publisherOptions)
 	if token := publisher.Connect(); token.Wait() && token.Error() != nil {
 		log.Errorf("failed to create publisher connection: %v", token.Error())
 	} else {
-		// log.Debug("MQTT publisher client: \n", publisher)
 		log.Debug("MQTT publisher connected")
 	}
 
-	log.Debug("Subscriber options:\n", subscriberOptions)
 	subscriber := mqtt.NewClient(subscriberOptions)
 	if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
 		log.Errorf("failed to create subscriber connection: %v", token.Error())
 	} else {
 		log.Debug("MQTT subscriber connected")
 	}
-	// log.Debug("MQTT subscriber client: \n", subscriber)
 
+	// MAIN LOOP
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		for {
+			// Attempt reconnect
 			if !publisher.IsConnected() {
 				log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
 
@@ -246,6 +260,7 @@ func main() {
 	}()
 	<-done
 
+	// Cleanup on ending the process
 	<-c
 	if publisher.IsConnected() {
 		log.Info("Disconnecting.....")
