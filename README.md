@@ -18,7 +18,7 @@ The binary or the source code, (with `go run`) the agent can be started with the
 ```bash
 go run ./cmd/agent/agent.go -v --notls \
     --nodeId local-test-node-1 \ # ID of this node \
-    --broker http://localhost:8080 \ # Broker to connect to \
+    --broker tcp://localhost:8080 \ # Broker to connect to \
     --subClientId nodes/localtest \ # Subscriber ClientId \
     --pubClientId manager/localtest \ # Publisher ClientId \
     --publish CheckVersion  \ # Topic Name \
@@ -32,6 +32,8 @@ This recipe requires a local MQTT broker, for example, the Mosquitto broker with
 In a second terminal, subscribe to all topics for that broker; `mosquitto_sub -t '#' -p 8080`.
 
 Run the weeve agent in a third terminal.
+
+mosquitto_pub
 
 ### With TLS
 TLS configuration requires the full path to all secrets and certificates as follows;
