@@ -29,7 +29,7 @@ type ContainerConfig struct {
 	ImageName      string
 	ImageTag       string
 	EntryPointArgs []string
-	EnvArgs 	   []string
+	EnvArgs        []string
 	Options        []OptionKeyVal
 	NetworkName    string
 	ExposedPorts   nat.PortSet // This must be set for the container create
@@ -172,9 +172,12 @@ func GetContainerName(pipelineID string, containerName string) string {
 // 		- Arguments to pass into entrypoint
 func (m Manifest) GetContainerStart() []ContainerConfig {
 	var startCommands []ContainerConfig
+	var cntr = 0
+	var prev_container_name = ""
 
 	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
 		var thisStartCommand ContainerConfig
+
 		thisStartCommand.PipelineName = m.Manifest.Search("compose").Search("network").Search("name").Data().(string)
 		thisStartCommand.NetworkName = m.Manifest.Search("compose").Search("network").Search("name").Data().(string)
 		thisStartCommand.NetworkMode = "" // This is the default setting
@@ -183,68 +186,34 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 		thisStartCommand.ImageName = mod.Search("image").Search("name").Data().(string)
 		thisStartCommand.ImageTag = mod.Search("image").Search("tag").Data().(string)
 
-		// var theseOptions []OptionKeyVal
-		// for _, opt := range mod.Search("options").Children() {
-		// 	// log.Debug(opt)
-		// 	var thisOption OptionKeyVal
-		// 	thisOption.key = opt.Search("opt").Data().(string)
-		// 	thisOption.val = opt.Search("val").Data().(string)
-		// 	theseOptions = append(theseOptions, thisOption)
-		// 	// fmt.Println(thisOption)
-		// }
-		// thisStartCommand.Options = theseOptions
-
 		var doc_data = mod.Search("document").Data()
 		if doc_data != nil {
 			ParseDocumentTag(mod.Search("document").Data(), &thisStartCommand)
 		}
 
-		var envArgs []string
+		//Populate Environment variables
 		log.Debug("Processing environments arguments")
-		for _, arg := range mod.Search("environments").Children() {
-			//TODO: IF we receive only a key or only a value, THEN do not append any empty string
-			if arg.Search("key").Data().(string) != "" {
-				envArgs = append(envArgs, arg.Search("key").Data().(string))
-			}
+		var envArgs = ParseArguments(mod.Search("environments").Children())
+		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "PREV_CONTAINER_NAME", prev_container_name))
 
-			if arg.Search("value").Data().(string) != "" {
-				envArgs = append(envArgs, arg.Search("value").Data().(string))
-			}
+		prev_container_name = thisStartCommand.ContainerName
+		if cntr > 0 {
+			var next_arg = fmt.Sprintf("%v=%v", "NEXT_CONTAINER_NAME", thisStartCommand.ContainerName)
+			startCommands[cntr-1].EnvArgs = append(startCommands[cntr-1].EnvArgs, next_arg)
 
-			log.Debug("String arguments: " + strings.Join(envArgs[:], ","))
+			var temp_arg = fmt.Sprintf("%v=http://%v", "EGRESS_API_HOST", thisStartCommand.ContainerName)
+			startCommands[cntr-1].EnvArgs = append(startCommands[cntr-1].EnvArgs, temp_arg)
+		}
 
-			for _, thisArg := range envArgs {
-				log.Debug(fmt.Sprintf("%v %T", thisArg, thisArg))
-			}
+		for _, thisArg := range envArgs {
+			log.Debug(fmt.Sprintf("%v %T", thisArg, thisArg))
 		}
 
 		thisStartCommand.EnvArgs = envArgs
 
-		var strArgs []string
 		log.Debug("Processing cmd arguments")
-		for _, arg := range mod.Search("command").Children() {
-			// strArgs = append(strArgs, "-"+arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
-			// strArgs = append(strArgs, arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
-			// strArgs = append(strArgs, arg.Search("key").Data().(string)+"="+arg.Search("value").Data().(string))
-			// strArgs = append(strArgs, arg.Search("key").Data().(string)+" "+arg.Search("value").Data().(string))
-
-			//TODO: IF we receive only a key or only a value, THEN do not append any empty string
-			if arg.Search("key").Data().(string) != "" {
-				strArgs = append(strArgs, arg.Search("key").Data().(string))
-			}
-
-			if arg.Search("value").Data().(string) != "" {
-				strArgs = append(strArgs, arg.Search("value").Data().(string))
-			}
-
-			log.Debug("String arguments: " + strings.Join(strArgs[:], ","))
-
-			for _, thisArg := range strArgs {
-				log.Debug(fmt.Sprintf("%v %T", thisArg, thisArg))
-			}
-		}
-
-		thisStartCommand.EntryPointArgs = strArgs
+		var cmdArgs = ParseArguments(mod.Search("command").Children())
+		thisStartCommand.EntryPointArgs = cmdArgs
 
 		// Handle the options
 		var ExposedPorts string
@@ -301,9 +270,30 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 		}
 
 		startCommands = append(startCommands, thisStartCommand)
+		cntr += 1
 	}
 
 	return startCommands
+}
+
+func ParseArguments(options []*gabs.Container) []string {
+	var args []string
+	for _, arg := range options {
+		var key = ""
+		var val = ""
+		if arg.Search("key").Data().(string) != "" {
+			key = arg.Search("key").Data().(string)
+		}
+
+		if arg.Search("value").Data().(string) != "" {
+			val = arg.Search("value").Data().(string)
+		}
+
+		if key != "" && val != "" {
+			args = append(args, fmt.Sprintf("%v=%v", key, val))
+		}
+	}
+	return args
 }
 
 func ParseDocumentTag(doc_data interface{}, thisStartCommand *ContainerConfig) {
