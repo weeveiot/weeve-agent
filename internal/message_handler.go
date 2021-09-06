@@ -25,8 +25,10 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 
 			thisManifest.Manifest = *jsonParsed
 
+			// TODO: Error handling?
 			controller.DeployManifest(thisManifest)
 		}
-		// post([]byte(msg.Payload()), "http://localhost:"+opt.NodeApiPort+"/pipelines")
 	}
+
+	//TODO: Error return type?
 }

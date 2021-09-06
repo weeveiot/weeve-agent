@@ -63,15 +63,6 @@ func DeployManifest(man model.Manifest) string {
 
 	jsonlines.Delete(constants.ManifestFile, "id", man.Manifest.Search("id").Data().(string))
 
-	// man.Manifest.Set("SUCCESS", "status")
-	// jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
-
-	// res := util.PrintManifestDetails(body)
-	// util.PrettyPrintJson(manifestBodyBytes)
-	// man.PrintManifest()
-	// man.SpewManifest()
-	// return
-
 	//******** STEP 1 - Pull all *************//
 	// Pull all images as required
 	log.Info("Iterating modules, pulling image into host if missing")
@@ -129,7 +120,6 @@ func DeployManifest(man model.Manifest) string {
 	}
 
 	//******** STEP 3 - Create the network *************//
-	// var networkName = "my-net5"
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -141,16 +131,11 @@ func DeployManifest(man model.Manifest) string {
 
 	pruneReport, err := cli.NetworksPrune(ctx, filter)
 	log.Info("Pruned:", pruneReport)
-	// var report types.NetworksPruneReport
 	log.Info("Create the network")
 	var networkCreateOptions types.NetworkCreate
 	networkCreateOptions.CheckDuplicate = true
 	networkCreateOptions.Attachable = true
-	// var networkCreateOptions = &NetworkCreate
 
-	// _ = ctx
-	// _ = cli
-	// fmt.Println(networkCreateOptions)
 	networkName := man.GetNetworkName()
 	resp, err := cli.NetworkCreate(ctx, networkName, networkCreateOptions)
 	if err != nil {
@@ -203,9 +188,8 @@ func DeployManifest(man model.Manifest) string {
 	man.Manifest.Set("SUCCESS", "status")
 	jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
 
-	// Finally, return 200
-	// Return payload: pipeline started / list of container IDs
 	log.Info("Started")
 
+	// TODO: Proper return/error handling
 	return "SUCCESS"
 }

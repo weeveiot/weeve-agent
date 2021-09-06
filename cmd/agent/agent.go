@@ -115,7 +115,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 
 	topic_rcvd := ""
 
-// TODO: Refactor this , we already hwave a proper subscription in the connectHandler!
+	// TODO: Refactor (remove) this , we already hwave a proper subscription in the connectHandler!
 	if strings.HasPrefix(msg.Topic(), opt.SubClientId+"/"+opt.NodeId+"/") {
 		topic_rcvd = strings.Replace(msg.Topic(), opt.SubClientId+"/"+opt.NodeId+"/", "", 1)
 	}
@@ -135,11 +135,7 @@ var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err
 	log.Info("Connection lost", err)
 }
 
-
-var mainLoop()
-
 func main() {
-
 
 	// Parse the CLI options
 	if _, err := parser.Parse(); err != nil {
@@ -180,7 +176,6 @@ func main() {
 
 	log.Debug("Broker: ", opt.Broker)
 
-
 	// FLAG: Optionally disable TLS
 	if opt.NoTLS {
 		log.Info("TLS disabled!")
@@ -204,7 +199,6 @@ func main() {
 			log.Debug("Client private key: ", opt.KeyPath)
 		}
 	}
-
 
 	// OPTIONS: ID and topics
 	log.Debug("NodeId: ", opt.NodeId)
@@ -248,7 +242,6 @@ func main() {
 	log.Debug("Subscriber options:\n", subscriberOptions)
 
 	log.Debug("Finished parsing and MQTT configuration")
-
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
