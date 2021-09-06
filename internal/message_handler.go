@@ -4,8 +4,9 @@ import (
 	"github.com/Jeffail/gabs/v2"
 	log "github.com/sirupsen/logrus"
 
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/controller"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
+
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/deploy"
 )
 
 func ProcessMessage(topic_rcvd string, payload []byte) {
@@ -26,7 +27,7 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 			thisManifest.Manifest = *jsonParsed
 
 			// TODO: Error handling?
-			controller.DeployManifest(thisManifest)
+			deploy.DeployManifest(thisManifest)
 		}
 	}
 
