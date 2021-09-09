@@ -3,6 +3,7 @@ package deploy
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/network"
@@ -160,4 +161,32 @@ func DeployManifest(man model.Manifest) string {
 
 	// TODO: Proper return/error handling
 	return "SUCCESS"
+}
+
+func StopDataService(dataservice_name string) {
+	log.Info("Stopping data service:", dataservice_name)
+	containers := docker.ReadAllContainers()
+	for _, container := range containers {
+		for _, name := range container.Names {
+			// Container's names are in form: "/container_name"
+			if strings.HasPrefix(name[1:], dataservice_name) {
+				log.Info("\tStopping container:", name)
+				docker.StopContainer(container.ID)
+			}
+		}
+	}
+}
+
+func StartDataService(dataservice_name string) {
+	log.Info("Starting data service:", dataservice_name)
+	containers := docker.ReadAllContainers()
+	for _, container := range containers {
+		for _, name := range container.Names {
+			// Container's names are in form: "/container_name"
+			if strings.HasPrefix(name[1:], dataservice_name) {
+				log.Info("\tStarting container:", name)
+				docker.StartContainer(container.ID)
+			}
+		}
+	}
 }

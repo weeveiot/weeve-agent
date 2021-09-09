@@ -34,6 +34,37 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 			// TODO: Error handling?
 			deploy.DeployManifest(thisManifest)
 		}
+
+	} else if topic_rcvd == "StopService" {
+
+		// expects JSON with field { name: serviceName }
+
+		jsonParsed, err := gabs.ParseJSON(payload)
+		if err != nil {
+			log.Error("Error on parsing message: ", err)
+		} else {
+			log.Debug("Parsed JSON >> ", jsonParsed)
+
+			serviceName := jsonParsed.Search("name").Data().(string)
+
+			deploy.StopDataService(serviceName)
+		}
+
+	} else if topic_rcvd == "StartService" {
+
+		// expects JSON with field { name: serviceName }
+
+		jsonParsed, err := gabs.ParseJSON(payload)
+		if err != nil {
+			log.Error("Error on parsing message: ", err)
+		} else {
+			log.Debug("Parsed JSON >> ", jsonParsed)
+
+			serviceName := jsonParsed.Search("name").Data().(string)
+
+			deploy.StartDataService(serviceName)
+		}
+
 	}
 
 	//TODO: Error return type?
