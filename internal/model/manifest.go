@@ -204,7 +204,7 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 
 		//Populate Environment variables
 		log.Debug("Processing environments arguments")
-		var envArgs = ParseArguments(mod.Search("environments").Children())
+		var envArgs = ParseArguments(mod.Search("environments").Children(), false)
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "PREV_CONTAINER_NAME", prev_container_name))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "SERVICE_ID", m.Manifest.Search("id").Data().(string)))
 
@@ -224,7 +224,7 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 		thisStartCommand.EnvArgs = envArgs
 
 		log.Debug("Processing cmd arguments")
-		var cmdArgs = ParseArguments(mod.Search("commands").Children())
+		var cmdArgs = ParseArguments(mod.Search("commands").Children(), true)
 		thisStartCommand.EntryPointArgs = cmdArgs
 
 		// Handle the options
@@ -288,7 +288,7 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 	return startCommands
 }
 
-func ParseArguments(options []*gabs.Container) []string {
+func ParseArguments(options []*gabs.Container, cmdArgs bool) []string {
 	var args []string
 	for _, arg := range options {
 		var key = ""
@@ -302,7 +302,13 @@ func ParseArguments(options []*gabs.Container) []string {
 		}
 
 		if key != "" && val != "" {
-			args = append(args, fmt.Sprintf("%v=%v", key, val))
+			if cmdArgs == true {
+				args = append(args, fmt.Sprintf("--%v", key))
+				args = append(args, fmt.Sprintf("%v", val))
+			} else {
+				args = append(args, fmt.Sprintf("%v=%v", key, val))
+			}
+
 		}
 	}
 	return args
