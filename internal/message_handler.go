@@ -17,57 +17,38 @@ import (
 func ProcessMessage(topic_rcvd string, payload []byte) {
 	log.Info(" ProcessMessage topic_rcvd ", topic_rcvd)
 
-	if topic_rcvd == "CheckVersion" {
+	jsonParsed, err := gabs.ParseJSON(payload)
+	if err != nil {
+		log.Error("Error on parsing message: ", err)
+	} else {
+		log.Debug("Parsed JSON >> ", jsonParsed)
 
-	} else if topic_rcvd == "deploy" {
+		if topic_rcvd == "CheckVersion" {
 
-		jsonParsed, err := gabs.ParseJSON(payload)
-		if err != nil {
-			log.Error("Error on parsing message: ", err)
-		} else {
-			log.Debug("Parsed JSON >> ", jsonParsed)
+		} else if topic_rcvd == "deploy" {
 
 			var thisManifest = model.Manifest{}
-
 			thisManifest.Manifest = *jsonParsed
-
 			// TODO: Error handling?
 			deploy.DeployManifest(thisManifest)
-		}
 
-	} else if topic_rcvd == "StopService" {
+		} else if topic_rcvd == "stopservice" {
 
-		// expects JSON with field { name: serviceName }
-
-		jsonParsed, err := gabs.ParseJSON(payload)
-		if err != nil {
-			log.Error("Error on parsing message: ", err)
-		} else {
-			log.Debug("Parsed JSON >> ", jsonParsed)
-
+			// expects JSON with field { name: serviceName }
+			serviceId := jsonParsed.Search("id").Data().(string)
 			serviceName := jsonParsed.Search("name").Data().(string)
 
-			deploy.StopDataService(serviceName)
-		}
+			deploy.StopDataService(serviceId, serviceName)
 
-	} else if topic_rcvd == "StartService" {
+		} else if topic_rcvd == "StartService" {
 
-		// expects JSON with field { name: serviceName }
-
-		jsonParsed, err := gabs.ParseJSON(payload)
-		if err != nil {
-			log.Error("Error on parsing message: ", err)
-		} else {
-			log.Debug("Parsed JSON >> ", jsonParsed)
-
+			// expects JSON with field { name: serviceName }
+			serviceId := jsonParsed.Search("id").Data().(string)
 			serviceName := jsonParsed.Search("name").Data().(string)
 
-			deploy.StartDataService(serviceName)
+			deploy.StartDataService(serviceId, serviceName)
 		}
-
 	}
-
-	//TODO: Error return type?
 }
 
 func GetStatusMessage(nodeId string) model.StatusMessage {

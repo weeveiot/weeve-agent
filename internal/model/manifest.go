@@ -195,6 +195,7 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 		log.Debug("Processing environments arguments")
 		var envArgs = ParseArguments(mod.Search("environments").Children())
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "PREV_CONTAINER_NAME", prev_container_name))
+		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "SERVICE_ID", m.Manifest.Search("id").Data().(string)))
 
 		prev_container_name = thisStartCommand.ContainerName
 		if cntr > 0 {
@@ -212,7 +213,7 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 		thisStartCommand.EnvArgs = envArgs
 
 		log.Debug("Processing cmd arguments")
-		var cmdArgs = ParseArguments(mod.Search("command").Children())
+		var cmdArgs = ParseArguments(mod.Search("commands").Children())
 		thisStartCommand.EntryPointArgs = cmdArgs
 
 		// Handle the options
@@ -313,7 +314,10 @@ func ParseDocumentTag(doc_data interface{}, thisStartCommand *ContainerConfig) {
 	for _, vols := range man_doc.Search("volumes").Children() {
 
 		vol_maps = append(vol_maps, map[string]struct{}{
-			vols.Search("host").Data().(string): {},
+			vols.Search("container").Data().(string): {
+				"Source":      vols.Search("container").Data().(string),
+				"Destination": vols.Search("host").Data().(string),
+			},
 		})
 	}
 

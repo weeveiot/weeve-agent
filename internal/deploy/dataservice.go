@@ -163,13 +163,13 @@ func DeployManifest(man model.Manifest) string {
 	return "SUCCESS"
 }
 
-func StopDataService(dataservice_name string) {
+func StopDataService(serviceId string, dataservice_name string) {
 	log.Info("Stopping data service:", dataservice_name)
 	containers := docker.ReadAllContainers()
 	for _, container := range containers {
 		for _, name := range container.Names {
 			// Container's names are in form: "/container_name"
-			if strings.HasPrefix(name[1:], dataservice_name) {
+			if strings.HasPrefix(name[1:], serviceId) {
 				log.Info("\tStopping container:", name)
 				docker.StopContainer(container.ID)
 			}
@@ -177,13 +177,13 @@ func StopDataService(dataservice_name string) {
 	}
 }
 
-func StartDataService(dataservice_name string) {
+func StartDataService(serviceId string, dataservice_name string) {
 	log.Info("Starting data service:", dataservice_name)
 	containers := docker.ReadAllContainers()
 	for _, container := range containers {
 		for _, name := range container.Names {
 			// Container's names are in form: "/container_name"
-			if strings.HasPrefix(name[1:], dataservice_name) {
+			if strings.HasPrefix(name[1:], serviceId) {
 				log.Info("\tStarting container:", name)
 				docker.StartContainer(container.ID)
 			}
