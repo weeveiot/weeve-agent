@@ -214,7 +214,7 @@ func StartCreateContainer(imageName string, startCommand model.ContainerConfig) 
 	// Fails with "Error: Unknown option '-p=2000'."
 
 	hostConfig := &container.HostConfig{
-		Binds: vols
+		// Binds: vols
 		PortBindings: nil,
 		NetworkMode:  "bridge",
 		RestartPolicy: container.RestartPolicy{
