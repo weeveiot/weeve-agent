@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/network"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -140,13 +139,13 @@ func DeployManifest(man model.Manifest) string {
 
 		}
 
-		// Attach to network
-		var netConfig network.EndpointSettings
-		err = cli.NetworkConnect(ctx, startCommand.NetworkName, containerCreateResponse.ID, &netConfig)
-		if err != nil {
-			panic(err)
-		}
-		log.Info("\tConnected to network", startCommand.NetworkName)
+		// // Attach to network
+		// var netConfig network.EndpointSettings
+		// err = cli.NetworkConnect(ctx, startCommand.NetworkName, containerCreateResponse.ID, &netConfig)
+		// if err != nil {
+		// 	panic(err)
+		// }
+		// log.Info("\tConnected to network", startCommand.NetworkName)
 	}
 
 	if failed {

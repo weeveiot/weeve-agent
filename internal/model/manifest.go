@@ -37,6 +37,7 @@ type ContainerConfig struct {
 	NetworkMode    container.NetworkMode
 	NetworkConfig  network.NetworkingConfig
 	Volumes        map[string]struct{}
+	MountConfigs   []MountConfig
 }
 
 type OptionKeyVal struct {
@@ -48,6 +49,15 @@ type RegistryDetails struct {
 	ImageName string
 	UserName  string
 	Password  string
+}
+
+type MountConfig struct {
+	Type        string
+	Source      string
+	Target      string
+	Mode        string
+	RW          bool
+	Propogation string
 }
 
 func PrintStartCommand(sc ContainerConfig) {
@@ -162,7 +172,8 @@ func (m Manifest) GetNetworkName() string {
 // GetContainerName is a simple utility to return a standard container name
 // This function appends the pipelineID and containerName with _
 func GetContainerName(pipelineID string, containerName string) string {
-	return strings.ReplaceAll(pipelineID+"_"+containerName, " ", "-")
+	var cont_name = strings.ReplaceAll(pipelineID+containerName, " ", "")
+	return strings.ReplaceAll(cont_name, "-", "")
 }
 
 // Based on an existing Manifest object, build a new object
@@ -300,6 +311,8 @@ func ParseArguments(options []*gabs.Container) []string {
 func ParseDocumentTag(doc_data interface{}, thisStartCommand *ContainerConfig) {
 	var vol_maps []map[string]struct{}
 	vol_map := make(map[string]struct{})
+	var mt_maps []MountConfig
+
 	var document = doc_data.(string)
 	document = strings.ReplaceAll(document, "'", "\"")
 
@@ -312,6 +325,15 @@ func ParseDocumentTag(doc_data interface{}, thisStartCommand *ContainerConfig) {
 	log.Info("man_doc ", document, man_doc)
 
 	for _, vols := range man_doc.Search("volumes").Children() {
+		var mt_map MountConfig
+
+		mt_map.Type = "bind"
+		mt_map.Source = vols.Search("host").Data().(string)
+		mt_map.Target = vols.Search("container").Data().(string)
+		mt_map.Mode = ""
+		mt_map.RW = true
+		mt_map.Propogation = "rprivate"
+		mt_maps = append(mt_maps, mt_map)
 
 		vol_maps = append(vol_maps, map[string]struct{}{
 			vols.Search("container").Data().(string): {
@@ -328,5 +350,6 @@ func ParseDocumentTag(doc_data interface{}, thisStartCommand *ContainerConfig) {
 			}
 		}
 		thisStartCommand.Volumes = vol_map
+		thisStartCommand.MountConfigs = mt_maps
 	}
 }
