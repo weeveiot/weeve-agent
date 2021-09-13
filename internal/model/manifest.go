@@ -315,8 +315,8 @@ func ParseDocumentTag(doc_data interface{}, thisStartCommand *ContainerConfig) {
 
 		vol_maps = append(vol_maps, map[string]struct{}{
 			vols.Search("container").Data().(string): {
-				"Source":      vols.Search("container").Data().(string),
-				"Destination": vols.Search("host").Data().(string),
+				// "Source":      vols.Search("container").Data().(string),
+				// "Destination": vols.Search("host").Data().(string),
 			},
 		})
 	}
