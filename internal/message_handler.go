@@ -34,19 +34,28 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 
 		} else if topic_rcvd == "stopservice" {
 
-			// expects JSON with field { name: serviceName }
-			serviceId := jsonParsed.Search("id").Data().(string)
-			serviceName := jsonParsed.Search("name").Data().(string)
+			err := model.ValidateStartStopJSON(jsonParsed)
+			if err == nil {
+				serviceId := jsonParsed.Search("id").Data().(string)
+				serviceName := jsonParsed.Search("name").Data().(string)
 
-			deploy.StopDataService(serviceId, serviceName)
+				deploy.StopDataService(serviceId, serviceName)
+			} else {
+				log.Error(err)
+			}
 
 		} else if topic_rcvd == "StartService" {
 
-			// expects JSON with field { name: serviceName }
-			serviceId := jsonParsed.Search("id").Data().(string)
-			serviceName := jsonParsed.Search("name").Data().(string)
+			err := model.ValidateStartStopJSON(jsonParsed)
+			if err == nil {
+				serviceId := jsonParsed.Search("id").Data().(string)
+				serviceName := jsonParsed.Search("name").Data().(string)
 
-			deploy.StartDataService(serviceId, serviceName)
+				deploy.StartDataService(serviceId, serviceName)
+			} else {
+				log.Error(err)
+			}
+
 		}
 	}
 }
