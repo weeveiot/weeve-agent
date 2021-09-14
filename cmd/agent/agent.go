@@ -20,10 +20,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/constants"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util/jsonlines"
-
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 )
 
 type Params struct {
@@ -74,23 +70,40 @@ func NewTLSConfig(CertPath string) (config *tls.Config, err error) {
 	return config, nil
 }
 
+func PublishMessages(cl mqtt.Client) {
+
+	msg := internal.GetStatusMessage(opt.NodeId)
+
+	b_msg, err := json.Marshal(msg)
+	if err != nil {
+		log.Fatalf("Marshall error: %v", err)
+	}
+
+	log.Info("Sending update.", opt.TopicName, msg, string(b_msg))
+	if token := cl.Publish(opt.PubClientId+"/"+opt.NodeId+"/"+opt.TopicName, 0, false, b_msg); token.Wait() && token.Error() != nil {
+		log.Fatalf("failed to send update: %v", token.Error())
+	}
+}
+
+// The message fallback handler used for incoming messages
+
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	log.Info(" messagePubHandler Received message on topic: ", msg.Topic(), "\nMessage: %s\n", msg.Payload())
+	log.Info("Received message on topic: ", msg.Topic(), "\nMessage: %s\n", msg.Payload())
 
 	topic_rcvd := ""
 
+	// TODO: Refactor (remove) this , we already hwave a proper subscription in the connectHandler!
 	if strings.HasPrefix(msg.Topic(), opt.SubClientId+"/"+opt.NodeId+"/") {
 		topic_rcvd = strings.Replace(msg.Topic(), opt.SubClientId+"/"+opt.NodeId+"/", "", 1)
 	}
 
 	internal.ProcessMessage(topic_rcvd, msg.Payload())
-
 }
 
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
 	log.Info("ON connect >> connected")
 	if token := c.Subscribe(opt.SubClientId+"/"+opt.NodeId+"/+", 0, messagePubHandler); token.Wait() && token.Error() != nil {
-		log.Error("subscribe connection: %v", token.Error())
+		log.Error("Error on subscribe connection: %v", token.Error())
 	}
 }
 
@@ -100,15 +113,13 @@ var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err
 
 func main() {
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-
+	// Parse the CLI options
 	if _, err := parser.Parse(); err != nil {
 		log.Error("Error on command line parser ", err)
 		os.Exit(1)
 	}
 
-	// Show the logs from the Paho package at STDOUT
+	// FLAG: Show the logs from the Paho package at STDOUT
 	if opt.MqttLogs {
 		mqtt.ERROR = golog.New(os.Stdout, "[ERROR] ", 0)
 		mqtt.CRITICAL = golog.New(os.Stdout, "[CRIT] ", 0)
@@ -116,6 +127,7 @@ func main() {
 		mqtt.DEBUG = golog.New(os.Stdout, "[DEBUG] ", 0)
 	}
 
+	// FLAG: Verbose
 	if len(opt.Verbose) >= 1 {
 		log.SetLevel(log.DebugLevel)
 	} else {
@@ -123,7 +135,7 @@ func main() {
 	}
 	log.Info("Logging level set to ", log.GetLevel())
 
-	// Parse the Broker url
+	// OPTION: Parse and validated the Broker url
 	u, err := url.Parse(opt.Broker)
 	if err != nil {
 		panic(err)
@@ -139,9 +151,8 @@ func main() {
 	log.Info(fmt.Sprintf("Broker host %v at port %v over %v\n", host, port, u.Scheme))
 
 	log.Debug("Broker: ", opt.Broker)
-	log.Debug("NodeId: ", opt.NodeId)
-	log.Debug("Heartbeat time: ", opt.Heartbeat)
 
+	// FLAG: Optionally disable TLS
 	if opt.NoTLS {
 		log.Info("TLS disabled!")
 	} else {
@@ -165,6 +176,9 @@ func main() {
 		}
 	}
 
+	// OPTIONS: ID and topics
+	log.Debug("NodeId: ", opt.NodeId)
+	log.Debug("Heartbeat time: ", opt.Heartbeat)
 	statusPublishTopic := opt.PubClientId + "/" + opt.NodeId
 	log.Debug("Status heartbeat publishing to topic: ", statusPublishTopic)
 
@@ -187,6 +201,7 @@ func main() {
 	// sub_opts.SetReconnectingHandler(messagePubHandler, opts)
 	subscriberOptions.OnConnect = connectHandler
 
+	// Optionally add the TLS configuration to the 2 client options
 	if !opt.NoTLS {
 		tlsconfig, err := NewTLSConfig(opt.CertPath)
 		if err != nil {
@@ -200,28 +215,33 @@ func main() {
 	}
 
 	log.Debug("Publisher options:\n", publisherOptions)
+	log.Debug("Subscriber options:\n", subscriberOptions)
+
+	log.Debug("Finished parsing and MQTT configuration")
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 	publisher := mqtt.NewClient(publisherOptions)
 	if token := publisher.Connect(); token.Wait() && token.Error() != nil {
 		log.Errorf("failed to create publisher connection: %v", token.Error())
 	} else {
-		// log.Debug("MQTT publisher client: \n", publisher)
 		log.Debug("MQTT publisher connected")
 	}
 
-	log.Debug("Subscriber options:\n", subscriberOptions)
 	subscriber := mqtt.NewClient(subscriberOptions)
 	if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
 		log.Errorf("failed to create subscriber connection: %v", token.Error())
 	} else {
 		log.Debug("MQTT subscriber connected")
 	}
-	// log.Debug("MQTT subscriber client: \n", subscriber)
 
+	// MAIN LOOP
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		for {
+			// Attempt reconnect
 			if !publisher.IsConnected() {
 				log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
 
@@ -246,6 +266,7 @@ func main() {
 	}()
 	<-done
 
+	// Cleanup on ending the process
 	<-c
 	if publisher.IsConnected() {
 		log.Info("Disconnecting.....")
@@ -257,53 +278,3 @@ func main() {
 		subscriber.Disconnect(250)
 	}
 }
-
-func PublishMessages(cl mqtt.Client) {
-
-	manifests := jsonlines.Read(constants.ManifestFile, "", "", nil, false)
-
-	var mani []model.ManifestStatus
-	var deviceParams = model.DeviceParams{"10", "10", "20"}
-
-	actv_cnt := 0
-	serv_cnt := 0
-	for _, rec := range manifests {
-		log.Info("Record on manifests >> ", rec)
-		mani = append(mani, model.ManifestStatus{rec["id"].(string), rec["version"].(string), rec["status"].(string)})
-		serv_cnt = serv_cnt + 1
-		if "SUCCESS" == rec["status"].(string) {
-			actv_cnt = actv_cnt + 1
-		}
-	}
-
-	now := time.Now()
-	nanos := now.UnixNano()
-	millis := nanos / 1000000
-	msg := model.StatusMessage{opt.NodeId, millis, "Available", actv_cnt, serv_cnt, mani, deviceParams}
-
-	b_msg, err := json.Marshal(msg)
-	if err != nil {
-		log.Fatalf("Marshall error: %v", err)
-	}
-
-	log.Info("Sending update.", opt.TopicName, msg, string(b_msg))
-	if token := cl.Publish(opt.PubClientId+"/"+opt.NodeId+"/"+opt.TopicName, 0, false, b_msg); token.Wait() && token.Error() != nil {
-		log.Fatalf("failed to send update: %v", token.Error())
-	}
-}
-
-// func post(jsonReq []byte, nextHost string) {
-// 	fmt.Printf("Next host %s", nextHost)
-// 	resp, err := http.Post(nextHost, "application/json; charset=utf-8", bytes.NewBuffer(jsonReq))
-// 	if err != nil {
-// 		log.Info("Post API Connection error: %v", err)
-// 	} else {
-
-// 		defer resp.Body.Close()
-// 		bodyBytes, _ := ioutil.ReadAll(resp.Body)
-
-// 		// Convert response body to string
-// 		bodyString := string(bodyBytes)
-// 		log.Info(bodyString)
-// 	}
-// }

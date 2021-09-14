@@ -10,3 +10,5 @@ build/
 *.pem.key
 *.zip
 *.jsonl
+node_listener
+node-service

@@ -1,4 +1,5 @@
 module gitlab.com/weeve/edge-server/edge-pipeline-service
+// https://gitlab.com/weeve/platform/agent
 
 go 1.15
 
@@ -19,6 +20,7 @@ require (
 	github.com/golang/gddo v0.0.0-20200831202555-721e228c7686
 	github.com/gorilla/mux v1.8.0
 	github.com/jessevdk/go-flags v1.4.0
+	github.com/moby/sys/mount v0.2.0
 	github.com/moby/term v0.0.0-20201101124115-0c0b3e1a3e1f // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect

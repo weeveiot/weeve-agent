@@ -11,6 +11,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
@@ -180,7 +181,7 @@ func StopContainer(containerId string) bool {
 func StartCreateContainer(imageName string, startCommand model.ContainerConfig) (container.ContainerCreateCreatedBody, error) {
 	var containerName = startCommand.ContainerName
 	var entryArgs = startCommand.EntryPointArgs
-	var vols = startCommand.Volumes
+	// var vols = startCommand.Volumes
 	var envArgs = startCommand.EnvArgs
 
 	log.Debug("\tCreating from " + imageName + " container " + containerName)
@@ -200,7 +201,7 @@ func StartCreateContainer(imageName string, startCommand model.ContainerConfig) 
 		Env:          envArgs,
 		Tty:          false,
 		ExposedPorts: nil,
-		Volumes:      vols,
+		// Volumes:      vols,
 	}
 
 	// The following works:
@@ -213,17 +214,32 @@ func StartCreateContainer(imageName string, startCommand model.ContainerConfig) 
 	// Cmd:          []string{"-p=2000"}
 	// Fails with "Error: Unknown option '-p=2000'."
 
+	var vols_bind []string
+	var mountings []mount.Mount
+	for _, mountConfig := range startCommand.MountConfigs {
+		vols_bind = append(vols_bind, mountConfig.Target)
+		mountings = append(mountings, mount.Mount{
+			Type:   mount.TypeBind,
+			Source: mountConfig.Source,
+			Target: mountConfig.Target,
+		})
+	}
+
 	hostConfig := &container.HostConfig{
+		// Binds:        vols_bind,
 		PortBindings: nil,
 		NetworkMode:  "bridge",
 		RestartPolicy: container.RestartPolicy{
 			Name:              "on-failure",
 			MaximumRetryCount: 100,
 		},
+		Mounts: mountings,
 	}
 
 	networkConfig := &network.NetworkingConfig{
-		EndpointsConfig: map[string]*network.EndpointSettings{},
+		EndpointsConfig: map[string]*network.EndpointSettings{
+			startCommand.NetworkName: {},
+		},
 	}
 
 	// platform := &specs.Platform{
