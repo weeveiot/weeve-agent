@@ -465,3 +465,20 @@ func CreateContainerOptsArgs(startCmd model.ContainerConfig, networkName string)
 	return true
 }
 */
+
+// Return container state. Can be one of "created", "running", "paused", "restarting", "removing", "exited", or "dead".
+func ContainerStatus(containerId string) string {
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Error(err)
+	}
+
+	containerJSON, err := cli.ContainerInspect(ctx, containerId)
+	if err != nil {
+		log.Error(err)
+	}
+
+	containerState := *(*containerJSON.ContainerJSONBase).State
+	return containerState.Status
+}
