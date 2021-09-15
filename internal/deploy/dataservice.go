@@ -44,7 +44,7 @@ func DeployManifest(man model.Manifest) string {
 			log.Info(fmt.Sprintf("\tImage %v %v, does not exist on host", i, imgDetails.ImageName))
 			log.Info("\t\tPulling ", imgDetails.ImageName, imgDetails)
 			exists = docker.PullImage(imgDetails)
-			if exists == false {
+			if !exists {
 				failed = true
 				msg := "404 - Unable to pull image " + imgDetails.ImageName
 				log.Error(msg)
@@ -98,6 +98,12 @@ func DeployManifest(man model.Manifest) string {
 	filter := filters.NewArgs()
 
 	pruneReport, err := cli.NetworksPrune(ctx, filter)
+	if err != nil {
+		log.Error(err)
+		log.Error("Error trying to prune network")
+		panic(err)
+
+	}
 	log.Info("Pruned:", pruneReport)
 	log.Info("Create the network")
 	var networkCreateOptions types.NetworkCreate
@@ -188,4 +194,74 @@ func StartDataService(serviceId string, dataservice_name string) {
 			}
 		}
 	}
+}
+
+func UnDeployManifest(man model.Manifest) string {
+
+	var err = model.ValidateManifest(man)
+	if err != nil {
+		log.Error(err)
+		return "FAILED"
+	}
+
+	// Check if process is failed and needs to return
+	failed := false
+
+	jsonlines.Insert(constants.ManifestLogFile, man.Manifest.String())
+
+	jsonlines.Delete(constants.ManifestFile, "id", man.Manifest.Search("id").Data().(string))
+
+	//******** STEP 1 - Check containers, stop and remove *************//
+	log.Info("Checking containers, stopping and removing")
+
+	for _, containerName := range man.ContainerNamesList() {
+
+		containerExists := docker.ContainerExists(containerName)
+		log.Info("\tContainer exists:", containerExists)
+
+		// Stop + remove container if exists, start fresh
+		if containerExists {
+			log.Info("\tStopAndRemoveContainer - ", containerName)
+			// Stop and delete container
+			err := docker.StopAndRemoveContainer(containerName)
+			if err != nil {
+				failed = true
+				log.Error(err)
+				return "FAILED"
+			}
+			log.Info("\tContainer ", containerName, " removed")
+		}
+	}
+
+	if failed {
+		man.Manifest.Set("FAILED", "status")
+		jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
+		return "FAILED"
+	}
+
+	//******** STEP 2 - Create the network *************//
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Error(err)
+	}
+
+	log.Info("Pruning networks")
+	filter := filters.NewArgs()
+
+	pruneReport, err := cli.NetworksPrune(ctx, filter)
+	log.Info("Pruned:", pruneReport)
+
+	networkName := man.GetNetworkName()
+
+	if err != nil {
+		log.Error(err)
+		log.Error("Error trying to create network " + networkName)
+		panic(err)
+
+	}
+	log.Info("Removed network ", networkName)
+
+	// TODO: Proper return/error handling
+	return "SUCCESS"
 }

@@ -47,6 +47,13 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 			serviceName := jsonParsed.Search("name").Data().(string)
 
 			deploy.StartDataService(serviceId, serviceName)
+		} else if topic_rcvd == "undeploy" {
+
+			var thisManifest = model.Manifest{}
+			thisManifest.Manifest = *jsonParsed
+			// TODO: Error handling?
+			deploy.UnDeployManifest(thisManifest)
+
 		}
 	}
 }
