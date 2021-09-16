@@ -170,7 +170,7 @@ func StopDataService(serviceId string, dataservice_name string) {
 			// Container's names are in form: "/container_name"
 			if strings.HasPrefix(name[1:], serviceId) {
 				// check if container is "running"
-				containerStatus := docker.ContainerStatus(container.ID)
+				containerStatus := container.State
 
 				if containerStatus == "running" {
 					log.Info("\tStopping container:", name)
@@ -190,7 +190,7 @@ func StartDataService(serviceId string, dataservice_name string) {
 			// Container's names are in form: "/container_name"
 			if strings.HasPrefix(name[1:], serviceId) {
 				// check if container is "exited", "created" or "paused"
-				containerStatus := docker.ContainerStatus(container.ID)
+				containerStatus := container.State
 
 				if containerStatus == "exited" || containerStatus == "created" || containerStatus == "paused" {
 					log.Info("\tStarting container:", name)
