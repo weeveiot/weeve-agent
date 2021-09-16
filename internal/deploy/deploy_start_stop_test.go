@@ -3,7 +3,7 @@
 	can be started and stopped using the tested functions.
 */
 
-package deploy
+package deploy_test
 
 import (
 	"context"
@@ -19,6 +19,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/deploy"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/docker"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 )
@@ -50,7 +51,7 @@ func TestDeployManifest(t *testing.T) {
 	// Get list of containers in a dataservice
 	serviceContainerList := thisManifest.ContainerNamesList()
 
-	resp := DeployManifest(thisManifest)
+	resp := deploy.DeployManifest(thisManifest)
 
 	if resp != "SUCCESS" {
 		t.Errorf("DeployManifest returned %v status", resp)
@@ -115,20 +116,20 @@ func TestStopDataServiceWrongDetails(t *testing.T) {
 	for _, container := range containers {
 		for _, name := range container.Names {
 			if strings.HasPrefix(name[1:], serviceID) {
-				statusBefore[name[1:]] = docker.ContainerStatus(container.ID)
+				statusBefore[name[1:]] = container.State
 			}
 		}
 	}
 
 	// run tested method
-	StopDataService(wrongServiceID, wrongServiceName)
+	deploy.StopDataService(wrongServiceID, wrongServiceName)
 
 	// check container status after executing tested function
 	containers = docker.ReadAllContainers()
 	for _, container := range containers {
 		for _, name := range container.Names {
 			if strings.HasPrefix(name[1:], serviceID) {
-				if docker.ContainerStatus(container.ID) != statusBefore[name[1:]] {
+				if container.State != statusBefore[name[1:]] {
 					wrongStatusContainerList = append(wrongStatusContainerList, name[1:])
 				}
 			}
@@ -145,15 +146,14 @@ func TestStopDataService(t *testing.T) {
 	var wrongStatusContainerList []string
 
 	// run tested method
-	StopDataService(serviceID, serviceName)
+	deploy.StopDataService(serviceID, serviceName)
 
 	// check container status
 	containers := docker.ReadAllContainers()
 	for _, container := range containers {
 		for _, name := range container.Names {
 			if strings.HasPrefix(name[1:], serviceID) {
-				containerStatus := docker.ContainerStatus(container.ID)
-				if containerStatus != "exited" {
+				if container.State != "exited" {
 					wrongStatusContainerList = append(wrongStatusContainerList, name[1:])
 				}
 			}
@@ -178,20 +178,20 @@ func TestStartDataServiceWrongDetails(t *testing.T) {
 	for _, container := range containers {
 		for _, name := range container.Names {
 			if strings.HasPrefix(name[1:], serviceID) {
-				statusBefore[name[1:]] = docker.ContainerStatus(container.ID)
+				statusBefore[name[1:]] = container.State
 			}
 		}
 	}
 
 	// run tested method
-	StartDataService(wrongServiceID, wrongServiceName)
+	deploy.StartDataService(wrongServiceID, wrongServiceName)
 
 	// check container status after executing tested function
 	containers = docker.ReadAllContainers()
 	for _, container := range containers {
 		for _, name := range container.Names {
 			if strings.HasPrefix(name[1:], serviceID) {
-				if docker.ContainerStatus(container.ID) != statusBefore[name[1:]] {
+				if container.State != statusBefore[name[1:]] {
 					wrongStatusContainerList = append(wrongStatusContainerList, name[1:])
 				}
 			}
@@ -208,15 +208,14 @@ func TestStartDataService(t *testing.T) {
 	var wrongStatusContainerList []string
 
 	// run tested method
-	StartDataService(serviceID, serviceName)
+	deploy.StartDataService(serviceID, serviceName)
 
 	// check container status
 	containers := docker.ReadAllContainers()
 	for _, container := range containers {
 		for _, name := range container.Names {
 			if strings.HasPrefix(name[1:], serviceID) {
-				containerStatus := docker.ContainerStatus(container.ID)
-				if containerStatus != "running" {
+				if container.State != "running" {
 					wrongStatusContainerList = append(wrongStatusContainerList, name[1:])
 				}
 			}
