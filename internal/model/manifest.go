@@ -205,11 +205,12 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 		//Populate Environment variables
 		log.Debug("Processing environments arguments")
 		var envArgs = ParseArguments(mod.Search("environments").Children(), false)
-		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "PREV_CONTAINER_NAME", prev_container_name))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "SERVICE_ID", m.Manifest.Search("id").Data().(string)))
 
 		prev_container_name = thisStartCommand.ContainerName
 		if cntr > 0 {
+			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "PREV_CONTAINER_NAME", prev_container_name))
+
 			var next_arg = fmt.Sprintf("%v=%v", "NEXT_CONTAINER_NAME", thisStartCommand.ContainerName)
 			startCommands[cntr-1].EnvArgs = append(startCommands[cntr-1].EnvArgs, next_arg)
 
