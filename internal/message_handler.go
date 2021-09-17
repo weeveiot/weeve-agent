@@ -44,7 +44,7 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 				log.Error(err)
 			}
 
-		} else if topic_rcvd == "StartService" {
+		} else if topic_rcvd == "startservice" {
 
 			err := model.ValidateStartStopJSON(jsonParsed)
 			if err == nil {

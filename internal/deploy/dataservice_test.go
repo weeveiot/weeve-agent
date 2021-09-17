@@ -43,7 +43,9 @@ func TestDeployManifest(t *testing.T) {
 	thisManifest.Manifest = *jsonParsed
 
 	// Fill the placeholders for Start and Stop tests
-	serviceID = strings.ReplaceAll(thisManifest.Manifest.Search("id").Data().(string), "-", "")
+	serviceID = strings.ReplaceAll(thisManifest.Manifest.Search("id").Data().(string), " ", "")
+	serviceID = strings.ReplaceAll(serviceID, "-", "")
+
 	log.Info(serviceID)
 	serviceName = thisManifest.Manifest.Search("compose").Search("network").Search("name").Data().(string)
 	log.Info(serviceName)

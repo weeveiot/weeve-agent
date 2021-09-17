@@ -163,6 +163,9 @@ func DeployManifest(man model.Manifest) string {
 }
 
 func StopDataService(serviceId string, dataservice_name string) {
+	serviceId = strings.ReplaceAll(serviceId, " ", "")
+	serviceId = strings.ReplaceAll(serviceId, "-", "")
+
 	log.Info("Stopping data service:", dataservice_name)
 	containers := docker.ReadAllContainers()
 	for _, container := range containers {
@@ -183,6 +186,9 @@ func StopDataService(serviceId string, dataservice_name string) {
 }
 
 func StartDataService(serviceId string, dataservice_name string) {
+	serviceId = strings.ReplaceAll(serviceId, " ", "")
+	serviceId = strings.ReplaceAll(serviceId, "-", "")
+
 	log.Info("Starting data service:", dataservice_name)
 	containers := docker.ReadAllContainers()
 	for _, container := range containers {
