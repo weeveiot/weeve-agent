@@ -27,7 +27,7 @@ import (
 var serviceID = "PLACEHOLDER"
 var serviceName = "PLACEHOLDER"
 
-const manifestPath = "testdata/deploy_start_stop/deploy_manifest.json"
+const manifestPath = "testdata/dataservice/dataservice_manifest.json"
 
 func TestDeployManifest(t *testing.T) {
 	// Load Manifest JSON from file.
