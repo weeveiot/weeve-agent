@@ -3,6 +3,8 @@ package model
 import (
 	"errors"
 	"strings"
+
+	"github.com/Jeffail/gabs/v2"
 )
 
 // ValidateManifest function to validate manifest JSON
@@ -53,4 +55,25 @@ func ValidateManifest(m Manifest) error {
 		return nil
 	}
 
+}
+
+func ValidateStartStopJSON(jsonParsed *gabs.Container) error {
+
+	// Expected JSON: {"id": dataServiceID, "name": dataServiceName}
+
+	var errorList []string
+	serviceID := jsonParsed.Search("id").Data()
+	if serviceID == nil {
+		errorList = append(errorList, "Expected Data Service ID 'id' in JSON, but not found.")
+	}
+	serviceName := jsonParsed.Search("name").Data()
+	if serviceName == nil {
+		errorList = append(errorList, "Expected Data Service Name 'name' in JSON, but not found.")
+	}
+
+	if len(errorList) > 0 {
+		return errors.New(strings.Join(errorList[:], " "))
+	} else {
+		return nil
+	}
 }

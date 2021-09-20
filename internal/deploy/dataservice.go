@@ -169,28 +169,46 @@ func DeployManifest(man model.Manifest) string {
 }
 
 func StopDataService(serviceId string, dataservice_name string) {
+	serviceId = strings.ReplaceAll(serviceId, " ", "")
+	serviceId = strings.ReplaceAll(serviceId, "-", "")
+
 	log.Info("Stopping data service:", dataservice_name)
 	containers := docker.ReadAllContainers()
 	for _, container := range containers {
 		for _, name := range container.Names {
 			// Container's names are in form: "/container_name"
 			if strings.HasPrefix(name[1:], serviceId) {
-				log.Info("\tStopping container:", name)
-				docker.StopContainer(container.ID)
+				// check if container is "running"
+				containerStatus := container.State
+
+				if containerStatus == "running" {
+					log.Info("\tStopping container:", name)
+					docker.StopContainer(container.ID)
+					log.Info("\t", name, ": ", containerStatus, " --> exited")
+				}
 			}
 		}
 	}
 }
 
 func StartDataService(serviceId string, dataservice_name string) {
+	serviceId = strings.ReplaceAll(serviceId, " ", "")
+	serviceId = strings.ReplaceAll(serviceId, "-", "")
+
 	log.Info("Starting data service:", dataservice_name)
 	containers := docker.ReadAllContainers()
 	for _, container := range containers {
 		for _, name := range container.Names {
 			// Container's names are in form: "/container_name"
 			if strings.HasPrefix(name[1:], serviceId) {
-				log.Info("\tStarting container:", name)
-				docker.StartContainer(container.ID)
+				// check if container is "exited", "created" or "paused"
+				containerStatus := container.State
+
+				if containerStatus == "exited" || containerStatus == "created" || containerStatus == "paused" {
+					log.Info("\tStarting container:", name)
+					docker.StartContainer(container.ID)
+					log.Info("\t", name, ": ", containerStatus, "--> running")
+				}
 			}
 		}
 	}
