@@ -218,7 +218,7 @@ func UndeployDataService(serviceId string, dataservice_name string) {
 	serviceId = strings.ReplaceAll(serviceId, " ", "")
 	serviceId = strings.ReplaceAll(serviceId, "-", "")
 
-	//******** STEP 1 - Check containers, stop and remove *************//
+	//******** STEP 1 - Stop and Remove Containers *************//
 	log.Info("Checking containers, stopping and removing")
 
 	containers := docker.ReadAllContainers()
@@ -236,21 +236,40 @@ func UndeployDataService(serviceId string, dataservice_name string) {
 		}
 	}
 
-	//******** STEP 2 - Prune networks *************//
+	//******** STEP 2 - Prune Images *************//
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
 	}
 
-	log.Info("Pruning networks")
+	log.Info("Pruning images")
 	filter := filters.NewArgs()
+	filter.Add("dangling", fmt.Sprintf("%v", false))
 
-	pruneReport, err := cli.NetworksPrune(ctx, filter)
+	imagesPruneReport, err := cli.ImagesPrune(ctx, filter)
 	if err != nil {
 		log.Error(err)
 	}
-	log.Info("Pruned: ", pruneReport)
+	log.Info("Pruned: ", imagesPruneReport)
 
-	// TODO: Proper return/error handling
+	//******** STEP 3 - Prune Networks *************//
+	log.Info("Pruning networks")
+
+	filter = filters.NewArgs()
+	networksPruneReport, err := cli.NetworksPrune(ctx, filter)
+	if err != nil {
+		log.Error(err)
+	}
+	log.Info("Pruned: ", networksPruneReport)
+
+	//******** STEP 4 - Prune Volumes *************//
+	log.Info("Pruning volumes")
+
+	volumesPruneReport, err := cli.VolumesPrune(ctx, filter)
+	if err != nil {
+		log.Error(err)
+	}
+	log.Info("Pruned: ", volumesPruneReport)
+
 }
