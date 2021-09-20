@@ -228,6 +228,38 @@ func TestStartDataService(t *testing.T) {
 	}
 }
 
+func TestUndeployDataService(t *testing.T) {
+	// run tested method
+	deploy.UndeployDataService(serviceID, serviceName)
+
+	// check if containers are removed
+	containers := docker.ReadAllContainers()
+	for _, container := range containers {
+		for _, name := range container.Names {
+			if strings.HasPrefix(name[1:], serviceID) {
+				t.Errorf("The following container should have been removed: %v", name)
+			}
+		}
+	}
+
+	// Check if the network is pruned
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Error(err)
+	}
+
+	networks, err := cli.NetworkList(ctx, types.NetworkListOptions{})
+	if err != nil {
+		log.Error(err)
+	}
+	for _, network := range networks {
+		if network.Name == serviceName {
+			t.Errorf("Network %v was not pruned (Data Service not removed)", serviceName)
+		}
+	}
+}
+
 // LoadJsonBytes reads file containts into byte[]
 func LoadJSONBytes(manName string) []byte {
 

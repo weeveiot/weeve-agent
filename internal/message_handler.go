@@ -58,10 +58,15 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 
 		} else if topic_rcvd == "undeploy" {
 
-			var thisManifest = model.Manifest{}
-			thisManifest.Manifest = *jsonParsed
-			// TODO: Error handling?
-			deploy.UnDeployManifest(thisManifest)
+			err := model.ValidateStartStopJSON(jsonParsed)
+			if err == nil {
+				serviceId := jsonParsed.Search("id").Data().(string)
+				serviceName := jsonParsed.Search("name").Data().(string)
+
+				deploy.UndeployDataService(serviceId, serviceName)
+			} else {
+				log.Error(err)
+			}
 
 		}
 	}
