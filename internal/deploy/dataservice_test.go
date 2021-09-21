@@ -242,7 +242,7 @@ func TestUndeployDataService(t *testing.T) {
 		}
 	}
 
-	// Check if the network is pruned
+	// Check if the network is removed
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {

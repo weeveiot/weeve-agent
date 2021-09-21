@@ -215,57 +215,74 @@ func StartDataService(serviceId string, dataservice_name string) {
 }
 
 func UndeployDataService(serviceId string, dataservice_name string) {
+	log.Info("Undeploying ", dataservice_name)
+
 	serviceId = strings.ReplaceAll(serviceId, " ", "")
 	serviceId = strings.ReplaceAll(serviceId, "-", "")
 
-	//******** STEP 1 - Stop and Remove Containers *************//
-	log.Info("Checking containers, stopping and removing")
-
-	containers := docker.ReadAllContainers()
-	for _, container := range containers {
-		for _, containerName := range container.Names {
-			// Container's names are in form: "/container_name"
-			if strings.HasPrefix(containerName[1:], serviceId) {
-				log.Info("\tStopAndRemoveContainer - ", containerName)
-				// Stop and delete container
-				err := docker.StopAndRemoveContainer(containerName)
-				if err != nil {
-					log.Error(err)
-				}
-			}
-		}
-	}
-
-	//******** STEP 2 - Prune Images *************//
+	// Set up Background Context and Client for Docker API calls
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
 	}
 
-	log.Info("Pruning images")
-	filter := filters.NewArgs()
-	filter.Add("dangling", fmt.Sprintf("%v", false))
+	//******** STEP 1 - Stop and Remove Containers *************//
 
-	imagesPruneReport, err := cli.ImagesPrune(ctx, filter)
+	// map { imageID: number_of_allocated_containers }, needed for removing images as not supported by Go-Docker SDK
+	imageContainers := make(map[string]int)
+
+	containers := docker.ReadAllContainers()
+	for _, container := range containers {
+
+		imageContainers[container.ImageID] = imageContainers[container.ImageID] + 1
+
+		for _, containerName := range container.Names {
+			// Container's names are in form: "/container_name"
+			if strings.HasPrefix(containerName[1:], serviceId) {
+				log.Info("\tStop And Remove Container - ", containerName)
+				// Stop and delete container
+				err := docker.StopAndRemoveContainer(containerName)
+				if err != nil {
+					log.Error(err)
+				}
+
+				imageContainers[container.ImageID] = imageContainers[container.ImageID] - 1
+			}
+		}
+	}
+
+	//******** STEP 2 - Remove Images WITHOUT Containers *************//
+	for imageID, containersCount := range imageContainers {
+		if containersCount == 0 {
+			log.Info("\tRemove Image - ", imageID)
+			_, err := cli.ImageRemove(ctx, imageID, types.ImageRemoveOptions{})
+			if err != nil {
+				log.Error(err)
+			}
+		}
+	}
+
+	//******** STEP 3 - Remove Network *************//
+	log.Info("\tRemove Network - ", dataservice_name)
+	networks, err := cli.NetworkList(ctx, types.NetworkListOptions{})
 	if err != nil {
 		log.Error(err)
 	}
-	log.Info("Pruned: ", imagesPruneReport)
-
-	//******** STEP 3 - Prune Networks *************//
-	log.Info("Pruning networks")
-
-	filter = filters.NewArgs()
-	networksPruneReport, err := cli.NetworksPrune(ctx, filter)
-	if err != nil {
-		log.Error(err)
+	for _, network := range networks {
+		if network.Name == dataservice_name {
+			err = cli.NetworkRemove(ctx, network.ID)
+			if err != nil {
+				log.Error(err)
+			}
+			break
+		}
 	}
-	log.Info("Pruned: ", networksPruneReport)
 
-	//******** STEP 4 - Prune Volumes *************//
+	//******** STEP 4 - Remove Volumes *************//
 	log.Info("Pruning volumes")
 
+	filter := filters.NewArgs()
 	volumesPruneReport, err := cli.VolumesPrune(ctx, filter)
 	if err != nil {
 		log.Error(err)
