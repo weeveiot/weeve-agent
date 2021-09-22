@@ -278,15 +278,4 @@ func UndeployDataService(serviceId string, dataservice_name string) {
 			break
 		}
 	}
-
-	//******** STEP 4 - Remove Volumes *************//
-	log.Info("Pruning volumes")
-
-	filter := filters.NewArgs()
-	volumesPruneReport, err := cli.VolumesPrune(ctx, filter)
-	if err != nil {
-		log.Error(err)
-	}
-	log.Info("Pruned: ", volumesPruneReport)
-
 }

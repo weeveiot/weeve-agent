@@ -26,10 +26,15 @@ import (
 
 var serviceID = "PLACEHOLDER"
 var serviceName = "PLACEHOLDER"
+var serviceID2 = "PLACEHOLDER"
+var serviceName2 = "PLACEHOLDER"
 
 const manifestPath = "testdata/dataservice/dataservice_manifest.json"
+const manifestPath2 = "testdata/dataservice/dataservice_manifest_2.json"
 
 func TestDeployManifest(t *testing.T) {
+	log.Info("TESTING DEPLOYMENT...")
+
 	// Load Manifest JSON from file.
 	json := LoadJSONBytes(manifestPath)
 
@@ -108,6 +113,8 @@ func TestDeployManifest(t *testing.T) {
 func TestStopDataServiceWrongDetails(t *testing.T) {
 	// IMPORTANT: Assume all containers are exited at the beginning
 
+	log.Info("TESTING STOP DATA SERVICE WITH WRONG DETAILS...")
+
 	var wrongServiceID = serviceID + "WRONG"
 	var wrongServiceName = serviceName + "WRONG"
 	var wrongStatusContainerList []string
@@ -145,6 +152,8 @@ func TestStopDataServiceWrongDetails(t *testing.T) {
 func TestStopDataService(t *testing.T) {
 	// IMPORTANT: Assume all containers are exited at the beginning
 
+	log.Info("TESTING STOP DATA SERVICE...")
+
 	var wrongStatusContainerList []string
 
 	// run tested method
@@ -169,6 +178,8 @@ func TestStopDataService(t *testing.T) {
 // Test Start Service method
 func TestStartDataServiceWrongDetails(t *testing.T) {
 	// IMPORTANT: Assume all containers are exited at the beginning
+
+	log.Info("TESTING START DATA SERVICE WITH WRONG DETAILS...")
 
 	var wrongServiceID = serviceID + "WRONG"
 	var wrongServiceName = serviceName + "WRONG"
@@ -207,6 +218,8 @@ func TestStartDataServiceWrongDetails(t *testing.T) {
 func TestStartDataService(t *testing.T) {
 	// IMPORTANT: Assume all containers are exited at the beginning
 
+	log.Info("TESTING START DATA SERVICE...")
+
 	var wrongStatusContainerList []string
 
 	// run tested method
@@ -229,6 +242,8 @@ func TestStartDataService(t *testing.T) {
 }
 
 func TestUndeployDataService(t *testing.T) {
+	log.Info("TESTING UNDEPLOYMENT...")
+
 	// run tested method
 	deploy.UndeployDataService(serviceID, serviceName)
 
@@ -258,6 +273,134 @@ func TestUndeployDataService(t *testing.T) {
 			t.Errorf("Network %v was not pruned (Data Service not removed)", serviceName)
 		}
 	}
+}
+
+func TestUndeployDataService2SameServices(t *testing.T) {
+	// testing 2 identical services, one should be later undeployed and another should still run
+
+	log.Info("TESTING UNDEPLOYMENT WHEN SECOND IDENTICAL DATA SERVICE EXISTS...")
+
+	// ***** DEPLOY ORIGINAL DATA SERVICE ********* //
+	// Load Manifest JSON from file.
+	log.Info("Loading original manifest...")
+
+	json := LoadJSONBytes(manifestPath)
+
+	// Parse to gabs Container type
+	jsonParsed, err := gabs.ParseJSON(json)
+	if err != nil {
+		log.Info("Error on parsing message: ", err)
+	}
+
+	var thisManifest = model.Manifest{}
+	thisManifest.Manifest = *jsonParsed
+
+	// Fill the placeholders for Start and Stop tests
+	serviceID = strings.ReplaceAll(thisManifest.Manifest.Search("id").Data().(string), " ", "")
+	serviceID = strings.ReplaceAll(serviceID, "-", "")
+
+	log.Info(serviceID)
+	serviceName = thisManifest.Manifest.Search("compose").Search("network").Search("name").Data().(string)
+	log.Info(serviceName)
+
+	resp := deploy.DeployManifest(thisManifest)
+
+	if resp != "SUCCESS" {
+		t.Errorf("DeployManifest returned %v status", resp)
+	}
+
+	// ***** DEPLOY SECOND IDENTICAL DATA SERVICE ********* //
+	// Load Manifest JSON from file.
+	log.Info("Loading second manifest...")
+
+	json = LoadJSONBytes(manifestPath2)
+
+	// Parse to gabs Container type
+	jsonParsed, err = gabs.ParseJSON(json)
+	if err != nil {
+		log.Info("Error on parsing message: ", err)
+	}
+
+	var thisManifest2 = model.Manifest{}
+	thisManifest2.Manifest = *jsonParsed
+
+	// Fill the placeholders for Start and Stop tests
+	serviceID2 = strings.ReplaceAll(thisManifest2.Manifest.Search("id").Data().(string), " ", "")
+	serviceID2 = strings.ReplaceAll(serviceID2, "-", "")
+
+	log.Info(serviceID2)
+	serviceName2 = thisManifest2.Manifest.Search("compose").Search("network").Search("name").Data().(string)
+	log.Info(serviceName2)
+
+	resp = deploy.DeployManifest(thisManifest2)
+
+	if resp != "SUCCESS" {
+		t.Errorf("DeployManifest returned %v status", resp)
+	}
+
+	// ***** TEST UNDEPLOY FOR ORIGINAL DATA SERVICE ********* //
+
+	// run tested method
+	deploy.UndeployDataService(serviceID, serviceName)
+
+	// check if containers are removed
+	containers := docker.ReadAllContainers()
+	for _, container := range containers {
+		for _, name := range container.Names {
+			if strings.HasPrefix(name[1:], serviceID) {
+				t.Errorf("The following container should have been removed: %v", name)
+			}
+		}
+	}
+
+	// Check if the network is removed
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Error(err)
+	}
+
+	networks, err := cli.NetworkList(ctx, types.NetworkListOptions{})
+	if err != nil {
+		log.Error(err)
+	}
+	for _, network := range networks {
+		if network.Name == serviceName {
+			t.Errorf("Network %v was not pruned (Data Service not removed)", serviceName)
+		}
+	}
+
+	// ***** CHECK IF SECOND IDENTICAL DATA SERVICE STILL EXISTS ********* //
+	expectedNumberContainers := len(thisManifest2.Manifest.Search("compose").S("services").Children())
+	containersCount := 0
+	for _, container := range docker.ReadAllContainers() {
+		for _, name := range container.Names {
+			if strings.HasPrefix(name[1:], serviceID2) {
+				containersCount++
+			}
+		}
+	}
+	if containersCount != expectedNumberContainers {
+		t.Errorf("Some containers from the second identical network were removed.")
+	}
+
+	secondNetworkExists := false
+	networks, err = cli.NetworkList(ctx, types.NetworkListOptions{})
+	if err != nil {
+		log.Error(err)
+	}
+	for _, network := range networks {
+		if network.Name == serviceName2 {
+			secondNetworkExists = true
+		}
+	}
+	if !secondNetworkExists {
+		t.Errorf("Second identical network is removed.")
+	}
+
+	// clean up and remove second data service
+	deploy.UndeployDataService(serviceID2, serviceName2)
+
 }
 
 // LoadJsonBytes reads file containts into byte[]
