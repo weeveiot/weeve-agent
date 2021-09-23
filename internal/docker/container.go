@@ -11,7 +11,6 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
@@ -180,9 +179,6 @@ func StopContainer(containerId string) bool {
 // 7) Return containerStart response
 func StartCreateContainer(imageName string, startCommand model.ContainerConfig) (container.ContainerCreateCreatedBody, error) {
 	var containerName = startCommand.ContainerName
-	var entryArgs = startCommand.EntryPointArgs
-	// var vols = startCommand.Volumes
-	var envArgs = startCommand.EnvArgs
 
 	log.Debug("\tCreating from " + imageName + " container " + containerName)
 	ctx := context.Background()
@@ -197,11 +193,11 @@ func StartCreateContainer(imageName string, startCommand model.ContainerConfig) 
 		AttachStdin:  false,
 		AttachStdout: false,
 		AttachStderr: false,
-		Cmd:          entryArgs,
-		Env:          envArgs,
+		Cmd:          startCommand.EntryPointArgs,
+		Env:          startCommand.EnvArgs,
 		Tty:          false,
 		ExposedPorts: nil,
-		// Volumes:      vols,
+		//Volumes:      startCommand.Volumes, // TODO: Remove this later and use only Mounts instead
 	}
 
 	// The following works:
@@ -214,26 +210,26 @@ func StartCreateContainer(imageName string, startCommand model.ContainerConfig) 
 	// Cmd:          []string{"-p=2000"}
 	// Fails with "Error: Unknown option '-p=2000'."
 
-	var vols_bind []string
-	var mountings []mount.Mount
-	for _, mountConfig := range startCommand.MountConfigs {
-		vols_bind = append(vols_bind, mountConfig.Target)
-		mountings = append(mountings, mount.Mount{
-			Type:   mount.TypeBind,
-			Source: mountConfig.Source,
-			Target: mountConfig.Target,
-		})
-	}
+	//var vols_bind []string
+	//var mountings []mount.Mount
+	//for _, mountConfig := range startCommand.MountConfigs {
+	//	vols_bind = append(vols_bind, mountConfig.Target)
+	// mountings = append(mountings, mount.Mount{
+	// 	Type:   mount.TypeBind,
+	// 	Source: mountConfig.Source,
+	// 	Target: mountConfig.Target,
+	// })
+	//}
 
 	hostConfig := &container.HostConfig{
-		// Binds:        vols_bind,
+		// Binds:        vols_bind, // TODO: Remove once Volumes removed
 		PortBindings: nil,
 		NetworkMode:  "bridge",
 		RestartPolicy: container.RestartPolicy{
 			Name:              "on-failure",
 			MaximumRetryCount: 100,
 		},
-		Mounts: mountings,
+		Mounts: startCommand.MountConfigs,
 	}
 
 	networkConfig := &network.NetworkingConfig{
