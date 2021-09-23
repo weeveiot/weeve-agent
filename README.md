@@ -110,8 +110,7 @@ Several developer features are supported in the project.
 ### Dependencies
 
 ### Enhanced golang terminal
-The `go` command may be replaced with the `richgo` command to provide more colorful output at the terminal. The project is found at [richgo](https://github.com/kyoh86/richgo) and installed with `go get -u github.com/kyoh86/richgo
-`.
+The `go` command may be replaced with the `richgo` command to provide more colorful output at the terminal. The project is found at [richgo](https://github.com/kyoh86/richgo) and installed with `go get -u github.com/kyoh86/richgo`.
 
 ### File watcher reflex
 A file watcher is employed to automate the restart of the server and run tests on code change.

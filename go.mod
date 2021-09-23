@@ -1,4 +1,5 @@
 module gitlab.com/weeve/edge-server/edge-pipeline-service
+
 // https://gitlab.com/weeve/platform/agent
 
 go 1.15
@@ -20,6 +21,8 @@ require (
 	github.com/golang/gddo v0.0.0-20200831202555-721e228c7686
 	github.com/gorilla/mux v1.8.0
 	github.com/jessevdk/go-flags v1.4.0
+	github.com/kyoh86/richgo v0.3.9 // indirect
+	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/moby/sys/mount v0.2.0
 	github.com/moby/term v0.0.0-20201101124115-0c0b3e1a3e1f // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
@@ -30,7 +33,7 @@ require (
 	github.com/stretchr/testify v1.6.1 // indirect
 	github.com/swaggo/http-swagger v0.0.0-20200308142732-58ac5e232fba
 	golang.org/x/net v0.0.0-20201031054903-ff519b6c9102 // indirect
-	golang.org/x/sys v0.0.0-20201223074533-0d417f636930 // indirect
+	golang.org/x/sys v0.0.0-20210923061019-b8560ed6a9b7 // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e // indirect
 	google.golang.org/grpc v1.33.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
