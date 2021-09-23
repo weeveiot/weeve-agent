@@ -21,7 +21,6 @@ require (
 	github.com/golang/gddo v0.0.0-20200831202555-721e228c7686
 	github.com/gorilla/mux v1.8.0
 	github.com/jessevdk/go-flags v1.4.0
-	github.com/kyoh86/richgo v0.3.9 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/moby/sys/mount v0.2.0
 	github.com/moby/term v0.0.0-20201101124115-0c0b3e1a3e1f // indirect
