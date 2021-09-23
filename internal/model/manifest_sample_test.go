@@ -1,18 +1,33 @@
 package model
 
 import (
-	"os"
+	"fmt"
 	"testing"
 
 	_ "gitlab.com/weeve/edge-server/edge-pipeline-service/testing"
 )
 
-var SampleManifestBytesMVP []byte
+func TestLoad(t *testing.T) {
+	fmt.Println("Load the sample manifest")
+	var sampleManifestBytesMVP []byte
 
-func TestLoad(m *testing.M) {
+	sampleManifestBytesMVP = LoadJsonBytes("manifest/mvp-manifest.json")
+	// fmt.Println(sampleManifestBytesMVP)
+	manifest, _ := ParseJSONManifest(sampleManifestBytesMVP)
+	// fmt.Print(res.ContainerNamesList())
+	ContainerConfigs := manifest.GetContainerStart()
+	// fmt.Print(ContainerConfig.MountConfigs)
+	fmt.Println("Container details:")
+	for i, ContainerConf := range ContainerConfigs {
+		fmt.Println(i, ContainerConf)
+	}
+	// for i := 0; i < count; i++ {
 
-	manifestBytesMVP = LoadJsonBytes("pipeline_unit/workingMVP.json")
-	code := m.Run()
+	// }
+	fmt.Print(ContainerConfigs[0].MountConfigs)
+	// fmt.Print(res)
+	// res.PrintManifest()
+	// code := t.Run()
 
-	os.Exit(code)
+	// os.Exit(code)
 }

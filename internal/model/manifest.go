@@ -331,7 +331,8 @@ func ParseDocumentTag(doc_data interface{}, thisStartCommand *ContainerConfig) {
 			return
 		}
 		json.Unmarshal([]byte(strMounts), &mounts)
-		log.Info("Mounts: %v", mounts)
+		// log.Info("Mounts: %v", mounts)
+		log.Info("Mounts:", mounts)
 	} else {
 		mounts = nil
 	}
