@@ -13,8 +13,11 @@ A data model for the manifest object and supporting structures is found in the i
 ## Getting started
 
 ### Without TLS
-The binary or the source code, (with `go run`) the agent can be started with the following options;
+The binary or the source code, (with `go run`) the agent can be started with the following options. This recipe requires a local MQTT broker, for example, the Mosquitto broker with logs enabled to confirm subscription and publish; `mosquitto -v -p 8080`.
 
+In a new terminal instance, subscribe to all topics for that broker; `mosquitto_sub -t '#' -p 8080`.
+
+In a final terminal, run the weeve agent and connect to the broker to publish status messages;
 ```bash
 go run ./cmd/agent/agent.go -v --notls \
     --nodeId local-test-node-1 \ # ID of this node \
@@ -26,14 +29,6 @@ go run ./cmd/agent/agent.go -v --notls \
 ```
 
 The `-v` flag enables debug logs, and the `--notls` flag disables TLS configuation. Further logs from the `paho` MQTT client can be enabled with the `--mqttlogs` flag.
-
-This recipe requires a local MQTT broker, for example, the Mosquitto broker with logs enabled to confirm subscription and publish; `mosquitto -v -p 8080`.
-
-In a second terminal, subscribe to all topics for that broker; `mosquitto_sub -t '#' -p 8080`.
-
-Run the weeve agent in a third terminal.
-
-mosquitto_pub
 
 ### With TLS
 TLS configuration requires the full path to all secrets and certificates as follows;
