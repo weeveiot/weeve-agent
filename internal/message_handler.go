@@ -56,6 +56,18 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 				log.Error(err)
 			}
 
+		} else if topic_rcvd == "undeploy" {
+
+			err := model.ValidateStartStopJSON(jsonParsed)
+			if err == nil {
+				serviceId := jsonParsed.Search("id").Data().(string)
+				serviceName := jsonParsed.Search("name").Data().(string)
+
+				deploy.UndeployDataService(serviceId, serviceName)
+			} else {
+				log.Error(err)
+			}
+
 		}
 	}
 }
