@@ -1,11 +1,7 @@
 package model
 
 import (
-	"fmt"
-	"io/ioutil"
-	"log"
 	"os"
-	"path"
 	"testing"
 
 	// "gitlab.com/weeve/poc-festo/poc-festo-mqtts-ethereum-gateway/internal/parser"
@@ -29,20 +25,6 @@ func TestMain(m *testing.M) {
 
 	// manifest := ParseJSONManifest(manifestBytes)
 	// fmt.Println(manifest
-}
-
-func LoadJsonBytes(manName string) []byte {
-	wd, _ := os.Getwd()
-	fmt.Println()
-	manifestPath := path.Join(wd, "testdata", manName)
-	// fmt.Println("Loading manifest from ", manifestPath)
-
-	var err error = nil
-	manifestBytes, err := ioutil.ReadFile(manifestPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return manifestBytes
 }
 
 // Unit function to validate negative tests
