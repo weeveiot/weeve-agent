@@ -13,10 +13,23 @@ A data model for the manifest object and supporting structures is found in the i
 ## Getting started
 
 ### Without TLS
-The binary or the source code, (with `go run`) the agent can be started with the following options. This recipe requires a local MQTT broker, for example, the Mosquitto broker with logs enabled to confirm subscription and publish; `mosquitto -v -p 8080`.
+The binary or the source code, (with `go run`) the agent can be started with the following options.
 
+#### Terminal: Broker
+This recipe requires a local MQTT broker, for example, the Mosquitto broker with logs enabled to confirm subscription and publish; `mosquitto -v -p 8080`.
+
+
+#### Terminal: Publishing to weeve agent
+With the mosquitto client tools, we can publish to the weeve agent in interactive mode (enter to send a message).
+`mosquitto_pub -t nodes/localtest/local-test-node-1/deploy -p 8080 -l`
+
+Of to send a sample manifest file, the `-f` option can be used.
+`mosquitto_pub -f ./testdata/manifest/mvp-manifest.json -p 8080 -t nodes/localtest/local-test-node-1/deploy`
+
+#### Terminal: Subscription to agent status
 In a new terminal instance, subscribe to all topics for that broker; `mosquitto_sub -t '#' -p 8080`.
 
+#### Terminal: Weeve agent
 In a final terminal, run the weeve agent and connect to the broker to publish status messages;
 ```bash
 go run ./cmd/agent/agent.go -v --notls \
