@@ -10,6 +10,7 @@ import (
 	"github.com/docker/go-connections/nat"
 
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	log "github.com/sirupsen/logrus"
 )
@@ -37,7 +38,7 @@ type ContainerConfig struct {
 	NetworkMode    container.NetworkMode
 	NetworkConfig  network.NetworkingConfig
 	Volumes        map[string]struct{}
-	MountConfigs   []MountConfig
+	MountConfigs   []mount.Mount
 }
 
 type OptionKeyVal struct {
@@ -49,15 +50,6 @@ type RegistryDetails struct {
 	ImageName string
 	UserName  string
 	Password  string
-}
-
-type MountConfig struct {
-	Type        string
-	Source      string
-	Target      string
-	Mode        string
-	RW          bool
-	Propogation string
 }
 
 func PrintStartCommand(sc ContainerConfig) {
@@ -318,7 +310,6 @@ func ParseArguments(options []*gabs.Container, cmdArgs bool) []string {
 func ParseDocumentTag(doc_data interface{}, thisStartCommand *ContainerConfig) {
 	var vol_maps []map[string]struct{}
 	vol_map := make(map[string]struct{})
-	var mt_maps []MountConfig
 
 	var document = doc_data.(string)
 	document = strings.ReplaceAll(document, "'", "\"")
@@ -331,22 +322,24 @@ func ParseDocumentTag(doc_data interface{}, thisStartCommand *ContainerConfig) {
 
 	log.Info("man_doc ", document, man_doc)
 
+	mounts := []mount.Mount{}
+	m, ok := man_doc.Search("mounts").Data().([]interface{})
+	if ok && m != nil {
+		strMounts, err := json.Marshal(m)
+		if err != nil {
+			log.Error("Error on parsing mounts ", err)
+			return
+		}
+		json.Unmarshal([]byte(strMounts), &mounts)
+		// log.Info("Mounts: %v", mounts)
+		log.Info("Mounts:", mounts)
+	} else {
+		mounts = nil
+	}
+
 	for _, vols := range man_doc.Search("volumes").Children() {
-		var mt_map MountConfig
-
-		mt_map.Type = "bind"
-		mt_map.Source = vols.Search("host").Data().(string)
-		mt_map.Target = vols.Search("container").Data().(string)
-		mt_map.Mode = ""
-		mt_map.RW = true
-		mt_map.Propogation = "rprivate"
-		mt_maps = append(mt_maps, mt_map)
-
 		vol_maps = append(vol_maps, map[string]struct{}{
-			vols.Search("container").Data().(string): {
-				// "Source":      vols.Search("container").Data().(string),
-				// "Destination": vols.Search("host").Data().(string),
-			},
+			vols.Search("container").Data().(string): {},
 		})
 	}
 
@@ -357,6 +350,6 @@ func ParseDocumentTag(doc_data interface{}, thisStartCommand *ContainerConfig) {
 			}
 		}
 		thisStartCommand.Volumes = vol_map
-		thisStartCommand.MountConfigs = mt_maps
+		thisStartCommand.MountConfigs = mounts
 	}
 }
