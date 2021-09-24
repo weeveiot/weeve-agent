@@ -18,7 +18,6 @@ The binary or the source code, (with `go run`) the agent can be started with the
 #### Terminal: Broker
 This recipe requires a local MQTT broker, for example, the Mosquitto broker with logs enabled to confirm subscription and publish; `mosquitto -v -p 8080`.
 
-
 #### Terminal: Publishing to weeve agent
 With the mosquitto client tools, we can publish to the weeve agent in interactive mode (enter to send a message).
 `mosquitto_pub -t nodes/localtest/local-test-node-1/deploy -p 8080 -l`
