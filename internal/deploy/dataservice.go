@@ -44,7 +44,7 @@ func DeployManifest(man model.Manifest) string {
 			log.Info(fmt.Sprintf("\tImage %v %v, does not exist on host", i, imgDetails.ImageName))
 			log.Info("\t\tPulling ", imgDetails.ImageName, imgDetails)
 			exists = docker.PullImage(imgDetails)
-			if exists == false {
+			if !exists {
 				failed = true
 				msg := "404 - Unable to pull image " + imgDetails.ImageName
 				log.Error(msg)
@@ -98,6 +98,12 @@ func DeployManifest(man model.Manifest) string {
 	filter := filters.NewArgs()
 
 	pruneReport, err := cli.NetworksPrune(ctx, filter)
+	if err != nil {
+		log.Error(err)
+		log.Error("Error trying to prune network")
+		panic(err)
+
+	}
 	log.Info("Pruned:", pruneReport)
 	log.Info("Create the network")
 	var networkCreateOptions types.NetworkCreate
@@ -204,6 +210,72 @@ func StartDataService(serviceId string, dataservice_name string) {
 					log.Info("\t", name, ": ", containerStatus, "--> running")
 				}
 			}
+		}
+	}
+}
+
+func UndeployDataService(serviceId string, dataservice_name string) {
+	log.Info("Undeploying ", dataservice_name)
+
+	serviceId = strings.ReplaceAll(serviceId, " ", "")
+	serviceId = strings.ReplaceAll(serviceId, "-", "")
+
+	// Set up Background Context and Client for Docker API calls
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Error(err)
+	}
+
+	//******** STEP 1 - Stop and Remove Containers *************//
+
+	// map { imageID: number_of_allocated_containers }, needed for removing images as not supported by Go-Docker SDK
+	imageContainers := make(map[string]int)
+
+	containers := docker.ReadAllContainers()
+	for _, container := range containers {
+
+		imageContainers[container.ImageID] = imageContainers[container.ImageID] + 1
+
+		for _, containerName := range container.Names {
+			// Container's names are in form: "/container_name"
+			if strings.HasPrefix(containerName[1:], serviceId) {
+				log.Info("\tStop And Remove Container - ", containerName)
+				// Stop and delete container
+				err := docker.StopAndRemoveContainer(containerName)
+				if err != nil {
+					log.Error(err)
+				}
+
+				imageContainers[container.ImageID] = imageContainers[container.ImageID] - 1
+			}
+		}
+	}
+
+	//******** STEP 2 - Remove Images WITHOUT Containers *************//
+	for imageID, containersCount := range imageContainers {
+		if containersCount == 0 {
+			log.Info("\tRemove Image - ", imageID)
+			_, err := cli.ImageRemove(ctx, imageID, types.ImageRemoveOptions{})
+			if err != nil {
+				log.Error(err)
+			}
+		}
+	}
+
+	//******** STEP 3 - Remove Network *************//
+	log.Info("\tRemove Network - ", dataservice_name)
+	networks, err := cli.NetworkList(ctx, types.NetworkListOptions{})
+	if err != nil {
+		log.Error(err)
+	}
+	for _, network := range networks {
+		if network.Name == dataservice_name {
+			err = cli.NetworkRemove(ctx, network.ID)
+			if err != nil {
+				log.Error(err)
+			}
+			break
 		}
 	}
 }
