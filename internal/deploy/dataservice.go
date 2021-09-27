@@ -16,7 +16,7 @@ import (
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util/jsonlines"
 )
 
-func DeployManifest(man model.Manifest) string {
+func DeployManifest(man model.Manifest, command string) string {
 
 	var err = model.ValidateManifest(man)
 	if err != nil {
@@ -31,7 +31,26 @@ func DeployManifest(man model.Manifest) string {
 
 	jsonlines.Delete(constants.ManifestFile, "id", man.Manifest.Search("id").Data().(string))
 
-	//******** STEP 1 - Pull all *************//
+	//******** STEP 1 - Deploy or Redeploy process *************//
+	if command == "deploy" {
+		// Check if data service already exist
+		for _, containerName := range man.ContainerNamesList() {
+			containerExists := docker.ContainerExists(containerName)
+			if containerExists {
+				log.Info("\tContainer for this data service is already exist - ", containerName)
+				return "Data service already exist"
+			}
+		}
+	} else if command == "redeploy" {
+		// Clean old data service resources
+		result := CleanDataService(man)
+		if result != "CLEANED" {
+			log.Info("\tError while cleaning old data service - ", result)
+			return result
+		}
+	}
+
+	//******** STEP 2 - Pull all images *************//
 	// Pull all images as required
 	log.Info("Iterating modules, pulling image into host if missing")
 
@@ -59,34 +78,6 @@ func DeployManifest(man model.Manifest) string {
 		return "FAILED"
 	}
 
-	//******** STEP 2 - Check containers, stop and remove *************//
-	log.Info("Checking containers, stopping and removing")
-
-	for _, containerName := range man.ContainerNamesList() {
-
-		containerExists := docker.ContainerExists(containerName)
-		log.Info("\tContainer exists:", containerExists)
-
-		// Stop + remove container if exists, start fresh
-		if containerExists {
-			log.Info("\tStopAndRemoveContainer - ", containerName)
-			// Stop and delete container
-			err := docker.StopAndRemoveContainer(containerName)
-			if err != nil {
-				failed = true
-				log.Error(err)
-				return "FAILED"
-			}
-			log.Info("\tContainer ", containerName, " removed")
-		}
-	}
-
-	if failed {
-		man.Manifest.Set("FAILED", "status")
-		jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
-		return "FAILED"
-	}
-
 	//******** STEP 3 - Create the network *************//
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -94,17 +85,6 @@ func DeployManifest(man model.Manifest) string {
 		log.Error(err)
 	}
 
-	log.Info("Pruning networks")
-	filter := filters.NewArgs()
-
-	pruneReport, err := cli.NetworksPrune(ctx, filter)
-	if err != nil {
-		log.Error(err)
-		log.Error("Error trying to prune network")
-		panic(err)
-
-	}
-	log.Info("Pruned:", pruneReport)
 	log.Info("Create the network")
 	var networkCreateOptions types.NetworkCreate
 	networkCreateOptions.CheckDuplicate = true
@@ -278,4 +258,58 @@ func UndeployDataService(serviceId string, dataservice_name string) {
 			break
 		}
 	}
+}
+
+func CleanDataService(man model.Manifest) string {
+
+	failed := false
+
+	//******** STEP 2 - Check containers, stop and remove *************//
+	log.Info("Checking containers, stopping and removing")
+
+	for _, containerName := range man.ContainerNamesList() {
+
+		containerExists := docker.ContainerExists(containerName)
+		log.Info("\tContainer exists:", containerExists)
+
+		// Stop + remove container if exists, start fresh
+		if containerExists {
+			log.Info("\tStopAndRemoveContainer - ", containerName)
+			// Stop and delete container
+			err := docker.StopAndRemoveContainer(containerName)
+			if err != nil {
+				failed = true
+				log.Error(err)
+				return "FAILED"
+			}
+			log.Info("\tContainer ", containerName, " removed")
+		}
+	}
+
+	if failed {
+		man.Manifest.Set("FAILED", "status")
+		jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
+		return "FAILED"
+	}
+
+	//******** Remove the network *************//
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Error(err)
+	}
+
+	log.Info("Pruning networks")
+	filter := filters.NewArgs()
+
+	pruneReport, err := cli.NetworksPrune(ctx, filter)
+	if err != nil {
+		log.Error(err)
+		log.Error("Error trying to prune network")
+		panic(err)
+
+	}
+	log.Info("Pruned:", pruneReport)
+
+	return "CLEANED"
 }

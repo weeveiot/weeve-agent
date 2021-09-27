@@ -58,7 +58,7 @@ func TestDeployManifest(t *testing.T) {
 	// Get list of containers in a dataservice
 	serviceContainerList := thisManifest.ContainerNamesList()
 
-	resp := deploy.DeployManifest(thisManifest)
+	resp := deploy.DeployManifest(thisManifest, "redeploy")
 
 	if resp != "SUCCESS" {
 		t.Errorf("DeployManifest returned %v status", resp)
@@ -303,7 +303,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	serviceName = thisManifest.Manifest.Search("compose").Search("network").Search("name").Data().(string)
 	log.Info(serviceName)
 
-	resp := deploy.DeployManifest(thisManifest)
+	resp := deploy.DeployManifest(thisManifest, "redeploy")
 
 	if resp != "SUCCESS" {
 		t.Errorf("DeployManifest returned %v status", resp)
@@ -332,7 +332,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	serviceName2 = thisManifest2.Manifest.Search("compose").Search("network").Search("name").Data().(string)
 	log.Info(serviceName2)
 
-	resp = deploy.DeployManifest(thisManifest2)
+	resp = deploy.DeployManifest(thisManifest2, "redeploy")
 
 	if resp != "SUCCESS" {
 		t.Errorf("DeployManifest returned %v status", resp)

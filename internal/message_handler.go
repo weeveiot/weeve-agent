@@ -30,7 +30,14 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 			var thisManifest = model.Manifest{}
 			thisManifest.Manifest = *jsonParsed
 			// TODO: Error handling?
-			deploy.DeployManifest(thisManifest)
+			deploy.DeployManifest(thisManifest, topic_rcvd)
+
+		} else if topic_rcvd == "redeploy" {
+
+			var thisManifest = model.Manifest{}
+			thisManifest.Manifest = *jsonParsed
+			// TODO: Error handling?
+			deploy.DeployManifest(thisManifest, topic_rcvd)
 
 		} else if topic_rcvd == "stopservice" {
 
