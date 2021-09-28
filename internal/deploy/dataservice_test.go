@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/docker/docker/api/types"
@@ -29,8 +30,9 @@ var serviceName = "PLACEHOLDER"
 var serviceID2 = "PLACEHOLDER"
 var serviceName2 = "PLACEHOLDER"
 
-const manifestPath = "testdata/dataservice/dataservice_manifest.json"
-const manifestPath2 = "testdata/dataservice/dataservice_manifest_2.json"
+const manifestPath = "testdata/manifest/test_manifest.json"
+const manifestPath2 = "testdata/manifest/test_manifest_copy.json"
+const manifestPathRedeploy = "testdata/manifest/test_manifest_redeploy.json"
 
 func TestDeployManifest(t *testing.T) {
 	log.Info("TESTING DEPLOYMENT...")
@@ -58,7 +60,7 @@ func TestDeployManifest(t *testing.T) {
 	// Get list of containers in a dataservice
 	serviceContainerList := thisManifest.ContainerNamesList()
 
-	resp := deploy.DeployManifest(thisManifest, "redeploy")
+	resp := deploy.DeployManifest(thisManifest, "deploy")
 
 	if resp != "SUCCESS" {
 		t.Errorf("DeployManifest returned %v status", resp)
@@ -303,7 +305,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	serviceName = thisManifest.Manifest.Search("compose").Search("network").Search("name").Data().(string)
 	log.Info(serviceName)
 
-	resp := deploy.DeployManifest(thisManifest, "redeploy")
+	resp := deploy.DeployManifest(thisManifest, "deploy")
 
 	if resp != "SUCCESS" {
 		t.Errorf("DeployManifest returned %v status", resp)
@@ -332,7 +334,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	serviceName2 = thisManifest2.Manifest.Search("compose").Search("network").Search("name").Data().(string)
 	log.Info(serviceName2)
 
-	resp = deploy.DeployManifest(thisManifest2, "redeploy")
+	resp = deploy.DeployManifest(thisManifest2, "deploy")
 
 	if resp != "SUCCESS" {
 		t.Errorf("DeployManifest returned %v status", resp)
@@ -401,6 +403,94 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	// clean up and remove second data service
 	deploy.UndeployDataService(serviceID2, serviceName2)
 
+}
+
+func TestRedeployDataService(t *testing.T) {
+	log.Info("TESTING REDEPLOYMENT...")
+
+	// ***************** LOAD ORIGINAL MANIFEST AND DEPLOY DATA SERVICE ******************** //
+	log.Info("Loading original manifest...")
+	json := LoadJSONBytes(manifestPath)
+
+	// Parse to gabs Container type
+	jsonParsed, err := gabs.ParseJSON(json)
+	if err != nil {
+		log.Info("Error on parsing message: ", err)
+	}
+
+	var thisManifest = model.Manifest{}
+	thisManifest.Manifest = *jsonParsed
+
+	originalServiceName := thisManifest.Manifest.Search("compose").Search("network").Search("name").Data().(string)
+
+	resp := deploy.DeployManifest(thisManifest, "deploy")
+	if resp != "SUCCESS" {
+		t.Errorf("DeployManifest returned %v status", resp)
+	}
+
+	// ***************** SAVE ORIGINAL DATA SERVICE TIMESTAMP AND ID ******************** //
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Error(err)
+	}
+
+	networks, err := cli.NetworkList(ctx, types.NetworkListOptions{})
+	if err != nil {
+		log.Error(err)
+	}
+
+	originalServiceTimestamp := time.Now()
+	originalServiceMachineID := "placeholder"
+	for _, network := range networks {
+		if network.Name == originalServiceName {
+			originalServiceTimestamp = network.Created
+			originalServiceMachineID = network.ID
+		}
+	}
+
+	// ***************** LOAD ORIGINAL MANIFEST AND DEPLOY DATA SERVICE ******************** //
+	log.Info("Loading redeployment manifest...")
+	json = LoadJSONBytes(manifestPathRedeploy)
+
+	// Parse to gabs Container type
+	jsonParsed, err = gabs.ParseJSON(json)
+	if err != nil {
+		log.Info("Error on parsing message: ", err)
+	}
+
+	var thisManifestRedeploy = model.Manifest{}
+	thisManifestRedeploy.Manifest = *jsonParsed
+
+	redeployedServiceName := thisManifestRedeploy.Manifest.Search("compose").Search("network").Search("name").Data().(string)
+
+	resp = deploy.DeployManifest(thisManifestRedeploy, "redeploy")
+	if resp != "SUCCESS" {
+		t.Errorf("DeployManifest returned %v status", resp)
+	}
+
+	// ***************** CHECK REDEPLOYMENT's SUCCESS ******************** //
+	// compare new and old networks
+	networks, err = cli.NetworkList(ctx, types.NetworkListOptions{})
+	if err != nil {
+		log.Info(err)
+	}
+
+	for _, network := range networks {
+		if network.Name == redeployedServiceName {
+			if redeployedServiceName != originalServiceName {
+				t.Errorf("Wrong networks names. Old network: %v. New network: %v", originalServiceName, redeployedServiceName)
+			} else if originalServiceMachineID == network.ID || originalServiceTimestamp == network.Created {
+				t.Errorf("New network was not created.")
+			}
+		}
+	}
+
+	// ***************** CLEANING AFTER TESTING ******************** //
+	log.Info("Cleaning after testing...")
+	redeployedServiceID := strings.ReplaceAll(thisManifestRedeploy.Manifest.Search("id").Data().(string), " ", "")
+	redeployedServiceID = strings.ReplaceAll(redeployedServiceID, "-", "")
+	deploy.UndeployDataService(redeployedServiceID, redeployedServiceName)
 }
 
 // LoadJsonBytes reads file containts into byte[]
