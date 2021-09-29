@@ -103,7 +103,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
 	log.Info("ON connect >> connected")
 	if token := c.Subscribe(opt.SubClientId+"/"+opt.NodeId+"/+", 0, messagePubHandler); token.Wait() && token.Error() != nil {
-		log.Error("Error on subscribe connection: %v", token.Error())
+		log.Error("Error on subscribe connection: ", token.Error())
 	}
 }
 
@@ -246,7 +246,7 @@ func main() {
 				log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
 
 				if token := publisher.Connect(); token.Wait() && token.Error() != nil {
-					log.Error("failed to create publisher connection: %v", token.Error())
+					log.Error("failed to create publisher connection: ", token.Error())
 				}
 			}
 
