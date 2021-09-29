@@ -9,9 +9,7 @@ import (
 
 func TestLoad(t *testing.T) {
 	fmt.Println("Load the sample manifest")
-	var sampleManifestBytesMVP []byte
-
-	sampleManifestBytesMVP = LoadJsonBytes("manifest/mvp-manifest.json")
+	var sampleManifestBytesMVP []byte = LoadJsonBytes("manifest/mvp-manifest.json")
 	// fmt.Println(sampleManifestBytesMVP)
 	manifest, _ := ParseJSONManifest(sampleManifestBytesMVP)
 	// fmt.Print(res.ContainerNamesList())
