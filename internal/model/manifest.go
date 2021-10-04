@@ -86,7 +86,7 @@ func ParseJSONManifest(data []byte) (Manifest, error) {
 
 func (m Manifest) ImageNamesList() []string {
 	var imageNamesList []string
-	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
+	for _, mod := range m.Manifest.Search("services").Children() {
 		imageName := mod.Search("image").Search("name").Data().(string)
 		if mod.Search("image").Search("tag").Data() != nil {
 			imageName = imageName + ":" + mod.Search("image").Search("tag").Data().(string)
@@ -99,7 +99,7 @@ func (m Manifest) ImageNamesList() []string {
 
 func (m Manifest) ImageNamesWithRegList() []RegistryDetails {
 	var imageNamesList []RegistryDetails
-	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
+	for _, mod := range m.Manifest.Search("services").Children() {
 		imageName := mod.Search("image").Search("name").Data().(string)
 		if mod.Search("image").Search("tag").Data() != nil {
 			imageName = imageName + ":" + mod.Search("image").Search("tag").Data().(string)
@@ -149,7 +149,7 @@ func (m Manifest) SpewManifest() {
 
 func (m Manifest) ContainerNamesList() []string {
 	var containerNamesList []string
-	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
+	for _, mod := range m.Manifest.Search("services").Children() {
 		containerName := GetContainerName(m.Manifest.Search("id").Data().(string), mod.Search("name").Data().(string))
 		// containerName := GetContainerName(mod.Search("moduleId").Data().(string), mod.Search("name").Data().(string))
 		containerNamesList = append(containerNamesList, containerName)
@@ -158,7 +158,7 @@ func (m Manifest) ContainerNamesList() []string {
 }
 
 func (m Manifest) GetNetworkName() string {
-	return m.Manifest.Search("compose").Search("network").Search("name").Data().(string)
+	return m.Manifest.Search("network").Search("name").Data().(string)
 }
 
 // GetContainerName is a simple utility to return a standard container name
@@ -178,11 +178,11 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 	var cntr = 0
 	var prev_container_name = ""
 
-	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
+	for _, mod := range m.Manifest.Search("services").Children() {
 		var thisStartCommand ContainerConfig
 
-		thisStartCommand.PipelineName = m.Manifest.Search("compose").Search("network").Search("name").Data().(string)
-		thisStartCommand.NetworkName = m.Manifest.Search("compose").Search("network").Search("name").Data().(string)
+		thisStartCommand.PipelineName = m.Manifest.Search("network").Search("name").Data().(string)
+		thisStartCommand.NetworkName = m.Manifest.Search("network").Search("name").Data().(string)
 		thisStartCommand.NetworkMode = "" // This is the default setting
 
 		thisStartCommand.ContainerName = GetContainerName(m.Manifest.Search("id").Data().(string), mod.Search("name").Data().(string))

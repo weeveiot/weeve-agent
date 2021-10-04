@@ -57,7 +57,7 @@ func TestImageExists(t *testing.T) {
 		t.Error("Json parsing failed")
 	}
 
-	for _, srv := range m.Manifest.Search("compose").Search("services").Children() {
+	for _, srv := range m.Manifest.Search("services").Children() {
 		moduleID := srv.Search("moduelId").Data()
 		serviceName := srv.Search("name").Data()
 		imageName := srv.Search("image").Search("name").Data()

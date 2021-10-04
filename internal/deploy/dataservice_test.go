@@ -54,7 +54,7 @@ func TestDeployManifest(t *testing.T) {
 	serviceID = strings.ReplaceAll(serviceID, "-", "")
 
 	log.Info(serviceID)
-	serviceName = thisManifest.Manifest.Search("compose").Search("network").Search("name").Data().(string)
+	serviceName = thisManifest.Manifest.Search("network").Search("name").Data().(string)
 	log.Info(serviceName)
 
 	// Get list of containers in a dataservice
@@ -302,7 +302,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	serviceID = strings.ReplaceAll(serviceID, "-", "")
 
 	log.Info(serviceID)
-	serviceName = thisManifest.Manifest.Search("compose").Search("network").Search("name").Data().(string)
+	serviceName = thisManifest.Manifest.Search("network").Search("name").Data().(string)
 	log.Info(serviceName)
 
 	resp := deploy.DeployManifest(thisManifest, "deploy")
@@ -331,7 +331,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	serviceID2 = strings.ReplaceAll(serviceID2, "-", "")
 
 	log.Info(serviceID2)
-	serviceName2 = thisManifest2.Manifest.Search("compose").Search("network").Search("name").Data().(string)
+	serviceName2 = thisManifest2.Manifest.Search("network").Search("name").Data().(string)
 	log.Info(serviceName2)
 
 	resp = deploy.DeployManifest(thisManifest2, "deploy")
@@ -373,7 +373,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	}
 
 	// ***** CHECK IF SECOND IDENTICAL DATA SERVICE STILL EXISTS ********* //
-	expectedNumberContainers := len(thisManifest2.Manifest.Search("compose").S("services").Children())
+	expectedNumberContainers := len(thisManifest2.Manifest.S("services").Children())
 	containersCount := 0
 	for _, container := range docker.ReadAllContainers() {
 		for _, name := range container.Names {
@@ -421,7 +421,7 @@ func TestRedeployDataService(t *testing.T) {
 	var thisManifest = model.Manifest{}
 	thisManifest.Manifest = *jsonParsed
 
-	originalServiceName := thisManifest.Manifest.Search("compose").Search("network").Search("name").Data().(string)
+	originalServiceName := thisManifest.Manifest.Search("network").Search("name").Data().(string)
 
 	resp := deploy.DeployManifest(thisManifest, "deploy")
 	if resp != "SUCCESS" {
@@ -462,7 +462,7 @@ func TestRedeployDataService(t *testing.T) {
 	var thisManifestRedeploy = model.Manifest{}
 	thisManifestRedeploy.Manifest = *jsonParsed
 
-	redeployedServiceName := thisManifestRedeploy.Manifest.Search("compose").Search("network").Search("name").Data().(string)
+	redeployedServiceName := thisManifestRedeploy.Manifest.Search("network").Search("name").Data().(string)
 
 	resp = deploy.DeployManifest(thisManifestRedeploy, "redeploy")
 	if resp != "SUCCESS" {
