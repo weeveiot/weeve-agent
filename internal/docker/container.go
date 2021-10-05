@@ -99,6 +99,23 @@ func ReadAllContainers() []types.Container {
 	return containers
 }
 
+func ReadLatestContainer() []types.Container {
+	log.Debug("Docker_container -> ReadLatestContainer")
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+	options := types.ContainerListOptions{Latest: true, Limit: 1}
+	containers, err := cli.ContainerList(context.Background(), options)
+	if err != nil {
+		log.Error(err)
+	}
+	log.Debug("Docker_container -> ReadLatestContainer response", containers)
+
+	return containers
+}
+
 func GetContainerLog(container string) string {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {

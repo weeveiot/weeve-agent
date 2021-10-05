@@ -13,7 +13,7 @@ func TestLoad(t *testing.T) {
 	// fmt.Println(sampleManifestBytesMVP)
 	manifest, _ := ParseJSONManifest(sampleManifestBytesMVP)
 	// fmt.Print(res.ContainerNamesList())
-	ContainerConfigs := manifest.GetContainerStart()
+	ContainerConfigs := manifest.GetContainerStart("")
 	// fmt.Print(ContainerConfig.MountConfigs)
 	fmt.Println("Container details:")
 	for i, ContainerConf := range ContainerConfigs {

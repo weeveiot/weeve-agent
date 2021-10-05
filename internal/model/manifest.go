@@ -150,22 +150,20 @@ func (m Manifest) SpewManifest() {
 func (m Manifest) ContainerNamesList() []string {
 	var containerNamesList []string
 	for _, mod := range m.Manifest.Search("services").Children() {
-		containerName := GetContainerName(m.Manifest.Search("id").Data().(string), mod.Search("name").Data().(string))
+		containerName := GetContainerName(m.Manifest.Search("id").Data().(string), mod.Search("name").Data().(string), "")
 		// containerName := GetContainerName(mod.Search("moduleId").Data().(string), mod.Search("name").Data().(string))
 		containerNamesList = append(containerNamesList, containerName)
 	}
 	return containerNamesList
 }
 
-func (m Manifest) GetNetworkName() string {
-	return m.Manifest.Search("network").Search("name").Data().(string)
-}
-
 // GetContainerName is a simple utility to return a standard container name
 // This function appends the pipelineID and containerName with _
-func GetContainerName(pipelineID string, containerName string) string {
-	var cont_name = strings.ReplaceAll(pipelineID+containerName, " ", "")
-	return strings.ReplaceAll(cont_name, "-", "")
+func GetContainerName(newtworkName string, imageName string, tag string) string {
+	containerName := newtworkName + "." + imageName + "." + tag
+	containerName = strings.ReplaceAll(containerName, "/", "_")
+	containerName = strings.ReplaceAll(containerName, ":", "_")
+	return strings.ReplaceAll(containerName, " ", "")
 }
 
 // Based on an existing Manifest object, build a new object
@@ -173,7 +171,7 @@ func GetContainerName(pipelineID string, containerName string) string {
 // The new object has all information required to execute 'docker run':
 // 		- Bridge Network information
 // 		- Arguments to pass into entrypoint
-func (m Manifest) GetContainerStart() []ContainerConfig {
+func (m Manifest) GetContainerStart(networkName string) []ContainerConfig {
 	var startCommands []ContainerConfig
 	var cntr = 0
 	var prev_container_name = ""
@@ -181,13 +179,13 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 	for _, mod := range m.Manifest.Search("services").Children() {
 		var thisStartCommand ContainerConfig
 
-		thisStartCommand.PipelineName = m.Manifest.Search("network").Search("name").Data().(string)
-		thisStartCommand.NetworkName = m.Manifest.Search("network").Search("name").Data().(string)
+		thisStartCommand.PipelineName = networkName
+		thisStartCommand.NetworkName = networkName
 		thisStartCommand.NetworkMode = "" // This is the default setting
-
-		thisStartCommand.ContainerName = GetContainerName(m.Manifest.Search("id").Data().(string), mod.Search("name").Data().(string))
 		thisStartCommand.ImageName = mod.Search("image").Search("name").Data().(string)
 		thisStartCommand.ImageTag = mod.Search("image").Search("tag").Data().(string)
+
+		thisStartCommand.ContainerName = GetContainerName(networkName, thisStartCommand.ImageName, thisStartCommand.ImageTag)
 
 		var doc_data = mod.Search("document").Data()
 		if doc_data != nil {

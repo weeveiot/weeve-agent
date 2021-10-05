@@ -3,6 +3,7 @@ package deploy
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/docker/docker/api/types/filters"
@@ -38,7 +39,7 @@ func DeployManifest(man model.Manifest, command string) string {
 			containerExists := docker.ContainerExists(containerName)
 			if containerExists {
 				log.Info("\tContainer for this data service is already exist - ", containerName)
-				return "Data service already exist"
+				//return "Data service already exist"
 			}
 		}
 	} else if command == "redeploy" {
@@ -90,7 +91,7 @@ func DeployManifest(man model.Manifest, command string) string {
 	networkCreateOptions.CheckDuplicate = true
 	networkCreateOptions.Attachable = true
 
-	networkName := man.GetNetworkName()
+	networkName := GetNetworkName(man)
 	resp, err := cli.NetworkCreate(ctx, networkName, networkCreateOptions)
 	if err != nil {
 		log.Error(err)
@@ -105,7 +106,7 @@ func DeployManifest(man model.Manifest, command string) string {
 
 	//******** STEP 4 - Create, Start, attach all containers *************//
 	log.Info("Start all containers")
-	var contianers_cmd = man.GetContainerStart()
+	var contianers_cmd = man.GetContainerStart(networkName)
 
 	if contianers_cmd == nil || len(contianers_cmd) <= 0 {
 		log.Error("No valid contianers in Manifest")
@@ -312,4 +313,41 @@ func CleanDataService(man model.Manifest) string {
 	log.Info("Pruned:", pruneReport)
 
 	return "CLEANED"
+}
+
+func GetNetworkName(m model.Manifest) string {
+	name := m.Manifest.Search("name").Data().(string)
+	networkName := ""
+
+	length := 11
+	if len(name) <= 0 {
+		return ""
+	} else if len(name) > length {
+		name = name[:length]
+	}
+
+	containers := docker.ReadLatestContainer()
+	if len(containers) > 0 {
+		netLastCount := "000"
+		// Retreive last created container count
+		for _, conName := range containers[0].Names {
+			netLastCount = conName[len(conName)-3:]
+		}
+
+		count, err := strconv.Atoi(netLastCount)
+		if err != nil || count == 0 {
+			// This is first container
+			networkName = fmt.Sprint(name, "_001")
+		} else if count < 9 {
+			networkName = fmt.Sprint(name, "_00", count+1)
+		} else if count < 99 {
+			networkName = fmt.Sprint(name, "_0", count+1)
+		} else {
+			networkName = fmt.Sprint(name, "_", count+1)
+		}
+	} else {
+		networkName = fmt.Sprint(name, "_001")
+	}
+
+	return networkName
 }

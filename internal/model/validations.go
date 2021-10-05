@@ -11,14 +11,17 @@ import (
 func ValidateManifest(m Manifest) error {
 	var errorList []string
 
-	net := m.Manifest.Search("network").Children()
-	if net == nil {
-		errorList = append(errorList, "Please provide network details")
-	} else {
-		netName := m.Manifest.Search("network").Search("name").Data()
-		if netName == nil {
-			errorList = append(errorList, "Please provide network name")
-		}
+	id := m.Manifest.Search("id").Data()
+	if id == nil {
+		errorList = append(errorList, "Please provide data service id")
+	}
+	version := m.Manifest.Search("version").Data()
+	if version == nil {
+		errorList = append(errorList, "Please provide data service version")
+	}
+	name := m.Manifest.Search("name").Data()
+	if name == nil {
+		errorList = append(errorList, "Please provide data service name")
 	}
 	services := m.Manifest.Search("services").Children()
 	// Check if manifest contains services
