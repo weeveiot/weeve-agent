@@ -3,7 +3,6 @@ package deploy
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/docker/docker/api/types/filters"
@@ -33,21 +32,21 @@ func DeployManifest(man model.Manifest, command string) string {
 	jsonlines.Delete(constants.ManifestFile, "id", man.Manifest.Search("id").Data().(string))
 
 	//******** STEP 1 - Deploy or Redeploy process *************//
+	manifestID := man.Manifest.Search("id").Data().(string)
+	version := man.Manifest.Search("version").Data().(string)
 	if command == "deploy" {
 		// Check if data service already exist
-		for _, containerName := range man.ContainerNamesList() {
-			containerExists := docker.ContainerExists(containerName)
-			if containerExists {
-				log.Info("\tContainer for this data service is already exist - ", containerName)
-				//return "Data service already exist"
-			}
+		containerExists := DataServiceExist(manifestID, version)
+		if containerExists {
+			log.Info("\tData service %v already exist", man.Manifest.Search("name").Data().(string))
+			return "Data service already exist"
 		}
 	} else if command == "redeploy" {
 		// Clean old data service resources
-		result := CleanDataService(man)
-		if result != "CLEANED" {
+		result := UndeployDataService(manifestID, version)
+		if !result {
 			log.Info("\tError while cleaning old data service - ", result)
-			return result
+			return "FAILED"
 		}
 	}
 
@@ -90,8 +89,9 @@ func DeployManifest(man model.Manifest, command string) string {
 	var networkCreateOptions types.NetworkCreate
 	networkCreateOptions.CheckDuplicate = true
 	networkCreateOptions.Attachable = true
+	networkCreateOptions.Labels = man.GetLabels()
 
-	networkName := GetNetworkName(man)
+	networkName := docker.GetNetworkName(man)
 	resp, err := cli.NetworkCreate(ctx, networkName, networkCreateOptions)
 	if err != nil {
 		log.Error(err)
@@ -123,7 +123,6 @@ func DeployManifest(man model.Manifest, command string) string {
 			failed = true
 			log.Info("Started")
 			return "FAILED"
-
 		}
 
 		// // Attach to network
@@ -143,69 +142,45 @@ func DeployManifest(man model.Manifest, command string) string {
 	man.Manifest.Set("SUCCESS", "status")
 	jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
 
-	log.Info("Started")
+	log.Info("Completed")
 
 	// TODO: Proper return/error handling
 	return "SUCCESS"
 }
 
-func StopDataService(serviceId string, dataservice_name string) {
-	serviceId = strings.ReplaceAll(serviceId, " ", "")
-	serviceId = strings.ReplaceAll(serviceId, "-", "")
-
-	log.Info("Stopping data service:", dataservice_name)
-	containers := docker.ReadAllContainers()
+func StopDataService(manifestID string, version string) {
+	log.Info("Stopping data service:", manifestID, version)
+	containers := docker.ReadDataServiceContainers(manifestID, version)
 	for _, container := range containers {
-		for _, name := range container.Names {
-			// Container's names are in form: "/container_name"
-			if strings.HasPrefix(name[1:], serviceId) {
-				// check if container is "running"
-				containerStatus := container.State
-
-				if containerStatus == "running" {
-					log.Info("\tStopping container:", name)
-					docker.StopContainer(container.ID)
-					log.Info("\t", name, ": ", containerStatus, " --> exited")
-				}
-			}
+		if container.State == "running" {
+			log.Info("\tStopping container:", strings.Join(container.Names[:], ","))
+			docker.StopContainer(container.ID)
+			log.Info("\t", strings.Join(container.Names[:], ","), ": ", container.Status, " --> exited")
 		}
 	}
 }
 
-func StartDataService(serviceId string, dataservice_name string) {
-	serviceId = strings.ReplaceAll(serviceId, " ", "")
-	serviceId = strings.ReplaceAll(serviceId, "-", "")
-
-	log.Info("Starting data service:", dataservice_name)
-	containers := docker.ReadAllContainers()
+func StartDataService(manifestID string, version string) {
+	log.Info("Starting data service:", manifestID, version)
+	containers := docker.ReadDataServiceContainers(manifestID, version)
 	for _, container := range containers {
-		for _, name := range container.Names {
-			// Container's names are in form: "/container_name"
-			if strings.HasPrefix(name[1:], serviceId) {
-				// check if container is "exited", "created" or "paused"
-				containerStatus := container.State
-
-				if containerStatus == "exited" || containerStatus == "created" || containerStatus == "paused" {
-					log.Info("\tStarting container:", name)
-					docker.StartContainer(container.ID)
-					log.Info("\t", name, ": ", containerStatus, "--> running")
-				}
-			}
+		if container.State == "exited" || container.State == "created" || container.State == "paused" {
+			log.Info("\tStarting container:", strings.Join(container.Names[:], ","))
+			docker.StartContainer(container.ID)
+			log.Info("\t", strings.Join(container.Names[:], ","), ": ", container.State, "--> running")
 		}
 	}
 }
 
-func UndeployDataService(serviceId string, dataservice_name string) {
-	log.Info("Undeploying ", dataservice_name)
-
-	serviceId = strings.ReplaceAll(serviceId, " ", "")
-	serviceId = strings.ReplaceAll(serviceId, "-", "")
+func UndeployDataService(manifestID string, version string) bool {
+	log.Info("Undeploying ", manifestID, version)
 
 	// Set up Background Context and Client for Docker API calls
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
+		return false
 	}
 
 	//******** STEP 1 - Stop and Remove Containers *************//
@@ -214,18 +189,19 @@ func UndeployDataService(serviceId string, dataservice_name string) {
 	imageContainers := make(map[string]int)
 
 	containers := docker.ReadAllContainers()
+	dsContainers := docker.ReadDataServiceContainers(manifestID, version)
 	for _, container := range containers {
 
 		imageContainers[container.ImageID] = imageContainers[container.ImageID] + 1
 
-		for _, containerName := range container.Names {
-			// Container's names are in form: "/container_name"
-			if strings.HasPrefix(containerName[1:], serviceId) {
-				log.Info("\tStop And Remove Container - ", containerName)
+		for _, dsContainer := range dsContainers {
+			if container.ID == dsContainer.ID {
+				log.Info("\tStop And Remove Container - ", dsContainer.ID)
 				// Stop and delete container
-				err := docker.StopAndRemoveContainer(containerName)
+				err := docker.StopAndRemoveContainer(dsContainer.ID)
 				if err != nil {
 					log.Error(err)
+					return false
 				}
 
 				imageContainers[container.ImageID] = imageContainers[container.ImageID] - 1
@@ -240,114 +216,46 @@ func UndeployDataService(serviceId string, dataservice_name string) {
 			_, err := cli.ImageRemove(ctx, imageID, types.ImageRemoveOptions{})
 			if err != nil {
 				log.Error(err)
+				return false
 			}
 		}
 	}
 
 	//******** STEP 3 - Remove Network *************//
-	log.Info("\tRemove Network - ", dataservice_name)
-	networks, err := cli.NetworkList(ctx, types.NetworkListOptions{})
-	if err != nil {
-		log.Error(err)
-	}
-	for _, network := range networks {
-		if network.Name == dataservice_name {
-			err = cli.NetworkRemove(ctx, network.ID)
-			if err != nil {
-				log.Error(err)
-			}
-			break
-		}
-	}
-}
-
-func CleanDataService(man model.Manifest) string {
-
-	failed := false
-
-	//******** STEP 2 - Check containers, stop and remove *************//
-	log.Info("Checking containers, stopping and removing")
-
-	for _, containerName := range man.ContainerNamesList() {
-
-		containerExists := docker.ContainerExists(containerName)
-		log.Info("\tContainer exists:", containerExists)
-
-		// Stop + remove container if exists, start fresh
-		if containerExists {
-			log.Info("\tStopAndRemoveContainer - ", containerName)
-			// Stop and delete container
-			err := docker.StopAndRemoveContainer(containerName)
-			if err != nil {
-				failed = true
-				log.Error(err)
-				return "FAILED"
-			}
-			log.Info("\tContainer ", containerName, " removed")
-		}
-	}
-
-	if failed {
-		man.Manifest.Set("FAILED", "status")
-		jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
-		return "FAILED"
-	}
-
-	//******** Remove the network *************//
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(err)
-	}
-
 	log.Info("Pruning networks")
 	filter := filters.NewArgs()
+	filter.Add("label", "manifestID="+manifestID)
+	filter.Add("label", "version="+version)
 
 	pruneReport, err := cli.NetworksPrune(ctx, filter)
 	if err != nil {
 		log.Error(err)
-		log.Error("Error trying to prune network")
-		panic(err)
-
+		return false
 	}
-	log.Info("Pruned:", pruneReport)
+	log.Info("Pruned networks:", pruneReport)
 
-	return "CLEANED"
+	return true
 }
 
-func GetNetworkName(m model.Manifest) string {
-	name := m.Manifest.Search("name").Data().(string)
-	networkName := ""
-
-	length := 11
-	if len(name) <= 0 {
-		return ""
-	} else if len(name) > length {
-		name = name[:length]
+// DataServiceExist returns status of data service existance as true or false
+func DataServiceExist(manifestID string, version string) bool {
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Error(err)
 	}
 
-	containers := docker.ReadLatestContainer()
-	if len(containers) > 0 {
-		netLastCount := "000"
-		// Retreive last created container count
-		for _, conName := range containers[0].Names {
-			netLastCount = conName[len(conName)-3:]
-		}
-
-		count, err := strconv.Atoi(netLastCount)
-		if err != nil || count == 0 {
-			// This is first container
-			networkName = fmt.Sprint(name, "_001")
-		} else if count < 9 {
-			networkName = fmt.Sprint(name, "_00", count+1)
-		} else if count < 99 {
-			networkName = fmt.Sprint(name, "_0", count+1)
-		} else {
-			networkName = fmt.Sprint(name, "_", count+1)
-		}
-	} else {
-		networkName = fmt.Sprint(name, "_001")
+	filter := filters.NewArgs()
+	filter.Add("label", "manifestID="+manifestID)
+	filter.Add("label", "version="+version)
+	options := types.NetworkListOptions{Filters: filter}
+	networks, err := dockerClient.NetworkList(context.Background(), options)
+	if err != nil {
+		log.Error(err)
 	}
 
-	return networkName
+	if len(networks) > 0 {
+		return true
+	}
+
+	return false
 }

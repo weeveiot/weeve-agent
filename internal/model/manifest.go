@@ -18,14 +18,13 @@ import (
 type Manifest struct {
 	data        []byte
 	Manifest    gabs.Container
-	Name        string `json:"name"`
-	NetworkName string `json:"name"`
+	Name        string
+	NetworkName string
 	NumModules  int
 }
 
 // This struct holds information for starting a container
 type ContainerConfig struct {
-	PipelineName   string
 	ContainerName  string
 	ImageName      string
 	ImageTag       string
@@ -39,6 +38,7 @@ type ContainerConfig struct {
 	NetworkConfig  network.NetworkingConfig
 	Volumes        map[string]struct{}
 	MountConfigs   []mount.Mount
+	Labels         map[string]string
 }
 
 type OptionKeyVal struct {
@@ -149,8 +149,8 @@ func (m Manifest) SpewManifest() {
 
 func (m Manifest) ContainerNamesList() []string {
 	var containerNamesList []string
-	for _, mod := range m.Manifest.Search("services").Children() {
-		containerName := GetContainerName(m.Manifest.Search("id").Data().(string), mod.Search("name").Data().(string), "")
+	for index, mod := range m.Manifest.Search("services").Children() {
+		containerName := GetContainerName(m.Manifest.Search("id").Data().(string), mod.Search("name").Data().(string), "", index)
 		// containerName := GetContainerName(mod.Search("moduleId").Data().(string), mod.Search("name").Data().(string))
 		containerNamesList = append(containerNamesList, containerName)
 	}
@@ -159,10 +159,12 @@ func (m Manifest) ContainerNamesList() []string {
 
 // GetContainerName is a simple utility to return a standard container name
 // This function appends the pipelineID and containerName with _
-func GetContainerName(newtworkName string, imageName string, tag string) string {
-	containerName := newtworkName + "." + imageName + "." + tag
+func GetContainerName(newtworkName string, imageName string, tag string, index int) string {
+	containerName := fmt.Sprint(newtworkName, ".", imageName, "_", tag, ".", index)
+
 	containerName = strings.ReplaceAll(containerName, "/", "_")
 	containerName = strings.ReplaceAll(containerName, ":", "_")
+
 	return strings.ReplaceAll(containerName, " ", "")
 }
 
@@ -176,16 +178,15 @@ func (m Manifest) GetContainerStart(networkName string) []ContainerConfig {
 	var cntr = 0
 	var prev_container_name = ""
 
-	for _, mod := range m.Manifest.Search("services").Children() {
+	for index, mod := range m.Manifest.Search("services").Children() {
 		var thisStartCommand ContainerConfig
 
-		thisStartCommand.PipelineName = networkName
 		thisStartCommand.NetworkName = networkName
 		thisStartCommand.NetworkMode = "" // This is the default setting
 		thisStartCommand.ImageName = mod.Search("image").Search("name").Data().(string)
 		thisStartCommand.ImageTag = mod.Search("image").Search("tag").Data().(string)
-
-		thisStartCommand.ContainerName = GetContainerName(networkName, thisStartCommand.ImageName, thisStartCommand.ImageTag)
+		thisStartCommand.ContainerName = GetContainerName(networkName, thisStartCommand.ImageName, thisStartCommand.ImageTag, index)
+		thisStartCommand.Labels = m.GetLabels()
 
 		var doc_data = mod.Search("document").Data()
 		if doc_data != nil {
@@ -293,7 +294,7 @@ func ParseArguments(options []*gabs.Container, cmdArgs bool) []string {
 		}
 
 		if key != "" && val != "" {
-			if cmdArgs == true {
+			if cmdArgs {
 				args = append(args, fmt.Sprintf("--%v", key))
 				args = append(args, fmt.Sprintf("%v", val))
 			} else {
@@ -350,4 +351,13 @@ func ParseDocumentTag(doc_data interface{}, thisStartCommand *ContainerConfig) {
 		thisStartCommand.Volumes = vol_map
 		thisStartCommand.MountConfigs = mounts
 	}
+}
+
+func (man Manifest) GetLabels() map[string]string {
+	labels := make(map[string]string)
+	labels["manifestID"] = man.Manifest.Search("id").Data().(string)
+	labels["version"] = man.Manifest.Search("version").Data().(string)
+	labels["name"] = man.Manifest.Search("name").Data().(string)
+
+	return labels
 }
