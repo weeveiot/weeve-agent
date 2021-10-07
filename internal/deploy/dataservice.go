@@ -38,7 +38,7 @@ func DeployManifest(man model.Manifest, command string) string {
 		// Check if data service already exist
 		containerExists := DataServiceExist(manifestID, version)
 		if containerExists {
-			log.Info("\tData service %v already exist", man.Manifest.Search("name").Data().(string))
+			log.Info(fmt.Sprintf("\tData service %v already exist", man.Manifest.Search("name").Data().(string)))
 			return "Data service already exist"
 		}
 	} else if command == "redeploy" {

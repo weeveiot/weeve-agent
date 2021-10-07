@@ -147,11 +147,10 @@ func (m Manifest) SpewManifest() {
 	// spew.Printf("%v", m)
 }
 
-func (m Manifest) ContainerNamesList() []string {
+func (m Manifest) ContainerNamesList(networkName string) []string {
 	var containerNamesList []string
 	for index, mod := range m.Manifest.Search("services").Children() {
-		containerName := GetContainerName(m.Manifest.Search("id").Data().(string), mod.Search("name").Data().(string), "", index)
-		// containerName := GetContainerName(mod.Search("moduleId").Data().(string), mod.Search("name").Data().(string))
+		containerName := "/" + GetContainerName(networkName, mod.Search("image").Search("name").Data().(string), mod.Search("image").Search("tag").Data().(string), index)
 		containerNamesList = append(containerNamesList, containerName)
 	}
 	return containerNamesList

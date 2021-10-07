@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/network"
@@ -67,7 +68,7 @@ func GetNetworkName(m model.Manifest) string {
 		networkName = fmt.Sprint(name, "_001")
 	}
 
-	return networkName
+	return strings.ReplaceAll(networkName, " ", "")
 }
 
 func AttachContainerNetwork(containerID string, networkName string) error {
