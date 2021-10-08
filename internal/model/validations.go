@@ -41,7 +41,20 @@ func ValidateManifest(m Manifest) error {
 				if imageName == nil {
 					errorList = append(errorList, "Please provide image name for all services")
 				}
+				imageTag := srv.Search("image").Search("tag").Data()
+				if imageTag == nil {
+					errorList = append(errorList, "Please provide image tags for all services")
+				}
 			}
+		}
+	}
+	network := m.Manifest.Search("network").Data()
+	if network == nil {
+		errorList = append(errorList, "Please provide data service network")
+	} else {
+		networkName := m.Manifest.Search("network").Search("name").Data()
+		if networkName == nil {
+			errorList = append(errorList, "Please provide data service network name")
 		}
 	}
 
