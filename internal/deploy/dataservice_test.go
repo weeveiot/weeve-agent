@@ -62,7 +62,7 @@ func TestDeployManifest(t *testing.T) {
 
 	resp := deploy.DeployManifest(thisManifest, "deploy")
 
-	if resp != "SUCCESS" {
+	if !resp {
 		t.Errorf("DeployManifest returned %v status", resp)
 	}
 
@@ -133,7 +133,10 @@ func TestStopDataServiceWrongDetails(t *testing.T) {
 	}
 
 	// run tested method
-	deploy.StopDataService(wrongServiceID, wrongServiceName)
+	resp := deploy.StopDataService(wrongServiceID, wrongServiceName)
+	if !resp {
+		t.Errorf("Failed to stop data service.")
+	}
 
 	// check container status after executing tested function
 	containers = docker.ReadAllContainers()
@@ -159,7 +162,10 @@ func TestStopDataService(t *testing.T) {
 	var wrongStatusContainerList []string
 
 	// run tested method
-	deploy.StopDataService(serviceID, serviceName)
+	resp := deploy.StopDataService(serviceID, serviceName)
+	if !resp {
+		t.Errorf("Failed to stop data service.")
+	}
 
 	// check container status
 	containers := docker.ReadAllContainers()
@@ -199,7 +205,10 @@ func TestStartDataServiceWrongDetails(t *testing.T) {
 	}
 
 	// run tested method
-	deploy.StartDataService(wrongServiceID, wrongServiceName)
+	resp := deploy.StartDataService(wrongServiceID, wrongServiceName)
+	if !resp {
+		t.Errorf("Failed to start data service.")
+	}
 
 	// check container status after executing tested function
 	containers = docker.ReadAllContainers()
@@ -225,7 +234,10 @@ func TestStartDataService(t *testing.T) {
 	var wrongStatusContainerList []string
 
 	// run tested method
-	deploy.StartDataService(serviceID, serviceName)
+	resp := deploy.StartDataService(serviceID, serviceName)
+	if !resp {
+		t.Errorf("Failed to start data service.")
+	}
 
 	// check container status
 	containers := docker.ReadAllContainers()
@@ -247,7 +259,10 @@ func TestUndeployDataService(t *testing.T) {
 	log.Info("TESTING UNDEPLOYMENT...")
 
 	// run tested method
-	deploy.UndeployDataService(serviceID, serviceName)
+	resp := deploy.UndeployDataService(serviceID, serviceName)
+	if !resp {
+		t.Errorf("Failed to undeploy data service.")
+	}
 
 	// check if containers are removed
 	containers := docker.ReadAllContainers()
@@ -307,7 +322,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 
 	resp := deploy.DeployManifest(thisManifest, "deploy")
 
-	if resp != "SUCCESS" {
+	if !resp {
 		t.Errorf("DeployManifest returned %v status", resp)
 	}
 
@@ -336,14 +351,17 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 
 	resp = deploy.DeployManifest(thisManifest2, "deploy")
 
-	if resp != "SUCCESS" {
+	if !resp {
 		t.Errorf("DeployManifest returned %v status", resp)
 	}
 
 	// ***** TEST UNDEPLOY FOR ORIGINAL DATA SERVICE ********* //
 
 	// run tested method
-	deploy.UndeployDataService(serviceID, serviceName)
+	resp = deploy.UndeployDataService(serviceID, serviceName)
+	if !resp {
+		t.Errorf("Failed to undeploy data service.")
+	}
 
 	// check if containers are removed
 	containers := docker.ReadAllContainers()
@@ -401,7 +419,10 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	}
 
 	// clean up and remove second data service
-	deploy.UndeployDataService(serviceID2, serviceName2)
+	resp = deploy.UndeployDataService(serviceID2, serviceName2)
+	if !resp {
+		log.Error("Failed to undeploy data service for cleaning after tests.")
+	}
 
 }
 
@@ -424,7 +445,7 @@ func TestRedeployDataService(t *testing.T) {
 	originalServiceName := thisManifest.Manifest.Search("network").Search("name").Data().(string)
 
 	resp := deploy.DeployManifest(thisManifest, "deploy")
-	if resp != "SUCCESS" {
+	if !resp {
 		t.Errorf("DeployManifest returned %v status", resp)
 	}
 
@@ -465,7 +486,7 @@ func TestRedeployDataService(t *testing.T) {
 	redeployedServiceName := thisManifestRedeploy.Manifest.Search("network").Search("name").Data().(string)
 
 	resp = deploy.DeployManifest(thisManifestRedeploy, "redeploy")
-	if resp != "SUCCESS" {
+	if !resp {
 		t.Errorf("DeployManifest returned %v status", resp)
 	}
 
@@ -490,7 +511,10 @@ func TestRedeployDataService(t *testing.T) {
 	log.Info("Cleaning after testing...")
 	redeployedServiceID := strings.ReplaceAll(thisManifestRedeploy.Manifest.Search("id").Data().(string), " ", "")
 	redeployedServiceID = strings.ReplaceAll(redeployedServiceID, "-", "")
-	deploy.UndeployDataService(redeployedServiceID, redeployedServiceName)
+	resp = deploy.UndeployDataService(redeployedServiceID, redeployedServiceName)
+	if !resp {
+		log.Error("Failed to undeploy data service for cleaning after testing.")
+	}
 }
 
 // LoadJsonBytes reads file containts into byte[]
