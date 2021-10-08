@@ -34,18 +34,19 @@ func DeployManifest(man model.Manifest, command string) string {
 	//******** STEP 1 - Deploy or Redeploy process *************//
 	manifestID := man.Manifest.Search("id").Data().(string)
 	version := man.Manifest.Search("version").Data().(string)
+	manifestName := man.Manifest.Search("name").Data().(string)
 	if command == "deploy" {
 		// Check if data service already exist
 		containerExists := DataServiceExist(manifestID, version)
 		if containerExists {
-			log.Info(fmt.Sprintf("\tData service %v already exist", man.Manifest.Search("name").Data().(string)))
+			log.Error(fmt.Sprintf("\tData service %v, %v already exist", manifestID, version))
 			return "Data service already exist"
 		}
 	} else if command == "redeploy" {
 		// Clean old data service resources
 		result := UndeployDataService(manifestID, version)
 		if !result {
-			log.Info("\tError while cleaning old data service - ", result)
+			log.Error("\tError while cleaning old data service - ", result)
 			return "FAILED"
 		}
 	}
@@ -91,7 +92,14 @@ func DeployManifest(man model.Manifest, command string) string {
 	networkCreateOptions.Attachable = true
 	networkCreateOptions.Labels = man.GetLabels()
 
-	networkName := docker.GetNetworkName(man)
+	networkName := docker.GetNetworkName(manifestName)
+	if networkName == "" {
+		log.Error("Failed to generate Network Name")
+		man.Manifest.Set("FAILED", "status")
+		jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
+		return "FAILED"
+	}
+
 	resp, err := cli.NetworkCreate(ctx, networkName, networkCreateOptions)
 	if err != nil {
 		log.Error(err)
@@ -110,7 +118,7 @@ func DeployManifest(man model.Manifest, command string) string {
 
 	if contianers_cmd == nil || len(contianers_cmd) <= 0 {
 		log.Error("No valid contianers in Manifest")
-		man.Manifest.Set("FAILED", "No valid contianers in Manifest")
+		man.Manifest.Set("FAILED", "status")
 		jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
 		return "FAILED"
 	}
@@ -124,14 +132,6 @@ func DeployManifest(man model.Manifest, command string) string {
 			log.Info("Started")
 			return "FAILED"
 		}
-
-		// // Attach to network
-		// var netConfig network.EndpointSettings
-		// err = cli.NetworkConnect(ctx, startCommand.NetworkName, containerCreateResponse.ID, &netConfig)
-		// if err != nil {
-		// 	panic(err)
-		// }
-		// log.Info("\tConnected to network", startCommand.NetworkName)
 	}
 
 	if failed {
@@ -174,6 +174,13 @@ func StartDataService(manifestID string, version string) {
 
 func UndeployDataService(manifestID string, version string) bool {
 	log.Info("Undeploying ", manifestID, version)
+
+	// Check if data service already exist
+	containerExists := DataServiceExist(manifestID, version)
+	if !containerExists {
+		log.Error(fmt.Sprintf("\tData service %v, %v does not exist", manifestID, version))
+		return false
+	}
 
 	// Set up Background Context and Client for Docker API calls
 	ctx := context.Background()

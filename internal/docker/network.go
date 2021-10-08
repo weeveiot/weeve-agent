@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"strings"
 
+	. "github.com/ahmetb/go-linq/v3"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 )
 
 func ReadAllNetworks() []types.NetworkResource {
@@ -29,44 +29,40 @@ func ReadAllNetworks() []types.NetworkResource {
 	return networks
 }
 
-func GetNetworkName(m model.Manifest) string {
-	name := m.Manifest.Search("name").Data().(string)
+func GetNetworkName(name string) string {
 	networkName := ""
 
-	// Manifest name
-	length := 11
+	// Initial values
+	manifestNamelength := 11
+	indexLength := 3
+	presidingDigits := "00"
+	maxNetworkIndex := 999
+
 	if len(name) <= 0 {
 		return ""
-	} else if len(name) > length {
-		name = name[:length]
+	} else if len(name) > manifestNamelength {
+		name = name[:manifestNamelength]
 	}
 
 	// Get last network count
 	networks := ReadAllNetworks()
 	if len(networks) > 0 {
-		count := 0
-		// Retreive last created container count
-		for _, network := range networks {
-			netLastCount := network.Name[len(network.Name)-3:]
-			netCount, _ := strconv.Atoi(netLastCount)
-			if netCount > count {
-				count = netCount
-			}
-		}
-
-		if count == 0 {
-			// This is first container
-			networkName = fmt.Sprint(name, "_001")
-		} else if count < 9 {
-			networkName = fmt.Sprint(name, "_00", count+1)
-		} else if count < 99 {
-			networkName = fmt.Sprint(name, "_0", count+1)
+		// Generate next network name
+		maxCount := GetLastCreatedNetworkCount(networks, indexLength)
+		if maxCount < maxNetworkIndex {
+			presidingDigits = fmt.Sprint(presidingDigits, maxCount+1)
 		} else {
-			networkName = fmt.Sprint(name, "_", count+1)
+			lowestAvailCount := GetLowestAvailableNetworkCount(networks, maxNetworkIndex, indexLength)
+			if lowestAvailCount == 0 {
+				log.Warning("Number of data services limit is exceeded")
+				return ""
+			}
+
+			presidingDigits = fmt.Sprint(presidingDigits, lowestAvailCount)
 		}
-	} else {
-		networkName = fmt.Sprint(name, "_001")
 	}
+
+	networkName = fmt.Sprint(name, "_", presidingDigits[len(presidingDigits)-indexLength:])
 
 	return strings.ReplaceAll(networkName, " ", "")
 }
@@ -87,4 +83,54 @@ func AttachContainerNetwork(containerID string, networkName string) error {
 	}
 	log.Debug("Connected ", containerID, "to network", networkName)
 	return nil
+}
+
+func GetLastCreatedNetworkCount(networks []types.NetworkResource, indexLength int) int {
+	maxCount := 0
+
+	var counts []int
+	From(networks).Select(func(c interface{}) interface{} {
+		nm := c.(types.NetworkResource).Name
+		nm = nm[len(nm)-indexLength:]
+		count, _ := strconv.Atoi(nm)
+		return count
+	}).ToSlice(&counts)
+
+	if len(counts) > 0 {
+		for _, e := range counts {
+			if e > maxCount {
+				maxCount = e
+			}
+		}
+	}
+
+	return maxCount
+}
+
+func GetLowestAvailableNetworkCount(networks []types.NetworkResource, maxNetworkIndex int, indexLength int) int {
+	minAvailCount := 0
+
+	var counts []int
+	From(networks).Select(func(c interface{}) interface{} {
+		nm := c.(types.NetworkResource).Name
+		nm = nm[len(nm)-indexLength:]
+		count, _ := strconv.Atoi(nm)
+		return count
+	}).ToSlice(&counts)
+
+	var availCount []int
+	for i := 1; i < maxNetworkIndex; i++ {
+		From(counts).Where(func(c interface{}) bool {
+			return c.(int) == i
+		}).Select(func(c interface{}) interface{} {
+			return c.(int)
+		}).ToSlice(&availCount)
+
+		if len(availCount) == 0 {
+			minAvailCount = i
+			break
+		}
+	}
+
+	return minAvailCount
 }

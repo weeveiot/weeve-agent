@@ -247,7 +247,7 @@ func StartCreateContainer(imageName string, startCommand model.ContainerConfig) 
 	hostConfig := &container.HostConfig{
 		// Binds:        vols_bind, // TODO: Remove once Volumes removed
 		PortBindings: nil,
-		NetworkMode:  "bridge",
+		NetworkMode:  container.NetworkMode(startCommand.NetworkDriver),
 		RestartPolicy: container.RestartPolicy{
 			Name:              "on-failure",
 			MaximumRetryCount: 100,
