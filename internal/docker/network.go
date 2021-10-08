@@ -23,6 +23,7 @@ func ReadAllNetworks() []types.NetworkResource {
 	networks, err := cli.NetworkList(context.Background(), types.NetworkListOptions{})
 	if err != nil {
 		log.Error(err)
+		return nil
 	}
 
 	return networks
@@ -76,13 +77,13 @@ func AttachContainerNetwork(containerID string, networkName string) error {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
-		panic(err)
+		return err
 	}
 
 	var netConfig network.EndpointSettings
 	err = cli.NetworkConnect(ctx, networkName, containerID, &netConfig)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	log.Debug("Connected ", containerID, "to network", networkName)
 	return nil

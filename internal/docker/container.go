@@ -25,12 +25,14 @@ func StartContainers() bool {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
+		return false
 	}
 
 	options := types.ContainerListOptions{All: true}
 	containers, err := cli.ContainerList(ctx, options)
 	if err != nil {
 		log.Error(err)
+		return false
 	}
 
 	for _, container := range containers {
@@ -41,6 +43,7 @@ func StartContainers() bool {
 
 			if err := cli.ContainerStart(ctx, container.ID, types.ContainerStartOptions{}); err != nil {
 				log.Error(err)
+				return false
 			}
 		}
 		fmt.Println("Success")
@@ -53,6 +56,7 @@ func StartContainer(containerId string) bool {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
+		return false
 	}
 
 	err = cli.ContainerStart(ctx, containerId, types.ContainerStartOptions{})
@@ -94,6 +98,7 @@ func ReadAllContainers() []types.Container {
 	containers, err := cli.ContainerList(context.Background(), options)
 	if err != nil {
 		log.Error(err)
+		return nil
 	}
 	log.Debug("Docker_container -> ReadAllContainers response", containers)
 
@@ -115,6 +120,7 @@ func ReadDataServiceContainers(manifestID string, version string) []types.Contai
 	containers, err := cli.ContainerList(context.Background(), options)
 	if err != nil {
 		log.Error(err)
+		return nil
 	}
 	log.Debug("Docker_container -> ReadAllContainers response", containers)
 
@@ -125,6 +131,7 @@ func GetContainerLog(container string) string {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error("Env Error ", err)
+		return ""
 	}
 
 	options := types.ContainerLogsOptions{
@@ -138,6 +145,7 @@ func GetContainerLog(container string) string {
 	logs, err := cli.ContainerLogs(context.Background(), container, options)
 	if err != nil {
 		log.Error("Log fetch Error ", err)
+		return ""
 	}
 	log.Debug("Logs ", logs)
 	buf := new(bytes.Buffer)
@@ -154,12 +162,14 @@ func StopContainers() bool {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
+		return false
 	}
 
 	options := types.ContainerListOptions{All: true}
 	containers, err := cli.ContainerList(ctx, options)
 	if err != nil {
 		log.Error(err)
+		return false
 	}
 
 	for _, container := range containers {
@@ -169,6 +179,7 @@ func StopContainers() bool {
 		if container.State == "running" {
 			if err := cli.ContainerStop(ctx, container.ID, nil); err != nil {
 				log.Error(err)
+				return false
 			}
 		}
 		fmt.Println("Success")
@@ -181,10 +192,12 @@ func StopContainer(containerId string) bool {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
+		return false
 	}
 
 	if err := cli.ContainerStop(ctx, containerId, nil); err != nil {
 		log.Error(err)
+		return false
 	}
 
 	return true
@@ -294,6 +307,7 @@ func StopAndRemoveContainer(containerID string) error {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
+		return err
 	}
 
 	if err := cli.ContainerStop(ctx, containerID, nil); err != nil {
@@ -318,11 +332,13 @@ func ContainerExists(containerName string) bool {
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
+		return false
 	}
 	options := types.ContainerListOptions{All: true}
 	containers, err := dockerClient.ContainerList(context.Background(), options)
 	if err != nil {
 		log.Error(err)
+		return false
 	}
 
 	for _, container := range containers {
@@ -491,11 +507,13 @@ func ContainerStatus(containerId string) string {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
+		return ""
 	}
 
 	containerJSON, err := cli.ContainerInspect(ctx, containerId)
 	if err != nil {
 		log.Error(err)
+		return ""
 	}
 
 	containerState := *(*containerJSON.ContainerJSONBase).State
