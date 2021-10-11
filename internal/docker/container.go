@@ -11,6 +11,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
@@ -90,6 +91,27 @@ func ReadAllContainers() []types.Container {
 		return nil
 	}
 	options := types.ContainerListOptions{All: true}
+	containers, err := cli.ContainerList(context.Background(), options)
+	if err != nil {
+		log.Error(err)
+	}
+	log.Debug("Docker_container -> ReadAllContainers response", containers)
+
+	return containers
+}
+
+func ReadDataServiceContainers(manifestID string, version string) []types.Container {
+	log.Debug("Docker_container -> ReadDataServiceContainers")
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+
+	filter := filters.NewArgs()
+	filter.Add("label", "manifestID="+manifestID)
+	filter.Add("label", "version="+version)
+	options := types.ContainerListOptions{All: true, Filters: filter}
 	containers, err := cli.ContainerList(context.Background(), options)
 	if err != nil {
 		log.Error(err)
@@ -197,6 +219,7 @@ func StartCreateContainer(imageName string, startCommand model.ContainerConfig) 
 		Env:          startCommand.EnvArgs,
 		Tty:          false,
 		ExposedPorts: nil,
+		Labels:       startCommand.Labels,
 		//Volumes:      startCommand.Volumes, // TODO: Remove this later and use only Mounts instead
 	}
 
@@ -224,7 +247,7 @@ func StartCreateContainer(imageName string, startCommand model.ContainerConfig) 
 	hostConfig := &container.HostConfig{
 		// Binds:        vols_bind, // TODO: Remove once Volumes removed
 		PortBindings: nil,
-		NetworkMode:  "bridge",
+		NetworkMode:  container.NetworkMode(startCommand.NetworkDriver),
 		RestartPolicy: container.RestartPolicy{
 			Name:              "on-failure",
 			MaximumRetryCount: 100,
@@ -266,15 +289,15 @@ func StartCreateContainer(imageName string, startCommand model.ContainerConfig) 
 }
 
 // StopAndRemoveContainer Stop and remove a container
-func StopAndRemoveContainer(containerName string) error {
+func StopAndRemoveContainer(containerID string) error {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
 	}
 
-	if err := cli.ContainerStop(ctx, containerName, nil); err != nil {
-		log.Printf("Unable to stop container %s: %s", containerName, err)
+	if err := cli.ContainerStop(ctx, containerID, nil); err != nil {
+		log.Printf("Unable to stop container %s: %s", containerID, err)
 	}
 
 	removeOptions := types.ContainerRemoveOptions{
@@ -282,7 +305,7 @@ func StopAndRemoveContainer(containerName string) error {
 		Force:         true,
 	}
 
-	if err := cli.ContainerRemove(ctx, containerName, removeOptions); err != nil {
+	if err := cli.ContainerRemove(ctx, containerID, removeOptions); err != nil {
 		log.Printf("Unable to remove container: %s", err)
 		return err
 	}

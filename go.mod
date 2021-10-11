@@ -7,6 +7,7 @@ go 1.15
 require (
 	github.com/Jeffail/gabs/v2 v2.6.0
 	github.com/Microsoft/go-winio v0.4.14 // indirect
+	github.com/ahmetb/go-linq/v3 v3.2.0
 	github.com/bitly/go-simplejson v0.5.0
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/containerd/containerd v1.4.1 // indirect

@@ -18,14 +18,13 @@ import (
 type Manifest struct {
 	data        []byte
 	Manifest    gabs.Container
-	Name        string `json:"name"`
-	NetworkName string `json:"name"`
+	Name        string
+	NetworkName string
 	NumModules  int
 }
 
 // This struct holds information for starting a container
 type ContainerConfig struct {
-	PipelineName   string
 	ContainerName  string
 	ImageName      string
 	ImageTag       string
@@ -33,12 +32,14 @@ type ContainerConfig struct {
 	EnvArgs        []string
 	Options        []OptionKeyVal
 	NetworkName    string
+	NetworkDriver  string
 	ExposedPorts   nat.PortSet // This must be set for the container create
 	PortBinding    nat.PortMap // This must be set for the containerStart
 	NetworkMode    container.NetworkMode
 	NetworkConfig  network.NetworkingConfig
 	Volumes        map[string]struct{}
 	MountConfigs   []mount.Mount
+	Labels         map[string]string
 }
 
 type OptionKeyVal struct {
@@ -86,7 +87,7 @@ func ParseJSONManifest(data []byte) (Manifest, error) {
 
 func (m Manifest) ImageNamesList() []string {
 	var imageNamesList []string
-	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
+	for _, mod := range m.Manifest.Search("services").Children() {
 		imageName := mod.Search("image").Search("name").Data().(string)
 		if mod.Search("image").Search("tag").Data() != nil {
 			imageName = imageName + ":" + mod.Search("image").Search("tag").Data().(string)
@@ -99,7 +100,7 @@ func (m Manifest) ImageNamesList() []string {
 
 func (m Manifest) ImageNamesWithRegList() []RegistryDetails {
 	var imageNamesList []RegistryDetails
-	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
+	for _, mod := range m.Manifest.Search("services").Children() {
 		imageName := mod.Search("image").Search("name").Data().(string)
 		if mod.Search("image").Search("tag").Data() != nil {
 			imageName = imageName + ":" + mod.Search("image").Search("tag").Data().(string)
@@ -147,25 +148,24 @@ func (m Manifest) SpewManifest() {
 	// spew.Printf("%v", m)
 }
 
-func (m Manifest) ContainerNamesList() []string {
+func (m Manifest) ContainerNamesList(networkName string) []string {
 	var containerNamesList []string
-	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
-		containerName := GetContainerName(m.Manifest.Search("id").Data().(string), mod.Search("name").Data().(string))
-		// containerName := GetContainerName(mod.Search("moduleId").Data().(string), mod.Search("name").Data().(string))
+	for index, mod := range m.Manifest.Search("services").Children() {
+		containerName := "/" + GetContainerName(networkName, mod.Search("image").Search("name").Data().(string), mod.Search("image").Search("tag").Data().(string), index)
 		containerNamesList = append(containerNamesList, containerName)
 	}
 	return containerNamesList
 }
 
-func (m Manifest) GetNetworkName() string {
-	return m.Manifest.Search("compose").Search("network").Search("name").Data().(string)
-}
-
 // GetContainerName is a simple utility to return a standard container name
 // This function appends the pipelineID and containerName with _
-func GetContainerName(pipelineID string, containerName string) string {
-	var cont_name = strings.ReplaceAll(pipelineID+containerName, " ", "")
-	return strings.ReplaceAll(cont_name, "-", "")
+func GetContainerName(networkName string, imageName string, tag string, index int) string {
+	containerName := fmt.Sprint(networkName, ".", imageName, "_", tag, ".", index)
+
+	containerName = strings.ReplaceAll(containerName, "/", "_")
+	containerName = strings.ReplaceAll(containerName, ":", "_")
+
+	return strings.ReplaceAll(containerName, " ", "")
 }
 
 // Based on an existing Manifest object, build a new object
@@ -173,21 +173,21 @@ func GetContainerName(pipelineID string, containerName string) string {
 // The new object has all information required to execute 'docker run':
 // 		- Bridge Network information
 // 		- Arguments to pass into entrypoint
-func (m Manifest) GetContainerStart() []ContainerConfig {
+func (m Manifest) GetContainerStart(networkName string) []ContainerConfig {
 	var startCommands []ContainerConfig
 	var cntr = 0
 	var prev_container_name = ""
 
-	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
+	for index, mod := range m.Manifest.Search("services").Children() {
 		var thisStartCommand ContainerConfig
 
-		thisStartCommand.PipelineName = m.Manifest.Search("compose").Search("network").Search("name").Data().(string)
-		thisStartCommand.NetworkName = m.Manifest.Search("compose").Search("network").Search("name").Data().(string)
+		thisStartCommand.NetworkName = networkName
 		thisStartCommand.NetworkMode = "" // This is the default setting
-
-		thisStartCommand.ContainerName = GetContainerName(m.Manifest.Search("id").Data().(string), mod.Search("name").Data().(string))
 		thisStartCommand.ImageName = mod.Search("image").Search("name").Data().(string)
 		thisStartCommand.ImageTag = mod.Search("image").Search("tag").Data().(string)
+		thisStartCommand.ContainerName = GetContainerName(networkName, thisStartCommand.ImageName, thisStartCommand.ImageTag, index)
+		thisStartCommand.Labels = m.GetLabels()
+		thisStartCommand.NetworkDriver = m.Manifest.Search("network").Search("driver").Data().(string)
 
 		var doc_data = mod.Search("document").Data()
 		if doc_data != nil {
@@ -295,7 +295,7 @@ func ParseArguments(options []*gabs.Container, cmdArgs bool) []string {
 		}
 
 		if key != "" && val != "" {
-			if cmdArgs == true {
+			if cmdArgs {
 				args = append(args, fmt.Sprintf("--%v", key))
 				args = append(args, fmt.Sprintf("%v", val))
 			} else {
@@ -352,4 +352,13 @@ func ParseDocumentTag(doc_data interface{}, thisStartCommand *ContainerConfig) {
 		thisStartCommand.Volumes = vol_map
 		thisStartCommand.MountConfigs = mounts
 	}
+}
+
+func (man Manifest) GetLabels() map[string]string {
+	labels := make(map[string]string)
+	labels["manifestID"] = man.Manifest.Search("id").Data().(string)
+	labels["version"] = man.Manifest.Search("version").Data().(string)
+	labels["name"] = man.Manifest.Search("name").Data().(string)
+
+	return labels
 }
