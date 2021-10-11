@@ -32,6 +32,7 @@ type ContainerConfig struct {
 	EnvArgs        []string
 	Options        []OptionKeyVal
 	NetworkName    string
+	NetworkDriver  string
 	ExposedPorts   nat.PortSet // This must be set for the container create
 	PortBinding    nat.PortMap // This must be set for the containerStart
 	NetworkMode    container.NetworkMode
@@ -147,11 +148,10 @@ func (m Manifest) SpewManifest() {
 	// spew.Printf("%v", m)
 }
 
-func (m Manifest) ContainerNamesList() []string {
+func (m Manifest) ContainerNamesList(networkName string) []string {
 	var containerNamesList []string
 	for index, mod := range m.Manifest.Search("services").Children() {
-		containerName := GetContainerName(m.Manifest.Search("id").Data().(string), mod.Search("name").Data().(string), "", index)
-		// containerName := GetContainerName(mod.Search("moduleId").Data().(string), mod.Search("name").Data().(string))
+		containerName := "/" + GetContainerName(networkName, mod.Search("image").Search("name").Data().(string), mod.Search("image").Search("tag").Data().(string), index)
 		containerNamesList = append(containerNamesList, containerName)
 	}
 	return containerNamesList
@@ -159,8 +159,8 @@ func (m Manifest) ContainerNamesList() []string {
 
 // GetContainerName is a simple utility to return a standard container name
 // This function appends the pipelineID and containerName with _
-func GetContainerName(newtworkName string, imageName string, tag string, index int) string {
-	containerName := fmt.Sprint(newtworkName, ".", imageName, "_", tag, ".", index)
+func GetContainerName(networkName string, imageName string, tag string, index int) string {
+	containerName := fmt.Sprint(networkName, ".", imageName, "_", tag, ".", index)
 
 	containerName = strings.ReplaceAll(containerName, "/", "_")
 	containerName = strings.ReplaceAll(containerName, ":", "_")
@@ -187,6 +187,7 @@ func (m Manifest) GetContainerStart(networkName string) []ContainerConfig {
 		thisStartCommand.ImageTag = mod.Search("image").Search("tag").Data().(string)
 		thisStartCommand.ContainerName = GetContainerName(networkName, thisStartCommand.ImageName, thisStartCommand.ImageTag, index)
 		thisStartCommand.Labels = m.GetLabels()
+		thisStartCommand.NetworkDriver = m.Manifest.Search("network").Search("driver").Data().(string)
 
 		var doc_data = mod.Search("document").Data()
 		if doc_data != nil {

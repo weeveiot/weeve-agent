@@ -121,9 +121,12 @@
       ]
     }
   ],
-  "network": { "driver": "bridge", "name": "tick-network" },
+  "id": "38e104fd-31dd-4dc7-9246-b408e7f14e01",
+  "version": "1.0.0",
   "description": "MVPDataServiceV2",
-  "document": "",
-  "name": "MVPDataServiceV2",
-  "modified": 1632981575399
-}
+	"document": "",
+	"name": "MVPDataServiceV2",
+	"modified": 1632981575399,
+  "created": 1632981575399,
+	"organizationId": ""
+  }

@@ -77,7 +77,7 @@ func TestDeployManifest(t *testing.T) {
 	if len(networks) > 0 {
 		// Check if containers exist
 		dsContainers := docker.ReadDataServiceContainers(manifestID, version)
-		containerName := thisManifest.ContainerNamesList()
+		containerName := thisManifest.ContainerNamesList(networks[0].Name)
 		for _, dsContainer := range dsContainers {
 			containersExist := false
 			for _, dsContainerName := range dsContainer.Names {
