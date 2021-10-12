@@ -22,7 +22,7 @@ func DeployManifest(man model.Manifest, command string) bool {
 	var err = model.ValidateManifest(man)
 	if err != nil {
 		log.Error(err)
-		jsonlines.Insert(constants.ManifestFile, "Invalid Manifest.")
+		LogStatus(man.Manifest.Search("id").Data().(string), strings.ToUpper(command)+"_FAILED", "Invalid Manifest")
 		return false
 	}
 
