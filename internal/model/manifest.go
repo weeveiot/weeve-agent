@@ -187,7 +187,7 @@ func (m Manifest) GetContainerStart(networkName string) []ContainerConfig {
 		thisStartCommand.ImageTag = mod.Search("image").Search("tag").Data().(string)
 		thisStartCommand.ContainerName = GetContainerName(networkName, thisStartCommand.ImageName, thisStartCommand.ImageTag, index)
 		thisStartCommand.Labels = m.GetLabels()
-		thisStartCommand.NetworkDriver = m.Manifest.Search("network").Search("driver").Data().(string)
+		thisStartCommand.NetworkDriver = m.Manifest.Search("networks").Search("driver").Data().(string)
 
 		var doc_data = mod.Search("document").Data()
 		if doc_data != nil {
