@@ -48,13 +48,13 @@ func ValidateManifest(m Manifest) error {
 			}
 		}
 	}
-	network := m.Manifest.Search("network").Data()
+	network := m.Manifest.Search("networks").Data()
 	if network == nil {
 		errorList = append(errorList, "Please provide data service network")
 	} else {
-		networkName := m.Manifest.Search("network").Search("name").Data()
+		networkName := m.Manifest.Search("networks").Search("driver").Data()
 		if networkName == nil {
-			errorList = append(errorList, "Please provide data service network name")
+			errorList = append(errorList, "Please provide data service network driver")
 		}
 	}
 
