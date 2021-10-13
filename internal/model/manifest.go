@@ -119,15 +119,6 @@ func (m Manifest) ImageNamesWithRegList() []RegistryDetails {
 	return imageNamesList
 }
 
-// func (m Manifest) CountNumModules() int {
-// 	// t.Logf("%d", i)
-// 	// t.Logf("COUNT")
-// 	fmt.Println("COUNT")
-
-// 	// return len(m.Manifest.Search("compose")
-// 	// return len(m.Manifest.Search("Modules").Children())
-// }
-
 func (m Manifest) PrintManifest() {
 	for _, mod := range m.Manifest.Search("Modules").Children() {
 		log.Debug(fmt.Sprintf("\t***** index: %v, name: %v", mod.Search("Index").Data(), mod.Search("Name").Data()))
@@ -260,16 +251,9 @@ func (m Manifest) GetContainerStart(networkName string) []ContainerConfig {
 				thisStartCommand.NetworkMode = container.NetworkMode(option.val)
 			}
 
-			// Define Network config (why isn't PORT in here...?:
-			// https://godoc.org/github.com/docker/docker/api/types/network#NetworkingConfig
 			networkConfig := &network.NetworkingConfig{
 				EndpointsConfig: map[string]*network.EndpointSettings{},
 			}
-
-			// gatewayConfig := &network.EndpointSettings{
-			// 	Gateway: "gatewayname",
-			// }
-			// networkConfig.EndpointsConfig["bridge"] = gatewayConfig
 
 			thisStartCommand.NetworkConfig = *networkConfig
 		}

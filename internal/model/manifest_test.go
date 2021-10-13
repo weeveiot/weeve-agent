@@ -17,15 +17,9 @@ var errMsg string
 func TestMain(m *testing.M) {
 
 	manifestBytesMVP = LoadJsonBytes("pipeline_unit/workingMVP.json")
-	// manifestBytesSimple = LoadJsonBytes("test_manifest1.json")
-	// manifestBytesNoModules = LoadJsonBytes("test_manifest_no_modules.json")
-	// manifestBytes3nodesBroker = LoadJsonBytes("test_manifest_3broker.json")
 	code := m.Run()
 
 	os.Exit(code)
-
-	// manifest := ParseJSONManifest(manifestBytes)
-	// fmt.Println(manifest
 }
 
 // Unit function to validate negative tests
@@ -131,15 +125,8 @@ func TestLoad(t *testing.T) {
 	for i, ContainerConf := range ContainerConfigs {
 		fmt.Println(i, ContainerConf)
 	}
-	// for i := 0; i < count; i++ {
 
-	// }
 	fmt.Print(ContainerConfigs[0].MountConfigs)
-	// fmt.Print(res)
-	// res.PrintManifest()
-	// code := t.Run()
-
-	// os.Exit(code)
 }
 
 // func TestManifestFailNoModules(t *testing.T) {

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 
-	// "io/ioutil"
 	"os"
 	"reflect"
 
@@ -74,12 +73,6 @@ func Encode(w io.Writer, ptrToSlice interface{}) error {
 }
 
 func Read(jsonFile string, pkField string, pkVal string, filter map[string]string, excludeKey bool) []map[string]interface{} {
-	// data, err := ioutil.ReadFile(jsonFile)
-	// if err != nil {
-	// 	fmt.Println("File reading error", err)
-
-	// }
-	// fmt.Println("Contents of file:", string(data))
 	var val []map[string]interface{}
 	file, err := os.Open(jsonFile)
 
@@ -105,9 +98,9 @@ func Read(jsonFile string, pkField string, pkVal string, filter map[string]strin
 		json.Unmarshal([]byte(each_ln), &lnVal)
 
 		if pkField != "" && pkVal != "" {
-			if lnVal[pkField] == pkVal && excludeKey == false {
+			if lnVal[pkField] == pkVal && !excludeKey {
 				val = append(val, lnVal)
-			} else if lnVal[pkField] != pkVal && excludeKey == true {
+			} else if lnVal[pkField] != pkVal && excludeKey {
 				val = append(val, lnVal)
 			}
 		} else {
@@ -119,7 +112,7 @@ func Read(jsonFile string, pkField string, pkVal string, filter map[string]strin
 						add = false
 					}
 				}
-				if add == true {
+				if add {
 					val = append(val, lnVal)
 				}
 			} else {

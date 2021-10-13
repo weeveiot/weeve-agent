@@ -65,17 +65,6 @@ func StartContainer(containerId string) bool {
 		return false
 	}
 
-	//TODO: Wait for containers
-	// statusCh, errCh := cli.ContainerWait(ctx, containerId, container.WaitConditionNotRunning)
-	// select {
-	// case err := <-errCh:
-	// 	if err != nil {
-	// log.Error(err)
-	// 		return false
-	// 	}
-	// case <-statusCh:
-	// }
-
 	out, err := cli.ContainerLogs(ctx, containerId, types.ContainerLogsOptions{ShowStdout: true})
 	if err != nil {
 		log.Error(err)
@@ -236,27 +225,6 @@ func StartCreateContainer(imageName string, startCommand model.ContainerConfig) 
 		//Volumes:      startCommand.Volumes, // TODO: Remove this later and use only Mounts instead
 	}
 
-	// The following works:
-	// Cmd:          []string{"p", "2000"},
-	// The following breaks:
-	//	Cmd:          []string{"p", "2000"},]
-	// Fails with "Error: Unknown option 'p'."
-	// Cmd:          []string{"-p 2000"},
-	// Fails with "Error: Unknown option '-p 2000'."
-	// Cmd:          []string{"-p=2000"}
-	// Fails with "Error: Unknown option '-p=2000'."
-
-	//var vols_bind []string
-	//var mountings []mount.Mount
-	//for _, mountConfig := range startCommand.MountConfigs {
-	//	vols_bind = append(vols_bind, mountConfig.Target)
-	// mountings = append(mountings, mount.Mount{
-	// 	Type:   mount.TypeBind,
-	// 	Source: mountConfig.Source,
-	// 	Target: mountConfig.Target,
-	// })
-	//}
-
 	hostConfig := &container.HostConfig{
 		// Binds:        vols_bind, // TODO: Remove once Volumes removed
 		PortBindings: nil,
@@ -273,10 +241,6 @@ func StartCreateContainer(imageName string, startCommand model.ContainerConfig) 
 			startCommand.NetworkName: {},
 		},
 	}
-
-	// platform := &specs.Platform{
-
-	// }
 
 	containerCreateResponse, err := dockerClient.ContainerCreate(ctx,
 		containerConfig,
@@ -421,85 +385,6 @@ func CreateContainer1(containerName string, imageName string) string {
 
 	return "Container " + containerName + " created for image " + imageName
 }
-
-/*
-func CreateContainerOptsArgs(startCmd model.ContainerConfig, networkName string) bool {
-
-	// fmt.Println(startCmd)
-	spew.Dump(startCmd)
-
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(err)
-		// log.Error(err)
-		return false
-	}
-
-	containerConfig := &container.Config{
-		Image:        startCmd.ImageName + ":" + startCmd.ImageTag,
-		AttachStdin:  false,
-		AttachStdout: false,
-		AttachStderr: false,
-		Cmd:          startCmd.EntryPointArgs,
-		Tty:          false,
-		ExposedPorts: startCmd.ExposedPorts,
-	}
-
-	hostConfig := &container.HostConfig{
-		PortBindings: startCmd.PortBinding,
-		NetworkMode:  startCmd.NetworkMode,
-	}
-
-	resp, err := cli.ContainerCreate(ctx,
-		containerConfig,
-		hostConfig,
-		&startCmd.NetworkConfig,
-		// &network.NetworkingConfig{},
-		nil,
-		startCmd.ContainerName)
-	// fmt.Println(resp)
-	if err != nil {
-		log.Error(err)
-		// return "CreateFailed"
-		return false
-	}
-	log.Debug("Created container " + startCmd.ContainerName)
-
-	// containerStarted := StartContainer(resp.ID)
-
-	// if !containerStarted {
-	// 	log.Debug("Did not start container")
-	// 	return false
-	// }
-
-	// statusCh, errCh := cli.ContainerWait(ctx, resp.ID, container.WaitConditionNotRunning)
-	// select {
-	// case err := <-errCh:
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-	// case <-statusCh:
-	// }
-
-	// out, err := cli.ContainerLogs(ctx, resp.ID, types.ContainerLogsOptions{ShowStdout: true})
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// stdcopy.StdCopy(os.Stdout, os.Stderr, out)
-
-	// cli.NetworkConnect(ctx, "TEST", resp.ID, config *network.EndpointSettings)
-	var netConfig network.EndpointSettings
-	err = cli.NetworkConnect(ctx, networkName, resp.ID, &netConfig)
-	if err != nil {
-		panic(err)
-	}
-	log.Debug("Connected ", resp.ID, "to network", networkName)
-
-	return true
-}
-*/
 
 // Return container state. Can be one of "created", "running", "paused", "restarting", "removing", "exited", or "dead".
 func ContainerStatus(containerId string) string {

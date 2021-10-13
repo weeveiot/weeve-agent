@@ -19,6 +19,8 @@ import (
 
 func DeployManifest(man model.Manifest, command string) bool {
 
+	log.Info(fmt.Sprintf("Data service %v initiated", command))
+
 	var err = model.ValidateManifest(man)
 	if err != nil {
 		log.Error(err)
@@ -42,21 +44,22 @@ func DeployManifest(man model.Manifest, command string) bool {
 	manifestID := man.Manifest.Search("id").Data().(string)
 	version := man.Manifest.Search("version").Data().(string)
 	manifestName := man.Manifest.Search("name").Data().(string)
-	if command == "deploy" {
-		// Check if data service already exist
-		containerExists := DataServiceExist(manifestID, version)
-		if containerExists {
+
+	dataServiceExists := DataServiceExist(manifestID, version)
+	// Check if data service already exist
+	if dataServiceExists {
+		if command == "deploy" {
 			log.Error(fmt.Sprintf("\tData service %v, %v already exist", manifestID, version))
 			LogStatus(manifestID, version, "DEPLOY_FAILED", fmt.Sprintf("Data service %v, %v already exist", manifestID, version))
 			return false
-		}
-	} else if command == "redeploy" {
-		// Clean old data service resources
-		result := UndeployDataService(manifestID, version)
-		if !result {
-			log.Error("\tError while cleaning old data service - ", result)
-			LogStatus(manifestID, version, "REDEPLOY_FAILED", "Undeployment failed")
-			return false
+		} else if command == "redeploy" {
+			// Clean old data service resources
+			result := UndeployDataService(manifestID, version)
+			if !result {
+				log.Error("\tError while cleaning old data service - ", result)
+				LogStatus(manifestID, version, "REDEPLOY_FAILED", "Undeployment failed")
+				return false
+			}
 		}
 	}
 
@@ -142,14 +145,6 @@ func DeployManifest(man model.Manifest, command string) bool {
 		}
 		log.Info("\tSuccessfully created with args: ", startCommand.EntryPointArgs, containerCreateResponse)
 		log.Info("Started")
-
-		// // Attach to network
-		// var netConfig network.EndpointSettings
-		// err = cli.NetworkConnect(ctx, startCommand.NetworkName, containerCreateResponse.ID, &netConfig)
-		// if err != nil {
-		// 	panic(err)
-		// }
-		// log.Info("\tConnected to network", startCommand.NetworkName)
 	}
 
 	if failed {
@@ -158,14 +153,13 @@ func DeployManifest(man model.Manifest, command string) bool {
 	}
 	LogStatus(manifestID, version, strings.ToUpper(command)+"ED", strings.Title(command)+"ed successfully")
 
-	log.Info("Completed")
-
-	// TODO: Proper return/error handling
 	return true
 }
 
 func StopDataService(manifestID string, version string) bool {
+
 	log.Info("Stopping data service:", manifestID, version)
+
 	containers := docker.ReadDataServiceContainers(manifestID, version)
 	if len(containers) == 0 {
 		LogStatus(manifestID, version, "STOPPED", "Stopped successfully")
@@ -183,12 +177,15 @@ func StopDataService(manifestID string, version string) bool {
 			log.Info("\t", strings.Join(container.Names[:], ","), ": ", container.Status, " --> exited")
 		}
 	}
+
 	LogStatus(manifestID, version, "STOPPED", "Stopped successfully")
 	return true
 }
 
 func StartDataService(manifestID string, version string) bool {
+
 	log.Info("Starting data service:", manifestID, version)
+
 	containers := docker.ReadDataServiceContainers(manifestID, version)
 	if len(containers) == 0 {
 		LogStatus(manifestID, version, "START_FAILED", "No data service containers found")
@@ -206,16 +203,18 @@ func StartDataService(manifestID string, version string) bool {
 			log.Info("\t", strings.Join(container.Names[:], ","), ": ", container.State, "--> running")
 		}
 	}
+
 	LogStatus(manifestID, version, "STARTED", "Started successfully")
 	return true
 }
 
 func UndeployDataService(manifestID string, version string) bool {
-	log.Info("Undeploying ", manifestID, version)
+
+	log.Info("Undeploying data service", manifestID, version)
 
 	// Check if data service already exist
-	containerExists := DataServiceExist(manifestID, version)
-	if !containerExists {
+	dataServiceExists := DataServiceExist(manifestID, version)
+	if !dataServiceExists {
 		log.Error(fmt.Sprintf("\tData service %v, %v does not exist", manifestID, version))
 		LogStatus(manifestID, version, "UNDEPLOY_FAILED", fmt.Sprintf("\tData service %v, %v does not exist", manifestID, version))
 		return false
@@ -321,11 +320,7 @@ func DataServiceExist(manifestID string, version string) bool {
 		log.Error(err)
 	}
 
-	if len(networks) > 0 {
-		return true
-	}
-
-	return false
+	return len(networks) > 0
 }
 
 func LogStatus(manifestID string, manifestVersion string, statusVal string, statusReason string) {

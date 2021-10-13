@@ -15,8 +15,6 @@ import (
 )
 
 var manifestBytesMVP []byte
-var filePath string
-var errMsg string
 
 func TestMain(m *testing.M) {
 
@@ -65,11 +63,4 @@ func TestImageExists(t *testing.T) {
 
 		fmt.Println("Service:", moduleID, serviceName, imageName, imageTag)
 	}
-
-	// ImageExists()
-	// err = ValidateManifest(m)
-	// if err == nil {
-	// 	t.Error(err.Error())
-	// 	t.Error(errMsg)
-	// }
 }

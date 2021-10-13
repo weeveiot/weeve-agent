@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	. "github.com/ahmetb/go-linq/v3"
+	linq "github.com/ahmetb/go-linq/v3"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
@@ -90,7 +90,7 @@ func GetLastCreatedNetworkCount(networks []types.NetworkResource, indexLength in
 	maxCount := 0
 
 	var counts []int
-	From(networks).Select(func(c interface{}) interface{} {
+	linq.From(networks).Select(func(c interface{}) interface{} {
 		nm := c.(types.NetworkResource).Name
 		nm = nm[len(nm)-indexLength:]
 		count, _ := strconv.Atoi(nm)
@@ -112,7 +112,7 @@ func GetLowestAvailableNetworkCount(networks []types.NetworkResource, maxNetwork
 	minAvailCount := 0
 
 	var counts []int
-	From(networks).Select(func(c interface{}) interface{} {
+	linq.From(networks).Select(func(c interface{}) interface{} {
 		nm := c.(types.NetworkResource).Name
 		nm = nm[len(nm)-indexLength:]
 		count, _ := strconv.Atoi(nm)
@@ -121,7 +121,7 @@ func GetLowestAvailableNetworkCount(networks []types.NetworkResource, maxNetwork
 
 	var availCount []int
 	for i := 1; i < maxNetworkIndex; i++ {
-		From(counts).Where(func(c interface{}) bool {
+		linq.From(counts).Where(func(c interface{}) bool {
 			return c.(int) == i
 		}).Select(func(c interface{}) interface{} {
 			return c.(int)

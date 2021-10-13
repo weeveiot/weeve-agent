@@ -1,5 +1,5 @@
 {
-  "network": { "driver": "bridge", "name": "tick-network" },
+  "networks": { "driver": "bridge", "name": "tick-network" },
   "services": [
       {
         "categories": [{ "id": "category", "name": "Experimental" }],
