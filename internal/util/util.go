@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -29,16 +28,7 @@ func PrintEndpoints(r *mux.Router) {
 	})
 }
 
-func readJson(jsonFileName string) {
-	jsonFile, err := os.Open(jsonFileName)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println("Successfully Opened " + jsonFileName)
-	defer jsonFile.Close()
-}
-
-func GetApi(host string) string { //}, result interface{}) interface{} { //}, params []string, respStruct interface{}) {
+func GetApi(host string) string {
 	fmt.Println("Http Get...", host)
 	resp, err := http.Get(host)
 	if err != nil {
@@ -52,9 +42,6 @@ func GetApi(host string) string { //}, result interface{}) interface{} { //}, pa
 	bodyString := string(bodyBytes)
 	fmt.Println("API Response as String:\n" + bodyString)
 
-	// json.Unmarshal(bodyBytes, &result)
-	// fmt.Printf("API Response as struct %+v\n", result)
-
 	return bodyString
 }
 
@@ -63,7 +50,6 @@ func PostApi(nextHost string, jsonReq []byte) bool {
 	resp, err := http.Post(nextHost, "application/json; charset=utf-8", bytes.NewBuffer(jsonReq))
 	if err != nil {
 		fmt.Println(err)
-		// panic(err)
 		return false
 	}
 

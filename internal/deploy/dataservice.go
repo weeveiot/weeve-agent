@@ -18,6 +18,8 @@ import (
 
 func DeployManifest(man model.Manifest, command string) string {
 
+	log.Info("Data service deployment initiated, ")
+
 	var err = model.ValidateManifest(man)
 	if err != nil {
 		log.Error(err)
@@ -142,14 +144,16 @@ func DeployManifest(man model.Manifest, command string) string {
 	man.Manifest.Set("SUCCESS", "status")
 	jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
 
-	log.Info("Completed")
+	log.Info("Data service deployed")
 
 	// TODO: Proper return/error handling
 	return "SUCCESS"
 }
 
 func StopDataService(manifestID string, version string) {
+
 	log.Info("Stopping data service:", manifestID, version)
+
 	containers := docker.ReadDataServiceContainers(manifestID, version)
 	for _, container := range containers {
 		if container.State == "running" {
@@ -158,10 +162,14 @@ func StopDataService(manifestID string, version string) {
 			log.Info("\t", strings.Join(container.Names[:], ","), ": ", container.Status, " --> exited")
 		}
 	}
+
+	log.Info("Data service stopped")
 }
 
 func StartDataService(manifestID string, version string) {
+
 	log.Info("Starting data service:", manifestID, version)
+
 	containers := docker.ReadDataServiceContainers(manifestID, version)
 	for _, container := range containers {
 		if container.State == "exited" || container.State == "created" || container.State == "paused" {
@@ -170,10 +178,13 @@ func StartDataService(manifestID string, version string) {
 			log.Info("\t", strings.Join(container.Names[:], ","), ": ", container.State, "--> running")
 		}
 	}
+
+	log.Info("Data service started")
 }
 
 func UndeployDataService(manifestID string, version string) bool {
-	log.Info("Undeploying ", manifestID, version)
+
+	log.Info("Undeploying data service", manifestID, version)
 
 	// Check if data service already exist
 	containerExists := DataServiceExist(manifestID, version)
@@ -241,6 +252,8 @@ func UndeployDataService(manifestID string, version string) bool {
 	}
 	log.Info("Pruned networks:", pruneReport)
 
+	log.Info("Undeployed data service")
+
 	return true
 }
 
@@ -260,9 +273,5 @@ func DataServiceExist(manifestID string, version string) bool {
 		log.Error(err)
 	}
 
-	if len(networks) > 0 {
-		return true
-	}
-
-	return false
+	return len(networks) > 0
 }

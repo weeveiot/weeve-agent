@@ -54,9 +54,6 @@ func ValidateManifest(m Manifest) error {
 }
 
 func ValidateStartStopJSON(jsonParsed *gabs.Container) error {
-
-	// Expected JSON: {"id": dataServiceID, "name": dataServiceName}
-
 	var errorList []string
 	serviceID := jsonParsed.Search("id").Data()
 	if serviceID == nil {

@@ -13,7 +13,7 @@ type Exception struct {
 type User struct {
 	ID       uint
 	Name     string
-	Email    string `json:"Email:varchar(100);unique_index"`
+	Email    string `json:"Email:varchar(100):unique_index"`
 	Password string `json:"Password"`
 }
 
@@ -23,26 +23,6 @@ type Token struct {
 	Email  string
 	*jwt.StandardClaims
 }
-
-/*
-type ManifestReq struct {
-	ID      string     `json:"ID"`
-	Name    string     `json:"Name"`
-	Modules []Manifest `json:"Modules"`
-}
-*/
-
-/*
-type Manifest struct {
-	Index     int      `json:"Index"`
-	Name      string   `json:"Name"`
-	Tag       string   `json:"Tag"`
-	ImageID   string   `json:"ImageID"`
-	ImageName string   `json:"ImageName"`
-	Options   Option   `json:"Options"`
-	Arguments Argument `json:"Arguments"`
-}
-*/
 
 type Argument []struct {
 	Arg string `json:"opt"`

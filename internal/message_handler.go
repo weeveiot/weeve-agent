@@ -83,15 +83,15 @@ func GetStatusMessage(nodeId string) model.StatusMessage {
 	manifests := jsonlines.Read(constants.ManifestFile, "", "", nil, false)
 
 	var mani []model.ManifestStatus
-	var deviceParams = model.DeviceParams{"10", "10", "20"}
+	var deviceParams = model.DeviceParams{Sensors: "10", Uptime: "10", CpuTemp: "20"}
 
 	actv_cnt := 0
 	serv_cnt := 0
 	for _, rec := range manifests {
 		log.Info("Record on manifests >> ", rec)
-		mani = append(mani, model.ManifestStatus{rec["id"].(string), rec["version"].(string), rec["status"].(string)})
+		mani = append(mani, model.ManifestStatus{ManifestId: rec["id"].(string), ManifestVersion: rec["version"].(string), Status: rec["status"].(string)})
 		serv_cnt = serv_cnt + 1
-		if "SUCCESS" == rec["status"].(string) {
+		if rec["status"].(string) == "SUCCESS" {
 			actv_cnt = actv_cnt + 1
 		}
 	}
@@ -99,6 +99,6 @@ func GetStatusMessage(nodeId string) model.StatusMessage {
 	now := time.Now()
 	nanos := now.UnixNano()
 	millis := nanos / 1000000
-	return model.StatusMessage{nodeId, millis, "Available", actv_cnt, serv_cnt, mani, deviceParams}
+	return model.StatusMessage{Id: nodeId, Timestamp: millis, Connectivity: "Available", ActiveServiceCount: actv_cnt, ServiceCount: serv_cnt, DeployStatus: mani, DeviceParams: deviceParams}
 
 }

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	// "log"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
@@ -80,6 +79,8 @@ func CommonMiddleware(next http.Handler) http.Handler {
 func JwtVerify(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
+		var val interface{} = "user"
+
 		fmt.Printf("%+v\n", r.Header)
 		var header = r.Header.Get("Authorization") //Grab the token from the header
 
@@ -103,7 +104,7 @@ func JwtVerify(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), "user", tk)
+		ctx := context.WithValue(r.Context(), val, tk)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
