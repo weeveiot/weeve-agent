@@ -31,7 +31,8 @@ func DeployManifest(man model.Manifest, command string) bool {
 
 	jsonlines.Insert(constants.ManifestLogFile, man.Manifest.String())
 
-	jsonlines.Delete(constants.ManifestFile, "id", man.Manifest.Search("id").Data().(string), nil, true)
+	filter := map[string]string{"id": man.Manifest.Search("id").Data().(string), "version": man.Manifest.Search("version").Data().(string)}
+	jsonlines.Delete(constants.ManifestFile, "", "", filter, true)
 
 	// need to set some default manifest in manifest.jsonl so later could log without errors
 	man.Manifest.Set("DEPLOYING_IN_PROGRESS", "status")
