@@ -146,9 +146,9 @@ func Insert(jsonFile string, jsonString string) bool {
 	return true
 }
 
-func Delete(jsonFile string, pkField string, pkVal string) bool {
+func Delete(jsonFile string, pkField string, pkVal string, filter map[string]string, excludeKey bool) bool {
 	log.Debug("jsonlines >> Delete()")
-	allExceptPk := Read(jsonFile, pkField, pkVal, nil, true)
+	allExceptPk := Read(jsonFile, pkField, pkVal, filter, excludeKey)
 
 	var err = os.Remove(jsonFile)
 	if err != nil {

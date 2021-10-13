@@ -68,16 +68,16 @@ func ValidateManifest(m Manifest) error {
 
 func ValidateStartStopJSON(jsonParsed *gabs.Container) error {
 
-	// Expected JSON: {"id": dataServiceID, "name": dataServiceName}
+	// Expected JSON: {"id": dataServiceID, "version": dataServiceVesion}
 
 	var errorList []string
 	serviceID := jsonParsed.Search("id").Data()
 	if serviceID == nil {
 		errorList = append(errorList, "Expected Data Service ID 'id' in JSON, but not found.")
 	}
-	serviceName := jsonParsed.Search("name").Data()
-	if serviceName == nil {
-		errorList = append(errorList, "Expected Data Service Name 'name' in JSON, but not found.")
+	serviceVersion := jsonParsed.Search("version").Data()
+	if serviceVersion == nil {
+		errorList = append(errorList, "Expected Data Service Version 'version' in JSON, but not found.")
 	}
 
 	if len(errorList) > 0 {
