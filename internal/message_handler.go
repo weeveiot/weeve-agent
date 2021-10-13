@@ -29,15 +29,23 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 
 			var thisManifest = model.Manifest{}
 			thisManifest.Manifest = *jsonParsed
-			// TODO: Error handling?
-			deploy.DeployManifest(thisManifest, topic_rcvd)
+			status := deploy.DeployManifest(thisManifest, topic_rcvd)
+			if !status {
+				log.Error("Error on deploy manifest")
+			} else {
+				log.Info("Manifest deployed successfully")
+			}
 
 		} else if topic_rcvd == "redeploy" {
 
 			var thisManifest = model.Manifest{}
 			thisManifest.Manifest = *jsonParsed
-			// TODO: Error handling?
-			deploy.DeployManifest(thisManifest, topic_rcvd)
+			status := deploy.DeployManifest(thisManifest, topic_rcvd)
+			if !status {
+				log.Error("Error on redeploy manifest")
+			} else {
+				log.Info("Manifest redeployed successfully")
+			}
 
 		} else if topic_rcvd == "stopservice" {
 
@@ -46,7 +54,12 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 				serviceId := jsonParsed.Search("id").Data().(string)
 				serviceName := jsonParsed.Search("name").Data().(string)
 
-				deploy.StopDataService(serviceId, serviceName)
+				status := deploy.StopDataService(serviceId, serviceName)
+				if !status {
+					log.Error("Error on stop service")
+				} else {
+					log.Info("Service stopped!")
+				}
 			} else {
 				log.Error(err)
 			}
@@ -58,7 +71,12 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 				serviceId := jsonParsed.Search("id").Data().(string)
 				serviceName := jsonParsed.Search("name").Data().(string)
 
-				deploy.StartDataService(serviceId, serviceName)
+				status := deploy.StartDataService(serviceId, serviceName)
+				if !status {
+					log.Error("Error on start service")
+				} else {
+					log.Info("Service started!")
+				}
 			} else {
 				log.Error(err)
 			}
@@ -70,7 +88,12 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 				serviceId := jsonParsed.Search("id").Data().(string)
 				serviceName := jsonParsed.Search("name").Data().(string)
 
-				deploy.UndeployDataService(serviceId, serviceName)
+				status := deploy.UndeployDataService(serviceId, serviceName)
+				if !status {
+					log.Error("Error on undeploy service")
+				} else {
+					log.Info("Service undeployed!")
+				}
 			} else {
 				log.Error(err)
 			}

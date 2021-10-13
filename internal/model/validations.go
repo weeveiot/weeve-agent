@@ -41,7 +41,20 @@ func ValidateManifest(m Manifest) error {
 				if imageName == nil {
 					errorList = append(errorList, "Please provide image name for all services")
 				}
+				imageTag := srv.Search("image").Search("tag").Data()
+				if imageTag == nil {
+					errorList = append(errorList, "Please provide image tags for all services")
+				}
 			}
+		}
+	}
+	network := m.Manifest.Search("networks").Data()
+	if network == nil {
+		errorList = append(errorList, "Please provide data service network")
+	} else {
+		networkName := m.Manifest.Search("networks").Search("driver").Data()
+		if networkName == nil {
+			errorList = append(errorList, "Please provide data service network driver")
 		}
 	}
 
@@ -55,16 +68,16 @@ func ValidateManifest(m Manifest) error {
 
 func ValidateStartStopJSON(jsonParsed *gabs.Container) error {
 
-	// Expected JSON: {"id": dataServiceID, "name": dataServiceName}
+	// Expected JSON: {"id": dataServiceID, "version": dataServiceVesion}
 
 	var errorList []string
 	serviceID := jsonParsed.Search("id").Data()
 	if serviceID == nil {
 		errorList = append(errorList, "Expected Data Service ID 'id' in JSON, but not found.")
 	}
-	serviceName := jsonParsed.Search("name").Data()
-	if serviceName == nil {
-		errorList = append(errorList, "Expected Data Service Name 'name' in JSON, but not found.")
+	serviceVersion := jsonParsed.Search("version").Data()
+	if serviceVersion == nil {
+		errorList = append(errorList, "Expected Data Service Version 'version' in JSON, but not found.")
 	}
 
 	if len(errorList) > 0 {

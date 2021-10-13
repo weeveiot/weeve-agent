@@ -2,6 +2,7 @@ package deploy
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -16,12 +17,13 @@ import (
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util/jsonlines"
 )
 
-func DeployManifest(man model.Manifest, command string) string {
+func DeployManifest(man model.Manifest, command string) bool {
 
 	var err = model.ValidateManifest(man)
 	if err != nil {
 		log.Error(err)
-		return "FAILED"
+		LogStatus(man.Manifest.Search("id").Data().(string), man.Manifest.Search("version").Data().(string), strings.ToUpper(command)+"_FAILED", "Invalid Manifest")
+		return false
 	}
 
 	// Check if process is failed and needs to return
@@ -29,7 +31,12 @@ func DeployManifest(man model.Manifest, command string) string {
 
 	jsonlines.Insert(constants.ManifestLogFile, man.Manifest.String())
 
-	jsonlines.Delete(constants.ManifestFile, "id", man.Manifest.Search("id").Data().(string))
+	filter := map[string]string{"id": man.Manifest.Search("id").Data().(string), "version": man.Manifest.Search("version").Data().(string)}
+	jsonlines.Delete(constants.ManifestFile, "", "", filter, true)
+
+	// need to set some default manifest in manifest.jsonl so later could log without errors
+	man.Manifest.Set("DEPLOYING_IN_PROGRESS", "status")
+	jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
 
 	//******** STEP 1 - Deploy or Redeploy process *************//
 	manifestID := man.Manifest.Search("id").Data().(string)
@@ -40,14 +47,16 @@ func DeployManifest(man model.Manifest, command string) string {
 		containerExists := DataServiceExist(manifestID, version)
 		if containerExists {
 			log.Error(fmt.Sprintf("\tData service %v, %v already exist", manifestID, version))
-			return "Data service already exist"
+			LogStatus(manifestID, version, "DEPLOY_FAILED", fmt.Sprintf("Data service %v, %v already exist", manifestID, version))
+			return false
 		}
 	} else if command == "redeploy" {
 		// Clean old data service resources
 		result := UndeployDataService(manifestID, version)
 		if !result {
 			log.Error("\tError while cleaning old data service - ", result)
-			return "FAILED"
+			LogStatus(manifestID, version, "REDEPLOY_FAILED", "Undeployment failed")
+			return false
 		}
 	}
 
@@ -68,15 +77,15 @@ func DeployManifest(man model.Manifest, command string) string {
 				failed = true
 				msg := "404 - Unable to pull image " + imgDetails.ImageName
 				log.Error(msg)
-				return "FAILED"
+				LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", msg)
+				return false
 			}
 		}
 	}
 
 	if failed {
-		man.Manifest.Set("FAILED", "status")
-		jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
-		return "FAILED"
+		LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", "Process failed")
+		return false
 	}
 
 	//******** STEP 3 - Create the network *************//
@@ -84,6 +93,8 @@ func DeployManifest(man model.Manifest, command string) string {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
+		LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", err.Error())
+		return false
 	}
 
 	log.Info("Create the network")
@@ -95,17 +106,15 @@ func DeployManifest(man model.Manifest, command string) string {
 	networkName := docker.GetNetworkName(manifestName)
 	if networkName == "" {
 		log.Error("Failed to generate Network Name")
-		man.Manifest.Set("FAILED", "status")
-		jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
-		return "FAILED"
+		LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", "Failed to generate Network Name")
+		return false
 	}
 
 	resp, err := cli.NetworkCreate(ctx, networkName, networkCreateOptions)
 	if err != nil {
 		log.Error(err)
-		log.Error("Error trying to create network " + networkName)
-		panic(err)
-
+		LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", err.Error())
+		return false
 	}
 	log.Info("Created network named ", networkName)
 
@@ -118,58 +127,87 @@ func DeployManifest(man model.Manifest, command string) string {
 
 	if contianers_cmd == nil || len(contianers_cmd) <= 0 {
 		log.Error("No valid contianers in Manifest")
-		man.Manifest.Set("FAILED", "status")
-		jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
-		return "FAILED"
+		LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", err.Error())
+		return false
 	}
 	for _, startCommand := range contianers_cmd {
 		log.Info("Creating ", startCommand.ContainerName, " from ", startCommand.ImageName, ":", startCommand.ImageTag, startCommand)
 		imageAndTag := startCommand.ImageName + ":" + startCommand.ImageTag
 		containerCreateResponse, err := docker.StartCreateContainer(imageAndTag, startCommand)
-		log.Info("\tSuccessfully created with args: ", startCommand.EntryPointArgs, containerCreateResponse)
 		if err != nil {
 			failed = true
-			log.Info("Started")
-			return "FAILED"
+			log.Error("Failed to create and start container: " + imageAndTag)
+			LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", err.Error())
+			return false
 		}
+		log.Info("\tSuccessfully created with args: ", startCommand.EntryPointArgs, containerCreateResponse)
+		log.Info("Started")
+
+		// // Attach to network
+		// var netConfig network.EndpointSettings
+		// err = cli.NetworkConnect(ctx, startCommand.NetworkName, containerCreateResponse.ID, &netConfig)
+		// if err != nil {
+		// 	panic(err)
+		// }
+		// log.Info("\tConnected to network", startCommand.NetworkName)
 	}
 
 	if failed {
-		man.Manifest.Set("FAILED", "status")
-		jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
-		return "FAILED"
+		LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", "Process failed")
+		return false
 	}
-	man.Manifest.Set("SUCCESS", "status")
-	jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
+	LogStatus(manifestID, version, strings.ToUpper(command)+"ED", strings.Title(command)+"ed successfully")
 
 	log.Info("Completed")
 
 	// TODO: Proper return/error handling
-	return "SUCCESS"
+	return true
 }
 
-func StopDataService(manifestID string, version string) {
+func StopDataService(manifestID string, version string) bool {
 	log.Info("Stopping data service:", manifestID, version)
 	containers := docker.ReadDataServiceContainers(manifestID, version)
+	if len(containers) == 0 {
+		LogStatus(manifestID, version, "STOPPED", "Stopped successfully")
+		return true
+	}
 	for _, container := range containers {
 		if container.State == "running" {
 			log.Info("\tStopping container:", strings.Join(container.Names[:], ","))
-			docker.StopContainer(container.ID)
+			status := docker.StopContainer(container.ID)
+			if !status {
+				log.Error("\tCould not stop a container")
+				LogStatus(manifestID, version, "STOP_FAILED", "Could not stop a container")
+				return false
+			}
 			log.Info("\t", strings.Join(container.Names[:], ","), ": ", container.Status, " --> exited")
 		}
 	}
+	LogStatus(manifestID, version, "STOPPED", "Stopped successfully")
+	return true
 }
 
-func StartDataService(manifestID string, version string) {
+func StartDataService(manifestID string, version string) bool {
 	log.Info("Starting data service:", manifestID, version)
 	containers := docker.ReadDataServiceContainers(manifestID, version)
+	if len(containers) == 0 {
+		LogStatus(manifestID, version, "START_FAILED", "No data service containers found")
+		return false
+	}
 	for _, container := range containers {
 		if container.State == "exited" || container.State == "created" || container.State == "paused" {
 			log.Info("\tStarting container:", strings.Join(container.Names[:], ","))
-			docker.StartContainer(container.ID)
+			status := docker.StartContainer(container.ID)
+			if !status {
+				log.Error("\tCould not start a container")
+				LogStatus(manifestID, version, "START_FAILED", "Could not start a container")
+				return false
+			}
 			log.Info("\t", strings.Join(container.Names[:], ","), ": ", container.State, "--> running")
 		}
 	}
+	LogStatus(manifestID, version, "STARTED", "Started successfully")
+	return true
 }
 
 func UndeployDataService(manifestID string, version string) bool {
@@ -179,6 +217,7 @@ func UndeployDataService(manifestID string, version string) bool {
 	containerExists := DataServiceExist(manifestID, version)
 	if !containerExists {
 		log.Error(fmt.Sprintf("\tData service %v, %v does not exist", manifestID, version))
+		LogStatus(manifestID, version, "UNDEPLOY_FAILED", fmt.Sprintf("\tData service %v, %v does not exist", manifestID, version))
 		return false
 	}
 
@@ -187,6 +226,7 @@ func UndeployDataService(manifestID string, version string) bool {
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
+		LogStatus(manifestID, version, "UNDEPLOY_FAILED", err.Error())
 		return false
 	}
 
@@ -196,7 +236,17 @@ func UndeployDataService(manifestID string, version string) bool {
 	imageContainers := make(map[string]int)
 
 	containers := docker.ReadAllContainers()
+	if containers == nil {
+		log.Error("Failed to read all containers.")
+		LogStatus(manifestID, version, "UNDEPLOY_FAILED", "Failed to read all containers")
+		return false
+	}
 	dsContainers := docker.ReadDataServiceContainers(manifestID, version)
+	if dsContainers == nil {
+		log.Error("Failed to read data service containers.")
+		LogStatus(manifestID, version, "UNDEPLOY_FAILED", "Failed to read data service containers")
+		return false
+	}
 	for _, container := range containers {
 
 		imageContainers[container.ImageID] = imageContainers[container.ImageID] + 1
@@ -208,6 +258,7 @@ func UndeployDataService(manifestID string, version string) bool {
 				err := docker.StopAndRemoveContainer(dsContainer.ID)
 				if err != nil {
 					log.Error(err)
+					LogStatus(manifestID, version, "UNDEPLOY_FAILED", err.Error())
 					return false
 				}
 
@@ -223,6 +274,7 @@ func UndeployDataService(manifestID string, version string) bool {
 			_, err := cli.ImageRemove(ctx, imageID, types.ImageRemoveOptions{})
 			if err != nil {
 				log.Error(err)
+				LogStatus(manifestID, version, "UNDEPLOY_FAILED", err.Error())
 				return false
 			}
 		}
@@ -237,9 +289,18 @@ func UndeployDataService(manifestID string, version string) bool {
 	pruneReport, err := cli.NetworksPrune(ctx, filter)
 	if err != nil {
 		log.Error(err)
+		LogStatus(manifestID, version, "UNDEPLOY_FAILED", err.Error())
 		return false
 	}
 	log.Info("Pruned networks:", pruneReport)
+
+	LogStatus(manifestID, version, "UNDEPLOYED", "Undeployed successfully")
+
+	// Remove records from manifest.jsonl
+	deleted := jsonlines.Delete(constants.ManifestFile, "", "", nil, true)
+	if !deleted {
+		log.Error("Could not remove old records from manifest.jsonl")
+	}
 
 	return true
 }
@@ -265,4 +326,26 @@ func DataServiceExist(manifestID string, version string) bool {
 	}
 
 	return false
+}
+
+func LogStatus(manifestID string, manifestVersion string, statusVal string, statusReason string) {
+	filter := map[string]string{"id": manifestID, "version": manifestVersion}
+	mani := jsonlines.Read(constants.ManifestFile, "", "", filter, false)
+	deleted := jsonlines.Delete(constants.ManifestFile, "", "", filter, true)
+	if !deleted {
+		log.Error("Could not remove old records from manifest.jsonl")
+	}
+
+	if len(mani) != 0 {
+		mani[0]["status"] = statusVal
+		mani[0]["reason"] = statusReason
+		maniJSON, err := json.Marshal(mani[0])
+		if err != nil {
+			log.Error("Could not convert map to json when logging status of the manifest")
+		}
+		inserted := jsonlines.Insert(constants.ManifestFile, string(maniJSON))
+		if !inserted {
+			log.Error("Could not log manifest status")
+		}
+	}
 }

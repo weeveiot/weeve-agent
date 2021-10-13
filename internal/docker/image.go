@@ -59,7 +59,8 @@ func PullImage(imgDetails model.RegistryDetails) bool {
 
 	encodedJSON, err := json.Marshal(authConfig)
 	if err != nil {
-		panic(err)
+		log.Error(err)
+		return false
 	}
 
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
@@ -96,7 +97,8 @@ func PullImage(imgDetails model.RegistryDetails) bool {
 			if err == io.EOF {
 				break
 			}
-			panic(err)
+			log.Error(err)
+			return false
 		}
 		// fmt.Printf(".")
 		// fmt.Printf("EVENT: %+v\n", event)
@@ -139,12 +141,14 @@ func ReadAllImages() []types.ImageSummary {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		panic(err)
+		log.Error(err)
+		return nil
 	}
 
 	images, err := cli.ImageList(ctx, types.ImageListOptions{})
 	if err != nil {
-		panic(err)
+		log.Error(err)
+		return nil
 	}
 
 	if false {
@@ -166,12 +170,14 @@ func ReadImage(id string) types.ImageInspect {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		panic(err)
+		log.Error(err)
+		return types.ImageInspect{}
 	}
 
 	images, bytes, err := cli.ImageInspectWithRaw(ctx, id)
 	if err != nil && bytes != nil {
-		panic(err)
+		log.Error(err)
+		return types.ImageInspect{}
 	}
 
 	return images
@@ -204,7 +210,8 @@ func SearchImages(term string, id string, tag string) []registry.SearchResult {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		panic(err)
+		log.Error(err)
+		return nil
 	}
 
 	var searchFilter filters.Args
@@ -214,7 +221,8 @@ func SearchImages(term string, id string, tag string) []registry.SearchResult {
 	options := types.ImageSearchOptions{Filters: searchFilter, Limit: 5}
 	images, err := cli.ImageSearch(ctx, term, options)
 	if err != nil {
-		panic(err)
+		log.Error(err)
+		return nil
 	}
 
 	for k, image := range images {
