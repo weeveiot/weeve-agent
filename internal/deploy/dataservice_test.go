@@ -55,7 +55,7 @@ func TestDeployManifest(t *testing.T) {
 
 	resp := deploy.DeployManifest(thisManifest, "deploy")
 
-	if resp != "SUCCESS" {
+	if !resp {
 		t.Errorf("DeployManifest returned %v status", resp)
 	}
 
@@ -251,7 +251,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 
 	resp := deploy.DeployManifest(thisManifest, "deploy")
 
-	if resp != "SUCCESS" {
+	if !resp {
 		t.Errorf("DeployManifest returned %v status", resp)
 	}
 
@@ -278,7 +278,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 
 	resp = deploy.DeployManifest(thisManifest2, "deploy")
 
-	if resp != "SUCCESS" {
+	if !resp {
 		t.Errorf("DeployManifest returned %v status", resp)
 	}
 
@@ -340,7 +340,7 @@ func TestRedeployDataService(t *testing.T) {
 	log.Info(version)
 
 	resp := deploy.DeployManifest(thisManifest, "deploy")
-	if resp != "SUCCESS" {
+	if !resp {
 		t.Errorf("DeployManifest returned %v status", resp)
 	}
 
@@ -377,7 +377,7 @@ func TestRedeployDataService(t *testing.T) {
 	thisManifestRedeploy.Manifest = *jsonParsed
 
 	resp = deploy.DeployManifest(thisManifestRedeploy, "redeploy")
-	if resp != "SUCCESS" {
+	if !resp {
 		t.Errorf("DeployManifest returned %v status", resp)
 	}
 
