@@ -15,6 +15,7 @@ import (
 )
 
 func ProcessMessage(topic_rcvd string, payload []byte) {
+
 	log.Info(" ProcessMessage topic_rcvd ", topic_rcvd)
 
 	jsonParsed, err := gabs.ParseJSON(payload)
@@ -52,9 +53,9 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 			err := model.ValidateStartStopJSON(jsonParsed)
 			if err == nil {
 				serviceId := jsonParsed.Search("id").Data().(string)
-				serviceName := jsonParsed.Search("name").Data().(string)
+				serviceVersion := jsonParsed.Search("version").Data().(string)
 
-				status := deploy.StopDataService(serviceId, serviceName)
+				status := deploy.StopDataService(serviceId, serviceVersion)
 				if !status {
 					log.Error("Error on stop service")
 				} else {
@@ -69,9 +70,9 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 			err := model.ValidateStartStopJSON(jsonParsed)
 			if err == nil {
 				serviceId := jsonParsed.Search("id").Data().(string)
-				serviceName := jsonParsed.Search("name").Data().(string)
+				serviceVersion := jsonParsed.Search("version").Data().(string)
 
-				status := deploy.StartDataService(serviceId, serviceName)
+				status := deploy.StartDataService(serviceId, serviceVersion)
 				if !status {
 					log.Error("Error on start service")
 				} else {
@@ -86,9 +87,9 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 			err := model.ValidateStartStopJSON(jsonParsed)
 			if err == nil {
 				serviceId := jsonParsed.Search("id").Data().(string)
-				serviceName := jsonParsed.Search("name").Data().(string)
+				serviceVersion := jsonParsed.Search("version").Data().(string)
 
-				status := deploy.UndeployDataService(serviceId, serviceName)
+				status := deploy.UndeployDataService(serviceId, serviceVersion)
 				if !status {
 					log.Error("Error on undeploy service")
 				} else {
