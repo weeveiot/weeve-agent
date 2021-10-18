@@ -31,9 +31,7 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 			var thisManifest = model.Manifest{}
 			thisManifest.Manifest = *jsonParsed
 			status := deploy.DeployManifest(thisManifest, topic_rcvd)
-			if !status {
-				log.Error("Error on deploy manifest")
-			} else {
+			if status {
 				log.Info("Manifest deployed successfully")
 			}
 
@@ -42,9 +40,7 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 			var thisManifest = model.Manifest{}
 			thisManifest.Manifest = *jsonParsed
 			status := deploy.DeployManifest(thisManifest, topic_rcvd)
-			if !status {
-				log.Error("Error on redeploy manifest")
-			} else {
+			if status {
 				log.Info("Manifest redeployed successfully")
 			}
 
@@ -56,9 +52,7 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 				serviceVersion := jsonParsed.Search("version").Data().(string)
 
 				status := deploy.StopDataService(serviceId, serviceVersion)
-				if !status {
-					log.Error("Error on stop service")
-				} else {
+				if status {
 					log.Info("Service stopped!")
 				}
 			} else {
@@ -73,9 +67,7 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 				serviceVersion := jsonParsed.Search("version").Data().(string)
 
 				status := deploy.StartDataService(serviceId, serviceVersion)
-				if !status {
-					log.Error("Error on start service")
-				} else {
+				if status {
 					log.Info("Service started!")
 				}
 			} else {
@@ -90,9 +82,7 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 				serviceVersion := jsonParsed.Search("version").Data().(string)
 
 				status := deploy.UndeployDataService(serviceId, serviceVersion)
-				if !status {
-					log.Error("Error on undeploy service")
-				} else {
+				if status {
 					log.Info("Service undeployed!")
 				}
 			} else {
