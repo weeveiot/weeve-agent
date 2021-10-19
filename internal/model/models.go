@@ -37,10 +37,10 @@ type Option []struct {
 type StatusMessage struct {
 	Id                 string           `json:"ID"`
 	Timestamp          int64            `json:"timestamp"`
-	Connectivity       string           `json:"connectivity"`
+	Status             string           `json:"status"`
 	ActiveServiceCount int              `json:"activeServiceCount"`
 	ServiceCount       int              `json:"serviceCount"`
-	DeployStatus       []ManifestStatus `json:"deployStatus"`
+	ServicesStatus     []ManifestStatus `json:"servicesStatus"`
 	DeviceParams       DeviceParams     `json:"deviceParams"`
 }
 

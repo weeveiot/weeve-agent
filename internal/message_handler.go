@@ -113,6 +113,6 @@ func GetStatusMessage(nodeId string) model.StatusMessage {
 	now := time.Now()
 	nanos := now.UnixNano()
 	millis := nanos / 1000000
-	return model.StatusMessage{Id: nodeId, Timestamp: millis, Connectivity: "Available", ActiveServiceCount: actv_cnt, ServiceCount: serv_cnt, DeployStatus: mani, DeviceParams: deviceParams}
+	return model.StatusMessage{Id: nodeId, Timestamp: millis, Status: "Available", ActiveServiceCount: actv_cnt, ServiceCount: serv_cnt, ServicesStatus: mani, DeviceParams: deviceParams}
 
 }
