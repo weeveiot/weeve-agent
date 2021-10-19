@@ -296,7 +296,8 @@ func UndeployDataService(manifestID string, version string) bool {
 	LogStatus(manifestID, version, "UNDEPLOYED", "Undeployed successfully")
 
 	// Remove records from manifest.jsonl
-	deleted := jsonlines.Delete(constants.ManifestFile, "", "", nil, true)
+	filterLog := map[string]string{"id": manifestID, "version": version}
+	deleted := jsonlines.Delete(constants.ManifestFile, "", "", filterLog, true)
 	if !deleted {
 		log.Error("Could not remove old records from manifest.jsonl")
 	}
