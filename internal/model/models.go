@@ -13,7 +13,7 @@ type Exception struct {
 type User struct {
 	ID       uint
 	Name     string
-	Email    string `json:"Email:varchar(100);unique_index"`
+	Email    string `json:"Email:varchar(100):unique_index"`
 	Password string `json:"Password"`
 }
 
@@ -24,26 +24,6 @@ type Token struct {
 	*jwt.StandardClaims
 }
 
-/*
-type ManifestReq struct {
-	ID      string     `json:"ID"`
-	Name    string     `json:"Name"`
-	Modules []Manifest `json:"Modules"`
-}
-*/
-
-/*
-type Manifest struct {
-	Index     int      `json:"Index"`
-	Name      string   `json:"Name"`
-	Tag       string   `json:"Tag"`
-	ImageID   string   `json:"ImageID"`
-	ImageName string   `json:"ImageName"`
-	Options   Option   `json:"Options"`
-	Arguments Argument `json:"Arguments"`
-}
-*/
-
 type Argument []struct {
 	Arg string `json:"opt"`
 	Val bool   `json:"val"`
@@ -52,4 +32,26 @@ type Argument []struct {
 type Option []struct {
 	Arg string `json:"arg"`
 	Val bool   `json:"val"`
+}
+
+type StatusMessage struct {
+	Id                 string           `json:"ID"`
+	Timestamp          int64            `json:"timestamp"`
+	Status             string           `json:"status"`
+	ActiveServiceCount int              `json:"activeServiceCount"`
+	ServiceCount       int              `json:"serviceCount"`
+	ServicesStatus     []ManifestStatus `json:"servicesStatus"`
+	DeviceParams       DeviceParams     `json:"deviceParams"`
+}
+
+type ManifestStatus struct {
+	ManifestId      string `json:"manifestId"`
+	ManifestVersion string `json:"manifestVersion"`
+	Status          string `json:"status"`
+}
+
+type DeviceParams struct {
+	Sensors string `json:"sensors"`
+	Uptime  string `json:"uptime"`
+	CpuTemp string `json:"cputemp"`
 }

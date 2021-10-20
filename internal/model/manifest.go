@@ -10,6 +10,7 @@ import (
 	"github.com/docker/go-connections/nat"
 
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	log "github.com/sirupsen/logrus"
 )
@@ -17,24 +18,28 @@ import (
 type Manifest struct {
 	data        []byte
 	Manifest    gabs.Container
-	Name        string `json:"name"`
-	NetworkName string `json:"name"`
+	Name        string
+	NetworkName string
 	NumModules  int
 }
 
 // This struct holds information for starting a container
 type ContainerConfig struct {
-	PipelineName   string
 	ContainerName  string
 	ImageName      string
 	ImageTag       string
 	EntryPointArgs []string
+	EnvArgs        []string
 	Options        []OptionKeyVal
 	NetworkName    string
+	NetworkDriver  string
 	ExposedPorts   nat.PortSet // This must be set for the container create
 	PortBinding    nat.PortMap // This must be set for the containerStart
 	NetworkMode    container.NetworkMode
 	NetworkConfig  network.NetworkingConfig
+	Volumes        map[string]struct{}
+	MountConfigs   []mount.Mount
+	Labels         map[string]string
 }
 
 type OptionKeyVal struct {
@@ -82,7 +87,7 @@ func ParseJSONManifest(data []byte) (Manifest, error) {
 
 func (m Manifest) ImageNamesList() []string {
 	var imageNamesList []string
-	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
+	for _, mod := range m.Manifest.Search("services").Children() {
 		imageName := mod.Search("image").Search("name").Data().(string)
 		if mod.Search("image").Search("tag").Data() != nil {
 			imageName = imageName + ":" + mod.Search("image").Search("tag").Data().(string)
@@ -95,7 +100,7 @@ func (m Manifest) ImageNamesList() []string {
 
 func (m Manifest) ImageNamesWithRegList() []RegistryDetails {
 	var imageNamesList []RegistryDetails
-	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
+	for _, mod := range m.Manifest.Search("services").Children() {
 		imageName := mod.Search("image").Search("name").Data().(string)
 		if mod.Search("image").Search("tag").Data() != nil {
 			imageName = imageName + ":" + mod.Search("image").Search("tag").Data().(string)
@@ -113,15 +118,6 @@ func (m Manifest) ImageNamesWithRegList() []RegistryDetails {
 
 	return imageNamesList
 }
-
-// func (m Manifest) CountNumModules() int {
-// 	// t.Logf("%d", i)
-// 	// t.Logf("COUNT")
-// 	fmt.Println("COUNT")
-
-// 	// return len(m.Manifest.Search("compose")
-// 	// return len(m.Manifest.Search("Modules").Children())
-// }
 
 func (m Manifest) PrintManifest() {
 	for _, mod := range m.Manifest.Search("Modules").Children() {
@@ -143,24 +139,35 @@ func (m Manifest) SpewManifest() {
 	// spew.Printf("%v", m)
 }
 
-func (m Manifest) ContainerNamesList() []string {
+func (m Manifest) ContainerNamesList(networkName string) []string {
 	var containerNamesList []string
+<<<<<<< HEAD
+	for index, mod := range m.Manifest.Search("services").Children() {
+		containerName := "/" + GetContainerName(networkName, mod.Search("image").Search("name").Data().(string), mod.Search("image").Search("tag").Data().(string), index)
+=======
 	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
 		containerName := GetContainerName(m.Manifest.Search("id").Data().(string), mod.Search("name").Data().(string))
 		// containerName := GetContainerName(mod.Search("moduleId").Data().(string), mod.Search("name").Data().(string))
+>>>>>>> master
 		containerNamesList = append(containerNamesList, containerName)
 	}
 	return containerNamesList
 }
 
-func (m Manifest) GetNetworkName() string {
-	return m.Manifest.Search("compose").Search("network").Search("name").Data().(string)
-}
-
 // GetContainerName is a simple utility to return a standard container name
 // This function appends the pipelineID and containerName with _
+<<<<<<< HEAD
+func GetContainerName(networkName string, imageName string, tag string, index int) string {
+	containerName := fmt.Sprint(networkName, ".", imageName, "_", tag, ".", index)
+
+	containerName = strings.ReplaceAll(containerName, "/", "_")
+	containerName = strings.ReplaceAll(containerName, ":", "_")
+
+	return strings.ReplaceAll(containerName, " ", "")
+=======
 func GetContainerName(pipelineID string, containerName string) string {
 	return strings.ReplaceAll(pipelineID+"_"+containerName, " ", "-")
+>>>>>>> master
 }
 
 // Based on an existing Manifest object, build a new object
@@ -168,54 +175,56 @@ func GetContainerName(pipelineID string, containerName string) string {
 // The new object has all information required to execute 'docker run':
 // 		- Bridge Network information
 // 		- Arguments to pass into entrypoint
-func (m Manifest) GetContainerStart() []ContainerConfig {
+func (m Manifest) GetContainerStart(networkName string) []ContainerConfig {
 	var startCommands []ContainerConfig
-	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
-		var thisStartCommand ContainerConfig
-		thisStartCommand.PipelineName = m.Manifest.Search("compose").Search("network").Search("name").Data().(string)
-		thisStartCommand.NetworkName = m.Manifest.Search("compose").Search("network").Search("name").Data().(string)
-		thisStartCommand.NetworkMode = "" // This is the default setting
+	var cntr = 0
+	var prev_container_name = ""
 
+	for index, mod := range m.Manifest.Search("services").Children() {
+		var thisStartCommand ContainerConfig
+
+<<<<<<< HEAD
+		thisStartCommand.NetworkName = networkName
+		thisStartCommand.NetworkMode = "" // This is the default setting
+=======
 		thisStartCommand.ContainerName = GetContainerName(m.Manifest.Search("id").Data().(string), mod.Search("name").Data().(string))
+>>>>>>> master
 		thisStartCommand.ImageName = mod.Search("image").Search("name").Data().(string)
 		thisStartCommand.ImageTag = mod.Search("image").Search("tag").Data().(string)
+		thisStartCommand.ContainerName = GetContainerName(networkName, thisStartCommand.ImageName, thisStartCommand.ImageTag, index)
+		thisStartCommand.Labels = m.GetLabels()
+		thisStartCommand.NetworkDriver = m.Manifest.Search("networks").Search("driver").Data().(string)
 
-		// var theseOptions []OptionKeyVal
-		// for _, opt := range mod.Search("options").Children() {
-		// 	// log.Debug(opt)
-		// 	var thisOption OptionKeyVal
-		// 	thisOption.key = opt.Search("opt").Data().(string)
-		// 	thisOption.val = opt.Search("val").Data().(string)
-		// 	theseOptions = append(theseOptions, thisOption)
-		// 	// fmt.Println(thisOption)
-		// }
-		// thisStartCommand.Options = theseOptions
-
-		var strArgs []string
-		log.Debug("Processing arguments")
-		for _, arg := range mod.Search("command").Children() {
-			// strArgs = append(strArgs, "-"+arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
-			// strArgs = append(strArgs, arg.Search("arg").Data().(string)+" "+arg.Search("val").Data().(string))
-			// strArgs = append(strArgs, arg.Search("key").Data().(string)+"="+arg.Search("value").Data().(string))
-			// strArgs = append(strArgs, arg.Search("key").Data().(string)+" "+arg.Search("value").Data().(string))
-
-			//TODO: IF we receive only a key or only a value, THEN do not append any empty string
-			if arg.Search("key").Data().(string) != "" {
-				strArgs = append(strArgs, arg.Search("key").Data().(string))
-			}
-
-			if arg.Search("value").Data().(string) != "" {
-				strArgs = append(strArgs, arg.Search("value").Data().(string))
-			}
-
-			log.Debug("String arguments: " + strings.Join(strArgs[:], ","))
-
-			for _, thisArg := range strArgs {
-				log.Debug(fmt.Sprintf("%v %T", thisArg, thisArg))
-			}
+		var doc_data = mod.Search("document").Data()
+		if doc_data != nil {
+			ParseDocumentTag(mod.Search("document").Data(), &thisStartCommand)
 		}
 
-		thisStartCommand.EntryPointArgs = strArgs
+		//Populate Environment variables
+		log.Debug("Processing environments arguments")
+		var envArgs = ParseArguments(mod.Search("environments").Children(), false)
+		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "SERVICE_ID", m.Manifest.Search("id").Data().(string)))
+
+		if cntr > 0 {
+			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "PREV_CONTAINER_NAME", prev_container_name))
+
+			var next_arg = fmt.Sprintf("%v=%v", "NEXT_CONTAINER_NAME", thisStartCommand.ContainerName)
+			startCommands[cntr-1].EnvArgs = append(startCommands[cntr-1].EnvArgs, next_arg)
+
+			var temp_arg = fmt.Sprintf("%v=http://%v", "EGRESS_API_HOST", thisStartCommand.ContainerName)
+			startCommands[cntr-1].EnvArgs = append(startCommands[cntr-1].EnvArgs, temp_arg)
+		}
+		prev_container_name = thisStartCommand.ContainerName
+
+		for _, thisArg := range envArgs {
+			log.Debug(fmt.Sprintf("%v %T", thisArg, thisArg))
+		}
+
+		thisStartCommand.EnvArgs = envArgs
+
+		log.Debug("Processing cmd arguments")
+		var cmdArgs = ParseArguments(mod.Search("commands").Children(), true)
+		thisStartCommand.EntryPointArgs = cmdArgs
 
 		// Handle the options
 		var ExposedPorts string
@@ -257,22 +266,98 @@ func (m Manifest) GetContainerStart() []ContainerConfig {
 				thisStartCommand.NetworkMode = container.NetworkMode(option.val)
 			}
 
-			// Define Network config (why isn't PORT in here...?:
-			// https://godoc.org/github.com/docker/docker/api/types/network#NetworkingConfig
 			networkConfig := &network.NetworkingConfig{
 				EndpointsConfig: map[string]*network.EndpointSettings{},
 			}
-
-			// gatewayConfig := &network.EndpointSettings{
-			// 	Gateway: "gatewayname",
-			// }
-			// networkConfig.EndpointsConfig["bridge"] = gatewayConfig
 
 			thisStartCommand.NetworkConfig = *networkConfig
 		}
 
 		startCommands = append(startCommands, thisStartCommand)
+		cntr += 1
 	}
 
 	return startCommands
+}
+
+func ParseArguments(options []*gabs.Container, cmdArgs bool) []string {
+	var args []string
+	for _, arg := range options {
+		var key = ""
+		var val = ""
+		if arg.Search("key").Data().(string) != "" {
+			key = arg.Search("key").Data().(string)
+		}
+
+		if arg.Search("value").Data().(string) != "" {
+			val = arg.Search("value").Data().(string)
+		}
+
+		if key != "" && val != "" {
+			if cmdArgs {
+				args = append(args, fmt.Sprintf("--%v", key))
+				args = append(args, fmt.Sprintf("%v", val))
+			} else {
+				args = append(args, fmt.Sprintf("%v=%v", key, val))
+			}
+
+		}
+	}
+	return args
+}
+
+func ParseDocumentTag(doc_data interface{}, thisStartCommand *ContainerConfig) {
+	var vol_maps []map[string]struct{}
+	vol_map := make(map[string]struct{})
+
+	var document = doc_data.(string)
+	document = strings.ReplaceAll(document, "'", "\"")
+
+	man_doc, err := gabs.ParseJSON([]byte(document))
+	if err != nil {
+		log.Error("Error on parsing document tag ", err)
+		return
+	}
+
+	log.Info("man_doc ", document, man_doc)
+
+	mounts := []mount.Mount{}
+	m, ok := man_doc.Search("mounts").Data().([]interface{})
+	if ok && m != nil {
+		strMounts, err := json.Marshal(m)
+		if err != nil {
+			log.Error("Error on parsing mounts ", err)
+			return
+		}
+		json.Unmarshal([]byte(strMounts), &mounts)
+		// log.Info("Mounts: %v", mounts)
+		log.Info("Mounts:", mounts)
+	} else {
+		mounts = nil
+	}
+
+	for _, vols := range man_doc.Search("volumes").Children() {
+		vol_maps = append(vol_maps, map[string]struct{}{
+			vols.Search("container").Data().(string): {},
+		})
+	}
+
+	if len(vol_maps) >= 0 {
+		for _, vol := range vol_maps {
+			for k, v := range vol {
+				vol_map[k] = v
+			}
+		}
+		thisStartCommand.Volumes = vol_map
+		thisStartCommand.MountConfigs = mounts
+	}
+}
+
+func (man Manifest) GetLabels() map[string]string {
+	labels := make(map[string]string)
+	labels["manifestID"] = man.Manifest.Search("id").Data().(string)
+	labels["version"] = man.Manifest.Search("version").Data().(string)
+	labels["name"] = man.Manifest.Search("name").Data().(string)
+
+	return labels
 }

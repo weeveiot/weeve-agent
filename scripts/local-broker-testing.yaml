@@ -1,0 +1,60 @@
+session_name: aws-multi-containers-mqtt
+windows:
+  - window_name: main
+    layout: main-horizontal
+    # shell_command_before:
+    #   - cd ~/
+    panes:
+      - shell_command: # Broker
+      - mosquitto -v -p 8080
+      - shell_command: # This is Target
+          - ssh infrastructure@35.159.50.145
+          - sleep 5
+          - mosquitto_sub -h 18.196.40.113 -t "topic/target" &
+          - mosquitto_sub -h 18.192.247.179 -t "topic/target" &
+  - window_name: Edge-1
+    layout: main-horizontal
+    shell_command_before:
+      - cd ~/
+    panes:
+      - shell_command: # This is the broker on Edge 1
+          - ssh infrastructure@18.196.40.113
+          - sudo fuser -k 1883/tcp
+          - mosquitto -v
+      - shell_command: # This is container 1 on Edge 1
+          - ssh infrastructure@18.196.40.113
+          - sleep 5
+          - docker run --network=host weevenetwork/go-mqtt-gobot:latest --InBroker="tcp://18.196.40.113:1883" --ProcessName="container-1" --InTopic="topic/source" --InClient= "weevenetwork/go-mqtt-gobot" --OutBroker="tcp://18.196.40.113:1883" --OutTopic="topic/c2" --OutClient= "weevenetwork/go-mqtt-gobot"
+
+      - shell_command: # This is container 2 on Edge 1
+          - ssh infrastructure@18.196.40.113
+          - sleep 5
+          - docker run --network=host weevenetwork/go-mqtt-gobot:latest --InBroker="tcp://18.196.40.113:1883" --ProcessName="container-2" --InTopic="topic/c2" --InClient= "weevenetwork/go-mqtt-gobot" --OutBroker="tcp://18.196.40.113:1883" --OutTopic="topic/c3" --OutClient= "weevenetwork/go-mqtt-gobot"
+
+      - shell_command: # This is container 3 on Edge 1
+          - ssh infrastructure@18.196.40.113
+          - sleep 5
+          - docker run --network=host weevenetwork/go-mqtt-gobot:latest --InBroker="tcp://18.196.40.113:1883" --ProcessName="container-3" --InTopic="topic/c3" --InClient= "weevenetwork/go-mqtt-gobot" --OutBroker="tcp://18.196.40.113:1883" --OutTopic="topic/target" --OutClient= "weevenetwork/go-mqtt-gobot"
+  - window_name: Edge-2
+    layout: main-horizontal
+    shell_command_before:
+      - cd ~/
+    panes:
+      - shell_command: # This is the broker on Edge 2
+          - ssh infrastructure@18.192.247.179
+          - sudo fuser -k 1883/tcp
+          - mosquitto -v
+      - shell_command: # This is container 1 on Edge 2
+          - ssh infrastructure@18.192.247.179
+          - sleep 5
+          - docker run --network=host weevenetwork/go-mqtt-gobot:latest --InBroker="tcp://18.192.247.179:1883" --ProcessName="container-1" --InTopic="topic/source" --InClient= "weevenetwork/go-mqtt-gobot" --OutBroker="tcp://18.192.247.179:1883" --OutTopic="topic/c2" --OutClient= "weevenetwork/go-mqtt-gobot"
+
+      - shell_command: # This is container 2 on Edge 2
+          - ssh infrastructure@18.192.247.179
+          - sleep 5
+          - docker run --network=host weevenetwork/go-mqtt-gobot:latest --InBroker="tcp://18.192.247.179:1883" --ProcessName="container-2" --InTopic="topic/c2" --InClient= "weevenetwork/go-mqtt-gobot" --OutBroker="tcp://18.192.247.179:1883" --OutTopic="topic/c3" --OutClient= "weevenetwork/go-mqtt-gobot"
+
+      - shell_command: # This is container 3 on Edge 2
+          - ssh infrastructure@18.192.247.179
+          - sleep 5
+          - docker run --network=host weevenetwork/go-mqtt-gobot:latest --InBroker="tcp://18.192.247.179:1883" --ProcessName="container-3" --InTopic="topic/c3" --InClient= "weevenetwork/go-mqtt-gobot" --OutBroker="tcp://18.192.247.179:1883" --OutTopic="topic/target" --OutClient= "weevenetwork/go-mqtt-gobot"

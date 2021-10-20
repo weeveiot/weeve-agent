@@ -1,11 +1,11 @@
 package controller
 
 import (
-	"context"
-	"fmt"
-	"io/ioutil"
 	"net/http"
 
+<<<<<<< HEAD
+	log "github.com/sirupsen/logrus"
+=======
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/network"
 
@@ -16,13 +16,38 @@ import (
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/docker"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util/jsonlines"
+>>>>>>> master
 )
 
 // POSTpipelines creates pipeline based on input manifest
 func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	log.Info("POST /pipeline")
-
+	log.Fatal("THIS FUNCTION IS OBSELETE!")
 	//Get the manifest as a []byte
+<<<<<<< HEAD
+	// manifestBodyBytes, err := ioutil.ReadAll(r.Body)
+	// if err != nil {
+	// 	log.Error(err)
+	// 	http.Error(w, err.Error(), http.StatusBadRequest)
+	// 	return
+	// }
+
+	// man, err := model.ParseJSONManifest(manifestBodyBytes)
+	// if err != nil {
+	// 	log.Error(err)
+	// 	http.Error(w, err.Error(), http.StatusBadRequest)
+	// 	return
+	// }
+
+	// resp := DeployManifest(man)
+	// if resp == "SUCCESS" {
+	// 	w.WriteHeader(http.StatusOK)
+	// 	w.Write([]byte("200 - Request processed successfully!"))
+	// } else {
+	// 	w.WriteHeader(http.StatusInternalServerError)
+	// 	w.Write([]byte("500 - Failed to create container!"))
+	// }
+=======
 	manifestBodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Error(err)
@@ -184,11 +209,6 @@ func POSTpipelines(w http.ResponseWriter, r *http.Request) {
 	}
 	man.Manifest.Set("SUCCESS", "status")
 	jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
+>>>>>>> master
 
-	// Finally, return 200
-	// Return payload: pipeline started / list of container IDs
-	log.Info("Started")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("200 - Request processed successfully!"))
-	return
 }

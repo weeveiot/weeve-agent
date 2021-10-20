@@ -2,10 +2,7 @@ package model
 
 import (
 	"fmt"
-	"io/ioutil"
-	"log"
 	"os"
-	"path"
 	"testing"
 
 	// "gitlab.com/weeve/poc-festo/poc-festo-mqtts-ethereum-gateway/internal/parser"
@@ -20,29 +17,9 @@ var errMsg string
 func TestMain(m *testing.M) {
 
 	manifestBytesMVP = LoadJsonBytes("pipeline_unit/workingMVP.json")
-	// manifestBytesSimple = LoadJsonBytes("test_manifest1.json")
-	// manifestBytesNoModules = LoadJsonBytes("test_manifest_no_modules.json")
-	// manifestBytes3nodesBroker = LoadJsonBytes("test_manifest_3broker.json")
 	code := m.Run()
 
 	os.Exit(code)
-
-	// manifest := ParseJSONManifest(manifestBytes)
-	// fmt.Println(manifest
-}
-
-func LoadJsonBytes(manName string) []byte {
-	wd, _ := os.Getwd()
-	fmt.Println()
-	manifestPath := path.Join(wd, "testdata", manName)
-	// fmt.Println("Loading manifest from ", manifestPath)
-
-	var err error = nil
-	manifestBytes, err := ioutil.ReadFile(manifestPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return manifestBytes
 }
 
 // Unit function to validate negative tests
@@ -134,6 +111,22 @@ func TestWorkingManifest(t *testing.T) {
 	filePath = "pipeline_unit/workingMVP.json"
 	errMsg = "Should not throw any error"
 	ExecutePassTest(t)
+}
+
+func TestLoad(t *testing.T) {
+	fmt.Println("Load the sample manifest")
+	var sampleManifestBytesMVP []byte = LoadJsonBytes("manifest/mvp-manifest.json")
+	// fmt.Println(sampleManifestBytesMVP)
+	manifest, _ := ParseJSONManifest(sampleManifestBytesMVP)
+	// fmt.Print(res.ContainerNamesList())
+	ContainerConfigs := manifest.GetContainerStart("MVPDataServ_001")
+	// fmt.Print(ContainerConfig.MountConfigs)
+	fmt.Println("Container details:")
+	for i, ContainerConf := range ContainerConfigs {
+		fmt.Println(i, ContainerConf)
+	}
+
+	fmt.Print(ContainerConfigs[0].MountConfigs)
 }
 
 // func TestManifestFailNoModules(t *testing.T) {

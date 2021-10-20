@@ -1,0 +1,132 @@
+{
+  "id": "3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e",
+  "created": 1632981575399,
+  "version": "1.0.3",
+  "organizationId": "",
+  "services": [
+    {
+      "image": { "name": "weevenetwork/dev-random", "tag": "latest" },
+      "environments": [
+        {
+          "default": "",
+          "name": "Volume Container",
+          "options": null,
+          "description": "Volume mount container.",
+          "type": "string",
+          "value": "/mnt/random",
+          "key": "VOLUME_CONTAINER"
+        }
+      ],
+      "document": "{\"ports\":[],\"mounts\":[{\"Type\":\"bind\",\"Source\":\"/dev/urandom\",\"Target\":\"/mnt/random\",\"ReadOnly\":true}],\"restart_policy\":{\"condition\":\"on-failure\",\"delay\":\"10s\",\"max_attempts\":3,\"window\":\"120s\"}}",
+      "name": "dev-randomv2",
+      "icon": "https://icons-020-demo.s3.eu-central-1.amazonaws.com/USB.png",
+      "description": "Ingress module mounting the dev/random device to generate a SHA256 hash string with bind type mounting.",
+      "id": "b9830bc7-a0af-4672-b8de-d570414cabb2",
+      "categories": [{ "name": "Experimental", "id": "category" }],
+      "type": "input",
+      "version": "0.0.1",
+      "commands": [
+        {
+          "default": "",
+          "name": "Hash",
+          "options": ["md5", "sha1", "sha256"],
+          "description": "Hash type.",
+          "type": "enum",
+          "value": "sha256",
+          "key": "hash"
+        },
+        {
+          "default": "",
+          "name": "Interval",
+          "options": null,
+          "description": "Sleep interval.",
+          "type": "integer",
+          "value": "30",
+          "key": "interval"
+        }
+      ],
+      "tags": ["dev", "random"]
+    },
+    {
+      "image": { "name": "weevenetwork/hash-to-int", "tag": "latest" },
+      "environments": null,
+      "document": "{\"ports\":[],\"volumes\":[],\"restart_policy\":{\"condition\":\"on-failure\",\"delay\":\"10s\",\"max_attempts\":3,\"window\":\"120s\"}}",
+      "name": "hash-to-int",
+      "icon": "https://icons-020-demo.s3.eu-central-1.amazonaws.com/USB.png",
+      "description": "Return the integer representation of a byte string.",
+      "id": "6bc53b83-eb48-4cb5-bb25-a772c4a1ae85",
+      "categories": [{ "name": "Experimental", "id": "category" }],
+      "type": "process",
+      "version": "0.0.1",
+      "commands": null,
+      "tags": ["hash", "integer", "byte", "string"]
+    },
+    {
+      "image": { "name": "weevenetwork/http-egress", "tag": "latest" },
+      "environments": [
+        {
+          "default": "",
+          "name": "HTTP URL",
+          "options": null,
+          "description": "Paste the HTTP address.",
+          "type": "string",
+          "value": "https://hookb.in/2qla9bN0JLFdzq88zqko",
+          "key": "EGRESS_WEBHOOK_URL"
+        },
+        {
+          "default": "",
+          "name": "Method",
+          "options": ["POST", "GET"],
+          "description": "HTTP ReST method (recommended POST).",
+          "type": "enum",
+          "value": "POST",
+          "key": "METHOD"
+        },
+        {
+          "default": "",
+          "name": "Input Labels",
+          "options": null,
+          "description": "List of comma (,) separated labels to read from a previous module. Leave empty (\"\") to keep all data.",
+          "type": "string",
+          "value": "",
+          "key": "LABELS"
+        },
+        {
+          "default": "",
+          "name": "Timestamp Field",
+          "options": null,
+          "description": "Label for timestamp field for incoming data. If left empty, this module will add the timestamp.",
+          "type": "string",
+          "value": "Time",
+          "key": "TIMESTAMP"
+        }
+      ],
+      "document": "{\"ports\":[],\"volumes\":[],\"restart_policy\":{\"condition\":\"on-failure\",\"delay\":\"10s\",\"max_attempts\":3,\"window\":\"120s\"}}",
+      "name": "HTTP Egress",
+      "icon": "https://icons-020-demo.s3.eu-central-1.amazonaws.com/HTTP.png",
+      "description": "Send your data to a third party via HTTP",
+      "id": "88352247-1ba8-4cf7-8e9c-7b5242e34cde",
+      "categories": [{ "name": "Egress", "id": "category" }],
+      "type": "output",
+      "version": "1.0.0",
+      "commands": [],
+      "tags": [
+        "HTTP Egress",
+        "output",
+        "Send",
+        "data",
+        "third",
+        "party",
+        "http"
+      ]
+    }
+  ],
+  "id": "38e104fd-31dd-4dc7-9246-b408e7f14e01",
+  "version": "1.0.0",
+  "description": "MVPDataServiceV2",
+	"document": "",
+	"name": "MVPDataServiceV2",
+	"modified": 1632981575399,
+  "created": 1632981575399,
+	"organizationId": ""
+}
