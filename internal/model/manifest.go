@@ -141,8 +141,14 @@ func (m Manifest) SpewManifest() {
 
 func (m Manifest) ContainerNamesList(networkName string) []string {
 	var containerNamesList []string
+<<<<<<< HEAD
 	for index, mod := range m.Manifest.Search("services").Children() {
 		containerName := "/" + GetContainerName(networkName, mod.Search("image").Search("name").Data().(string), mod.Search("image").Search("tag").Data().(string), index)
+=======
+	for _, mod := range m.Manifest.Search("compose").Search("services").Children() {
+		containerName := GetContainerName(m.Manifest.Search("id").Data().(string), mod.Search("name").Data().(string))
+		// containerName := GetContainerName(mod.Search("moduleId").Data().(string), mod.Search("name").Data().(string))
+>>>>>>> master
 		containerNamesList = append(containerNamesList, containerName)
 	}
 	return containerNamesList
@@ -150,6 +156,7 @@ func (m Manifest) ContainerNamesList(networkName string) []string {
 
 // GetContainerName is a simple utility to return a standard container name
 // This function appends the pipelineID and containerName with _
+<<<<<<< HEAD
 func GetContainerName(networkName string, imageName string, tag string, index int) string {
 	containerName := fmt.Sprint(networkName, ".", imageName, "_", tag, ".", index)
 
@@ -157,6 +164,10 @@ func GetContainerName(networkName string, imageName string, tag string, index in
 	containerName = strings.ReplaceAll(containerName, ":", "_")
 
 	return strings.ReplaceAll(containerName, " ", "")
+=======
+func GetContainerName(pipelineID string, containerName string) string {
+	return strings.ReplaceAll(pipelineID+"_"+containerName, " ", "-")
+>>>>>>> master
 }
 
 // Based on an existing Manifest object, build a new object
@@ -172,8 +183,12 @@ func (m Manifest) GetContainerStart(networkName string) []ContainerConfig {
 	for index, mod := range m.Manifest.Search("services").Children() {
 		var thisStartCommand ContainerConfig
 
+<<<<<<< HEAD
 		thisStartCommand.NetworkName = networkName
 		thisStartCommand.NetworkMode = "" // This is the default setting
+=======
+		thisStartCommand.ContainerName = GetContainerName(m.Manifest.Search("id").Data().(string), mod.Search("name").Data().(string))
+>>>>>>> master
 		thisStartCommand.ImageName = mod.Search("image").Search("name").Data().(string)
 		thisStartCommand.ImageTag = mod.Search("image").Search("tag").Data().(string)
 		thisStartCommand.ContainerName = GetContainerName(networkName, thisStartCommand.ImageName, thisStartCommand.ImageTag, index)
