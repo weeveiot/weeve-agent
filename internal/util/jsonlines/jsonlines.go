@@ -105,16 +105,14 @@ func Read(jsonFile string, pkField string, pkVal string, filter map[string]strin
 			}
 		} else {
 			if filter != nil {
-				add := false
+				add := true
 				for k, v := range filter {
 					log.Debug(k, "value is", v)
-					if lnVal[k] == v && !excludeKey {
-						add = true
-					} else if lnVal[k] != v && excludeKey {
-						add = true
+					if lnVal[k] != v {
+						add = false
 					}
 				}
-				if add {
+				if (add && !excludeKey) || (!add && excludeKey) {
 					val = append(val, lnVal)
 				}
 			} else {
