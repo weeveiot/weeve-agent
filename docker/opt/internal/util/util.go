@@ -63,7 +63,6 @@ func PostApi(nextHost string, jsonReq []byte) bool {
 	resp, err := http.Post(nextHost, "application/json; charset=utf-8", bytes.NewBuffer(jsonReq))
 	if err != nil {
 		fmt.Println(err)
-		// panic(err)
 		return false
 	}
 

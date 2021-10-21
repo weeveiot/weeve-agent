@@ -233,7 +233,8 @@ func (m Manifest) GetContainerStart(networkName string) []ContainerConfig {
 				}
 				// Make sure HostPort was seen in the options!
 				if HostPort == "" {
-					panic("Need to define HostPort in options!")
+					// Set default HostPort as in Modules and Intercontainer Communication Spec 1.0.0
+					HostPort = "80"
 				}
 
 				// Finally, build the PortBindings struct

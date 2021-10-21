@@ -209,7 +209,7 @@ func StartCreateContainer(imageName string, startCommand model.ContainerConfig) 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
-		panic(err)
+		return container.ContainerCreateCreatedBody{}, err
 	}
 
 	containerConfig := &container.Config{
@@ -258,7 +258,7 @@ func StartCreateContainer(imageName string, startCommand model.ContainerConfig) 
 	err = dockerClient.ContainerStart(ctx, containerCreateResponse.ID, types.ContainerStartOptions{})
 	if err != nil {
 		log.Error(err)
-		panic("Failed to start container")
+		return containerCreateResponse, err
 	}
 	log.Debug("\tStarted container")
 
