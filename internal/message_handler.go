@@ -89,6 +89,14 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 				log.Error(err)
 			}
 
+		} else if topic_rcvd == "certificate" {
+
+			var thisManifest = model.Manifest{}
+			thisManifest.Manifest = *jsonParsed
+			status := deploy.DeployManifest(thisManifest, topic_rcvd)
+			if status {
+				log.Info("Certificates downloaded successfully")
+			}
 		}
 	}
 }

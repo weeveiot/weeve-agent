@@ -1,6 +1,8 @@
 package model
 
-import jwt "github.com/dgrijalva/jwt-go"
+import (
+	jwt "github.com/dgrijalva/jwt-go"
+)
 
 type ErrorResponse struct {
 	Err string
@@ -48,6 +50,14 @@ type ManifestStatus struct {
 	ManifestId      string `json:"manifestId"`
 	ManifestVersion string `json:"manifestVersion"`
 	Status          string `json:"status"`
+}
+
+type RegistrationMessage struct {
+	Id        string `json:"id"`
+	Timestamp int64  `json:"timestamp"`
+	Operation string `json:"operation"`
+	Status    string `json:"status"`
+	Name      string `json:"name"`
 }
 
 type DeviceParams struct {

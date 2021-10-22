@@ -20,6 +20,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 )
 
 type Params struct {
@@ -82,6 +83,48 @@ func PublishMessages(cl mqtt.Client) {
 	log.Info("Sending update.", opt.TopicName, msg, string(b_msg))
 	if token := cl.Publish(opt.PubClientId+"/"+opt.NodeId+"/"+opt.TopicName, 0, false, b_msg); token.Wait() && token.Error() != nil {
 		log.Fatalf("failed to send update: %v", token.Error())
+	}
+}
+
+func PublishRegistrationMessage(cl mqtt.Client) {
+
+	msg := GetRegistrationMessage(opt.NodeId)
+
+	b_msg, err := json.Marshal(msg)
+	if err != nil {
+		log.Fatalf("Marshall error: %v", err)
+	}
+
+	log.Info("Sending registration request.", "Registration", msg, string(b_msg))
+	if token := cl.Publish(opt.PubClientId+"/"+opt.NodeId+"/"+"Registration", 0, false, b_msg); token.Wait() && token.Error() != nil {
+		log.Fatalf("failed to send registration request: %v", token.Error())
+	}
+}
+
+func GetRegistrationMessage(nodeId string) model.RegistrationMessage {
+	now := time.Now()
+	nanos := now.UnixNano()
+	millis := nanos / 1000000
+
+	return model.RegistrationMessage{Id: nodeId, Timestamp: millis, Status: "Available", Operation: "Registration", Name: "NodeName"}
+}
+
+func CheckBrokerConnection(publisher mqtt.Client, subscriber mqtt.Client) {
+	// Attempt reconnect
+	if !publisher.IsConnected() {
+		log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
+
+		if token := publisher.Connect(); token.Wait() && token.Error() != nil {
+			log.Error("failed to create publisher connection: ", token.Error())
+		}
+	}
+
+	if !subscriber.IsConnected() {
+		log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
+
+		if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
+			log.Errorf("failed to create subscriber connection: %v", token.Error())
+		}
 	}
 }
 
@@ -237,28 +280,15 @@ func main() {
 		log.Debug("MQTT subscriber connected")
 	}
 
+	//CheckBrokerConnection(publisher, subscriber)
+	//PublishRegistrationMessage(publisher)
+
 	// MAIN LOOP
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		for {
-			// Attempt reconnect
-			if !publisher.IsConnected() {
-				log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
-
-				if token := publisher.Connect(); token.Wait() && token.Error() != nil {
-					log.Error("failed to create publisher connection: ", token.Error())
-				}
-			}
-
-			if !subscriber.IsConnected() {
-				log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
-
-				if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
-					log.Errorf("failed to create subscriber connection: %v", token.Error())
-				}
-			}
-
+			CheckBrokerConnection(publisher, subscriber)
 			PublishMessages(publisher)
 
 			log.Info("Sleeping ", opt.Heartbeat)
