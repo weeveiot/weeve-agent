@@ -91,9 +91,9 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 
 		} else if topic_rcvd == "certificate" {
 
-			var thisManifest = model.Manifest{}
-			thisManifest.Manifest = *jsonParsed
-			status := deploy.DeployManifest(thisManifest, topic_rcvd)
+			var certMsg = gabs.Container{}
+			certMsg = *jsonParsed
+			status := downloadCertificates(certMsg)
 			if status {
 				log.Info("Certificates downloaded successfully")
 			}

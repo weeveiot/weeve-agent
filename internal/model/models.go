@@ -60,6 +60,17 @@ type RegistrationMessage struct {
 	Name      string `json:"name"`
 }
 
+type CertificateMessage struct {
+	Id         string `json:"id"`
+	Timestamp  int64  `json:"timestamp"`
+	Operation  string `json:"operation"`
+	Status     string `json:"status"`
+	Name       string `json:"name"`
+	Cert_Path  string `json:"certPath"`
+	Key_Path   string `json:"keyPath"`
+	Expires_At int64  `json:"expiresAt"`
+}
+
 type DeviceParams struct {
 	Sensors string `json:"sensors"`
 	Uptime  string `json:"uptime"`
