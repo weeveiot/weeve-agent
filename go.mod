@@ -22,6 +22,7 @@ require (
 	github.com/go-chi/chi v4.0.2+incompatible // indirect
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/golang/gddo v0.0.0-20200831202555-721e228c7686
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/mux v1.8.0
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/mattn/go-isatty v0.0.14 // indirect

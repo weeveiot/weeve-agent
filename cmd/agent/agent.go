@@ -19,12 +19,12 @@ import (
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/google/uuid"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 )
 
 type Params struct {
-	NodeId       string `long:"nodeId" short:"i" description:"ID of this node" required:"true"`
 	Verbose      []bool `long:"verbose" short:"v" description:"Show verbose debug information"`
 	Broker       string `long:"broker" short:"b" description:"Broker to connect" required:"true"`
 	PubClientId  string `long:"pubClientId" short:"c" description:"Publisher ClientId" required:"true"`
@@ -39,6 +39,7 @@ type Params struct {
 }
 
 var opt Params
+var nodeId string
 var parser = flags.NewParser(&opt, flags.Default)
 
 func init() {
@@ -73,7 +74,7 @@ func NewTLSConfig(CertPath string) (config *tls.Config, err error) {
 
 func PublishMessages(cl mqtt.Client) {
 
-	msg := internal.GetStatusMessage(opt.NodeId)
+	msg := internal.GetStatusMessage(nodeId)
 
 	b_msg, err := json.Marshal(msg)
 	if err != nil {
@@ -81,14 +82,14 @@ func PublishMessages(cl mqtt.Client) {
 	}
 
 	log.Info("Sending update.", opt.TopicName, msg, string(b_msg))
-	if token := cl.Publish(opt.PubClientId+"/"+opt.NodeId+"/"+opt.TopicName, 0, false, b_msg); token.Wait() && token.Error() != nil {
+	if token := cl.Publish(opt.PubClientId+"/"+nodeId+"/"+opt.TopicName, 0, false, b_msg); token.Wait() && token.Error() != nil {
 		log.Fatalf("failed to send update: %v", token.Error())
 	}
 }
 
 func PublishRegistrationMessage(cl mqtt.Client) {
 
-	msg := GetRegistrationMessage(opt.NodeId)
+	msg := GetRegistrationMessage(nodeId)
 
 	b_msg, err := json.Marshal(msg)
 	if err != nil {
@@ -96,7 +97,7 @@ func PublishRegistrationMessage(cl mqtt.Client) {
 	}
 
 	log.Info("Sending registration request.", "Registration", msg, string(b_msg))
-	if token := cl.Publish(opt.PubClientId+"/"+opt.NodeId+"/"+"Registration", 0, false, b_msg); token.Wait() && token.Error() != nil {
+	if token := cl.Publish(opt.PubClientId+"/"+nodeId+"/"+"Registration", 0, false, b_msg); token.Wait() && token.Error() != nil {
 		log.Fatalf("failed to send registration request: %v", token.Error())
 	}
 }
@@ -136,8 +137,8 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 	topic_rcvd := ""
 
 	// TODO: Refactor (remove) this , we already hwave a proper subscription in the connectHandler!
-	if strings.HasPrefix(msg.Topic(), opt.SubClientId+"/"+opt.NodeId+"/") {
-		topic_rcvd = strings.Replace(msg.Topic(), opt.SubClientId+"/"+opt.NodeId+"/", "", 1)
+	if strings.HasPrefix(msg.Topic(), opt.SubClientId+"/"+nodeId+"/") {
+		topic_rcvd = strings.Replace(msg.Topic(), opt.SubClientId+"/"+nodeId+"/", "", 1)
 	}
 
 	internal.ProcessMessage(topic_rcvd, msg.Payload())
@@ -145,7 +146,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
 	log.Info("ON connect >> connected")
-	if token := c.Subscribe(opt.SubClientId+"/"+opt.NodeId+"/+", 0, messagePubHandler); token.Wait() && token.Error() != nil {
+	if token := c.Subscribe(opt.SubClientId+"/"+nodeId+"/+", 0, messagePubHandler); token.Wait() && token.Error() != nil {
 		log.Error("Error on subscribe connection: ", token.Error())
 	}
 }
@@ -220,13 +221,14 @@ func main() {
 		}
 	}
 
+	nodeId = uuid.New().String()
 	// OPTIONS: ID and topics
-	log.Debug("NodeId: ", opt.NodeId)
+	log.Debug("NodeId: ", nodeId)
 	log.Debug("Heartbeat time: ", opt.Heartbeat)
-	statusPublishTopic := opt.PubClientId + "/" + opt.NodeId
+	statusPublishTopic := opt.PubClientId + "/" + nodeId
 	log.Debug("Status heartbeat publishing to topic: ", statusPublishTopic)
 
-	nodeSubscribeTopic := opt.SubClientId + "/" + opt.NodeId
+	nodeSubscribeTopic := opt.SubClientId + "/" + nodeId
 	log.Debug("This node is subscribed to topic: ", nodeSubscribeTopic)
 
 	// Build the options for the publish client
@@ -280,8 +282,8 @@ func main() {
 		log.Debug("MQTT subscriber connected")
 	}
 
-	//CheckBrokerConnection(publisher, subscriber)
-	//PublishRegistrationMessage(publisher)
+	CheckBrokerConnection(publisher, subscriber)
+	PublishRegistrationMessage(publisher)
 
 	// MAIN LOOP
 	done := make(chan os.Signal, 1)
