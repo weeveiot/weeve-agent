@@ -44,6 +44,7 @@ var opt Params
 var parser = flags.NewParser(&opt, flags.Default)
 
 // logging into terminal and files
+// test
 func init() {
 	log.SetFormatter(&log.TextFormatter{})
 	log.SetOutput(os.Stdout)
