@@ -43,10 +43,16 @@ func DeleteData(id string) bool {
 }
 
 func readJson(jsonFileName string) {
-	jsonFile, err := os.Open(jsonFileName)
-	if err != nil {
-		fmt.Println(err)
+	// Check if file exists
+	if _, err := os.Stat(jsonFileName); err == nil {
+		jsonFile, err := os.Open(jsonFileName)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println("Successfully Opened " + jsonFileName)
+		defer jsonFile.Close()
+
+	} else if os.IsNotExist(err) {
+		return
 	}
-	fmt.Println("Successfully Opened " + jsonFileName)
-	defer jsonFile.Close()
 }

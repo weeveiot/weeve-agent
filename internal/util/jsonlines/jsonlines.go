@@ -112,7 +112,7 @@ func Read(jsonFile string, pkField string, pkVal string, filter map[string]strin
 						add = false
 					}
 				}
-				if add {
+				if (add && !excludeKey) || (!add && excludeKey) {
 					val = append(val, lnVal)
 				}
 			} else {

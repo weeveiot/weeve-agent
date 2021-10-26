@@ -162,7 +162,8 @@ func main() {
 	// OPTION: Parse and validated the Broker url
 	u, err := url.Parse(opt.Broker)
 	if err != nil {
-		panic(err)
+		log.Error("Error on parsing broker ", err)
+		os.Exit(1)
 	}
 
 	host, port, _ := net.SplitHostPort(u.Host)

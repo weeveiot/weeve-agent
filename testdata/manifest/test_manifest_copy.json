@@ -128,5 +128,6 @@
 	"name": "MVPDataServiceV2",
 	"modified": 1632981575399,
   "created": 1632981575399,
-	"organizationId": ""
+	"organizationId": "",
+  "networks":{"driver":"bridge","name":"COPY-tick-network"}
 }
