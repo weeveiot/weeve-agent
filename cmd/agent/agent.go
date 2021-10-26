@@ -49,7 +49,7 @@ func init() {
 	log.SetOutput(os.Stdout)
 
 	lumberjackLogger := &lumberjack.Logger{
-		Filename:   filepath.ToSlash("/home/nithin/logs.txt"),
+		Filename:   filepath.ToSlash("file_path/file_name"),
 		MaxSize:    1,
 		MaxAge:     30,
 		MaxBackups: 10,
