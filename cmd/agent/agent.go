@@ -6,13 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"path/filepath"
 	"io/ioutil"
 	golog "log"
 	"net"
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -43,13 +43,13 @@ type Params struct {
 var opt Params
 var parser = flags.NewParser(&opt, flags.Default)
 
-// logging into terminal and files 
+// logging into terminal and files
 func init() {
 	log.SetFormatter(&log.TextFormatter{})
 	log.SetOutput(os.Stdout)
 
 	lumberjackLogger := &lumberjack.Logger{
-		Filename:   filepath.ToSlash("/logs.txt"),
+		Filename:   filepath.ToSlash("/home/nithin/logs.txt"),
 		MaxSize:    1,
 		MaxAge:     30,
 		MaxBackups: 10,
@@ -60,7 +60,7 @@ func init() {
 	multiWriter := io.MultiWriter(os.Stderr, lumberjackLogger)
 
 	logFormatter := new(log.TextFormatter)
-	logFormatter.TimestampFormat = time.RFC1123Z 
+	logFormatter.TimestampFormat = time.RFC1123Z
 	logFormatter.FullTimestamp = true
 
 	log.SetFormatter(logFormatter)
