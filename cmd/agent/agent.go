@@ -5,6 +5,8 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"io"
+	"path/filepath"
 	"io/ioutil"
 	golog "log"
 	"net"
@@ -18,6 +20,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/natefinch/lumberjack.v2"
 
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal"
 )
@@ -40,9 +43,29 @@ type Params struct {
 var opt Params
 var parser = flags.NewParser(&opt, flags.Default)
 
+// logging into terminal and files 
 func init() {
 	log.SetFormatter(&log.TextFormatter{})
 	log.SetOutput(os.Stdout)
+
+	lumberjackLogger := &lumberjack.Logger{
+		Filename:   filepath.ToSlash("/logs.txt"),
+		MaxSize:    1,
+		MaxAge:     30,
+		MaxBackups: 10,
+		LocalTime:  false,
+		Compress:   true,
+	}
+
+	multiWriter := io.MultiWriter(os.Stderr, lumberjackLogger)
+
+	logFormatter := new(log.TextFormatter)
+	logFormatter.TimestampFormat = time.RFC1123Z 
+	logFormatter.FullTimestamp = true
+
+	log.SetFormatter(logFormatter)
+	log.SetLevel(log.InfoLevel)
+	log.SetOutput(multiWriter)
 
 	log.SetLevel(log.DebugLevel)
 	log.Info("Started logging")
