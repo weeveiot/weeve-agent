@@ -107,7 +107,7 @@ func GetRegistrationMessage(nodeId string) model.RegistrationMessage {
 	nanos := now.UnixNano()
 	millis := nanos / 1000000
 
-	return model.RegistrationMessage{Id: nodeId, Timestamp: millis, Status: "Available", Operation: "Registration", Name: "NodeName"}
+	return model.RegistrationMessage{Id: nodeId, Timestamp: millis, Status: "Registering", Operation: "Registration", Name: "NodeName"}
 }
 
 func CheckBrokerConnection(publisher mqtt.Client, subscriber mqtt.Client) {
@@ -136,17 +136,23 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 
 	topic_rcvd := ""
 
-	// TODO: Refactor (remove) this , we already hwave a proper subscription in the connectHandler!
 	if strings.HasPrefix(msg.Topic(), opt.SubClientId+"/"+nodeId+"/") {
 		topic_rcvd = strings.Replace(msg.Topic(), opt.SubClientId+"/"+nodeId+"/", "", 1)
 	}
 
-	internal.ProcessMessage(topic_rcvd, msg.Payload())
+	if msg.Topic() == opt.SubClientId+"/"+nodeId+"/Certificate" {
+		certificates := internal.DownloadCertificates(msg.Payload())
+		if certificates != nil {
+			internal.MarkNodeRegistered(nodeId, certificates)
+		}
+	} else {
+		internal.ProcessMessage(topic_rcvd, msg.Payload())
+	}
 }
 
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
 	log.Info("ON connect >> connected")
-	if token := c.Subscribe(opt.SubClientId+"/"+nodeId+"/+", 0, messagePubHandler); token.Wait() && token.Error() != nil {
+	if token := c.Subscribe(opt.SubClientId+"/"+nodeId+"/Certificate", 0, messagePubHandler); token.Wait() && token.Error() != nil {
 		log.Error("Error on subscribe connection: ", token.Error())
 	}
 }
@@ -283,17 +289,15 @@ func main() {
 	}
 
 	CheckBrokerConnection(publisher, subscriber)
-	PublishRegistrationMessage(publisher)
+	if !internal.CheckIfNodeAlreadyRegistered() {
+		PublishRegistrationMessage(publisher)
+	}
 
 	// MAIN LOOP
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		for {
-			CheckBrokerConnection(publisher, subscriber)
-			PublishMessages(publisher)
-
-			log.Info("Sleeping ", opt.Heartbeat)
 			time.Sleep(time.Second * time.Duration(opt.Heartbeat))
 		}
 	}()

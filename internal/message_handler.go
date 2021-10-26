@@ -88,15 +88,6 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 			} else {
 				log.Error(err)
 			}
-
-		} else if topic_rcvd == "certificate" {
-
-			var certMsg = gabs.Container{}
-			certMsg = *jsonParsed
-			status := downloadCertificates(certMsg)
-			if status {
-				log.Info("Certificates downloaded successfully")
-			}
 		}
 	}
 }
