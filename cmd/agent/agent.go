@@ -97,7 +97,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 		topic_rcvd = strings.Replace(msg.Topic(), opt.SubClientId+"/"+opt.NodeId+"/", "", 1)
 	}
 
-	internal.ProcessMessage(topic_rcvd, msg.Payload())
+	internal.ProcessMessage(topic_rcvd, msg.Payload(), true)
 }
 
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {

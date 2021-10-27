@@ -17,14 +17,23 @@ import (
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util/jsonlines"
 )
 
-func DeployManifest(man model.Manifest, command string) bool {
+func DeployManifest(man model.Manifest, command string) (response bool) {
+	// flag for exception handling
+	response = true
+	defer func() {
+		// if response true means there was exception because last line of this method (response = false) was not executed
+		if response {
+			response = false
+		} else {
+			response = true
+		}
+	}()
 
 	log.Info(fmt.Sprintf("Data service %v initiated", command))
 
 	var err = model.ValidateManifest(man)
 	if err != nil {
 		log.Error(err)
-		LogStatus(man.Manifest.Search("id").Data().(string), man.Manifest.Search("version").Data().(string), strings.ToUpper(command)+"_FAILED", "Invalid Manifest")
 		return false
 	}
 
@@ -42,8 +51,7 @@ func DeployManifest(man model.Manifest, command string) bool {
 	// Check if data service already exist
 	if dataServiceExists {
 		if command == "deploy" {
-			log.Error(fmt.Sprintf("\tData service %v, %v already exist", manifestID, version))
-			LogStatus(manifestID, version, "DEPLOY_FAILED", fmt.Sprintf("Data service %v, %v already exist", manifestID, version))
+			log.Info(fmt.Sprintf("\tData service %v, %v already exist", manifestID, version))
 			return false
 		} else if command == "redeploy" {
 			// Clean old data service resources
@@ -153,10 +161,22 @@ func DeployManifest(man model.Manifest, command string) bool {
 	}
 	LogStatus(manifestID, version, strings.ToUpper(command)+"ED", strings.Title(command)+"ed successfully")
 
-	return true
+	response = false
+
+	return response
 }
 
-func StopDataService(manifestID string, version string) bool {
+func StopDataService(manifestID string, version string) (response bool) {
+	// flag for exception handling
+	response = true
+	defer func() {
+		// if response true means there was exception because last line of this method (response = false) was not executed
+		if response {
+			response = false
+		} else {
+			response = true
+		}
+	}()
 
 	log.Info("Stopping data service:", manifestID, version)
 
@@ -179,10 +199,23 @@ func StopDataService(manifestID string, version string) bool {
 	}
 
 	LogStatus(manifestID, version, "STOPPED", "Stopped successfully")
-	return true
+
+	response = false
+
+	return response
 }
 
-func StartDataService(manifestID string, version string) bool {
+func StartDataService(manifestID string, version string) (response bool) {
+	// flag for exception handling
+	response = true
+	defer func() {
+		// if response true means there was exception because last line of this method (response = false) was not executed
+		if response {
+			response = false
+		} else {
+			response = true
+		}
+	}()
 
 	log.Info("Starting data service:", manifestID, version)
 
@@ -205,10 +238,23 @@ func StartDataService(manifestID string, version string) bool {
 	}
 
 	LogStatus(manifestID, version, "STARTED", "Started successfully")
-	return true
+
+	response = false
+
+	return response
 }
 
-func UndeployDataService(manifestID string, version string) bool {
+func UndeployDataService(manifestID string, version string) (response bool) {
+	// flag for exception handling
+	response = true
+	defer func() {
+		// if response true means there was exception because last line of this method (response = false) was not executed
+		if response {
+			response = false
+		} else {
+			response = true
+		}
+	}()
 
 	log.Info("Undeploying data service", manifestID, version)
 
@@ -302,11 +348,25 @@ func UndeployDataService(manifestID string, version string) bool {
 		log.Error("Could not remove old records from manifest.jsonl")
 	}
 
-	return true
+	response = false
+
+	return response
 }
 
 // DataServiceExist returns status of data service existance as true or false
-func DataServiceExist(manifestID string, version string) bool {
+func DataServiceExist(manifestID string, version string) (response bool) {
+	// flag for exception handling
+	response = true
+	var networks []types.NetworkResource
+	defer func() {
+		// if response true means there was exception because last line of this method (response = false) was not executed
+		if response {
+			response = false
+		} else {
+			response = (len(networks) > 0)
+		}
+	}()
+
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
@@ -316,12 +376,14 @@ func DataServiceExist(manifestID string, version string) bool {
 	filter.Add("label", "manifestID="+manifestID)
 	filter.Add("label", "version="+version)
 	options := types.NetworkListOptions{Filters: filter}
-	networks, err := dockerClient.NetworkList(context.Background(), options)
+	networks, err = dockerClient.NetworkList(context.Background(), options)
 	if err != nil {
 		log.Error(err)
 	}
 
-	return len(networks) > 0
+	response = false
+
+	return response
 }
 
 func LogStatus(manifestID string, manifestVersion string, statusVal string, statusReason string) {
