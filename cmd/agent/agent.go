@@ -44,18 +44,17 @@ var opt Params
 var parser = flags.NewParser(&opt, flags.Default)
 
 // logging into terminal and files
-// test
 func init() {
 	log.SetFormatter(&log.TextFormatter{})
 	log.SetOutput(os.Stdout)
 
 	lumberjackLogger := &lumberjack.Logger{
-		Filename:   filepath.ToSlash("file_path/file_name"),
-		MaxSize:    1,
-		MaxAge:     30,
-		MaxBackups: 10,
-		LocalTime:  false,
-		Compress:   true,
+		Filename:   filepath.ToSlash("file_path along with file_name"), //eg. xxx/xxx/xxx/file_name.txt
+		MaxSize:    1,                                                  //Size limit of a single .txt file in MB. Default -> 100MB
+		MaxAge:     30,                                                 //Number of days to retain the files. Default -> no file deletion based on age
+		MaxBackups: 10,                                                 //Maximum number of old files to retain. Default -> retain all old files
+		LocalTime:  false,                                              //time in UTC
+		Compress:   true,                                               //option to compress the files
 	}
 
 	multiWriter := io.MultiWriter(os.Stderr, lumberjackLogger)
