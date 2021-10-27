@@ -5,12 +5,14 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	golog "log"
 	"net"
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -18,6 +20,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/natefinch/lumberjack.v2"
 
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal"
 )
@@ -40,9 +43,29 @@ type Params struct {
 var opt Params
 var parser = flags.NewParser(&opt, flags.Default)
 
+// logging into terminal and files
 func init() {
 	log.SetFormatter(&log.TextFormatter{})
 	log.SetOutput(os.Stdout)
+
+	lumberjackLogger := &lumberjack.Logger{
+		Filename:   filepath.ToSlash("file_path along with file_name"), //eg. xxx/xxx/xxx/file_name.txt
+		MaxSize:    1,                                                  //Size limit of a single .txt file in MB. Default -> 100MB
+		MaxAge:     30,                                                 //Number of days to retain the files. Default -> no file deletion based on age
+		MaxBackups: 10,                                                 //Maximum number of old files to retain. Default -> retain all old files
+		LocalTime:  false,                                              //time in UTC
+		Compress:   true,                                               //option to compress the files
+	}
+
+	multiWriter := io.MultiWriter(os.Stderr, lumberjackLogger)
+
+	logFormatter := new(log.TextFormatter)
+	logFormatter.TimestampFormat = time.RFC1123Z
+	logFormatter.FullTimestamp = true
+
+	log.SetFormatter(logFormatter)
+	log.SetLevel(log.InfoLevel)
+	log.SetOutput(multiWriter)
 
 	log.SetLevel(log.DebugLevel)
 	log.Info("Started logging")
