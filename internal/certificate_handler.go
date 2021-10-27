@@ -16,6 +16,12 @@ import (
 	"os"
 )
 
+const NodeConfigFileName = "nodeconfig.json"
+const CertificateKey = "Certificate"
+const PrivateKeyKay = "PrivateKey"
+const NodeIdKey = "NodeId"
+const AWSRootCertKey = "AWSRootCert"
+
 func DownloadCertificates(payload []byte) map[string]string {
 
 	fmt.Println("Downloading certificates")
@@ -27,8 +33,8 @@ func DownloadCertificates(payload []byte) map[string]string {
 
 	json := *jsonParsed
 	certificates := map[string]string{
-		"Certificate": json.Search("Certificate").Data().(string),
-		"PrivateKey":  json.Search("PrivateKey").Data().(string),
+		CertificateKey: json.Search(CertificateKey).Data().(string),
+		PrivateKeyKay:  json.Search(PrivateKeyKay).Data().(string),
 	}
 
 	for key, certPath := range certificates {
@@ -70,11 +76,29 @@ func DownloadCertificates(payload []byte) map[string]string {
 
 func CheckIfNodeAlreadyRegistered() bool {
 
+	config := ReadNodeConfig()
+	return len(config[NodeIdKey]) > 0
+}
+
+func MarkNodeRegistered(nodeId string, certificates map[string]string) bool {
+	data := map[string]string{
+		NodeIdKey:      nodeId,
+		CertificateKey: certificates[CertificateKey],
+		PrivateKeyKay:  certificates[PrivateKeyKay],
+	}
+
+	file, _ := json.MarshalIndent(data, "", " ")
+	_ = ioutil.WriteFile(NodeConfigFileName, file, 0644)
+
+	return true
+}
+
+func ReadNodeConfig() map[string]string {
 	// Open our jsonFile
-	jsonFile, err := os.Open("nodeconfig.json")
+	jsonFile, err := os.Open(NodeConfigFileName)
 	if err != nil {
 		fmt.Println(err)
-		return false
+		return nil
 	}
 	// read our opened jsonFile as a byte array.
 	byteValue, _ := ioutil.ReadAll(jsonFile)
@@ -84,22 +108,6 @@ func CheckIfNodeAlreadyRegistered() bool {
 
 	// unmarshal byteArray
 	json.Unmarshal(byteValue, &config)
-	if (len(config["NodeId"]) > 0) && (len(config["Certificate"]) > 0) && (len(config["PrivateKey"]) > 0) {
-		return true
-	}
 
-	return false
-}
-
-func MarkNodeRegistered(nodeId string, certificates map[string]string) bool {
-	data := map[string]string{
-		"NodeId":      nodeId,
-		"Certificate": certificates["Certificate"],
-		"PrivateKey":  certificates["PrivateKey"],
-	}
-
-	file, _ := json.MarshalIndent(data, "", " ")
-	_ = ioutil.WriteFile("nodeconfig.json", file, 0644)
-
-	return true
+	return config
 }

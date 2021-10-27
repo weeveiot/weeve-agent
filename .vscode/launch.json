@@ -5,6 +5,28 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "WeeveAgentLocal",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/agent/agent.go",
+            "showLog": true,
+            "args": [
+                "-v",
+                "--notls",
+                "-b",
+                "tcp://localhost:8080",
+                "-s",
+                "nodes/localtest",
+                "-c",
+                "manager/localtest",
+                "-t",
+                "CheckVersion",
+                "--heartbeat",
+                "300"
+            ]
+        },
+        {
             "name": "WeeveAgent",
             "type": "go",
             "request": "launch",
@@ -21,12 +43,6 @@
                 "manager/awsdev",
                 "-t",
                 "CheckVersion",
-                "-k",
-                "${workspaceRoot}/0f27a88471-private.pem.key",
-                "-r",
-                "${workspaceRoot}/AmazonRootCA1.pem",
-                "-f",
-                "${workspaceRoot}/0f27a88471-certificate.pem.crt",
                 "--heartbeat",
                 "3600"
             ]
