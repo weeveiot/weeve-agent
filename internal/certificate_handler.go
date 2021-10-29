@@ -68,7 +68,7 @@ func DownloadCertificates(payload []byte) map[string]string {
 			return nil
 		}
 
-		certificates[key] = fileNameWithPath
+		certificates[key] = fileName
 	}
 
 	return certificates
@@ -85,6 +85,7 @@ func MarkNodeRegistered(nodeId string, certificates map[string]string) bool {
 		NodeIdKey:      nodeId,
 		CertificateKey: certificates[CertificateKey],
 		PrivateKeyKay:  certificates[PrivateKeyKay],
+		AWSRootCertKey: "AmazonRootCA1.pem",
 	}
 
 	file, _ := json.MarshalIndent(data, "", " ")

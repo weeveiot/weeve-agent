@@ -1,6 +1,0 @@
-{
- "Certificate": "F:\\Working_Directory\\Weeve\\Platform\\agent/0f27a88471-certificate.pem.crt",
- "NodeId": "",
- "PrivateKey": "F:\\Working_Directory\\Weeve\\Platform\\agent/0f27a88471-private.pem.key",
- "AWSRootCert": "F:\\Working_Directory\\Weeve\\Platform\\agent/AmazonRootCA1.pem"
-}

@@ -11,6 +11,9 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"path"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -106,9 +109,11 @@ func main() {
 
 	nodeRegistered := internal.CheckIfNodeAlreadyRegistered()
 	if !nodeRegistered {
+		log.Info("Registering node!")
 		InitializeBrocker(certPubHandler, certConnectHandler, false)
 		PublishRegistrationMessage(publisher)
 	} else {
+		log.Info("Node already registered!")
 		InitializeBrocker(messagePubHandler, connectHandler, true)
 	}
 
@@ -136,8 +141,9 @@ func main() {
 
 func InitializeBrocker(messagePubHandler mqtt.MessageHandler, connectHandler mqtt.OnConnectHandler, startHeartbeats bool) bool {
 
-	DisconnectBrocker()
+	sendHeartbeats = startHeartbeats
 
+	// Read node configurations
 	nodeConfig = internal.ReadNodeConfig()
 	nodeRegistered := len(nodeConfig[internal.NodeIdKey]) > 0
 
@@ -146,8 +152,6 @@ func InitializeBrocker(messagePubHandler mqtt.MessageHandler, connectHandler mqt
 	} else {
 		nodeId = uuid.New().String()
 	}
-
-	sendHeartbeats = startHeartbeats
 
 	// OPTIONS: ID and topics
 	log.Debug("NodeId: ", nodeId)
@@ -209,14 +213,22 @@ func InitializeBrocker(messagePubHandler mqtt.MessageHandler, connectHandler mqt
 }
 
 func NewTLSConfig() (config *tls.Config, err error) {
+	// Root folder of this project
+	_, b, _, _ := runtime.Caller(0)
+	Root := filepath.Join(filepath.Dir(b), "../..")
+
+	rootCert := path.Join(Root, nodeConfig[internal.AWSRootCertKey])
+	nodeCert := path.Join(Root, nodeConfig[internal.CertificateKey])
+	pvtKey := path.Join(Root, nodeConfig[internal.PrivateKeyKay])
+
 	certpool := x509.NewCertPool()
-	pemCerts, err := ioutil.ReadFile(nodeConfig[internal.AWSRootCertKey])
+	pemCerts, err := ioutil.ReadFile(rootCert)
 	if err != nil {
 		return nil, err
 	}
 	certpool.AppendCertsFromPEM(pemCerts)
 
-	cert, err := tls.LoadX509KeyPair(nodeConfig[internal.CertificateKey], nodeConfig[internal.PrivateKeyKay])
+	cert, err := tls.LoadX509KeyPair(nodeCert, pvtKey)
 	if err != nil {
 		return nil, err
 	}
@@ -273,7 +285,6 @@ func GetStatusMessage(nodeId string) model.StatusMessage {
 	actv_cnt := 0
 	serv_cnt := 0
 	for _, rec := range manifests {
-		log.Info("Record on manifests >> ", rec)
 		mani = append(mani, model.ManifestStatus{ManifestId: rec["id"].(string), ManifestVersion: rec["version"].(string), Status: rec["status"].(string)})
 		serv_cnt = serv_cnt + 1
 		if rec["status"].(string) == "SUCCESS" {
@@ -325,7 +336,7 @@ func DisconnectBrocker() {
 // The message fallback handler used for incoming messages
 
 var certPubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	log.Info("Received message on topic: ", msg.Topic(), "\nMessage: %s\n", msg.Payload())
+	log.Info("Received message on topic: ", msg.Topic())
 
 	topic_rcvd := ""
 
@@ -337,7 +348,7 @@ var certPubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Messa
 		certificates := internal.DownloadCertificates(msg.Payload())
 		if certificates != nil {
 			marked := internal.MarkNodeRegistered(nodeId, certificates)
-			if !marked {
+			if marked {
 				nodeRegistered := InitializeBrocker(messagePubHandler, connectHandler, true)
 				sendHeartbeats = nodeRegistered
 			}
@@ -355,7 +366,7 @@ var certConnectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
 }
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	log.Info("Received message on topic: ", msg.Topic(), "\nMessage: %s\n", msg.Payload())
+	log.Info("Received message on topic: ", msg.Topic())
 
 	topic_rcvd := ""
 

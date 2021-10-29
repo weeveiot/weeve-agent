@@ -33,14 +33,11 @@ require (
 	github.com/opencontainers/image-spec v1.0.1
 	github.com/sirupsen/logrus v1.7.0
 	github.com/ssimunic/gosensors v0.0.0-20170414000417-e7ab9a4e799b // indirect
-	github.com/stretchr/testify v1.6.1 // indirect
 	github.com/swaggo/gin-swagger v1.2.0 // indirect
 	github.com/swaggo/http-swagger v1.1.2
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
 	golang.org/x/sys v0.0.0-20210923061019-b8560ed6a9b7 // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e // indirect
 	google.golang.org/grpc v1.33.1 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc
 )
 
