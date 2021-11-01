@@ -110,11 +110,13 @@ func main() {
 	nodeRegistered := internal.CheckIfNodeAlreadyRegistered()
 	if !nodeRegistered {
 		log.Info("Registering node!")
-		InitializeBrocker(certPubHandler, certConnectHandler, false)
+		sendHeartbeats = false
+		InitializeBroker(certPubHandler, certConnectHandler, false)
 		PublishRegistrationMessage(publisher)
 	} else {
+		sendHeartbeats = true
 		log.Info("Node already registered!")
-		InitializeBrocker(messagePubHandler, connectHandler, true)
+		InitializeBroker(messagePubHandler, connectHandler, true)
 	}
 
 	c := make(chan os.Signal, 1)
@@ -139,7 +141,7 @@ func main() {
 	DisconnectBrocker()
 }
 
-func InitializeBrocker(messagePubHandler mqtt.MessageHandler, connectHandler mqtt.OnConnectHandler, startHeartbeats bool) bool {
+func InitializeBroker(lMessageHandler mqtt.MessageHandler, lConnectHandler mqtt.OnConnectHandler, startHeartbeats bool) bool {
 
 	sendHeartbeats = startHeartbeats
 
@@ -166,16 +168,16 @@ func InitializeBrocker(messagePubHandler mqtt.MessageHandler, connectHandler mqt
 	publisherOptions := mqtt.NewClientOptions()
 	publisherOptions.AddBroker(opt.Broker)
 	publisherOptions.SetClientID(statusPublishTopic)
-	publisherOptions.SetDefaultPublishHandler(messagePubHandler)
+	publisherOptions.SetDefaultPublishHandler(lMessageHandler)
 	publisherOptions.OnConnectionLost = connectLostHandler
 
 	// Build the options for the subscribe client
 	subscriberOptions := mqtt.NewClientOptions()
 	subscriberOptions.AddBroker(opt.Broker)
 	subscriberOptions.SetClientID(nodeSubscribeTopic)
-	subscriberOptions.SetDefaultPublishHandler(messagePubHandler)
+	subscriberOptions.SetDefaultPublishHandler(lMessageHandler)
 	subscriberOptions.OnConnectionLost = connectLostHandler
-	subscriberOptions.OnConnect = connectHandler
+	subscriberOptions.OnConnect = lConnectHandler
 
 	// Optionally add the TLS configuration to the 2 client options
 	if !opt.NoTLS {
@@ -349,7 +351,7 @@ var certPubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Messa
 		if certificates != nil {
 			marked := internal.MarkNodeRegistered(nodeId, certificates)
 			if marked {
-				nodeRegistered := InitializeBrocker(messagePubHandler, connectHandler, true)
+				nodeRegistered := InitializeBroker(messagePubHandler, connectHandler, true)
 				sendHeartbeats = nodeRegistered
 			}
 		}
