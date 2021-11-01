@@ -6,7 +6,7 @@
     "organizationId": "2d83e5aa819747ff3b5d055adda4b2257a5ec8d96634ad0f8923d3b9bbde75e3",
     "groupId": "245536acb08b0958f1aa78d391d5efc773e60fa2c39d942318aa04d6085bef40",
     "description": "Minimum Viable Manifest",
-    "network": {
+    "networks": {
         "name": "mosquitto-net",
         "driver": "bridge"
     },
