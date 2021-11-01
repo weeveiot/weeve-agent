@@ -89,20 +89,32 @@ func MarkNodeRegistered(nodeId string, certificates map[string]string) bool {
 	}
 
 	file, _ := json.MarshalIndent(data, "", " ")
-	_ = ioutil.WriteFile(NodeConfigFileName, file, 0644)
+
+	// Root folder of this project
+	_, b, _, _ := runtime.Caller(0)
+	Root := filepath.Join(filepath.Dir(b), "../")
+	NodeConfigFilePath := path.Join(Root, NodeConfigFileName)
+	_ = ioutil.WriteFile(NodeConfigFilePath, file, 0644)
 
 	return true
 }
 
 func ReadNodeConfig() map[string]string {
+	// Root folder of this project
+	_, b, _, _ := runtime.Caller(0)
+	Root := filepath.Join(filepath.Dir(b), "../")
+	NodeConfigFilePath := path.Join(Root, NodeConfigFileName)
+
 	// Open our jsonFile
-	jsonFile, err := os.Open(NodeConfigFileName)
+	jsonFile, err := os.Open(NodeConfigFilePath)
 	if err != nil {
-		fmt.Println(err)
-		return nil
+		log.Fatalf("Unable to open node configuration file: %v", err)
 	}
 	// read our opened jsonFile as a byte array.
-	byteValue, _ := ioutil.ReadAll(jsonFile)
+	byteValue, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		log.Fatalf("Unable to read node configuration file: %v", err)
+	}
 
 	// we initialize our Users array
 	var config map[string]string
