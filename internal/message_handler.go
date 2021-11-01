@@ -9,7 +9,16 @@ import (
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/deploy"
 )
 
-func ProcessMessage(topic_rcvd string, payload []byte) {
+func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
+	// flag for exception handling
+	exception := true
+	defer func() {
+		if exception && retry {
+			// on exception sleep 5s and try again
+			time.Sleep(5 * time.Second)
+			ProcessMessage(topic_rcvd, payload, false)
+		}
+	}()
 
 	log.Info(" ProcessMessage topic_rcvd ", topic_rcvd)
 
@@ -85,4 +94,6 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 			}
 		}
 	}
+
+	exception = false
 }

@@ -54,7 +54,6 @@ func TestDeployManifest(t *testing.T) {
 	log.Info(version)
 
 	resp := deploy.DeployManifest(thisManifest, "deploy")
-
 	if !resp {
 		t.Errorf("DeployManifest returned %v status", resp)
 	}
@@ -115,7 +114,10 @@ func TestStopDataServiceWrongDetails(t *testing.T) {
 	}
 
 	// run tested method
-	deploy.StopDataService(wrongManifesetID, wrongVersion)
+	resp := deploy.StopDataService(wrongManifesetID, wrongVersion)
+	if resp {
+		t.Errorf("StopDataService returned True status, but should return False as manifestID is wrong")
+	}
 
 	// check container status after executing tested function
 	containers = docker.ReadDataServiceContainers(manifestID, version)
@@ -137,7 +139,10 @@ func TestStopDataService(t *testing.T) {
 	var wrongStatusContainerList []string
 
 	// run tested method
-	deploy.StopDataService(manifestID, version)
+	resp := deploy.StopDataService(manifestID, version)
+	if !resp {
+		t.Errorf("StopDataService returned %v status", resp)
+	}
 
 	// check container status
 	containers := docker.ReadDataServiceContainers(manifestID, version)
@@ -169,7 +174,10 @@ func TestStartDataServiceWrongDetails(t *testing.T) {
 	}
 
 	// run tested method
-	deploy.StartDataService(wrongServiceID, wrongServiceName)
+	resp := deploy.StartDataService(wrongServiceID, wrongServiceName)
+	if !resp {
+		t.Errorf("StartDataService returned %v status", resp)
+	}
 
 	// check container status after executing tested function
 	containers = docker.ReadDataServiceContainers(manifestID, version)
@@ -191,7 +199,10 @@ func TestStartDataService(t *testing.T) {
 	var wrongStatusContainerList []string
 
 	// run tested method
-	deploy.StartDataService(manifestID, version)
+	resp := deploy.StartDataService(manifestID, version)
+	if !resp {
+		t.Errorf("StartDataService returned %v status", resp)
+	}
 
 	// check container status
 	containers := docker.ReadDataServiceContainers(manifestID, version)
@@ -209,7 +220,10 @@ func TestUndeployDataService(t *testing.T) {
 	log.Info("TESTING UNDEPLOYMENT...")
 
 	// run tested method
-	deploy.UndeployDataService(manifestID, version)
+	resp := deploy.UndeployDataService(manifestID, version)
+	if !resp {
+		t.Errorf("UndeployDataService returned %v status", resp)
+	}
 
 	// check if containers are removed
 	containers := docker.ReadDataServiceContainers(manifestID, version)
@@ -250,7 +264,6 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	log.Info(version)
 
 	resp := deploy.DeployManifest(thisManifest, "deploy")
-
 	if !resp {
 		t.Errorf("DeployManifest returned %v status", resp)
 	}
@@ -277,7 +290,6 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	log.Info(version2)
 
 	resp = deploy.DeployManifest(thisManifest2, "deploy")
-
 	if !resp {
 		t.Errorf("DeployManifest returned %v status", resp)
 	}
@@ -285,7 +297,10 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	// ***** TEST UNDEPLOY FOR ORIGINAL DATA SERVICE ********* //
 
 	// run tested method
-	deploy.UndeployDataService(manifestID, version)
+	resp = deploy.UndeployDataService(manifestID, version)
+	if !resp {
+		t.Errorf("UndeployDataService returned %v status", resp)
+	}
 
 	// check if containers are removed
 	containers := docker.ReadDataServiceContainers(manifestID, version)
@@ -313,7 +328,10 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	}
 
 	// clean up and remove second data service
-	deploy.UndeployDataService(manifestID2, version2)
+	resp = deploy.UndeployDataService(manifestID2, version2)
+	if !resp {
+		t.Errorf("UndeployDataService returned %v status", resp)
+	}
 
 }
 
@@ -396,7 +414,10 @@ func TestRedeployDataService(t *testing.T) {
 	log.Info("Cleaning after testing...")
 	redeployedManifestID := thisManifestRedeploy.Manifest.Search("id").Data().(string)
 	redeployedVersion := thisManifestRedeploy.Manifest.Search("version").Data().(string)
-	deploy.UndeployDataService(redeployedManifestID, redeployedVersion)
+	resp = deploy.UndeployDataService(redeployedManifestID, redeployedVersion)
+	if !resp {
+		t.Errorf("UndeployDataService returned %v status", resp)
+	}
 }
 
 // LoadJsonBytes reads file containts into byte[]

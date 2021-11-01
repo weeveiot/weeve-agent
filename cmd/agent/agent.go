@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	golog "log"
 	"net"
@@ -21,6 +22,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/google/uuid"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal"
@@ -48,9 +50,29 @@ var parser = flags.NewParser(&opt, flags.Default)
 var sendHeartbeats = false
 var nodeConfig map[string]string
 
+// logging into terminal and files
 func init() {
 	log.SetFormatter(&log.TextFormatter{})
 	log.SetOutput(os.Stdout)
+
+	lumberjackLogger := &lumberjack.Logger{
+		Filename:   filepath.ToSlash("file_path along with file_name"), //eg. xxx/xxx/xxx/file_name.txt
+		MaxSize:    1,                                                  //Size limit of a single .txt file in MB. Default -> 100MB
+		MaxAge:     30,                                                 //Number of days to retain the files. Default -> no file deletion based on age
+		MaxBackups: 10,                                                 //Maximum number of old files to retain. Default -> retain all old files
+		LocalTime:  false,                                              //time in UTC
+		Compress:   true,                                               //option to compress the files
+	}
+
+	multiWriter := io.MultiWriter(os.Stderr, lumberjackLogger)
+
+	logFormatter := new(log.TextFormatter)
+	logFormatter.TimestampFormat = time.RFC1123Z
+	logFormatter.FullTimestamp = true
+
+	log.SetFormatter(logFormatter)
+	log.SetLevel(log.InfoLevel)
+	log.SetOutput(multiWriter)
 
 	log.SetLevel(log.DebugLevel)
 	log.Info("Started logging")
@@ -356,7 +378,7 @@ var certPubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Messa
 			}
 		}
 	} else {
-		internal.ProcessMessage(topic_rcvd, msg.Payload())
+		internal.ProcessMessage(topic_rcvd, msg.Payload(), false)
 	}
 }
 
@@ -376,7 +398,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 		topic_rcvd = strings.Replace(msg.Topic(), opt.SubClientId+"/"+nodeId+"/", "", 1)
 	}
 
-	internal.ProcessMessage(topic_rcvd, msg.Payload())
+	internal.ProcessMessage(topic_rcvd, msg.Payload(), false)
 }
 
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
