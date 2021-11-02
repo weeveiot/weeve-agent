@@ -59,7 +59,7 @@ func init() {
 	multiWriter := io.MultiWriter(os.Stderr, lumberjackLogger)
 
 	logFormatter := new(log.TextFormatter)
-	logFormatter.TimestampFormat = time.RFC1123Z
+	logFormatter.TimestampFormat = "2006-02-01 15:04:05 IST"
 	logFormatter.FullTimestamp = true
 
 	log.SetFormatter(logFormatter)
