@@ -1,17 +1,14 @@
 package internal
 
 import (
+	"time"
+
 	"github.com/Jeffail/gabs/v2"
 	log "github.com/sirupsen/logrus"
 
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 
-	"time"
-
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/deploy"
-
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/constants"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util/jsonlines"
 )
 
 func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
@@ -97,33 +94,8 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 			} else {
 				log.Error(err)
 			}
-
 		}
 	}
 
 	exception = false
-}
-
-func GetStatusMessage(nodeId string) model.StatusMessage {
-	manifests := jsonlines.Read(constants.ManifestFile, "", "", nil, false)
-
-	var mani []model.ManifestStatus
-	var deviceParams = model.DeviceParams{Sensors: "10", Uptime: "10", CpuTemp: "20"}
-
-	actv_cnt := 0
-	serv_cnt := 0
-	for _, rec := range manifests {
-		log.Info("Record on manifests >> ", rec)
-		mani = append(mani, model.ManifestStatus{ManifestId: rec["id"].(string), ManifestVersion: rec["version"].(string), Status: rec["status"].(string)})
-		serv_cnt = serv_cnt + 1
-		if rec["status"].(string) == "SUCCESS" {
-			actv_cnt = actv_cnt + 1
-		}
-	}
-
-	now := time.Now()
-	nanos := now.UnixNano()
-	millis := nanos / 1000000
-	return model.StatusMessage{Id: nodeId, Timestamp: millis, Status: "Available", ActiveServiceCount: actv_cnt, ServiceCount: serv_cnt, ServicesStatus: mani, DeviceParams: deviceParams}
-
 }
