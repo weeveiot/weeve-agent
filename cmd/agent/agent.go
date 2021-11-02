@@ -171,19 +171,21 @@ func InitializeBroker(lMessageHandler mqtt.MessageHandler, lConnectHandler mqtt.
 	nodeConfig = internal.ReadNodeConfig()
 	nodeRegistered := len(nodeConfig[internal.NodeIdKey]) > 0
 
+	log.Debug("Heartbeat time: ", opt.Heartbeat)
+	statusPublishTopic := opt.PubClientId + "/" + nodeId
+	nodeSubscribeTopic := opt.SubClientId + "/" + nodeId
+
 	if nodeRegistered {
 		nodeId = nodeConfig[internal.NodeIdKey]
 	} else {
 		nodeId = uuid.New().String()
+		statusPublishTopic = opt.PubClientId + "/" + nodeId + "/Registration"
+		nodeSubscribeTopic = opt.SubClientId + "/" + nodeId + "/Certificate"
 	}
 
 	// OPTIONS: ID and topics
 	log.Debug("NodeId: ", nodeId)
-	log.Debug("Heartbeat time: ", opt.Heartbeat)
-	statusPublishTopic := opt.PubClientId + "/" + nodeId
 	log.Debug("Status heartbeat publishing to topic: ", statusPublishTopic)
-
-	nodeSubscribeTopic := opt.SubClientId + "/" + nodeId
 	log.Debug("This node is subscribed to topic: ", nodeSubscribeTopic)
 
 	// Build the options for the publish client
@@ -244,6 +246,9 @@ func NewTLSConfig() (config *tls.Config, err error) {
 	rootCert := path.Join(Root, nodeConfig[internal.AWSRootCertKey])
 	nodeCert := path.Join(Root, nodeConfig[internal.CertificateKey])
 	pvtKey := path.Join(Root, nodeConfig[internal.PrivateKeyKay])
+
+	log.Debug("Node Certificate: ", nodeCert)
+	log.Debug("Node PrivateKey: ", pvtKey)
 
 	certpool := x509.NewCertPool()
 	pemCerts, err := ioutil.ReadFile(rootCert)
