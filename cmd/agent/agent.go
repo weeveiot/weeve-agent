@@ -48,12 +48,12 @@ var parser = flags.NewParser(&opt, flags.Default)
 func init() {
 
 	lumberjackLogger := &lumberjack.Logger{
-		Filename:   filepath.ToSlash("FilePath along with FileName"), //eg. xxx/xxx/xxx/file_name.txt
-		MaxSize:    1,                                                //Size limit of a single .txt file in MB. Default -> 100MB
-		MaxAge:     30,                                               //Number of days to retain the files. Default -> no file deletion based on age
-		MaxBackups: 10,                                               //Maximum number of old files to retain. Default -> retain all old files
-		LocalTime:  false,                                            //time in UTC
-		Compress:   false,                                            //option to compress the files
+		Filename:   filepath.ToSlash("logs"), //file_name or with destination eg. xxx/xxx/xxx/file_name
+		MaxSize:    1,                        //Size limit of a single .txt file in MB. Default -> 100MB
+		MaxAge:     30,                       //Number of days to retain the files. Default -> no file deletion based on age
+		MaxBackups: 10,                       //Maximum number of old files to retain. Default -> retain all old files
+		LocalTime:  false,                    //time in UTC
+		Compress:   false,                    //option to compress the files
 	}
 
 	multiWriter := io.MultiWriter(os.Stderr, lumberjackLogger)
@@ -65,28 +65,6 @@ func init() {
 	log.SetFormatter(logFormatter)
 	log.SetOutput(multiWriter)
 	log.Info("Started logging")
-}
-
-func parselevel(lvl string) (log.Level, error) {
-	switch strings.ToLower(lvl) {
-	case "panic":
-		return log.PanicLevel, nil
-	case "fatal":
-		return log.FatalLevel, nil
-	case "error":
-		return log.ErrorLevel, nil
-	case "warn", "warning":
-		return log.WarnLevel, nil
-	case "info":
-		return log.InfoLevel, nil
-	case "debug":
-		return log.DebugLevel, nil
-	case "trace":
-		return log.TraceLevel, nil
-	}
-
-	var l log.Level
-	return l, fmt.Errorf("not a valid logrus Level: %q", lvl)
 }
 
 func NewTLSConfig(CertPath string) (config *tls.Config, err error) {
@@ -168,7 +146,7 @@ func main() {
 		mqtt.DEBUG = golog.New(os.Stdout, "[DEBUG] ", 0)
 	}
 	// FLAG: LogLevel
-	l, _ := parselevel(opt.LogLevel)
+	l, _ := log.ParseLevel(opt.LogLevel)
 	log.SetLevel(l)
 
 	// FLAG: Verbose
