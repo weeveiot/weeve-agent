@@ -47,7 +47,7 @@ func GetNetworkName(name string) string {
 
 	// Get last network count
 	networks := ReadAllNetworks()
-	if len(networks) > 0 {
+	if len(networks) >= 0 {
 		// Generate next network name
 		maxCount := GetLastCreatedNetworkCount(networks, indexLength)
 		if maxCount < maxNetworkIndex {
