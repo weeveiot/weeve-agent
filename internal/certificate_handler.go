@@ -99,6 +99,25 @@ func MarkNodeRegistered(nodeId string, certificates map[string]string) bool {
 	return true
 }
 
+func UpdateNodeConfig(attrs map[string]string) bool {
+	configs := ReadNodeConfig()
+
+	for k, v := range attrs {
+		log.Debug(k, "value is", v)
+		configs[k] = v
+	}
+
+	file, _ := json.MarshalIndent(configs, "", " ")
+
+	// Root folder of this project
+	_, b, _, _ := runtime.Caller(0)
+	Root := filepath.Join(filepath.Dir(b), "../")
+	NodeConfigFilePath := path.Join(Root, NodeConfigFileName)
+	_ = ioutil.WriteFile(NodeConfigFilePath, file, 0644)
+
+	return true
+}
+
 func ReadNodeConfig() map[string]string {
 	// Root folder of this project
 	_, b, _, _ := runtime.Caller(0)
