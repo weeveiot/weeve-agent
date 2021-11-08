@@ -37,6 +37,7 @@ go run ./cmd/agent/agent.go -v --notls \
     --pubClientId manager/localtest \ # Publisher ClientId \
     --publish CheckVersion  \ # Topic Name \
 	--heartbeat 3 # Status message publishing interval
+    --nodeId local-test-node-1 \ # ID of this node optional \
 ```
 
 The `-v` flag enables debug logs, and the `--notls` flag disables TLS configuation. Further logs from the `paho` MQTT client can be enabled with the `--mqttlogs` flag.
@@ -46,10 +47,11 @@ TLS configuration requires the full path to all secrets and certificates as foll
 
 ```bash
 SERVER_CERTIFICATE=AmazonRootCA1.pem
-CLIENT_CERTIFICATE=adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-certificate.pem.crt
-CLIENT_PRIVATE_KEY=adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-private.pem.key
+CLIENT_CERTIFICATE=<nodeid>-certificate.pem.crt
+CLIENT_PRIVATE_KEY=<nodeid>-private.pem.key
 go run ./cmd/agent/agent.go -v \
-    --broker tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883 \ # Broker to connect to \
+	--nodeId awsdev-test-node-1 \ # ID of this node (optional here)\
+    --broker tls://<broker host url>:8883 \ # Broker to connect to \
     --subClientId nodes/awsdev \ # Subscriber ClientId \
     --pubClientId manager/awsdev \ # Publisher ClientId \
     --publish status \ # Topic bame for publishing status messages \
@@ -58,6 +60,15 @@ go run ./cmd/agent/agent.go -v \
 ```
 
 The `tls` protocol is strictly checked in the Broker url.
+
+# Config options
+All the below params can be updated into json instead of arguments as above
+{
+    "AWSRootCert": "AmazonRootCA1.pem",
+	"PrivateKey": "<node private key/bootstrap private key file name>",
+    "Certificate": "<node certificate/bootstrap certificate file name>",
+    "NodeId": "<node id>" //Empty initially for auto registration    
+}
 
 # [BELOW IS WIP]
 
