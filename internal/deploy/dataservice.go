@@ -86,7 +86,7 @@ func DeployManifest(man model.Manifest, command string) (response bool) {
 			exists = docker.PullImage(imgDetails)
 			if !exists {
 				failed = true
-				msg := "404 - Unable to pull image " + imgDetails.ImageName
+				msg := "404 - Unable to pull image/s, one or more image/s not found"
 				log.Error(msg)
 				LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", msg)
 				return false

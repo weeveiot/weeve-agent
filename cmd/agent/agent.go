@@ -165,18 +165,20 @@ func main() {
 
 func InitializeBroker(lMessageHandler mqtt.MessageHandler, lConnectHandler mqtt.OnConnectHandler, startHeartbeats bool) bool {
 
+	log.Debug("Heartbeat time: ", opt.Heartbeat)
 	sendHeartbeats = startHeartbeats
 
 	// Read node configurations
 	nodeConfig = internal.ReadNodeConfig()
 	nodeRegistered := len(nodeConfig[internal.NodeIdKey]) > 0
 
-	log.Debug("Heartbeat time: ", opt.Heartbeat)
-	statusPublishTopic := opt.PubClientId + "/" + nodeId
-	nodeSubscribeTopic := opt.SubClientId + "/" + nodeId
+	var statusPublishTopic string
+	var nodeSubscribeTopic string
 
 	if nodeRegistered {
 		nodeId = nodeConfig[internal.NodeIdKey]
+		statusPublishTopic = opt.PubClientId + "/" + nodeId
+		nodeSubscribeTopic = opt.SubClientId + "/" + nodeId
 	} else {
 		nodeId = uuid.New().String()
 		statusPublishTopic = opt.PubClientId + "/" + nodeId + "/Registration"
