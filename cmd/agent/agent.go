@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	golog "log"
 	mathrand "math/rand"
@@ -39,7 +38,7 @@ type Params struct {
 	Heartbeat    int    `long:"heartbeat" short:"h" description:"Heartbeat time in seconds" required:"false" default:"30"`
 	MqttLogs     bool   `long:"mqttlogs" short:"m" description:"For developer - Display detailed MQTT logging messages" required:"false"`
 	NoTLS        bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
-	LogLevel     string `long:"loglevel" short:"l" description:"Set the logging level" required:"true"` // level -> error, info, debug.
+	LogLevel     string `long:"loglevel" short:"l" description:"Set the logging level" required:"true"`
 	NodeId       string `long:"nodeId" short:"i" description:"ID of this node" required:"false" default:"register"`
 	NodeName     string `long:"name" short:"n" description:"Name of this node to be registered" required:"false"`
 	RootCertPath string `long:"rootcert" short:"r" description:"Path to MQTT broker (server) certificate" required:"false"`
@@ -53,26 +52,25 @@ var parser = flags.NewParser(&opt, flags.Default)
 var registered = false
 var connected = false
 
-// logging into terminal and files
+var logger = &lumberjack.Logger{
+	Filename:   filepath.ToSlash("logs"), //file_name or with destination eg. xxx/xxx/xxx/file_name
+	MaxSize:    1,                        //Size limit of a single .txt file in MB. Default -> 100MB
+	MaxAge:     30,                       //Number of days to retain the files. Default -> no file deletion based on age
+	MaxBackups: 10,                       //Maximum number of old files to retain. Default -> retain all old files
+	Compress:   false,                    //option to compress the files
+}
+
+// logging into the terminal and files
 func init() {
 
-	lumberjackLogger := &lumberjack.Logger{
-		Filename:   filepath.ToSlash("logs"), //file_name or with destination eg. xxx/xxx/xxx/file_name
-		MaxSize:    1,                        //Size limit of a single .txt file in MB. Default -> 100MB
-		MaxAge:     30,                       //Number of days to retain the files. Default -> no file deletion based on age
-		MaxBackups: 10,                       //Maximum number of old files to retain. Default -> retain all old files
-		LocalTime:  false,                    //time in UTC
-		Compress:   false,                    //option to compress the files
-	}
-
-	multiWriter := io.MultiWriter(os.Stderr, lumberjackLogger)
-
 	logFormatter := new(log.TextFormatter)
-	logFormatter.TimestampFormat = "2006-02-01 15:04:05 IST"
+
+	timezone, _ := time.Now().Zone()
+	logFormatter.TimestampFormat = "2006-02-01 15:04:05 " + timezone
 	logFormatter.FullTimestamp = true
 
 	log.SetFormatter(logFormatter)
-	log.SetOutput(multiWriter)
+	log.SetOutput(logger)
 }
 
 func main() {
@@ -85,22 +83,16 @@ func main() {
 
 	// FLAG: Show the logs from the Paho package at STDOUT
 	if opt.MqttLogs {
-		mqtt.ERROR = golog.New(os.Stdout, "[ERROR] ", 0)
-		mqtt.CRITICAL = golog.New(os.Stdout, "[CRIT] ", 0)
-		mqtt.WARN = golog.New(os.Stdout, "[WARN]  ", 0)
-		mqtt.DEBUG = golog.New(os.Stdout, "[DEBUG] ", 0)
+		mqtt.ERROR = golog.New(logger, "[ERROR] ", 0)
+		mqtt.CRITICAL = golog.New(logger, "[CRIT] ", 0)
+		mqtt.WARN = golog.New(logger, "[WARN]  ", 0)
+		mqtt.DEBUG = golog.New(logger, "[DEBUG] ", 0)
 	}
 	// FLAG: LogLevel
 	l, _ := log.ParseLevel(opt.LogLevel)
 	log.SetLevel(l)
 	log.Info("Started logging")
 
-	// FLAG: Verbose
-	/*if len(opt.Verbose) >= 1 {
-		log.SetLevel(log.DebugLevel)
-	} else {
-		log.SetLevel(log.InfoLevel)
-	}*/
 	log.Info("Logging level set to ", log.GetLevel())
 
 	// OPTION: Parse and validate the Broker url
