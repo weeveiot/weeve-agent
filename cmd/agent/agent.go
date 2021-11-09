@@ -22,6 +22,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/google/uuid"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal"
@@ -37,6 +38,7 @@ type Params struct {
 	Heartbeat    int    `long:"heartbeat" short:"h" description:"Heartbeat time in seconds" required:"false" default:"30"`
 	MqttLogs     bool   `long:"mqttlogs" short:"m" description:"For developer - Display detailed MQTT logging messages" required:"false"`
 	NoTLS        bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
+	LogLevel     string `long:"loglevel" short:"l" description:"Set the logging level" required:"true"`
 	NodeId       string `long:"nodeId" short:"i" description:"ID of this node" required:"false" default:"register"`
 	NodeName     string `long:"name" short:"n" description:"Name of this node to be registered" required:"false"`
 	RootCertPath string `long:"rootcert" short:"r" description:"Path to MQTT broker (server) certificate" required:"false"`
@@ -50,12 +52,25 @@ var parser = flags.NewParser(&opt, flags.Default)
 var registered = false
 var connected = false
 
-func init() {
-	log.SetFormatter(&log.TextFormatter{})
-	log.SetOutput(os.Stdout)
+var logger = &lumberjack.Logger{
+	Filename:   filepath.ToSlash("logs"), //file_name or with destination eg. xxx/xxx/xxx/file_name
+	MaxSize:    1,                        //Size limit of a single .txt file in MB. Default -> 100MB
+	MaxAge:     30,                       //Number of days to retain the files. Default -> no file deletion based on age
+	MaxBackups: 10,                       //Maximum number of old files to retain. Default -> retain all old files
+	Compress:   false,                    //option to compress the files
+}
 
-	log.SetLevel(log.DebugLevel)
-	log.Info("Started logging")
+// logging into the terminal and files
+func init() {
+
+	logFormatter := new(log.TextFormatter)
+
+	timezone, _ := time.Now().Zone()
+	logFormatter.TimestampFormat = "2006-02-01 15:04:05 " + timezone
+	logFormatter.FullTimestamp = true
+
+	log.SetFormatter(logFormatter)
+	log.SetOutput(logger)
 }
 
 func main() {
@@ -68,21 +83,19 @@ func main() {
 
 	// FLAG: Show the logs from the Paho package at STDOUT
 	if opt.MqttLogs {
-		mqtt.ERROR = golog.New(os.Stdout, "[ERROR] ", 0)
-		mqtt.CRITICAL = golog.New(os.Stdout, "[CRIT] ", 0)
-		mqtt.WARN = golog.New(os.Stdout, "[WARN]  ", 0)
-		mqtt.DEBUG = golog.New(os.Stdout, "[DEBUG] ", 0)
+		mqtt.ERROR = golog.New(logger, "[ERROR] ", 0)
+		mqtt.CRITICAL = golog.New(logger, "[CRIT] ", 0)
+		mqtt.WARN = golog.New(logger, "[WARN]  ", 0)
+		mqtt.DEBUG = golog.New(logger, "[DEBUG] ", 0)
 	}
+	// FLAG: LogLevel
+	l, _ := log.ParseLevel(opt.LogLevel)
+	log.SetLevel(l)
+	log.Info("Started logging")
 
-	// FLAG: Verbose
-	if len(opt.Verbose) >= 1 {
-		log.SetLevel(log.DebugLevel)
-	} else {
-		log.SetLevel(log.InfoLevel)
-	}
 	log.Info("Logging level set to ", log.GetLevel())
 
-	// OPTION: Parse and validated the Broker url
+	// OPTION: Parse and validate the Broker url
 	u, err := url.Parse(opt.Broker)
 	if err != nil {
 		log.Error("Error on parsing broker ", err)
