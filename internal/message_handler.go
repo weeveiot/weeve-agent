@@ -124,10 +124,10 @@ func GetStatusMessage(nodeId string) model.StatusMessage {
 	return model.StatusMessage{Id: nodeId, Timestamp: millis, Status: "Available", ActiveServiceCount: actv_cnt, ServiceCount: serv_cnt, ServicesStatus: mani, DeviceParams: deviceParams}
 }
 
-func GetRegistrationMessage(nodeId string) model.RegistrationMessage {
+func GetRegistrationMessage(nodeId string, nodeName string) model.RegistrationMessage {
 	now := time.Now()
 	nanos := now.UnixNano()
 	millis := nanos / 1000000
 
-	return model.RegistrationMessage{Id: nodeId, Timestamp: millis, Status: "Registering", Operation: "Registration", Name: "NodeName"}
+	return model.RegistrationMessage{Id: nodeId, Timestamp: millis, Status: "Registering", Operation: "Registration", Name: nodeName}
 }

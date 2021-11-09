@@ -37,6 +37,7 @@ type Params struct {
 	MqttLogs     bool   `long:"mqttlogs" short:"m" description:"For developer - Display detailed MQTT logging messages" required:"false"`
 	NoTLS        bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
 	NodeId       string `long:"nodeId" short:"i" description:"ID of this node" required:"false" default:"register"`
+	NodeName     string `long:"name" short:"n" description:"Name of this node to be registered" required:"false"`
 	RootCertPath string `long:"rootcert" short:"r" description:"Path to MQTT broker (server) certificate" required:"false"`
 	CertPath     string `long:"cert" short:"f" description:"Path to certificate to authenticate to Broker" required:"false"`
 	KeyPath      string `long:"key" short:"k" description:"Path to private key to authenticate to Broker" required:"false"`
@@ -287,8 +288,13 @@ func PublishMessages(publisher mqtt.Client, pubNodeId string, msgType string) bo
 	var err error
 	if msgType == "Registration" {
 		topicNm = opt.PubClientId + "/" + pubNodeId + "/" + "Registration"
+		nodeName := "NodeName"
 
-		msg := internal.GetRegistrationMessage(pubNodeId)
+		if opt.NodeName != "" {
+			nodeName = opt.NodeName
+		}
+
+		msg := internal.GetRegistrationMessage(pubNodeId, nodeName)
 		log.Info("Sending registration request.", "Registration", msg)
 		b_msg, err = json.Marshal(msg)
 		if err != nil {
@@ -382,6 +388,10 @@ func validateUpdateConfig() {
 
 	if opt.CertPath != "" {
 		nodeConfig[constants.KeyPrivateKey] = opt.KeyPath
+		configChanged = true
+	}
+	if opt.NodeName != "" {
+		nodeConfig[constants.KeyNodeName] = opt.NodeName
 		configChanged = true
 	}
 	if configChanged {
