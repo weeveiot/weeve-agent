@@ -64,7 +64,6 @@ func init() {
 
 	log.SetFormatter(logFormatter)
 	log.SetOutput(multiWriter)
-	log.Info("Started logging")
 }
 
 func NewTLSConfig(CertPath string) (config *tls.Config, err error) {
@@ -148,6 +147,7 @@ func main() {
 	// FLAG: LogLevel
 	l, _ := log.ParseLevel(opt.LogLevel)
 	log.SetLevel(l)
+	log.Info("Started logging")
 
 	// FLAG: Verbose
 	/*if len(opt.Verbose) >= 1 {
