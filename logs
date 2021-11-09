@@ -1,4 +1,0 @@
-time="20211-02-1111 117:4111:5111 IST" level=info msg="Started logging"
-time="20211-02-1111 117:4111:5111 IST" level=error msg="Error on command line parser the required flags `-b, --broker', `-c, --pubClientId', `-i, --nodeId', `-l, --loglevel', `-s, --subClientId' and `-t, --publish' were not specified"
-time="20211-02-1111 117:395:59 IST" level=info msg="Started logging"
-time="20211-02-1111 117:395:59 IST" level=error msg="Error on command line parser the required flags `-b, --broker', `-c, --pubClientId', `-i, --nodeId', `-l, --loglevel', `-s, --subClientId' and `-t, --publish' were not specified"
