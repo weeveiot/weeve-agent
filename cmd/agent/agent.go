@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	golog "log"
+	mathrand "math/rand"
 	"net"
 	"net/url"
 	"os"
@@ -111,7 +112,8 @@ func main() {
 	var subscriber mqtt.Client
 	var nodeConfig map[string]string
 
-	validateUpdateConfig()
+	nodeConfig = internal.ReadNodeConfig()
+	validateUpdateConfig(nodeConfig)
 
 	// Read node configurations
 	nodeConfig = internal.ReadNodeConfig()
@@ -131,7 +133,7 @@ func main() {
 		publisher = InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId+"/Registration", false)
 		subscriber = InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId+"/Certificate", true)
 		for {
-			published := PublishMessages(publisher, nodeId, "Registration")
+			published := PublishMessages(publisher, nodeId, nodeConfig[constants.KeyNodeName], "Registration")
 			if published {
 				break
 			}
@@ -161,7 +163,7 @@ func main() {
 					connected = true
 				}
 				CheckBrokerConnection(publisher, subscriber)
-				PublishMessages(publisher, nodeId, "All")
+				PublishMessages(publisher, nodeId, "", "All")
 			}
 
 			time.Sleep(time.Second * time.Duration(opt.Heartbeat))
@@ -272,7 +274,7 @@ func CheckBrokerConnection(publisher mqtt.Client, subscriber mqtt.Client) {
 	}
 }
 
-func PublishMessages(publisher mqtt.Client, pubNodeId string, msgType string) bool {
+func PublishMessages(publisher mqtt.Client, pubNodeId string, nodeName string, msgType string) bool {
 
 	if !publisher.IsConnected() {
 		log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
@@ -288,11 +290,6 @@ func PublishMessages(publisher mqtt.Client, pubNodeId string, msgType string) bo
 	var err error
 	if msgType == "Registration" {
 		topicNm = opt.PubClientId + "/" + pubNodeId + "/" + "Registration"
-		nodeName := "NodeName"
-
-		if opt.NodeName != "" {
-			nodeName = opt.NodeName
-		}
 
 		msg := internal.GetRegistrationMessage(pubNodeId, nodeName)
 		log.Info("Sending registration request.", "Registration", msg)
@@ -374,25 +371,36 @@ var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err
 	log.Info("Connection lost", err)
 }
 
-func validateUpdateConfig() {
+func validateUpdateConfig(nodeConfigs map[string]string) {
 	var configChanged bool
 	nodeConfig := map[string]string{}
 	if opt.NodeId != "register" {
 		nodeConfig[constants.KeyNodeId] = opt.NodeId
 		configChanged = true
 	}
-	if opt.CertPath != "" {
+	if len(opt.CertPath) > 0 {
 		nodeConfig[constants.KeyCertificate] = opt.CertPath
 		configChanged = true
 	}
 
-	if opt.CertPath != "" {
+	if len(opt.CertPath) > 0 {
 		nodeConfig[constants.KeyPrivateKey] = opt.KeyPath
 		configChanged = true
 	}
-	if opt.NodeName != "" {
+
+	if len(opt.NodeName) > 0 {
 		nodeConfig[constants.KeyNodeName] = opt.NodeName
 		configChanged = true
+	} else {
+		nodeNm := nodeConfigs[constants.KeyNodeName]
+		if nodeNm == "" {
+			nodeNm = "New Node"
+		}
+		if nodeNm == "New Node" {
+			nodeNm = fmt.Sprintf("%s%d", nodeNm, mathrand.Intn(10000))
+			nodeConfig[constants.KeyNodeName] = nodeNm
+			configChanged = true
+		}
 	}
 	if configChanged {
 		internal.UpdateNodeConfig(nodeConfig)

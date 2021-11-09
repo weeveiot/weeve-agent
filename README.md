@@ -69,6 +69,7 @@ All the below params can be updated into json instead of arguments as above
 	"PrivateKey": "<node private key/bootstrap private key file name>",
     "Certificate": "<node certificate/bootstrap certificate file name>",
     "NodeId": "<node id>" //Empty initially for auto registration    
+	"NodeName": "<node name>" //Node name for auto registration  
 }
 
 # [BELOW IS WIP]
