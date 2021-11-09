@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "WeeveAgent",
+            "name": "WeeveAgentLocal",
             "type": "go",
             "request": "launch",
             "mode": "debug",
@@ -14,15 +14,34 @@
             "args": [
                 "-v",
                 "--notls",
-                "--nodeId",
-                "local-test-node-1",
-                "--broker",
+                "-b",
                 "tcp://localhost:8080",
-                "--subClientId",
+                "-s",
                 "nodes/localtest",
-                "--pubClientId",
+                "-c",
                 "manager/localtest",
-                "--publish",
+                "-t",
+                "CheckVersion",
+                "--heartbeat",
+                "300"
+            ]
+        },
+        {
+            "name": "WeeveAgent",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/agent/agent.go",
+            "showLog": true,
+            "args": [
+                "-v",
+                "-b",
+                "tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883",
+                "-s",
+                "nodes/awsdev",
+                "-c",
+                "manager/awsdev",
+                "-t",
                 "CheckVersion",
                 "--heartbeat",
                 "3600"

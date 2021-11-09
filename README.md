@@ -32,12 +32,12 @@ In a new terminal instance, subscribe to all topics for that broker; `mosquitto_
 In a final terminal, run the weeve agent and connect to the broker to publish status messages;
 ```bash
 go run ./cmd/agent/agent.go -v --notls \
-    --nodeId local-test-node-1 \ # ID of this node \
     --broker tcp://localhost:8080 \ # Broker to connect to \
     --subClientId nodes/localtest \ # Subscriber ClientId \
     --pubClientId manager/localtest \ # Publisher ClientId \
     --publish CheckVersion  \ # Topic Name \
 	--heartbeat 3 # Status message publishing interval
+    --nodeId local-test-node-1 \ # ID of this node optional \
 ```
 
 The `-v` flag enables debug logs, and the `--notls` flag disables TLS configuation. Further logs from the `paho` MQTT client can be enabled with the `--mqttlogs` flag.
@@ -47,14 +47,12 @@ TLS configuration requires the full path to all secrets and certificates as foll
 
 ```bash
 SERVER_CERTIFICATE=AmazonRootCA1.pem
-CLIENT_CERTIFICATE=adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-certificate.pem.crt
-CLIENT_PRIVATE_KEY=adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-private.pem.key
+CLIENT_CERTIFICATE=<nodeid>-certificate.pem.crt
+CLIENT_PRIVATE_KEY=<nodeid>-private.pem.key
 go run ./cmd/agent/agent.go -v \
-    --nodeId awsdev-test-node-1 \ # ID of this node \
-    --broker tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883 \ # Broker to connect to \
-	--rootcert $SERVER_CERTIFICATE \ #\
-	--cert $CLIENT_CERTIFICATE \ #\
-	--key $CLIENT_PRIVATE_KEY \ #\
+	--nodeId awsdev-test-node-1 \ # ID of this node (optional here)\
+	--nodeName awsdev-test-node-1 \ # Name of this node (optional here)\
+    --broker tls://<broker host url>:8883 \ # Broker to connect to \
     --subClientId nodes/awsdev \ # Subscriber ClientId \
     --pubClientId manager/awsdev \ # Publisher ClientId \
     --publish status \ # Topic bame for publishing status messages \
@@ -63,6 +61,16 @@ go run ./cmd/agent/agent.go -v \
 ```
 
 The `tls` protocol is strictly checked in the Broker url.
+
+# Config options
+All the below params can be updated into json instead of arguments as above
+{
+    "AWSRootCert": "AmazonRootCA1.pem",
+	"PrivateKey": "<node private key/bootstrap private key file name>",
+    "Certificate": "<node certificate/bootstrap certificate file name>",
+    "NodeId": "<node id>" //Empty initially for auto registration    
+	"NodeName": "<node name>" //Node name for auto registration  
+}
 
 # [BELOW IS WIP]
 
@@ -128,58 +136,8 @@ The `go` command may be replaced with the `richgo` command to provide more color
 A file watcher is employed to automate the restart of the server and run tests on code change.
 The file selected watcher is [reflex](https://github.com/cespare/reflex), and is installed with `go get -u github.com/cespare/reflex`.
 
-The server can be started with;
-`reflex -r '\.go$' -s -- sh -c 'go run ./cmd/node-service.go -v -p 8030'`
-
-Similarly for unit tests;
+For unit tests;
 `reflex -r '\.go$' -s -- sh -c 'richgo test -v ./...'`
-
-
-**Endpoint**
-
-POST: {EDGE_PIPELINE_URL}/pipelines
-
-Request Body:
-
-```
-{
-    "ID":"manifest2",
-	"Name": "ManifestSingleContainerWithParameters",
-	"Modules": [
-    {
-		"Index": 0,
-		"Name": "c1",
-		"Tag": "working",
-		"ImageID": "sha256:a99a6700a30478ce4af059543a0aaac139eea3c85ff62b2603c9d53b4cc42657",
-		"ImageName": "weevenetwork/go-mqtt-gobot",
-        "options": [
-            {"opt":"network", "val":"host"}
-            ],
-        "arguments": [
-            {"arg":"InBroker", "val":"localhost:1883"},
-            {"arg":"ProcessName", "val":"container-1"},
-            {"arg":"InTopic", "val":"topic/source"},
-            {"arg":"InClient", "val":"weevenetwork/go-mqtt-gobot"},
-            {"arg":"OutBroker", "val":"localhost:1883"},
-            {"arg":"OutTopic", "val":"topic/c2"},
-            {"arg":"OutClient", "val":"weevenetwork/go-mqtt-gobot"}
-        ]
-	}
-    ]
-}
-```
-
-go run ./listener/node_listener.go -v -i demo_edge_node1 -b tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883 -f efbb87beed -s nodes/awsdev -c manager/awsdev -t CheckVersion -u hssss -p 8030
-
-go run ./listener/node_listener.go -v \
-    --nodeId demo_edge_node1 \ # ID of this node \
-    --broker tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883 \ # Broker to connect to \
-    --cert adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c \ # Certificate to connect Broker \
-    --subClientId nodes/awsdev \ # Subscriber ClientId \
-    --pubClientId manager/awsdev \ # Publisher ClientId \
-    --publish CheckVersion \ # Topic Name \
-    --publicurl hssss \ # Public URL to connect from public \
-    --nodeport 8030 \ # Port where edge node api is listening
 
 
 # [WIP] Developer testing - listener
@@ -219,72 +177,178 @@ ifconfig
 
 ## Testing the manifest
 ```bash
-NODE_URL_AWS='http://ec2-52-59-184-236.eu-central-1.compute.amazonaws.com:8030/pipelines'
-
-NODE_URL_LOCAL='http://localhost:8030/pipelines'
+Local: mosquitto_pub -t nodes/localtest/{nodeId}/deploy -p 8080 -l
 
 MANIFEST='{
-	"id": "e1b09fb4-ce02-4cbd-a7e1-e4f717b62b18",
+	"id": "3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e",
+	"created": 1632981575399,
 	"version": "1.0.0",
-	"compose": {
-		"network": {
-			"driver": "bridge",
-			"name": "tick-network"
-		},
-		"services": [{
-            "name": "MQTT Ingress",
-            "id": "e0569c1d-380b-43cb-b38c-2ddaf52d75b3",
+	"organizationId": "",
+	"services": [
+		{
 			"image": {
-				"name": "weevenetwork/weeve-ingress-mqtt",
+				"name": "weevenetwork/dev-random",
 				"tag": "latest"
 			},
-			"environments": [{
-				"default": "",
-				"name": "MQTT Broker",
-				"options": null,
-				"description": "Broker to subscribe from",
-				"type": "string",
-				"value": "mqtt://18.193.133.162/",
-				"key": "MQTT_BROKER"
-			}, {
-				"default": "1883",
-				"name": "Port",
-				"options": null,
-				"description": "Port on which the broker is listening",
-				"type": "integer",
-				"value": "",
-				"key": "PORT"
-			}, {
-				"default": "mqtt",
-				"name": "Protocol",
-				"options": ["mqtt", "ws"],
-				"description": "Protocol used for connection",
-				"type": "enum",
-				"value": "",
-				"key": "PROTOCOL"
-			}, {
-				"default": "",
-				"name": "Topic",
-				"options": null,
-				"description": "Topic to subscribe",
-				"type": "string",
-				"value": "weeve/airquality",
-				"key": "TOPIC"
-			}, {
-				"default": "0",
-				"name": "QOS",
-				"options": ["0", "1", "2"],
-				"description": "Quality of service for the connection",
-				"type": "enum",
-				"value": "",
-				"key": "QOS"
-			}],
-			"document": "{'\''ports'\'': [],'\''volumes'\'': [{'\''host'\'': '\''/dev/tty10'\'','\''container'\'': '\''/dev/tty10'\''},{'\''host'\'': '\''/documents'\'','\''container'\'': '\''/app'\''}]}"
-		}]
-	}
+			"environments": [
+				{
+					"default": "",
+					"name": "Volume Container",
+					"options": null,
+					"description": "Volume mount container.",
+					"type": "string",
+					"value": "/mnt/random",
+					"key": "VOLUME_CONTAINER"
+				}
+			],
+			"document": "{\"ports\":[],\"mounts\":[{\"Type\":\"bind\",\"Source\":\"/dev/urandom\",\"Target\":\"/mnt/random\",\"ReadOnly\":true}],\"restart_policy\":{\"condition\":\"on-failure\",\"delay\":\"10s\",\"max_attempts\":3,\"window\":\"120s\"}}",
+			"name": "dev-randomv2",
+			"icon": "https://icons-020-demo.s3.eu-central-1.amazonaws.com/USB.png",
+			"description": "Ingress module mounting the dev/random device to generate a SHA256 hash string with bind type mounting.",
+			"id": "b9830bc7-a0af-4672-b8de-d570414cabb2",
+			"categories": [
+				{
+					"name": "Experimental",
+					"id": "category"
+				}
+			],
+			"type": "input",
+			"version": "0.0.1",
+			"commands": [
+				{
+					"default": "",
+					"name": "Hash",
+					"options": [
+						"md5",
+						"sha1",
+						"sha256"
+					],
+					"description": "Hash type.",
+					"type": "enum",
+					"value": "sha256",
+					"key": "hash"
+				},
+				{
+					"default": "",
+					"name": "Interval",
+					"options": null,
+					"description": "Sleep interval.",
+					"type": "integer",
+					"value": "30",
+					"key": "interval"
+				}
+			],
+			"tags": [
+				"dev",
+				"random"
+			]
+		},
+		{
+			"image": {
+				"name": "weevenetwork/hash-to-int",
+				"tag": "latest"
+			},
+			"environments": null,
+			"document": "{\"ports\":[],\"volumes\":[],\"restart_policy\":{\"condition\":\"on-failure\",\"delay\":\"10s\",\"max_attempts\":3,\"window\":\"120s\"}}",
+			"name": "hash-to-int",
+			"icon": "https://icons-020-demo.s3.eu-central-1.amazonaws.com/USB.png",
+			"description": "Return the integer representation of a byte string.",
+			"id": "6bc53b83-eb48-4cb5-bb25-a772c4a1ae85",
+			"categories": [
+				{
+					"name": "Experimental",
+					"id": "category"
+				}
+			],
+			"type": "process",
+			"version": "0.0.1",
+			"commands": null,
+			"tags": [
+				"hash",
+				"integer",
+				"byte",
+				"string"
+			]
+		},
+		{
+			"image": {
+				"name": "weevenetwork/http-egress",
+				"tag": "latest"
+			},
+			"environments": [
+				{
+					"default": "",
+					"name": "HTTP URL",
+					"options": null,
+					"description": "Paste the HTTP address.",
+					"type": "string",
+					"value": "https://hookb.in/2qla9bN0JLFdzq88zqko",
+					"key": "EGRESS_WEBHOOK_URL"
+				},
+				{
+					"default": "",
+					"name": "Method",
+					"options": [
+						"POST",
+						"GET"
+					],
+					"description": "HTTP ReST method (recommended POST).",
+					"type": "enum",
+					"value": "POST",
+					"key": "METHOD"
+				},
+				{
+					"default": "",
+					"name": "Input Labels",
+					"options": null,
+					"description": "List of comma (,) separated labels to read from a previous module. Leave empty (\"\") to keep all data.",
+					"type": "string",
+					"value": "",
+					"key": "LABELS"
+				},
+				{
+					"default": "",
+					"name": "Timestamp Field",
+					"options": null,
+					"description": "Label for timestamp field for incoming data. If left empty, this module will add the timestamp.",
+					"type": "string",
+					"value": "Time",
+					"key": "TIMESTAMP"
+				}
+			],
+			"document": "{\"ports\":[],\"volumes\":[],\"restart_policy\":{\"condition\":\"on-failure\",\"delay\":\"10s\",\"max_attempts\":3,\"window\":\"120s\"}}",
+			"name": "HTTP Egress",
+			"icon": "https://icons-020-demo.s3.eu-central-1.amazonaws.com/HTTP.png",
+			"description": "Send your data to a third party via HTTP",
+			"id": "88352247-1ba8-4cf7-8e9c-7b5242e34cde",
+			"categories": [
+				{
+					"name": "Egress",
+					"id": "category"
+				}
+			],
+			"type": "output",
+			"version": "1.0.0",
+			"commands": [],
+			"tags": [
+				"HTTP Egress",
+				"output",
+				"Send",
+				"data",
+				"third",
+				"party",
+				"http"
+			]
+		}
+	],
+	"networks": {
+		"driver": "bridge",
+		"name": "tick-network"
+	},
+	"description": "MVPDataServiceV2",
+	"document": "",
+	"name": "MVPDataServiceV2",
+	"modified": 1632981575399
 }'
 
-curl --location --request POST $NODE_URL_LOCAL \
---header 'Content-Type: application/json' \
---data-raw $MANIFEST
 ```

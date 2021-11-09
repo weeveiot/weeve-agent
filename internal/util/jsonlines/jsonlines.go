@@ -75,11 +75,12 @@ func Encode(w io.Writer, ptrToSlice interface{}) error {
 func Read(jsonFile string, pkField string, pkVal string, filter map[string]string, excludeKey bool) []map[string]interface{} {
 	var val []map[string]interface{}
 	file, err := os.Open(jsonFile)
-
 	if err != nil {
 		log.Error("File not available", err)
 		return val
 	}
+
+	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
 
@@ -89,8 +90,6 @@ func Read(jsonFile string, pkField string, pkVal string, filter map[string]strin
 	for scanner.Scan() {
 		text = append(text, scanner.Text())
 	}
-
-	file.Close()
 
 	for _, each_ln := range text {
 		log.Debug(each_ln)

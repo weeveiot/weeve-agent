@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/Jeffail/gabs/v2"
@@ -153,10 +154,16 @@ func (m Manifest) ContainerNamesList(networkName string) []string {
 func GetContainerName(networkName string, imageName string, tag string, index int) string {
 	containerName := fmt.Sprint(networkName, ".", imageName, "_", tag, ".", index)
 
-	containerName = strings.ReplaceAll(containerName, "/", "_")
-	containerName = strings.ReplaceAll(containerName, ":", "_")
+	// create regular expression for all alphanumeric characters and _ . -
+	reg, err := regexp.Compile("[^A-Za-z0-9_.-]+")
+	if err != nil {
+		log.Error(err)
+	}
 
-	return strings.ReplaceAll(containerName, " ", "")
+	containerName = strings.ReplaceAll(containerName, " ", "")
+	containerName = reg.ReplaceAllString(containerName, "_")
+
+	return containerName
 }
 
 // Based on an existing Manifest object, build a new object
@@ -166,7 +173,6 @@ func GetContainerName(networkName string, imageName string, tag string, index in
 // 		- Arguments to pass into entrypoint
 func (m Manifest) GetContainerStart(networkName string) []ContainerConfig {
 	var startCommands []ContainerConfig
-	var cntr = 0
 	var prev_container_name = ""
 
 	for index, mod := range m.Manifest.Search("services").Children() {
@@ -188,16 +194,33 @@ func (m Manifest) GetContainerStart(networkName string) []ContainerConfig {
 		//Populate Environment variables
 		log.Debug("Processing environments arguments")
 		var envArgs = ParseArguments(mod.Search("environments").Children(), false)
-		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "SERVICE_ID", m.Manifest.Search("id").Data().(string)))
 
-		if cntr > 0 {
+		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "SERVICE_ID", m.Manifest.Search("id").Data().(string)))
+		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_NAME", mod.Search("name").Data().(string)))
+		types_mapping := map[string]string{"input": "INGRESS", "process": "PROCESS", "output": "EGRESS"}
+		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_TYPE", types_mapping[mod.Search("type").Data().(string)]))
+		if mod.Search("type").Data().(string) == "output" {
+			// need to pass anything as EGRESS_URL for module's validation script
+			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "EGRESS_URL", "None"))
+		}
+		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_HOST", thisStartCommand.ContainerName))
+		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PORT", 80))
+		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PATH", "/"))
+
+		// since there is no cmd in module's dockerfile, need to move commands to environments
+		for _, cmd := range mod.Search("commands").Children() {
+			envArgs = append(envArgs, fmt.Sprintf("%v=%v", cmd.Search("key").Data().(string), cmd.Search("value").Data().(string)))
+		}
+
+		if index > 0 {
 			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "PREV_CONTAINER_NAME", prev_container_name))
 
 			var next_arg = fmt.Sprintf("%v=%v", "NEXT_CONTAINER_NAME", thisStartCommand.ContainerName)
-			startCommands[cntr-1].EnvArgs = append(startCommands[cntr-1].EnvArgs, next_arg)
+			startCommands[index-1].EnvArgs = append(startCommands[index-1].EnvArgs, next_arg)
 
-			var temp_arg = fmt.Sprintf("%v=http://%v", "EGRESS_API_HOST", thisStartCommand.ContainerName)
-			startCommands[cntr-1].EnvArgs = append(startCommands[cntr-1].EnvArgs, temp_arg)
+			// following egressing convention 2: http://host:80/
+			var temp_arg = fmt.Sprintf("%v=http://%v:80/", "EGRESS_URL", thisStartCommand.ContainerName)
+			startCommands[index-1].EnvArgs = append(startCommands[index-1].EnvArgs, temp_arg)
 		}
 		prev_container_name = thisStartCommand.ContainerName
 
@@ -260,7 +283,6 @@ func (m Manifest) GetContainerStart(networkName string) []ContainerConfig {
 		}
 
 		startCommands = append(startCommands, thisStartCommand)
-		cntr += 1
 	}
 
 	return startCommands
