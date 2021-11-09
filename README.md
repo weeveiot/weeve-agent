@@ -51,6 +51,7 @@ CLIENT_CERTIFICATE=<nodeid>-certificate.pem.crt
 CLIENT_PRIVATE_KEY=<nodeid>-private.pem.key
 go run ./cmd/agent/agent.go -v \
 	--nodeId awsdev-test-node-1 \ # ID of this node (optional here)\
+	--nodeName awsdev-test-node-1 \ # Name of this node (optional here)\
     --broker tls://<broker host url>:8883 \ # Broker to connect to \
     --subClientId nodes/awsdev \ # Subscriber ClientId \
     --pubClientId manager/awsdev \ # Publisher ClientId \
