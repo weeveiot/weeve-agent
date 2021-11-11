@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	golog "log"
 	mathrand "math/rand"
@@ -38,7 +39,7 @@ type Params struct {
 	Heartbeat    int    `long:"heartbeat" short:"h" description:"Heartbeat time in seconds" required:"false" default:"30"`
 	MqttLogs     bool   `long:"mqttlogs" short:"m" description:"For developer - Display detailed MQTT logging messages" required:"false"`
 	NoTLS        bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
-	LogLevel     string `long:"loglevel" short:"l" description:"Set the logging level" required:"true"`
+	LogLevel     string `long:"loglevel" short:"l" description:"Set the logging level" required:"false"`
 	NodeId       string `long:"nodeId" short:"i" description:"ID of this node" required:"false" default:"register"`
 	NodeName     string `long:"name" short:"n" description:"Name of this node to be registered" required:"false"`
 	RootCertPath string `long:"rootcert" short:"r" description:"Path to MQTT broker (server) certificate" required:"false"`
@@ -65,12 +66,11 @@ func init() {
 
 	logFormatter := new(log.TextFormatter)
 
-	timezone, _ := time.Now().Zone()
-	logFormatter.TimestampFormat = "2006-02-01 15:04:05 " + timezone
+	logFormatter.TimestampFormat = "2006-02-01 15:04:05 "
 	logFormatter.FullTimestamp = true
 
 	log.SetFormatter(logFormatter)
-	log.SetOutput(logger)
+
 }
 
 func main() {
@@ -81,6 +81,24 @@ func main() {
 		os.Exit(1)
 	}
 
+	// FLAG: LogLevel
+	l, err := log.ParseLevel(opt.LogLevel)
+
+	if err != nil {
+		log.SetLevel(log.InfoLevel)
+	} else {
+		log.SetLevel(l)
+	}
+
+	multiWriter := io.MultiWriter(os.Stderr, logger)
+
+	// FLAG: Verbose
+	if len(opt.Verbose) >= 1 {
+		log.SetOutput(multiWriter)
+	} else {
+		log.SetOutput(logger)
+	}
+
 	// FLAG: Show the logs from the Paho package at STDOUT
 	if opt.MqttLogs {
 		mqtt.ERROR = golog.New(logger, "[ERROR] ", 0)
@@ -88,9 +106,7 @@ func main() {
 		mqtt.WARN = golog.New(logger, "[WARN]  ", 0)
 		mqtt.DEBUG = golog.New(logger, "[DEBUG] ", 0)
 	}
-	// FLAG: LogLevel
-	l, _ := log.ParseLevel(opt.LogLevel)
-	log.SetLevel(l)
+
 	log.Info("Started logging")
 
 	log.Info("Logging level set to ", log.GetLevel())
