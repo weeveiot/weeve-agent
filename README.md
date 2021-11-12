@@ -40,7 +40,7 @@ go run ./cmd/agent/agent.go -v --notls \
     --nodeId local-test-node-1 \ # ID of this node optional \
 ```
 
-The `-v` flag enables debug logs, and the `--notls` flag disables TLS configuation. Further logs from the `paho` MQTT client can be enabled with the `--mqttlogs` flag.
+The `-v` flag enables logs in terminal, and the `--notls` flag disables TLS configuation. Further logs from the `paho` MQTT client can be enabled with the `--mqttlogs` flag, and the `--loglevel` flag enables to set desired logging level.
 
 ### With TLS
 TLS configuration requires the full path to all secrets and certificates as follows;
@@ -51,7 +51,7 @@ CLIENT_CERTIFICATE=<nodeid>-certificate.pem.crt
 CLIENT_PRIVATE_KEY=<nodeid>-private.pem.key
 go run ./cmd/agent/agent.go -v \
 	--nodeId awsdev-test-node-1 \ # ID of this node (optional here)\
-	--nodeName awsdev-test-node-1 \ # Name of this node (optional here)\
+	--name awsdev-test-node-1 \ # Name of this node (optional here)\
     --broker tls://<broker host url>:8883 \ # Broker to connect to \
     --subClientId nodes/awsdev \ # Subscriber ClientId \
     --pubClientId manager/awsdev \ # Publisher ClientId \

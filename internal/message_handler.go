@@ -24,7 +24,7 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 		}
 	}()
 
-	log.Info(" ProcessMessage topic_rcvd ", topic_rcvd)
+	log.Info("Processing the message : ", topic_rcvd)
 
 	jsonParsed, err := gabs.ParseJSON(payload)
 	if err != nil {
@@ -41,6 +41,8 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 			status := deploy.DeployManifest(thisManifest, topic_rcvd)
 			if status {
 				log.Info("Manifest deployed successfully")
+			} else {
+				log.Info("Deployment unsuccessful")
 			}
 
 		} else if topic_rcvd == "redeploy" {
@@ -50,6 +52,8 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 			status := deploy.DeployManifest(thisManifest, topic_rcvd)
 			if status {
 				log.Info("Manifest redeployed successfully")
+			} else {
+				log.Info("Redeployment unsuccessful")
 			}
 
 		} else if topic_rcvd == "stopservice" {
@@ -91,7 +95,7 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 
 				status := deploy.UndeployDataService(serviceId, serviceVersion)
 				if status {
-					log.Info("Service undeployed!")
+					log.Info("Undeployment Successful")
 				}
 			} else {
 				log.Error(err)

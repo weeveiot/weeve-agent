@@ -229,10 +229,10 @@ func InitBrokerChannel(nodeConfig map[string]string, pubsubClientId string, isSu
 		}
 		// log.Debug("Tls Config >> ", tlsconfig)
 		channelOptions.SetTLSConfig(tlsconfig)
-		log.Debug("TLS set on channelOptions options")
+		log.Debug("TLS set on options")
 	}
 
-	log.Debug("channelOptions options:\n", channelOptions)
+	log.Debug("options:\n", channelOptions)
 
 	log.Debug("Finished parsing and MQTT configuration")
 
