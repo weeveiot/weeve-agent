@@ -40,11 +40,11 @@ type Params struct {
 	MqttLogs     bool   `long:"mqttlogs" short:"m" description:"For developer - Display detailed MQTT logging messages" required:"false"`
 	NoTLS        bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
 	LogLevel     string `long:"loglevel" short:"l" default:"info" description:"Set the logging level" required:"false"`
-	FileName     string `long:"filename" default:"logs" description:"Set the name of the log file" required:"false"`
-	FileSize     int    `long:"filesize" default:"1" description:"Set the size of each log files (MB)" required:"false"`
-	FileAge      int    `long:"fileage" default:"1" description:"Set the time period to retain the log files (days)" required:"false"`
-	FileBackup   int    `long:"filebackup" default:"5" description:"Set the max number of log files to retain" required:"false"`
-	FileCompress bool   `long:"filecompress" description:"To compress the log files" required:"false"`
+	LogFileName  string `long:"logfilename" default:"logs" description:"Set the name of the log file" required:"false"`
+	LogSize      int    `long:"logsize" default:"1" description:"Set the size of each log files (MB)" required:"false"`
+	LogAge       int    `long:"logage" default:"1" description:"Set the time period to retain the log files (days)" required:"false"`
+	LogBackup    int    `long:"logbackup" default:"5" description:"Set the max number of log files to retain" required:"false"`
+	LogCompress  bool   `long:"logcompress" description:"To compress the log files" required:"false"`
 	NodeId       string `long:"nodeId" short:"i" description:"ID of this node" required:"false" default:"register"`
 	NodeName     string `long:"name" short:"n" description:"Name of this node to be registered" required:"false"`
 	RootCertPath string `long:"rootcert" short:"r" description:"Path to MQTT broker (server) certificate" required:"false"`
@@ -84,11 +84,11 @@ func main() {
 
 	// LOG CONFIGS
 	logger := &lumberjack.Logger{
-		Filename:   filepath.ToSlash(opt.FileName),
-		MaxSize:    opt.FileSize,
-		MaxAge:     opt.FileAge,
-		MaxBackups: opt.FileBackup,
-		Compress:   opt.FileCompress,
+		Filename:   filepath.ToSlash(opt.LogFileName),
+		MaxSize:    opt.LogSize,
+		MaxAge:     opt.LogAge,
+		MaxBackups: opt.LogBackup,
+		Compress:   opt.LogCompress,
 	}
 
 	// FLAG: Verbose
