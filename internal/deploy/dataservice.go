@@ -23,9 +23,9 @@ func DeployManifest(man model.Manifest, command string) (response bool) {
 	defer func() {
 		// if response true means there was exception because last line of this method (response = false) was not executed
 		if response {
-			response = false
-		} else {
 			response = true
+		} else {
+			response = false
 		}
 	}()
 
@@ -51,13 +51,13 @@ func DeployManifest(man model.Manifest, command string) (response bool) {
 	// Check if data service already exist
 	if dataServiceExists {
 		if command == "deploy" {
-			log.Info(fmt.Sprintf("\tData service %v, %v already exist", manifestID, version))
+			log.Info(fmt.Sprintf("Data service %v, %v already exist", manifestID, version))
 			return false
 		} else if command == "redeploy" {
 			// Clean old data service resources
 			result := UndeployDataService(manifestID, version)
 			if !result {
-				log.Error("\tError while cleaning old data service - ", result)
+				log.Error("Error while cleaning old data service - ", result)
 				LogStatus(manifestID, version, "REDEPLOY_FAILED", "Undeployment failed")
 				return false
 			}
@@ -79,10 +79,10 @@ func DeployManifest(man model.Manifest, command string) (response bool) {
 		// Check if image exist in local
 		exists := docker.ImageExists(imgDetails.ImageName)
 		if exists { // Image already exists, continue
-			log.Info(fmt.Sprintf("\tImage %v %v, already exists on host", i, imgDetails.ImageName))
+			log.Info(fmt.Sprintf("Image %v %v, already exists on host", i, imgDetails.ImageName))
 		} else { // Pull this image
-			log.Info(fmt.Sprintf("\tImage %v %v, does not exist on host", i, imgDetails.ImageName))
-			log.Info("\t\tPulling ", imgDetails.ImageName, imgDetails)
+			log.Info(fmt.Sprintf("Image %v %v, does not exist on host", i, imgDetails.ImageName))
+			log.Info("Pulling ", imgDetails.ImageName, imgDetails)
 			exists = docker.PullImage(imgDetails)
 			if !exists {
 				failed = true
@@ -127,7 +127,7 @@ func DeployManifest(man model.Manifest, command string) (response bool) {
 		LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", err.Error())
 		return false
 	}
-	log.Info("Created network named ", networkName)
+	log.Info("Created network name ", networkName)
 
 	_ = resp
 	// log.Info(resp.ID, resp.Warning)
@@ -151,7 +151,7 @@ func DeployManifest(man model.Manifest, command string) (response bool) {
 			LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", err.Error())
 			return false
 		}
-		log.Info("\tSuccessfully created with args: ", startCommand.EntryPointArgs, containerCreateResponse)
+		log.Info("Successfully created with args: ", startCommand.EntryPointArgs, containerCreateResponse)
 		log.Info("Started")
 	}
 
@@ -161,7 +161,7 @@ func DeployManifest(man model.Manifest, command string) (response bool) {
 	}
 	LogStatus(manifestID, version, strings.ToUpper(command)+"ED", strings.Title(command)+"ed successfully")
 
-	response = false
+	response = true
 
 	return response
 }
@@ -172,9 +172,9 @@ func StopDataService(manifestID string, version string) (response bool) {
 	defer func() {
 		// if response true means there was exception because last line of this method (response = false) was not executed
 		if response {
-			response = false
-		} else {
 			response = true
+		} else {
+			response = false
 		}
 	}()
 
@@ -187,20 +187,20 @@ func StopDataService(manifestID string, version string) (response bool) {
 	}
 	for _, container := range containers {
 		if container.State == "running" {
-			log.Info("\tStopping container:", strings.Join(container.Names[:], ","))
+			log.Info("Stopping container:", strings.Join(container.Names[:], ","))
 			status := docker.StopContainer(container.ID)
 			if !status {
-				log.Error("\tCould not stop a container")
+				log.Error("Could not stop a container")
 				LogStatus(manifestID, version, "STOP_FAILED", "Could not stop a container")
 				return false
 			}
-			log.Info("\t", strings.Join(container.Names[:], ","), ": ", container.Status, " --> exited")
+			log.Info(strings.Join(container.Names[:], ","), ": ", container.Status, " --> exited")
 		}
 	}
 
 	LogStatus(manifestID, version, "STOPPED", "Stopped successfully")
 
-	response = false
+	response = true
 
 	return response
 }
@@ -211,9 +211,9 @@ func StartDataService(manifestID string, version string) (response bool) {
 	defer func() {
 		// if response true means there was exception because last line of this method (response = false) was not executed
 		if response {
-			response = false
-		} else {
 			response = true
+		} else {
+			response = false
 		}
 	}()
 
@@ -226,20 +226,20 @@ func StartDataService(manifestID string, version string) (response bool) {
 	}
 	for _, container := range containers {
 		if container.State == "exited" || container.State == "created" || container.State == "paused" {
-			log.Info("\tStarting container:", strings.Join(container.Names[:], ","))
+			log.Info("Starting container:", strings.Join(container.Names[:], ","))
 			status := docker.StartContainer(container.ID)
 			if !status {
-				log.Error("\tCould not start a container")
+				log.Error("Could not start a container")
 				LogStatus(manifestID, version, "START_FAILED", "Could not start a container")
 				return false
 			}
-			log.Info("\t", strings.Join(container.Names[:], ","), ": ", container.State, "--> running")
+			log.Info(strings.Join(container.Names[:], ","), ": ", container.State, "--> running")
 		}
 	}
 
 	LogStatus(manifestID, version, "STARTED", "Started successfully")
 
-	response = false
+	response = true
 
 	return response
 }
@@ -250,9 +250,9 @@ func UndeployDataService(manifestID string, version string) (response bool) {
 	defer func() {
 		// if response true means there was exception because last line of this method (response = false) was not executed
 		if response {
-			response = false
-		} else {
 			response = true
+		} else {
+			response = false
 		}
 	}()
 
@@ -261,8 +261,8 @@ func UndeployDataService(manifestID string, version string) (response bool) {
 	// Check if data service already exist
 	dataServiceExists := DataServiceExist(manifestID, version)
 	if !dataServiceExists {
-		log.Error(fmt.Sprintf("\tData service %v, %v does not exist", manifestID, version))
-		LogStatus(manifestID, version, "UNDEPLOY_FAILED", fmt.Sprintf("\tData service %v, %v does not exist", manifestID, version))
+		log.Error(fmt.Sprintf("Data service %v, %v does not exist", manifestID, version))
+		LogStatus(manifestID, version, "UNDEPLOY_FAILED", fmt.Sprintf("Data service %v, %v does not exist", manifestID, version))
 		return false
 	}
 
@@ -298,7 +298,7 @@ func UndeployDataService(manifestID string, version string) (response bool) {
 
 		for _, dsContainer := range dsContainers {
 			if container.ID == dsContainer.ID {
-				log.Info("\tStop And Remove Container - ", dsContainer.ID)
+				log.Info("Stop And Remove Container - ", dsContainer.ID)
 				// Stop and delete container
 				err := docker.StopAndRemoveContainer(dsContainer.ID)
 				if err != nil {
@@ -315,7 +315,7 @@ func UndeployDataService(manifestID string, version string) (response bool) {
 	//******** STEP 2 - Remove Images WITHOUT Containers *************//
 	for imageID, containersCount := range imageContainers {
 		if containersCount == 0 {
-			log.Info("\tRemove Image - ", imageID)
+			log.Info("Remove Image - ", imageID)
 			_, err := cli.ImageRemove(ctx, imageID, types.ImageRemoveOptions{})
 			if err != nil {
 				log.Error(err)
@@ -348,7 +348,7 @@ func UndeployDataService(manifestID string, version string) (response bool) {
 		log.Error("Could not remove old records from manifest.jsonl")
 	}
 
-	response = false
+	response = true
 
 	return response
 }
@@ -361,9 +361,9 @@ func DataServiceExist(manifestID string, version string) (response bool) {
 	defer func() {
 		// if response true means there was exception because last line of this method (response = false) was not executed
 		if response {
-			response = false
-		} else {
 			response = (len(networks) > 0)
+		} else {
+			response = false
 		}
 	}()
 
@@ -381,7 +381,7 @@ func DataServiceExist(manifestID string, version string) (response bool) {
 		log.Error(err)
 	}
 
-	response = false
+	response = true
 
 	return response
 }

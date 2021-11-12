@@ -9,11 +9,10 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"os"
+
 	"github.com/Jeffail/gabs/v2"
 	log "github.com/sirupsen/logrus"
-
-	"fmt"
-	"os"
 )
 
 const NodeConfigFileName = "nodeconfig.json"
@@ -24,7 +23,7 @@ const AWSRootCertKey = "AWSRootCert"
 
 func DownloadCertificates(payload []byte) map[string]string {
 
-	fmt.Println("Downloading certificates")
+	log.Info("Downloading certificates")
 
 	jsonParsed, err := gabs.ParseJSON(payload)
 	if err != nil {

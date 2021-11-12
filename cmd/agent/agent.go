@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	golog "log"
 	mathrand "math/rand"
@@ -38,7 +39,12 @@ type Params struct {
 	Heartbeat    int    `long:"heartbeat" short:"h" description:"Heartbeat time in seconds" required:"false" default:"30"`
 	MqttLogs     bool   `long:"mqttlogs" short:"m" description:"For developer - Display detailed MQTT logging messages" required:"false"`
 	NoTLS        bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
-	LogLevel     string `long:"loglevel" short:"l" description:"Set the logging level" required:"true"`
+	LogLevel     string `long:"loglevel" short:"l" default:"info" description:"Set the logging level" required:"false"`
+	LogFileName  string `long:"logfilename" default:"logs" description:"Set the name of the log file" required:"false"`
+	LogSize      int    `long:"logsize" default:"1" description:"Set the size of each log files (MB)" required:"false"`
+	LogAge       int    `long:"logage" default:"1" description:"Set the time period to retain the log files (days)" required:"false"`
+	LogBackup    int    `long:"logbackup" default:"5" description:"Set the max number of log files to retain" required:"false"`
+	LogCompress  bool   `long:"logcompress" description:"To compress the log files" required:"false"`
 	NodeId       string `long:"nodeId" short:"i" description:"ID of this node" required:"false" default:"register"`
 	NodeName     string `long:"name" short:"n" description:"Name of this node to be registered" required:"false"`
 	RootCertPath string `long:"rootcert" short:"r" description:"Path to MQTT broker (server) certificate" required:"false"`
@@ -52,25 +58,16 @@ var parser = flags.NewParser(&opt, flags.Default)
 var registered = false
 var connected = false
 
-var logger = &lumberjack.Logger{
-	Filename:   filepath.ToSlash("logs"), //file_name or with destination eg. xxx/xxx/xxx/file_name
-	MaxSize:    1,                        //Size limit of a single .txt file in MB. Default -> 100MB
-	MaxAge:     30,                       //Number of days to retain the files. Default -> no file deletion based on age
-	MaxBackups: 10,                       //Maximum number of old files to retain. Default -> retain all old files
-	Compress:   false,                    //option to compress the files
-}
-
 // logging into the terminal and files
 func init() {
 
 	logFormatter := new(log.TextFormatter)
 
-	timezone, _ := time.Now().Zone()
-	logFormatter.TimestampFormat = "2006-02-01 15:04:05 " + timezone
+	logFormatter.TimestampFormat = "2006-02-01 15:04:05 "
 	logFormatter.FullTimestamp = true
 
 	log.SetFormatter(logFormatter)
-	log.SetOutput(logger)
+
 }
 
 func main() {
@@ -81,6 +78,27 @@ func main() {
 		os.Exit(1)
 	}
 
+	// FLAG: LogLevel
+	l, _ := log.ParseLevel(opt.LogLevel)
+	log.SetLevel(l)
+
+	// LOG CONFIGS
+	logger := &lumberjack.Logger{
+		Filename:   filepath.ToSlash(opt.LogFileName),
+		MaxSize:    opt.LogSize,
+		MaxAge:     opt.LogAge,
+		MaxBackups: opt.LogBackup,
+		Compress:   opt.LogCompress,
+	}
+
+	// FLAG: Verbose
+	if len(opt.Verbose) >= 1 {
+		multiWriter := io.MultiWriter(os.Stderr, logger)
+		log.SetOutput(multiWriter)
+	} else {
+		log.SetOutput(logger)
+	}
+
 	// FLAG: Show the logs from the Paho package at STDOUT
 	if opt.MqttLogs {
 		mqtt.ERROR = golog.New(logger, "[ERROR] ", 0)
@@ -88,9 +106,7 @@ func main() {
 		mqtt.WARN = golog.New(logger, "[WARN]  ", 0)
 		mqtt.DEBUG = golog.New(logger, "[DEBUG] ", 0)
 	}
-	// FLAG: LogLevel
-	l, _ := log.ParseLevel(opt.LogLevel)
-	log.SetLevel(l)
+
 	log.Info("Started logging")
 
 	log.Info("Logging level set to ", log.GetLevel())
@@ -213,10 +229,10 @@ func InitBrokerChannel(nodeConfig map[string]string, pubsubClientId string, isSu
 		}
 		// log.Debug("Tls Config >> ", tlsconfig)
 		channelOptions.SetTLSConfig(tlsconfig)
-		log.Debug("TLS set on channelOptions options")
+		log.Debug("TLS set on options")
 	}
 
-	log.Debug("channelOptions options:\n", channelOptions)
+	log.Debug("options:\n", channelOptions)
 
 	log.Debug("Finished parsing and MQTT configuration")
 
