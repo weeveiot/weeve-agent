@@ -39,7 +39,12 @@ type Params struct {
 	Heartbeat    int    `long:"heartbeat" short:"h" description:"Heartbeat time in seconds" required:"false" default:"30"`
 	MqttLogs     bool   `long:"mqttlogs" short:"m" description:"For developer - Display detailed MQTT logging messages" required:"false"`
 	NoTLS        bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
-	LogLevel     string `long:"loglevel" short:"l" description:"Set the logging level" required:"false"`
+	LogLevel     string `long:"loglevel" short:"l" default:"info" description:"Set the logging level" required:"false"`
+	FileName     string `long:"filename" default:"logs" description:"Set the name of the log file" required:"false"`
+	FileSize     int    `long:"filesize" default:"1" description:"Set the size of each log files (MB)" required:"false"`
+	FileAge      int    `long:"fileage" default:"1" description:"Set the time period to retain the log files (days)" required:"false"`
+	FileBackup   int    `long:"filebackup" default:"5" description:"Set the max number of log files to retain" required:"false"`
+	FileCompress bool   `long:"filecompress" description:"To compress the log files" required:"false"`
 	NodeId       string `long:"nodeId" short:"i" description:"ID of this node" required:"false" default:"register"`
 	NodeName     string `long:"name" short:"n" description:"Name of this node to be registered" required:"false"`
 	RootCertPath string `long:"rootcert" short:"r" description:"Path to MQTT broker (server) certificate" required:"false"`
@@ -52,14 +57,6 @@ var nodeId string
 var parser = flags.NewParser(&opt, flags.Default)
 var registered = false
 var connected = false
-
-var logger = &lumberjack.Logger{
-	Filename:   filepath.ToSlash("logs"), //file_name or with destination eg. xxx/xxx/xxx/file_name
-	MaxSize:    1,                        //Size limit of a single .txt file in MB. Default -> 100MB
-	MaxAge:     30,                       //Number of days to retain the files. Default -> no file deletion based on age
-	MaxBackups: 10,                       //Maximum number of old files to retain. Default -> retain all old files
-	Compress:   false,                    //option to compress the files
-}
 
 // logging into the terminal and files
 func init() {
@@ -82,18 +79,21 @@ func main() {
 	}
 
 	// FLAG: LogLevel
-	l, err := log.ParseLevel(opt.LogLevel)
+	l, _ := log.ParseLevel(opt.LogLevel)
+	log.SetLevel(l)
 
-	if err != nil {
-		log.SetLevel(log.InfoLevel)
-	} else {
-		log.SetLevel(l)
+	// LOG CONFIGS
+	logger := &lumberjack.Logger{
+		Filename:   filepath.ToSlash(opt.FileName),
+		MaxSize:    opt.FileSize,
+		MaxAge:     opt.FileAge,
+		MaxBackups: opt.FileBackup,
+		Compress:   opt.FileCompress,
 	}
-
-	multiWriter := io.MultiWriter(os.Stderr, logger)
 
 	// FLAG: Verbose
 	if len(opt.Verbose) >= 1 {
+		multiWriter := io.MultiWriter(os.Stderr, logger)
 		log.SetOutput(multiWriter)
 	} else {
 		log.SetOutput(logger)
