@@ -76,7 +76,7 @@ func Read(jsonFile string, pkField string, pkVal string, filter map[string]strin
 	var val []map[string]interface{}
 	file, err := os.Open(jsonFile)
 	if err != nil {
-		log.Error("File not available", err)
+		log.Error("File not available! ", err)
 		return val
 	}
 

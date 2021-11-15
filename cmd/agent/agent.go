@@ -52,6 +52,15 @@ type Params struct {
 	KeyPath      string `long:"key" short:"k" description:"Path to private key to authenticate to Broker" required:"false"`
 }
 
+type PlainFormatter struct {
+	TimestampFormat string
+}
+
+func (f *PlainFormatter) Format(entry *log.Entry) ([]byte, error) {
+	timestamp := fmt.Sprintf(entry.Time.Format(f.TimestampFormat))
+	return []byte(fmt.Sprintf("%s %s : %s\n", timestamp, entry.Level, entry.Message)), nil
+}
+
 var opt Params
 var nodeId string
 var parser = flags.NewParser(&opt, flags.Default)
@@ -61,12 +70,9 @@ var connected = false
 // logging into the terminal and files
 func init() {
 
-	logFormatter := new(log.TextFormatter)
-
-	logFormatter.TimestampFormat = "2006-02-01 15:04:05 "
-	logFormatter.FullTimestamp = true
-
-	log.SetFormatter(logFormatter)
+	plainFormatter := new(PlainFormatter)
+	plainFormatter.TimestampFormat = "2006-01-02 15:04:05"
+	log.SetFormatter(plainFormatter)
 
 }
 
@@ -125,7 +131,7 @@ func main() {
 		log.Fatalf("Error in --broker option: Specify both protocol:\\\\host in the Broker URL")
 	}
 
-	log.Info(fmt.Sprintf("Broker host %v at port %v over %v\n", host, port, u.Scheme))
+	log.Info(fmt.Sprintf("Broker host %v at port %v over %v", host, port, u.Scheme))
 
 	log.Debug("Broker: ", opt.Broker)
 
