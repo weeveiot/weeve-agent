@@ -95,7 +95,7 @@ After receiving bootstrap (group) certificates.
 1) Set up nodeconfig.json with bootstrap details:
 ```json
 {
-	"AMSRootCert": "AmazonRootCA1.pem",
+	"AWSRootCert": "AmazonRootCA1.pem",
 	"Certificate": "<bootstrap_id>-certificate.pem.crt",
 	"NodeId": "",
 	"NodeName": "Node-Sample-1",
