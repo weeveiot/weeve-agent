@@ -69,8 +69,9 @@ The `-v` flag enables logs in terminal, and the `--notls` flag disables TLS conf
 ### With TLS
 
 #### Manual Node Provisioning
-After registering the Node with GraphQL or in UI, and downloading pem certificate and key.
-TLS configuration requires the full path to all secrets and certificates as follows:
+Start with registering a new Node with GraphQL or with weeve UI. Then download corresponding pem certificate and key from AWS S3 to your device,
+and place them in a root directory of a cloned weeve Agent code. Download AmazonRootCA1.pem from Google.
+Since TLS configuration requires the full path to all secrets and certificates, executed the following code in weeve Agent directory:
 
 ```bash
 SERVER_CERTIFICATE=AmazonRootCA1.pem
@@ -90,9 +91,10 @@ go run ./cmd/agent/agent.go -v \
 The `tls` protocol is strictly checked in the Broker url.
 
 #### Automatic Node Provisioning
-After receiving bootstrap (group) certificates.
+Clone weeve Agent code to your device and place bootstrap (group) certificates in its directory.
+Download AmazonRootCA1.pem from Google. Then, follow the steps:
 
-1) Set up nodeconfig.json with bootstrap details:
+1) Set up nodeconfig.json with bootstrap details (see [Config Options](#config-options)):
 ```json
 {
 	"AWSRootCert": "AmazonRootCA1.pem",
@@ -103,7 +105,7 @@ After receiving bootstrap (group) certificates.
 }
 ```
 
-2) Run command:
+2) Run command in weeve Agent root directory:
 ```bash
 go run ./cmd/agent/agent.go -v \
 	--broker tls://<broker host url>:8883 \ # Broker to connect to \
@@ -115,6 +117,7 @@ go run ./cmd/agent/agent.go -v \
 
 # Config options
 All the below params can be updated into json instead of arguments as above
+```json
 {
     "AWSRootCert": "AmazonRootCA1.pem",
 	"PrivateKey": "<node private key/bootstrap private key file name>",
@@ -122,6 +125,7 @@ All the below params can be updated into json instead of arguments as above
     "NodeId": "<node id>" //Empty initially for auto registration    
 	"NodeName": "<node name>" //Node name for auto registration  
 }
+```
 
 # [BELOW IS WIP]
 
