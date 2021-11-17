@@ -10,6 +10,30 @@ A data model for the manifest object and supporting structures is found in the i
 
 [WIP] A simple web server is implemented with the [Gorilla MUX package](github.com/gorilla/mux) for debugging and inspection of the weeve agent and the device.
 
+## Command Parameters
+
+| Parameter   | Short | Required | Description                                            | Default  |
+| ----------- | ----- | -------- | ------------------------------------------------------ | -------- |
+| verbose     | v     | false    | Show verbose debug information                         |          |
+| broker      | b     | true     | Broker to connect                                      |          |
+| pubClientId | c     | true     | Publisher ClientId                                     |          |
+| subClientId | s     | true     | Subscriber ClientId                                    |          |
+| publish     | t     | true     | Topic Name                                             |          |
+| heartbeat   | h     | false    | Heartbeat time in seconds                              | 30       |
+| mqttlogs    | m     | false    | For developer - Display detailed MQTT logging messages |          |
+| notls       |       | false    | For developer - disable TLS for MQTT                   |          |
+| loglevel    | l     | false    | Set the logging level                                  | info     |
+| logfilename |       | false    | Set the name of the log file                           | logs     |
+| logsize     |       | false    | Set the size of each log files (MB)                    | 1        |
+| logage      |       | false    | Set the time period to retain the log files (days)     | 1        |
+| logbackup   |       | false    | Set the max number of log files to retain              | 5        |
+| logcompress |       | false    | To compress the log files                              |          |
+| nodeId      | i     | false    | ID of this node                                        | register |
+| name        | n     | false    | Name of this node to be registered                     |          |
+| rootcert    | r     | false    | Path to MQTT broker (server) certificate               |          |
+| cert        | f     | false    | Path to certificate to authenticate to Broker          |          |
+| key         | k     | false    | Path to private key to authenticate to Broker          |          |
+
 ## Getting started
 
 ### Without TLS
@@ -43,7 +67,11 @@ go run ./cmd/agent/agent.go -v --notls \
 The `-v` flag enables logs in terminal, and the `--notls` flag disables TLS configuation. Further logs from the `paho` MQTT client can be enabled with the `--mqttlogs` flag, and the `--loglevel` flag enables to set desired logging level.
 
 ### With TLS
-TLS configuration requires the full path to all secrets and certificates as follows;
+
+#### Manual Node Provisioning
+Start with registering a new Node with GraphQL or with weeve UI. Then download corresponding pem certificate and key from AWS S3 to your device,
+and place them in a root directory of a cloned weeve Agent code. Download AmazonRootCA1.pem from Google.
+Since TLS configuration requires the full path to all secrets and certificates, executed the following code in weeve Agent directory:
 
 ```bash
 SERVER_CERTIFICATE=AmazonRootCA1.pem
@@ -62,8 +90,34 @@ go run ./cmd/agent/agent.go -v \
 
 The `tls` protocol is strictly checked in the Broker url.
 
+#### Automatic Node Provisioning
+Clone weeve Agent code to your device and place bootstrap (group) certificates in its directory.
+Download AmazonRootCA1.pem from Google. Then, follow the steps:
+
+1) Set up nodeconfig.json with bootstrap details (see [Config Options](#config-options)):
+```json
+{
+	"AWSRootCert": "AmazonRootCA1.pem",
+	"Certificate": "<bootstrap_id>-certificate.pem.crt",
+	"NodeId": "",
+	"NodeName": "Node-Sample-1",
+	"PrivateKey": "<bootstrap_id>-private.pem.key"
+}
+```
+
+2) Run command in weeve Agent root directory:
+```bash
+go run ./cmd/agent/agent.go -v \
+	--broker tls://<broker host url>:8883 \ # Broker to connect to \
+	--subClientId nodes/awsdev \ # Subscriber ClientId \
+	--pubClientId manager/awsdev \  # Publisher ClientId \
+	--publish CheckVersion \ # Topic bame for publishing status messages \
+	--heartbeat 60 # Status message publishing interval \
+```
+
 # Config options
 All the below params can be updated into json instead of arguments as above
+```json
 {
     "AWSRootCert": "AmazonRootCA1.pem",
 	"PrivateKey": "<node private key/bootstrap private key file name>",
@@ -71,6 +125,7 @@ All the below params can be updated into json instead of arguments as above
     "NodeId": "<node id>" //Empty initially for auto registration    
 	"NodeName": "<node name>" //Node name for auto registration  
 }
+```
 
 # [BELOW IS WIP]
 
