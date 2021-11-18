@@ -1,7 +1,7 @@
 {
  "AWSRootCert": "AmazonRootCA1.pem",
- "Certificate": "./96a0e71c-7eaa-4ec4-98cb-4b8f4a54de7f-certificate.pem.crt",
- "NodeId": "96a0e71c-7eaa-4ec4-98cb-4b8f4a54de7f",
- "NodeName": "New Node8081",
- "PrivateKey": "./96a0e71c-7eaa-4ec4-98cb-4b8f4a54de7f-private.pem.key"
+ "Certificate": "0f27a88471-certificate.pem.crt",
+ "NodeId": "",
+ "NodeName": "New Node",
+ "PrivateKey": "0f27a88471-private.pem.key"
 }
