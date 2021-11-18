@@ -47,7 +47,12 @@ func DeployManifest(man model.Manifest, command string) (response bool) {
 	version := man.Manifest.Search("version").Data().(string)
 	manifestName := man.Manifest.Search("name").Data().(string)
 
-	dataServiceExists := DataServiceExist(manifestID, version)
+	dataServiceExists, err := DataServiceExist(manifestID, version)
+	if err != nil {
+		log.Error(err)
+		LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", err.Error())
+		return false
+	}
 	// Check if data service already exist
 	if dataServiceExists {
 		if command == "deploy" {
@@ -259,7 +264,12 @@ func UndeployDataService(manifestID string, version string) (response bool) {
 	log.Info("Undeploying data service", manifestID, version)
 
 	// Check if data service already exist
-	dataServiceExists := DataServiceExist(manifestID, version)
+	dataServiceExists, err := DataServiceExist(manifestID, version)
+	if err != nil {
+		log.Error(err)
+		LogStatus(manifestID, version, "UNDEPLOY_FAILED", err.Error())
+		return false
+	}
 	if !dataServiceExists {
 		log.Error(fmt.Sprintf("Data service %v, %v does not exist", manifestID, version))
 		LogStatus(manifestID, version, "UNDEPLOY_FAILED", fmt.Sprintf("Data service %v, %v does not exist", manifestID, version))
@@ -354,22 +364,12 @@ func UndeployDataService(manifestID string, version string) (response bool) {
 }
 
 // DataServiceExist returns status of data service existance as true or false
-func DataServiceExist(manifestID string, version string) (response bool) {
-	// flag for exception handling
-	response = true
+func DataServiceExist(manifestID string, version string) (bool, error) {
 	var networks []types.NetworkResource
-	defer func() {
-		// if response true means there was exception because last line of this method (response = false) was not executed
-		if response {
-			response = (len(networks) > 0)
-		} else {
-			response = false
-		}
-	}()
 
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		log.Error(err)
+		return true, err
 	}
 
 	filter := filters.NewArgs()
@@ -378,12 +378,14 @@ func DataServiceExist(manifestID string, version string) (response bool) {
 	options := types.NetworkListOptions{Filters: filter}
 	networks, err = dockerClient.NetworkList(context.Background(), options)
 	if err != nil {
-		log.Error(err)
+		return true, err
 	}
 
-	response = true
-
-	return response
+	if len(networks) > 0 {
+		return true, nil
+	} else {
+		return false, nil
+	}
 }
 
 func LogStatus(manifestID string, manifestVersion string, statusVal string, statusReason string) {
