@@ -139,6 +139,7 @@ func DeployManifest(man model.Manifest, command string) (response bool) {
 	if contianers_cmd == nil || len(contianers_cmd) <= 0 {
 		log.Error("No valid contianers in Manifest")
 		LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", err.Error())
+		UndeployDataService(manifestID, version)
 		return false
 	}
 	for _, startCommand := range contianers_cmd {
@@ -149,6 +150,7 @@ func DeployManifest(man model.Manifest, command string) (response bool) {
 			failed = true
 			log.Error("Failed to create and start container: " + imageAndTag)
 			LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", err.Error())
+			UndeployDataService(manifestID, version)
 			return false
 		}
 		log.Info("Successfully created with args: ", startCommand.EntryPointArgs, containerCreateResponse)
@@ -157,6 +159,7 @@ func DeployManifest(man model.Manifest, command string) (response bool) {
 
 	if failed {
 		LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", "Process failed")
+		UndeployDataService(manifestID, version)
 		return false
 	}
 	LogStatus(manifestID, version, strings.ToUpper(command)+"ED", strings.Title(command)+"ed successfully")
@@ -180,7 +183,13 @@ func StopDataService(manifestID string, version string) (response bool) {
 
 	log.Info("Stopping data service:", manifestID, version)
 
-	containers := docker.ReadDataServiceContainers(manifestID, version)
+	containers, err := docker.ReadDataServiceContainers(manifestID, version)
+
+	if err != nil {
+		log.Error("Failed to read data service containers.")
+		LogStatus(manifestID, version, "UNDEPLOY_FAILED", "Failed to read data service containers")
+		return false
+	}
 	if len(containers) == 0 {
 		LogStatus(manifestID, version, "STOPPED", "Stopped successfully")
 		return true
@@ -219,7 +228,13 @@ func StartDataService(manifestID string, version string) (response bool) {
 
 	log.Info("Starting data service:", manifestID, version)
 
-	containers := docker.ReadDataServiceContainers(manifestID, version)
+	containers, err := docker.ReadDataServiceContainers(manifestID, version)
+
+	if err != nil {
+		log.Error("Failed to read data service containers.")
+		LogStatus(manifestID, version, "UNDEPLOY_FAILED", "Failed to read data service containers")
+		return false
+	}
 	if len(containers) == 0 {
 		LogStatus(manifestID, version, "START_FAILED", "No data service containers found")
 		return false
@@ -280,14 +295,14 @@ func UndeployDataService(manifestID string, version string) (response bool) {
 	// map { imageID: number_of_allocated_containers }, needed for removing images as not supported by Go-Docker SDK
 	imageContainers := make(map[string]int)
 
-	containers := docker.ReadAllContainers()
-	if containers == nil {
+	containers, err := docker.ReadAllContainers()
+	if err != nil {
 		log.Error("Failed to read all containers.")
 		LogStatus(manifestID, version, "UNDEPLOY_FAILED", "Failed to read all containers")
 		return false
 	}
-	dsContainers := docker.ReadDataServiceContainers(manifestID, version)
-	if dsContainers == nil {
+	dsContainers, err := docker.ReadDataServiceContainers(manifestID, version)
+	if err != nil {
 		log.Error("Failed to read data service containers.")
 		LogStatus(manifestID, version, "UNDEPLOY_FAILED", "Failed to read data service containers")
 		return false

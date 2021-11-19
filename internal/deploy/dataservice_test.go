@@ -75,7 +75,7 @@ func TestDeployManifest(t *testing.T) {
 
 	if len(networks) > 0 {
 		// Check if containers exist
-		dsContainers := docker.ReadDataServiceContainers(manifestID, version)
+		dsContainers, _ := docker.ReadDataServiceContainers(manifestID, version)
 		containerName := thisManifest.ContainerNamesList(networks[0].Name)
 		for _, dsContainer := range dsContainers {
 			containersExist := false
@@ -108,7 +108,7 @@ func TestStopDataServiceWrongDetails(t *testing.T) {
 
 	// check container status before executing tested function
 	statusBefore := make(map[string]string)
-	containers := docker.ReadDataServiceContainers(manifestID, version)
+	containers, _ := docker.ReadDataServiceContainers(manifestID, version)
 	for _, container := range containers {
 		statusBefore[container.ID] = container.State
 	}
@@ -120,7 +120,7 @@ func TestStopDataServiceWrongDetails(t *testing.T) {
 	}
 
 	// check container status after executing tested function
-	containers = docker.ReadDataServiceContainers(manifestID, version)
+	containers, _ = docker.ReadDataServiceContainers(manifestID, version)
 	for _, container := range containers {
 		if container.State != statusBefore[container.ID] {
 			wrongStatusContainerList = append(wrongStatusContainerList, container.ID)
@@ -145,7 +145,7 @@ func TestStopDataService(t *testing.T) {
 	}
 
 	// check container status
-	containers := docker.ReadDataServiceContainers(manifestID, version)
+	containers, _ := docker.ReadDataServiceContainers(manifestID, version)
 	for _, container := range containers {
 		if container.State != "exited" {
 			wrongStatusContainerList = append(wrongStatusContainerList, container.ID)
@@ -168,7 +168,7 @@ func TestStartDataServiceWrongDetails(t *testing.T) {
 
 	// check container status before executing tested function
 	statusBefore := make(map[string]string)
-	containers := docker.ReadDataServiceContainers(manifestID, version)
+	containers, _ := docker.ReadDataServiceContainers(manifestID, version)
 	for _, container := range containers {
 		statusBefore[container.ID] = container.State
 	}
@@ -180,7 +180,7 @@ func TestStartDataServiceWrongDetails(t *testing.T) {
 	}
 
 	// check container status after executing tested function
-	containers = docker.ReadDataServiceContainers(manifestID, version)
+	containers, _ = docker.ReadDataServiceContainers(manifestID, version)
 	for _, container := range containers {
 		if container.State != statusBefore[container.ID] {
 			wrongStatusContainerList = append(wrongStatusContainerList, container.ID)
@@ -205,7 +205,7 @@ func TestStartDataService(t *testing.T) {
 	}
 
 	// check container status
-	containers := docker.ReadDataServiceContainers(manifestID, version)
+	containers, _ := docker.ReadDataServiceContainers(manifestID, version)
 	for _, container := range containers {
 		if container.State != "running" {
 			wrongStatusContainerList = append(wrongStatusContainerList, container.ID)
@@ -226,7 +226,7 @@ func TestUndeployDataService(t *testing.T) {
 	}
 
 	// check if containers are removed
-	containers := docker.ReadDataServiceContainers(manifestID, version)
+	containers, _ := docker.ReadDataServiceContainers(manifestID, version)
 	if len(containers) > 0 {
 		t.Errorf("The following containers should have been removed: %v", containers)
 	}
@@ -303,7 +303,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	}
 
 	// check if containers are removed
-	containers := docker.ReadDataServiceContainers(manifestID, version)
+	containers, _ := docker.ReadDataServiceContainers(manifestID, version)
 	if len(containers) > 0 {
 		t.Errorf("The following containers should have been removed: %v", containers)
 	}
@@ -316,7 +316,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 
 	// ***** CHECK IF SECOND IDENTICAL DATA SERVICE STILL EXISTS ********* //
 	expectedNumberContainers := len(thisManifest2.Manifest.S("services").Children())
-	dsContainers := docker.ReadDataServiceContainers(manifestID2, version2)
+	dsContainers, _ := docker.ReadDataServiceContainers(manifestID2, version2)
 
 	if len(dsContainers) != expectedNumberContainers {
 		t.Errorf("Some containers from the second identical network were removed.")
