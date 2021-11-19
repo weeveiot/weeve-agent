@@ -76,30 +76,30 @@ func StartContainer(containerId string) bool {
 	return true
 }
 
-func ReadAllContainers() []types.Container {
+func ReadAllContainers() ([]types.Container, error) {
 	log.Debug("Docker_container -> ReadAllContainers")
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
-		return nil
+		return nil, err
 	}
 	options := types.ContainerListOptions{All: true}
 	containers, err := cli.ContainerList(context.Background(), options)
 	if err != nil {
 		log.Error(err)
-		return nil
+		return nil, nil
 	}
 	log.Debug("Docker_container -> ReadAllContainers response", containers)
 
-	return containers
+	return containers, nil
 }
 
-func ReadDataServiceContainers(manifestID string, version string) []types.Container {
+func ReadDataServiceContainers(manifestID string, version string) ([]types.Container, error) {
 	log.Debug("Docker_container -> ReadDataServiceContainers")
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
-		return nil
+		return nil, err
 	}
 
 	filter := filters.NewArgs()
@@ -109,11 +109,11 @@ func ReadDataServiceContainers(manifestID string, version string) []types.Contai
 	containers, err := cli.ContainerList(context.Background(), options)
 	if err != nil {
 		log.Error(err)
-		return nil
+		return nil, nil
 	}
 	log.Debug("Docker_container -> ReadAllContainers response", containers)
 
-	return containers
+	return containers, nil
 }
 
 func GetContainerLog(container string) string {

@@ -12,4 +12,4 @@ build/
 *.jsonl
 node_listener
 node-service
-cmd/agent/logs
+nodeconfig.json
