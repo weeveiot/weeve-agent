@@ -232,7 +232,7 @@ func TestUndeployDataService(t *testing.T) {
 	}
 
 	// Check if the network is removed
-	result := deploy.DataServiceExist(manifestID, version)
+	result, _ := deploy.DataServiceExist(manifestID, version)
 	if result {
 		t.Errorf("Network %v was not pruned (Data Service not removed)", version)
 	}
@@ -309,7 +309,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	}
 
 	// Check if the network is removed
-	result := deploy.DataServiceExist(manifestID, version)
+	result, _ := deploy.DataServiceExist(manifestID, version)
 	if result {
 		t.Errorf("Network was not pruned (Data Service not removed)")
 	}
@@ -322,7 +322,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 		t.Errorf("Some containers from the second identical network were removed.")
 	}
 
-	result2 := deploy.DataServiceExist(manifestID2, version2)
+	result2, _ := deploy.DataServiceExist(manifestID2, version2)
 	if !result2 {
 		t.Errorf("Second identical network is removed.")
 	}
