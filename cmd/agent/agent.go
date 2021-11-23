@@ -5,12 +5,17 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	golog "log"
+	mathrand "math/rand"
 	"net"
 	"net/url"
 	"os"
 	"os/signal"
+	"path"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -18,45 +23,260 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/natefinch/lumberjack.v2"
 
+	"github.com/google/uuid"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/constants"
 )
 
 type Params struct {
-	NodeId       string `long:"nodeId" short:"i" description:"ID of this node" required:"true"`
 	Verbose      []bool `long:"verbose" short:"v" description:"Show verbose debug information"`
 	Broker       string `long:"broker" short:"b" description:"Broker to connect" required:"true"`
 	PubClientId  string `long:"pubClientId" short:"c" description:"Publisher ClientId" required:"true"`
 	SubClientId  string `long:"subClientId" short:"s" description:"Subscriber ClientId" required:"true"`
 	TopicName    string `long:"publish" short:"t" description:"Topic Name" required:"true"`
-	RootCertPath string `long:"rootcert" short:"r" description:"Path to MQTT broker (server) certificate" required:"false"`
-	CertPath     string `long:"cert" short:"f" description:"Path to certificate to authenticate to Broker" required:"false"`
-	KeyPath      string `long:"key" short:"k" description:"Path to private key to authenticate to Broker" required:"false"`
 	Heartbeat    int    `long:"heartbeat" short:"h" description:"Heartbeat time in seconds" required:"false" default:"30"`
 	MqttLogs     bool   `long:"mqttlogs" short:"m" description:"For developer - Display detailed MQTT logging messages" required:"false"`
 	NoTLS        bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
+	LogLevel     string `long:"loglevel" short:"l" default:"info" description:"Set the logging level" required:"false"`
+	LogFileName  string `long:"logfilename" default:"logs" description:"Set the name of the log file" required:"false"`
+	LogSize      int    `long:"logsize" default:"1" description:"Set the size of each log files (MB)" required:"false"`
+	LogAge       int    `long:"logage" default:"1" description:"Set the time period to retain the log files (days)" required:"false"`
+	LogBackup    int    `long:"logbackup" default:"5" description:"Set the max number of log files to retain" required:"false"`
+	LogCompress  bool   `long:"logcompress" description:"To compress the log files" required:"false"`
+	NodeId       string `long:"nodeId" short:"i" description:"ID of this node" required:"false" default:"register"`
+	NodeName     string `long:"name" short:"n" description:"Name of this node to be registered" required:"false"`
+	RootCertPath string `long:"rootcert" short:"r" description:"Path to MQTT broker (server) certificate" required:"false"`
+	CertPath     string `long:"cert" short:"f" description:"Path to certificate to authenticate to Broker" required:"false"`
+	KeyPath      string `long:"key" short:"k" description:"Path to private key to authenticate to Broker" required:"false"`
+}
+
+type PlainFormatter struct {
+	TimestampFormat string
+}
+
+func (f *PlainFormatter) Format(entry *log.Entry) ([]byte, error) {
+	timestamp := fmt.Sprintf(entry.Time.Format(f.TimestampFormat))
+	return []byte(fmt.Sprintf("%s %s : %s\n", timestamp, entry.Level, entry.Message)), nil
 }
 
 var opt Params
+var nodeId string
 var parser = flags.NewParser(&opt, flags.Default)
+var registered = false
+var connected = false
 
+// logging into the terminal and files
 func init() {
-	log.SetFormatter(&log.TextFormatter{})
-	log.SetOutput(os.Stdout)
 
-	log.SetLevel(log.DebugLevel)
-	log.Info("Started logging")
+	plainFormatter := new(PlainFormatter)
+	plainFormatter.TimestampFormat = "2006-01-02 15:04:05"
+	log.SetFormatter(plainFormatter)
+
 }
 
-func NewTLSConfig(CertPath string) (config *tls.Config, err error) {
+func main() {
+
+	// Parse the CLI options
+	if _, err := parser.Parse(); err != nil {
+		log.Error("Error on command line parser ", err)
+		os.Exit(1)
+	}
+
+	// FLAG: LogLevel
+	l, _ := log.ParseLevel(opt.LogLevel)
+	log.SetLevel(l)
+
+	// LOG CONFIGS
+	logger := &lumberjack.Logger{
+		Filename:   filepath.ToSlash(opt.LogFileName),
+		MaxSize:    opt.LogSize,
+		MaxAge:     opt.LogAge,
+		MaxBackups: opt.LogBackup,
+		Compress:   opt.LogCompress,
+	}
+
+	// FLAG: Verbose
+	if len(opt.Verbose) >= 1 {
+		multiWriter := io.MultiWriter(os.Stderr, logger)
+		log.SetOutput(multiWriter)
+	} else {
+		log.SetOutput(logger)
+	}
+
+	// FLAG: Show the logs from the Paho package at STDOUT
+	if opt.MqttLogs {
+		mqtt.ERROR = golog.New(logger, "[ERROR] ", 0)
+		mqtt.CRITICAL = golog.New(logger, "[CRIT] ", 0)
+		mqtt.WARN = golog.New(logger, "[WARN]  ", 0)
+		mqtt.DEBUG = golog.New(logger, "[DEBUG] ", 0)
+	}
+
+	log.Info("Started logging")
+
+	log.Info("Logging level set to ", log.GetLevel())
+
+	// OPTION: Parse and validate the Broker url
+	u, err := url.Parse(opt.Broker)
+	if err != nil {
+		log.Error("Error on parsing broker ", err)
+		os.Exit(1)
+	}
+
+	host, port, _ := net.SplitHostPort(u.Host)
+
+	// Strictly require protocol and host in Broker specification
+	if (len(strings.TrimSpace(host)) == 0) || (len(strings.TrimSpace(u.Scheme)) == 0) {
+		log.Fatalf("Error in --broker option: Specify both protocol:\\\\host in the Broker URL")
+	}
+
+	log.Info(fmt.Sprintf("Broker host %v at port %v over %v", host, port, u.Scheme))
+
+	log.Debug("Broker: ", opt.Broker)
+
+	// FLAG: Optionally disable TLS
+	if opt.NoTLS {
+		log.Info("TLS disabled!")
+	} else {
+		if u.Scheme != "tls" {
+			log.Fatalf("Incorrect protocol, TLS is required unless --notls is set. You specified protocol in broker to: %v", u.Scheme)
+		}
+	}
+	var publisher mqtt.Client
+	var subscriber mqtt.Client
+	var nodeConfig map[string]string
+
+	nodeConfig = internal.ReadNodeConfig()
+	validateUpdateConfig(nodeConfig)
+
+	// Read node configurations
+	nodeConfig = internal.ReadNodeConfig()
+
+	isRegistered := len(nodeConfig[internal.NodeIdKey]) > 0
+
+	if opt.NodeId == "register" && !isRegistered {
+		nodeId = uuid.New().String()
+	} else {
+		nodeId = nodeConfig[internal.NodeIdKey]
+		registered = true
+	}
+
+	if !isRegistered {
+		log.Info("Registering node!")
+		registered = false
+		publisher = InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId+"/Registration", false)
+		subscriber = InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId+"/Certificate", true)
+		for {
+			published := PublishMessages(publisher, nodeId, nodeConfig[constants.KeyNodeName], "Registration")
+			if published {
+				break
+			}
+			time.Sleep(time.Second * 5)
+		}
+
+	} else {
+		log.Info("Node already registered!")
+		registered = true
+	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	// MAIN LOOP
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		for {
+			log.Debug("Node registered > ", registered, " connected > ", connected)
+			if registered {
+				if !connected {
+					DisconnectBroker(publisher, subscriber)
+					nodeConfig = internal.ReadNodeConfig()
+					publisher = InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId, false)
+					subscriber = InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId, true)
+					connected = true
+				}
+				CheckBrokerConnection(publisher, subscriber)
+				PublishMessages(publisher, nodeId, "", "All")
+			}
+
+			time.Sleep(time.Second * time.Duration(opt.Heartbeat))
+		}
+	}()
+	<-done
+
+	// Cleanup on ending the process
+	<-c
+	DisconnectBroker(publisher, subscriber)
+}
+
+func InitBrokerChannel(nodeConfig map[string]string, pubsubClientId string, isSubscribe bool) mqtt.Client {
+
+	// var pubsubClient mqtt.Client
+
+	log.Debug("Client id >> : ", pubsubClientId, " is subscription > ", isSubscribe)
+
+	// Build the options for the mqtt client
+	channelOptions := mqtt.NewClientOptions()
+	channelOptions.AddBroker(opt.Broker)
+	channelOptions.SetClientID(pubsubClientId)
+	channelOptions.SetDefaultPublishHandler(messagePubHandler)
+	channelOptions.OnConnectionLost = connectLostHandler
+	if isSubscribe {
+		channelOptions.OnConnect = connectHandler
+	}
+
+	// Optionally add the TLS configuration to the 2 client options
+	if !opt.NoTLS {
+		tlsconfig, err := NewTLSConfig(nodeConfig)
+		if err != nil {
+			log.Fatalf("failed to create TLS configuration: %v", err)
+		}
+		// log.Debug("Tls Config >> ", tlsconfig)
+		channelOptions.SetTLSConfig(tlsconfig)
+		log.Debug("TLS set on options")
+	}
+
+	log.Debug("options:\n", channelOptions)
+
+	log.Debug("Finished parsing and MQTT configuration")
+
+	pubsubClient := mqtt.NewClient(channelOptions)
+	if token := pubsubClient.Connect(); token.Wait() && token.Error() != nil {
+		if isSubscribe {
+			log.Fatalf("failed to create subscriber connection: %v", token.Error())
+		} else {
+			log.Fatalf("failed to create publisher connection: %v", token.Error())
+		}
+	} else {
+		if isSubscribe {
+			log.Debug("MQTT subscriber connected")
+		} else {
+			log.Debug("MQTT Publisher connected")
+		}
+	}
+
+	return pubsubClient
+}
+
+func NewTLSConfig(nodeConfig map[string]string) (config *tls.Config, err error) {
+	// Root folder of this project
+	_, b, _, _ := runtime.Caller(0)
+	Root := filepath.Join(filepath.Dir(b), "../..")
+
+	rootCert := path.Join(Root, nodeConfig[internal.AWSRootCertKey])
+	nodeCert := path.Join(Root, nodeConfig[internal.CertificateKey])
+	pvtKey := path.Join(Root, nodeConfig[internal.PrivateKeyKay])
+	log.Debug("MQTT cert paths", pvtKey, " >> ", nodeCert, " >> ")
 	certpool := x509.NewCertPool()
-	pemCerts, err := ioutil.ReadFile(opt.RootCertPath)
+	pemCerts, err := ioutil.ReadFile(rootCert)
 	if err != nil {
 		return nil, err
 	}
 	certpool.AppendCertsFromPEM(pemCerts)
 
-	cert, err := tls.LoadX509KeyPair(opt.CertPath, opt.KeyPath)
+	cert, err := tls.LoadX509KeyPair(nodeCert, pvtKey)
 	if err != nil {
 		return nil, err
 	}
@@ -70,40 +290,115 @@ func NewTLSConfig(CertPath string) (config *tls.Config, err error) {
 	return config, nil
 }
 
-func PublishMessages(cl mqtt.Client) {
+func CheckBrokerConnection(publisher mqtt.Client, subscriber mqtt.Client) {
+	// Attempt reconnect
+	if !publisher.IsConnected() {
+		log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
 
-	msg := internal.GetStatusMessage(opt.NodeId)
-
-	b_msg, err := json.Marshal(msg)
-	if err != nil {
-		log.Fatalf("Marshall error: %v", err)
+		if token := publisher.Connect(); token.Wait() && token.Error() != nil {
+			log.Error("failed to create publisher connection: ", token.Error())
+		}
 	}
 
-	log.Info("Sending update.", opt.TopicName, msg, string(b_msg))
-	if token := cl.Publish(opt.PubClientId+"/"+opt.NodeId+"/"+opt.TopicName, 0, false, b_msg); token.Wait() && token.Error() != nil {
-		log.Fatalf("failed to send update: %v", token.Error())
+	if !subscriber.IsConnected() {
+		log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
+
+		if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
+			log.Errorf("failed to create subscriber connection: %v", token.Error())
+		}
 	}
 }
 
-// The message fallback handler used for incoming messages
+func PublishMessages(publisher mqtt.Client, pubNodeId string, nodeName string, msgType string) bool {
+
+	if !publisher.IsConnected() {
+		log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
+
+		if token := publisher.Connect(); token.Wait() && token.Error() != nil {
+			log.Error("failed to create publisher connection: ", token.Error())
+			return false
+		}
+	}
+
+	var topicNm string
+	var b_msg []byte
+	var err error
+	if msgType == "Registration" {
+		topicNm = opt.PubClientId + "/" + pubNodeId + "/" + "Registration"
+
+		msg := internal.GetRegistrationMessage(pubNodeId, nodeName)
+		log.Info("Sending registration request.", "Registration", msg)
+		b_msg, err = json.Marshal(msg)
+		if err != nil {
+			log.Fatalf("Marshall error: %v", err)
+		}
+
+	} else {
+		topicNm = opt.PubClientId + "/" + pubNodeId + "/" + opt.TopicName
+		msg := internal.GetStatusMessage(pubNodeId)
+		log.Info("Sending update >> ", opt.TopicName, msg)
+		b_msg, err = json.Marshal(msg)
+		if err != nil {
+			log.Fatalf("Marshall error: %v", err)
+		}
+	}
+
+	log.Info("Publishing message >> ", topicNm, " ", string(b_msg))
+	if token := publisher.Publish(topicNm, 0, false, b_msg); token.Wait() && token.Error() != nil {
+		log.Fatalf("failed to send update: %v", token.Error())
+		return false
+	}
+	return true
+
+}
+
+func DisconnectBroker(publisher mqtt.Client, subscriber mqtt.Client) {
+	if publisher != nil && publisher.IsConnected() {
+		log.Info("Disconnecting.....")
+		publisher.Disconnect(250)
+	}
+
+	if subscriber != nil && subscriber.IsConnected() {
+		log.Info("Disconnecting.....")
+		subscriber.Disconnect(250)
+	}
+}
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	log.Info("Received message on topic: ", msg.Topic(), "\nMessage: %s\n", msg.Payload())
+	log.Info("Received message on topic: ", msg.Topic())
 
 	topic_rcvd := ""
 
-	// TODO: Refactor (remove) this , we already hwave a proper subscription in the connectHandler!
-	if strings.HasPrefix(msg.Topic(), opt.SubClientId+"/"+opt.NodeId+"/") {
-		topic_rcvd = strings.Replace(msg.Topic(), opt.SubClientId+"/"+opt.NodeId+"/", "", 1)
+	if msg.Topic() == opt.SubClientId+"/"+nodeId+"/Certificate" {
+		certificates := internal.DownloadCertificates(msg.Payload())
+		if certificates != nil {
+			time.Sleep(time.Second * 10)
+			marked := internal.MarkNodeRegistered(nodeId, certificates)
+			if marked {
+				registered = true
+			}
+		}
+	} else {
+		if strings.HasPrefix(msg.Topic(), opt.SubClientId+"/"+nodeId+"/") {
+			topic_rcvd = strings.Replace(msg.Topic(), opt.SubClientId+"/"+nodeId+"/", "", 1)
+		}
+
+		internal.ProcessMessage(topic_rcvd, msg.Payload(), false)
 	}
 
-	internal.ProcessMessage(topic_rcvd, msg.Payload())
 }
 
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
-	log.Info("ON connect >> connected")
-	if token := c.Subscribe(opt.SubClientId+"/"+opt.NodeId+"/+", 0, messagePubHandler); token.Wait() && token.Error() != nil {
-		log.Error("Error on subscribe connection: %v", token.Error())
+	log.Info("ON connect >> connected >> registered : ", registered)
+	var topicName string
+	topicName = opt.SubClientId + "/" + nodeId + "/Certificate"
+	if registered {
+		topicName = opt.SubClientId + "/" + nodeId + "/+"
+	}
+
+	log.Debug("ON connect >> subscribes >> topicName : ", topicName)
+	if token := c.Subscribe(topicName, 0, messagePubHandler); token.Wait() && token.Error() != nil {
+		log.Error("Error on subscribe connection: ", token.Error())
 	}
 }
 
@@ -111,170 +406,38 @@ var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err
 	log.Info("Connection lost", err)
 }
 
-func main() {
-
-	// Parse the CLI options
-	if _, err := parser.Parse(); err != nil {
-		log.Error("Error on command line parser ", err)
-		os.Exit(1)
+func validateUpdateConfig(nodeConfigs map[string]string) {
+	var configChanged bool
+	nodeConfig := map[string]string{}
+	if opt.NodeId != "register" {
+		nodeConfig[constants.KeyNodeId] = opt.NodeId
+		configChanged = true
+	}
+	if len(opt.CertPath) > 0 {
+		nodeConfig[constants.KeyCertificate] = opt.CertPath
+		configChanged = true
 	}
 
-	// FLAG: Show the logs from the Paho package at STDOUT
-	if opt.MqttLogs {
-		mqtt.ERROR = golog.New(os.Stdout, "[ERROR] ", 0)
-		mqtt.CRITICAL = golog.New(os.Stdout, "[CRIT] ", 0)
-		mqtt.WARN = golog.New(os.Stdout, "[WARN]  ", 0)
-		mqtt.DEBUG = golog.New(os.Stdout, "[DEBUG] ", 0)
+	if len(opt.CertPath) > 0 {
+		nodeConfig[constants.KeyPrivateKey] = opt.KeyPath
+		configChanged = true
 	}
 
-	// FLAG: Verbose
-	if len(opt.Verbose) >= 1 {
-		log.SetLevel(log.DebugLevel)
+	if len(opt.NodeName) > 0 {
+		nodeConfig[constants.KeyNodeName] = opt.NodeName
+		configChanged = true
 	} else {
-		log.SetLevel(log.InfoLevel)
-	}
-	log.Info("Logging level set to ", log.GetLevel())
-
-	// OPTION: Parse and validated the Broker url
-	u, err := url.Parse(opt.Broker)
-	if err != nil {
-		panic(err)
-	}
-
-	host, port, _ := net.SplitHostPort(u.Host)
-
-	// Strictly require protocol and host in Broker specification
-	if (len(strings.TrimSpace(host)) == 0) || (len(strings.TrimSpace(u.Scheme)) == 0) {
-		log.Fatalf("Error in --broker option: Specify both protocol:\\\\host in the Broker URL")
-	}
-
-	log.Info(fmt.Sprintf("Broker host %v at port %v over %v\n", host, port, u.Scheme))
-
-	log.Debug("Broker: ", opt.Broker)
-
-	// FLAG: Optionally disable TLS
-	if opt.NoTLS {
-		log.Info("TLS disabled!")
-	} else {
-		if u.Scheme != "tls" {
-			log.Fatalf("Incorrect protocol, TLS is required unless --notls is set. You specified protocol in broker to: %v", u.Scheme)
+		nodeNm := nodeConfigs[constants.KeyNodeName]
+		if nodeNm == "" {
+			nodeNm = "New Node"
 		}
-		if _, err := os.Stat(opt.RootCertPath); os.IsNotExist(err) {
-			log.Fatalf("Root certificate path does not exist: %v", opt.RootCertPath)
-		} else {
-			log.Debug("Root server certificate: ", opt.RootCertPath)
-		}
-		if _, err := os.Stat(opt.CertPath); os.IsNotExist(err) {
-			log.Fatalf("Client certificate path does not exist: %v", opt.CertPath)
-		} else {
-			log.Debug("Client certificate: ", opt.CertPath)
-		}
-		if _, err := os.Stat(opt.KeyPath); os.IsNotExist(err) {
-			log.Fatalf("Client private key path does not exist: %v", opt.KeyPath)
-		} else {
-			log.Debug("Client private key: ", opt.KeyPath)
+		if nodeNm == "New Node" {
+			nodeNm = fmt.Sprintf("%s%d", nodeNm, mathrand.Intn(10000))
+			nodeConfig[constants.KeyNodeName] = nodeNm
+			configChanged = true
 		}
 	}
-
-	// OPTIONS: ID and topics
-	log.Debug("NodeId: ", opt.NodeId)
-	log.Debug("Heartbeat time: ", opt.Heartbeat)
-	statusPublishTopic := opt.PubClientId + "/" + opt.NodeId
-	log.Debug("Status heartbeat publishing to topic: ", statusPublishTopic)
-
-	nodeSubscribeTopic := opt.SubClientId + "/" + opt.NodeId
-	log.Debug("This node is subscribed to topic: ", nodeSubscribeTopic)
-
-	// Build the options for the publish client
-	publisherOptions := mqtt.NewClientOptions()
-	publisherOptions.AddBroker(opt.Broker)
-	publisherOptions.SetClientID(statusPublishTopic)
-	publisherOptions.SetDefaultPublishHandler(messagePubHandler)
-	publisherOptions.OnConnectionLost = connectLostHandler
-
-	// Build the options for the subscribe client
-	subscriberOptions := mqtt.NewClientOptions()
-	subscriberOptions.AddBroker(opt.Broker)
-	subscriberOptions.SetClientID(nodeSubscribeTopic)
-	subscriberOptions.SetDefaultPublishHandler(messagePubHandler)
-	subscriberOptions.OnConnectionLost = connectLostHandler
-	// sub_opts.SetReconnectingHandler(messagePubHandler, opts)
-	subscriberOptions.OnConnect = connectHandler
-
-	// Optionally add the TLS configuration to the 2 client options
-	if !opt.NoTLS {
-		tlsconfig, err := NewTLSConfig(opt.CertPath)
-		if err != nil {
-			log.Fatalf("failed to create TLS configuration: %v", err)
-		}
-		// log.Debug("Tls Config >> ", tlsconfig)
-		subscriberOptions.SetTLSConfig(tlsconfig)
-		log.Debug("TLS set on subscriber options")
-		publisherOptions.SetTLSConfig(tlsconfig)
-		log.Debug("TLS set on publisher options")
-	}
-
-	log.Debug("Publisher options:\n", publisherOptions)
-	log.Debug("Subscriber options:\n", subscriberOptions)
-
-	log.Debug("Finished parsing and MQTT configuration")
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-
-	publisher := mqtt.NewClient(publisherOptions)
-	if token := publisher.Connect(); token.Wait() && token.Error() != nil {
-		log.Errorf("failed to create publisher connection: %v", token.Error())
-	} else {
-		log.Debug("MQTT publisher connected")
-	}
-
-	subscriber := mqtt.NewClient(subscriberOptions)
-	if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
-		log.Errorf("failed to create subscriber connection: %v", token.Error())
-	} else {
-		log.Debug("MQTT subscriber connected")
-	}
-
-	// MAIN LOOP
-	done := make(chan os.Signal, 1)
-	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		for {
-			// Attempt reconnect
-			if !publisher.IsConnected() {
-				log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
-
-				if token := publisher.Connect(); token.Wait() && token.Error() != nil {
-					log.Error("failed to create publisher connection: %v", token.Error())
-				}
-			}
-
-			if !subscriber.IsConnected() {
-				log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
-
-				if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
-					log.Errorf("failed to create subscriber connection: %v", token.Error())
-				}
-			}
-
-			PublishMessages(publisher)
-
-			log.Info("Sleeping ", opt.Heartbeat)
-			time.Sleep(time.Second * time.Duration(opt.Heartbeat))
-		}
-	}()
-	<-done
-
-	// Cleanup on ending the process
-	<-c
-	if publisher.IsConnected() {
-		log.Info("Disconnecting.....")
-		publisher.Disconnect(250)
-	}
-
-	if subscriber.IsConnected() {
-		log.Info("Disconnecting.....")
-		subscriber.Disconnect(250)
+	if configChanged {
+		internal.UpdateNodeConfig(nodeConfig)
 	}
 }

@@ -1,6 +1,8 @@
 package model
 
-import jwt "github.com/dgrijalva/jwt-go"
+import (
+	jwt "github.com/dgrijalva/jwt-go"
+)
 
 type ErrorResponse struct {
 	Err string
@@ -13,7 +15,7 @@ type Exception struct {
 type User struct {
 	ID       uint
 	Name     string
-	Email    string `json:"Email:varchar(100);unique_index"`
+	Email    string `json:"Email:varchar(100):unique_index"`
 	Password string `json:"Password"`
 }
 
@@ -23,26 +25,6 @@ type Token struct {
 	Email  string
 	*jwt.StandardClaims
 }
-
-/*
-type ManifestReq struct {
-	ID      string     `json:"ID"`
-	Name    string     `json:"Name"`
-	Modules []Manifest `json:"Modules"`
-}
-*/
-
-/*
-type Manifest struct {
-	Index     int      `json:"Index"`
-	Name      string   `json:"Name"`
-	Tag       string   `json:"Tag"`
-	ImageID   string   `json:"ImageID"`
-	ImageName string   `json:"ImageName"`
-	Options   Option   `json:"Options"`
-	Arguments Argument `json:"Arguments"`
-}
-*/
 
 type Argument []struct {
 	Arg string `json:"opt"`
@@ -57,10 +39,10 @@ type Option []struct {
 type StatusMessage struct {
 	Id                 string           `json:"ID"`
 	Timestamp          int64            `json:"timestamp"`
-	Connectivity       string           `json:"connectivity"`
+	Status             string           `json:"status"`
 	ActiveServiceCount int              `json:"activeServiceCount"`
 	ServiceCount       int              `json:"serviceCount"`
-	DeployStatus       []ManifestStatus `json:"deployStatus"`
+	ServicesStatus     []ManifestStatus `json:"servicesStatus"`
 	DeviceParams       DeviceParams     `json:"deviceParams"`
 }
 
@@ -68,6 +50,25 @@ type ManifestStatus struct {
 	ManifestId      string `json:"manifestId"`
 	ManifestVersion string `json:"manifestVersion"`
 	Status          string `json:"status"`
+}
+
+type RegistrationMessage struct {
+	Id        string `json:"id"`
+	Timestamp int64  `json:"timestamp"`
+	Operation string `json:"operation"`
+	Status    string `json:"status"`
+	Name      string `json:"name"`
+}
+
+type CertificateMessage struct {
+	Id         string `json:"id"`
+	Timestamp  int64  `json:"timestamp"`
+	Operation  string `json:"operation"`
+	Status     string `json:"status"`
+	Name       string `json:"name"`
+	Cert_Path  string `json:"certPath"`
+	Key_Path   string `json:"keyPath"`
+	Expires_At int64  `json:"expiresAt"`
 }
 
 type DeviceParams struct {

@@ -1,7 +1,6 @@
 {
-  "compose": {
-    "network": { "driver": "bridge", "name": "tick-network" },
-    "services": [
+  "networks": { "driver": "bridge", "name": "tick-network" },
+  "services": [
       {
         "categories": [{ "id": "category", "name": "Experimental" }],
         "commands": [
@@ -25,7 +24,7 @@
           }
         ],
         "description": "Ingress module mounting the dev/random device to generate a SHA256 hash string.",
-        "document": "{\"ports\":[],\"volumes\":[{\"host\":\"/dev/urandom\",\"container\":\"/mnt/random\"}],\"restart_policy\":{\"condition\":\"on-failure\",\"delay\":\"10s\",\"max_attempts\":3,\"window\":\"120s\"}}",
+        "document": "{\"ports\":[],\"volumes\":[],\"mounts\":[{\"type\":\"bind\",\"source\":\"/dev/urandom\",\"target\":\"/mnt/random\",\"readonly\":false,\"consistency\":\"default\",\"bindoptions\":{\"propagation\":\"rprivate\",\"nonrecursive\":true}}],\"restart_policy\":{\"condition\":\"on-failure\",\"delay\":\"10s\",\"max_attempts\":3,\"window\":\"120s\"}}",
         "environments": [
           {
             "default": "",
@@ -49,7 +48,7 @@
         "categories": [{ "id": "category", "name": "Experimental" }],
         "commands": null,
         "description": "Return the integer representation of a byte string.",
-        "document": "{\"ports\":[],\"volumes\":[],\"restart_policy\":{\"condition\":\"on-failure\",\"delay\":\"10s\",\"max_attempts\":3,\"window\":\"120s\"}}",
+        "document": "{\"ports\":[],\"volumes\":[],\"mounts\":[{\"type\":\"bind\",\"source\":\"/dev/urandom\",\"target\":\"/mnt/random\",\"readonly\":false,\"consistency\":\"default\",\"bindoptions\":{\"propagation\":\"rprivate\",\"nonrecursive\":true}}],\"restart_policy\":{\"condition\":\"on-failure\",\"delay\":\"10s\",\"max_attempts\":3,\"window\":\"120s\"}}",
         "environments": null,
         "icon": "https://icons-020-demo.s3.eu-central-1.amazonaws.com/USB.png",
         "id": "c385ec66-ee5d-48a5-9eb1-96aa65152cbe",
@@ -63,7 +62,7 @@
         "categories": [{ "id": "category", "name": "Egress" }],
         "commands": [],
         "description": "Send your data to a third party via HTTP",
-        "document": "{\"ports\":[],\"volumes\":[],\"restart_policy\":{\"condition\":\"on-failure\",\"delay\":\"10s\",\"max_attempts\":3,\"window\":\"120s\"}}",
+        "document": "{\"ports\":[],\"volumes\":[],\"mounts\":[{\"type\":\"bind\",\"source\":\"/dev/urandom\",\"target\":\"/mnt/random\",\"readonly\":false,\"consistency\":\"default\",\"bindoptions\":{\"propagation\":\"rprivate\",\"nonrecursive\":true}}],\"restart_policy\":{\"condition\":\"on-failure\",\"delay\":\"10s\",\"max_attempts\":3,\"window\":\"120s\"}}",
         "environments": [
           {
             "default": "",
@@ -72,7 +71,7 @@
             "name": "HTTP URL",
             "options": null,
             "type": "string",
-            "value": "https://hookb.in/JKe2P0QGqLug0l99029b"
+            "value": "https://hookb.in/MqZ0JQqDkphDRWppR08V"
           },
           {
             "default": "POST",
@@ -118,9 +117,13 @@
         "type": "output",
         "version": "1.0.0"
       }
-    ]
-  },
+  ],
   "id": "38e104fd-31dd-4dc7-9246-b408e7f14e01",
-  "status": "SUCCESS",
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "description": "MVPDataServiceV2",
+	"document": "",
+	"name": "MVPDataServiceV2",
+	"modified": 1632981575399,
+  "created": 1632981575399,
+	"organizationId": ""
 }

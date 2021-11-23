@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 
-	// "io/ioutil"
 	"os"
 	"reflect"
 
@@ -74,19 +73,14 @@ func Encode(w io.Writer, ptrToSlice interface{}) error {
 }
 
 func Read(jsonFile string, pkField string, pkVal string, filter map[string]string, excludeKey bool) []map[string]interface{} {
-	// data, err := ioutil.ReadFile(jsonFile)
-	// if err != nil {
-	// 	fmt.Println("File reading error", err)
-
-	// }
-	// fmt.Println("Contents of file:", string(data))
 	var val []map[string]interface{}
 	file, err := os.Open(jsonFile)
-
 	if err != nil {
-		log.Error("File not available", err)
+		log.Error("File not available! ", err)
 		return val
 	}
+
+	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
 
@@ -97,17 +91,15 @@ func Read(jsonFile string, pkField string, pkVal string, filter map[string]strin
 		text = append(text, scanner.Text())
 	}
 
-	file.Close()
-
 	for _, each_ln := range text {
 		log.Debug(each_ln)
 		var lnVal map[string]interface{}
 		json.Unmarshal([]byte(each_ln), &lnVal)
 
 		if pkField != "" && pkVal != "" {
-			if lnVal[pkField] == pkVal && excludeKey == false {
+			if lnVal[pkField] == pkVal && !excludeKey {
 				val = append(val, lnVal)
-			} else if lnVal[pkField] != pkVal && excludeKey == true {
+			} else if lnVal[pkField] != pkVal && excludeKey {
 				val = append(val, lnVal)
 			}
 		} else {
@@ -115,11 +107,11 @@ func Read(jsonFile string, pkField string, pkVal string, filter map[string]strin
 				add := true
 				for k, v := range filter {
 					log.Debug(k, "value is", v)
-					if lnVal[k] == v {
+					if lnVal[k] != v {
 						add = false
 					}
 				}
-				if add == true {
+				if (add && !excludeKey) || (!add && excludeKey) {
 					val = append(val, lnVal)
 				}
 			} else {
@@ -146,9 +138,9 @@ func Insert(jsonFile string, jsonString string) bool {
 	return true
 }
 
-func Delete(jsonFile string, pkField string, pkVal string) bool {
+func Delete(jsonFile string, pkField string, pkVal string, filter map[string]string, excludeKey bool) bool {
 	log.Debug("jsonlines >> Delete()")
-	allExceptPk := Read(jsonFile, pkField, pkVal, nil, true)
+	allExceptPk := Read(jsonFile, pkField, pkVal, filter, excludeKey)
 
 	var err = os.Remove(jsonFile)
 	if err != nil {

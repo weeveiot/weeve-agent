@@ -5,23 +5,58 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch Package",
+            "name": "WeeveAgentLocal",
             "type": "go",
             "request": "launch",
-            "mode": "auto",
-            "program": "./listener/node_listener.go",
-            "cwd": "~/weeve/edge-pipeline-service",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/agent/agent.go",
             "showLog": true,
-            "args": ["-v",
-                "--nodeId", "demo_edge_node1",
-                "--broker", "tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883",
-                "--cert", "adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c",
-                "--subClientId", "nodes/awsdev ",
-                "--pubClientId", "manager/awsdev",
-                "--publish", "CheckVersion",
-                "--publicurl", "hssss",
-                "--nodeport", "8030",
+            "args": [
+                "-v",
+                "--notls",
+                "-b",
+                "tcp://localhost:8080",
+                "-s",
+                "nodes/localtest",
+                "-c",
+                "manager/localtest",
+                "-t",
+                "CheckVersion",
+                "--heartbeat",
+                "300"
             ]
+        },
+        {
+            "name": "WeeveAgent",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/agent/agent.go",
+            "showLog": true,
+            "args": [
+                "-v",
+                "-b",
+                "tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883",
+                "-s",
+                "nodes/awsdev",
+                "-c",
+                "manager/awsdev",
+                "-t",
+                "CheckVersion",
+                "--heartbeat",
+                "3600"
+            ]
+        },
+        {
+            "name": "Test Current File",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "remotePath": "",
+            "program": "${workspaceRoot}/internal/deploy",
+            "env": {},
+            "args": [],
+            "showLog": true
         }
     ]
 }

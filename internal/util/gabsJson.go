@@ -42,7 +42,7 @@ func PrintManifestDetails(jsonParsed *gabs.Container) bool {
 func PrettyPrintJson(jsonBytes []byte) {
 	jsonObj, err := gabs.ParseJSON(jsonBytes)
 	if err != nil {
-		panic(err)
+		fmt.Println("Error:", err)
 	}
 	fmt.Println(jsonObj.StringIndent("", "  "))
 }
