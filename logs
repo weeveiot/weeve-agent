@@ -1,0 +1,12 @@
+2021-11-24 13:41:37 info : Started logging
+2021-11-24 13:41:37 info : Logging level set to info
+2021-11-24 13:41:37 info : Broker host localhost at port 8080 over tcp
+2021-11-24 13:41:37 info : TLS disabled!
+2021-11-24 13:41:37 info : Node already registered!
+2021-11-24 13:41:39 fatal : failed to create publisher connection: network Error : dial tcp [::1]:8080: connectex: No connection could be made because the target machine actively refused it.
+2021-11-24 13:42:29 info : Started logging
+2021-11-24 13:42:29 info : Logging level set to info
+2021-11-24 13:42:29 info : Broker host localhost at port 8080 over tcp
+2021-11-24 13:42:29 info : TLS disabled!
+2021-11-24 13:42:29 info : Node already registered!
+2021-11-24 13:42:31 fatal : failed to create publisher connection: network Error : dial tcp [::1]:8080: connectex: No connection could be made because the target machine actively refused it.
