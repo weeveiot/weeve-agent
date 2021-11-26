@@ -1,22 +1,30 @@
 package internal
 
 import (
+	"time"
+
 	"github.com/Jeffail/gabs/v2"
 	log "github.com/sirupsen/logrus"
 
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 
-	"time"
-
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/deploy"
-
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/constants"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/deploy"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util/jsonlines"
 )
 
-func ProcessMessage(topic_rcvd string, payload []byte) {
+func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
+	// flag for exception handling
+	exception := true
+	defer func() {
+		if exception && retry {
+			// on exception sleep 5s and try again
+			time.Sleep(5 * time.Second)
+			ProcessMessage(topic_rcvd, payload, false)
+		}
+	}()
 
-	log.Info(" ProcessMessage topic_rcvd ", topic_rcvd)
+	log.Info("Processing the message : ", topic_rcvd)
 
 	jsonParsed, err := gabs.ParseJSON(payload)
 	if err != nil {
@@ -33,6 +41,8 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 			status := deploy.DeployManifest(thisManifest, topic_rcvd)
 			if status {
 				log.Info("Manifest deployed successfully")
+			} else {
+				log.Info("Deployment unsuccessful")
 			}
 
 		} else if topic_rcvd == "redeploy" {
@@ -42,6 +52,8 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 			status := deploy.DeployManifest(thisManifest, topic_rcvd)
 			if status {
 				log.Info("Manifest redeployed successfully")
+			} else {
+				log.Info("Redeployment unsuccessful")
 			}
 
 		} else if topic_rcvd == "stopservice" {
@@ -83,14 +95,15 @@ func ProcessMessage(topic_rcvd string, payload []byte) {
 
 				status := deploy.UndeployDataService(serviceId, serviceVersion)
 				if status {
-					log.Info("Service undeployed!")
+					log.Info("Undeployment Successful")
 				}
 			} else {
 				log.Error(err)
 			}
-
 		}
 	}
+
+	exception = false
 }
 
 func GetStatusMessage(nodeId string) model.StatusMessage {
@@ -102,7 +115,6 @@ func GetStatusMessage(nodeId string) model.StatusMessage {
 	actv_cnt := 0
 	serv_cnt := 0
 	for _, rec := range manifests {
-		log.Info("Record on manifests >> ", rec)
 		mani = append(mani, model.ManifestStatus{ManifestId: rec["id"].(string), ManifestVersion: rec["version"].(string), Status: rec["status"].(string)})
 		serv_cnt = serv_cnt + 1
 		if rec["status"].(string) == "SUCCESS" {
@@ -114,5 +126,12 @@ func GetStatusMessage(nodeId string) model.StatusMessage {
 	nanos := now.UnixNano()
 	millis := nanos / 1000000
 	return model.StatusMessage{Id: nodeId, Timestamp: millis, Status: "Available", ActiveServiceCount: actv_cnt, ServiceCount: serv_cnt, ServicesStatus: mani, DeviceParams: deviceParams}
+}
 
+func GetRegistrationMessage(nodeId string, nodeName string) model.RegistrationMessage {
+	now := time.Now()
+	nanos := now.UnixNano()
+	millis := nanos / 1000000
+
+	return model.RegistrationMessage{Id: nodeId, Timestamp: millis, Status: "Registering", Operation: "Registration", Name: nodeName}
 }

@@ -20,7 +20,7 @@ func GETcontainersID(w http.ResponseWriter, r *http.Request) {
 	// vars := mux.Vars(r)
 	// key := vars["id"]
 
-	containers := docker.ReadAllContainers()
+	containers, _ := docker.ReadAllContainers()
 	json.NewEncoder(w).Encode(containers[0])
 }
 
@@ -37,7 +37,7 @@ func GETcontainersID(w http.ResponseWriter, r *http.Request) {
 // @param Authorization header string true "Token"
 func GETcontainers(w http.ResponseWriter, r *http.Request) {
 	log.Info("GET /containers")
-	containers := docker.ReadAllContainers()
+	containers, _ := docker.ReadAllContainers()
 	log.Debug(len(containers), " containers found")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

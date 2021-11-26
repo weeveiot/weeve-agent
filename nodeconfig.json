@@ -1,0 +1,7 @@
+{
+ "AWSRootCert": "AmazonRootCA1.pem",
+ "Certificate": "0f27a88471-certificate.pem.crt",
+ "NodeId": "",
+ "NodeName": "New Node",
+ "PrivateKey": "0f27a88471-private.pem.key"
+}

@@ -54,7 +54,6 @@ func TestDeployManifest(t *testing.T) {
 	log.Info(version)
 
 	resp := deploy.DeployManifest(thisManifest, "deploy")
-
 	if !resp {
 		t.Errorf("DeployManifest returned %v status", resp)
 	}
@@ -76,7 +75,7 @@ func TestDeployManifest(t *testing.T) {
 
 	if len(networks) > 0 {
 		// Check if containers exist
-		dsContainers := docker.ReadDataServiceContainers(manifestID, version)
+		dsContainers, _ := docker.ReadDataServiceContainers(manifestID, version)
 		containerName := thisManifest.ContainerNamesList(networks[0].Name)
 		for _, dsContainer := range dsContainers {
 			containersExist := false
@@ -109,16 +108,19 @@ func TestStopDataServiceWrongDetails(t *testing.T) {
 
 	// check container status before executing tested function
 	statusBefore := make(map[string]string)
-	containers := docker.ReadDataServiceContainers(manifestID, version)
+	containers, _ := docker.ReadDataServiceContainers(manifestID, version)
 	for _, container := range containers {
 		statusBefore[container.ID] = container.State
 	}
 
 	// run tested method
-	deploy.StopDataService(wrongManifesetID, wrongVersion)
+	resp := deploy.StopDataService(wrongManifesetID, wrongVersion)
+	if resp {
+		t.Errorf("StopDataService returned True status, but should return False as manifestID is wrong")
+	}
 
 	// check container status after executing tested function
-	containers = docker.ReadDataServiceContainers(manifestID, version)
+	containers, _ = docker.ReadDataServiceContainers(manifestID, version)
 	for _, container := range containers {
 		if container.State != statusBefore[container.ID] {
 			wrongStatusContainerList = append(wrongStatusContainerList, container.ID)
@@ -137,10 +139,13 @@ func TestStopDataService(t *testing.T) {
 	var wrongStatusContainerList []string
 
 	// run tested method
-	deploy.StopDataService(manifestID, version)
+	resp := deploy.StopDataService(manifestID, version)
+	if !resp {
+		t.Errorf("StopDataService returned %v status", resp)
+	}
 
 	// check container status
-	containers := docker.ReadDataServiceContainers(manifestID, version)
+	containers, _ := docker.ReadDataServiceContainers(manifestID, version)
 	for _, container := range containers {
 		if container.State != "exited" {
 			wrongStatusContainerList = append(wrongStatusContainerList, container.ID)
@@ -163,16 +168,19 @@ func TestStartDataServiceWrongDetails(t *testing.T) {
 
 	// check container status before executing tested function
 	statusBefore := make(map[string]string)
-	containers := docker.ReadDataServiceContainers(manifestID, version)
+	containers, _ := docker.ReadDataServiceContainers(manifestID, version)
 	for _, container := range containers {
 		statusBefore[container.ID] = container.State
 	}
 
 	// run tested method
-	deploy.StartDataService(wrongServiceID, wrongServiceName)
+	resp := deploy.StartDataService(wrongServiceID, wrongServiceName)
+	if !resp {
+		t.Errorf("StartDataService returned %v status", resp)
+	}
 
 	// check container status after executing tested function
-	containers = docker.ReadDataServiceContainers(manifestID, version)
+	containers, _ = docker.ReadDataServiceContainers(manifestID, version)
 	for _, container := range containers {
 		if container.State != statusBefore[container.ID] {
 			wrongStatusContainerList = append(wrongStatusContainerList, container.ID)
@@ -191,10 +199,13 @@ func TestStartDataService(t *testing.T) {
 	var wrongStatusContainerList []string
 
 	// run tested method
-	deploy.StartDataService(manifestID, version)
+	resp := deploy.StartDataService(manifestID, version)
+	if !resp {
+		t.Errorf("StartDataService returned %v status", resp)
+	}
 
 	// check container status
-	containers := docker.ReadDataServiceContainers(manifestID, version)
+	containers, _ := docker.ReadDataServiceContainers(manifestID, version)
 	for _, container := range containers {
 		if container.State != "running" {
 			wrongStatusContainerList = append(wrongStatusContainerList, container.ID)
@@ -209,16 +220,19 @@ func TestUndeployDataService(t *testing.T) {
 	log.Info("TESTING UNDEPLOYMENT...")
 
 	// run tested method
-	deploy.UndeployDataService(manifestID, version)
+	resp := deploy.UndeployDataService(manifestID, version)
+	if !resp {
+		t.Errorf("UndeployDataService returned %v status", resp)
+	}
 
 	// check if containers are removed
-	containers := docker.ReadDataServiceContainers(manifestID, version)
+	containers, _ := docker.ReadDataServiceContainers(manifestID, version)
 	if len(containers) > 0 {
 		t.Errorf("The following containers should have been removed: %v", containers)
 	}
 
 	// Check if the network is removed
-	result := deploy.DataServiceExist(manifestID, version)
+	result, _ := deploy.DataServiceExist(manifestID, version)
 	if result {
 		t.Errorf("Network %v was not pruned (Data Service not removed)", version)
 	}
@@ -250,7 +264,6 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	log.Info(version)
 
 	resp := deploy.DeployManifest(thisManifest, "deploy")
-
 	if !resp {
 		t.Errorf("DeployManifest returned %v status", resp)
 	}
@@ -277,7 +290,6 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	log.Info(version2)
 
 	resp = deploy.DeployManifest(thisManifest2, "deploy")
-
 	if !resp {
 		t.Errorf("DeployManifest returned %v status", resp)
 	}
@@ -285,35 +297,41 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	// ***** TEST UNDEPLOY FOR ORIGINAL DATA SERVICE ********* //
 
 	// run tested method
-	deploy.UndeployDataService(manifestID, version)
+	resp = deploy.UndeployDataService(manifestID, version)
+	if !resp {
+		t.Errorf("UndeployDataService returned %v status", resp)
+	}
 
 	// check if containers are removed
-	containers := docker.ReadDataServiceContainers(manifestID, version)
+	containers, _ := docker.ReadDataServiceContainers(manifestID, version)
 	if len(containers) > 0 {
 		t.Errorf("The following containers should have been removed: %v", containers)
 	}
 
 	// Check if the network is removed
-	result := deploy.DataServiceExist(manifestID, version)
+	result, _ := deploy.DataServiceExist(manifestID, version)
 	if result {
 		t.Errorf("Network was not pruned (Data Service not removed)")
 	}
 
 	// ***** CHECK IF SECOND IDENTICAL DATA SERVICE STILL EXISTS ********* //
 	expectedNumberContainers := len(thisManifest2.Manifest.S("services").Children())
-	dsContainers := docker.ReadDataServiceContainers(manifestID2, version2)
+	dsContainers, _ := docker.ReadDataServiceContainers(manifestID2, version2)
 
 	if len(dsContainers) != expectedNumberContainers {
 		t.Errorf("Some containers from the second identical network were removed.")
 	}
 
-	result2 := deploy.DataServiceExist(manifestID2, version2)
+	result2, _ := deploy.DataServiceExist(manifestID2, version2)
 	if !result2 {
 		t.Errorf("Second identical network is removed.")
 	}
 
 	// clean up and remove second data service
-	deploy.UndeployDataService(manifestID2, version2)
+	resp = deploy.UndeployDataService(manifestID2, version2)
+	if !resp {
+		t.Errorf("UndeployDataService returned %v status", resp)
+	}
 
 }
 
@@ -396,7 +414,10 @@ func TestRedeployDataService(t *testing.T) {
 	log.Info("Cleaning after testing...")
 	redeployedManifestID := thisManifestRedeploy.Manifest.Search("id").Data().(string)
 	redeployedVersion := thisManifestRedeploy.Manifest.Search("version").Data().(string)
-	deploy.UndeployDataService(redeployedManifestID, redeployedVersion)
+	resp = deploy.UndeployDataService(redeployedManifestID, redeployedVersion)
+	if !resp {
+		t.Errorf("UndeployDataService returned %v status", resp)
+	}
 }
 
 // LoadJsonBytes reads file containts into byte[]

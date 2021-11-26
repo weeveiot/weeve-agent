@@ -12,3 +12,4 @@ build/
 *.jsonl
 node_listener
 node-service
+nodeconfig.json

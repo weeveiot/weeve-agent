@@ -76,30 +76,30 @@ func StartContainer(containerId string) bool {
 	return true
 }
 
-func ReadAllContainers() []types.Container {
+func ReadAllContainers() ([]types.Container, error) {
 	log.Debug("Docker_container -> ReadAllContainers")
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
-		return nil
+		return nil, err
 	}
 	options := types.ContainerListOptions{All: true}
 	containers, err := cli.ContainerList(context.Background(), options)
 	if err != nil {
 		log.Error(err)
-		return nil
+		return nil, nil
 	}
 	log.Debug("Docker_container -> ReadAllContainers response", containers)
 
-	return containers
+	return containers, nil
 }
 
-func ReadDataServiceContainers(manifestID string, version string) []types.Container {
+func ReadDataServiceContainers(manifestID string, version string) ([]types.Container, error) {
 	log.Debug("Docker_container -> ReadDataServiceContainers")
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
-		return nil
+		return nil, err
 	}
 
 	filter := filters.NewArgs()
@@ -109,11 +109,11 @@ func ReadDataServiceContainers(manifestID string, version string) []types.Contai
 	containers, err := cli.ContainerList(context.Background(), options)
 	if err != nil {
 		log.Error(err)
-		return nil
+		return nil, nil
 	}
 	log.Debug("Docker_container -> ReadAllContainers response", containers)
 
-	return containers
+	return containers, nil
 }
 
 func GetContainerLog(container string) string {
@@ -204,12 +204,12 @@ func StopContainer(containerId string) bool {
 func StartCreateContainer(imageName string, startCommand model.ContainerConfig) (container.ContainerCreateCreatedBody, error) {
 	var containerName = startCommand.ContainerName
 
-	log.Debug("\tCreating from " + imageName + " container " + containerName)
+	log.Debug("Creating from " + imageName + " container " + containerName)
 	ctx := context.Background()
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
-		panic(err)
+		return container.ContainerCreateCreatedBody{}, err
 	}
 
 	containerConfig := &container.Config{
@@ -252,15 +252,15 @@ func StartCreateContainer(imageName string, startCommand model.ContainerConfig) 
 		log.Error(err)
 		return containerCreateResponse, err
 	}
-	log.Debug("\tCreated container " + containerName)
+	log.Debug("Created container " + containerName)
 
 	// Start container
 	err = dockerClient.ContainerStart(ctx, containerCreateResponse.ID, types.ContainerStartOptions{})
 	if err != nil {
 		log.Error(err)
-		panic("Failed to start container")
+		return containerCreateResponse, err
 	}
-	log.Debug("\tStarted container")
+	log.Debug("Started container")
 
 	return containerCreateResponse, nil
 }
