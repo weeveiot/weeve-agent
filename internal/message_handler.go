@@ -40,9 +40,10 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 			thisManifest.Manifest = *jsonParsed
 			err := deploy.DeployManifest(thisManifest, topic_rcvd)
 			if err != nil {
-				log.Info("Manifest deployed successfully")
-			} else {
 				log.Info("Deployment unsuccessful")
+			} else {
+				log.Info("Manifest deployed successfully")
+				
 			}
 
 		} else if topic_rcvd == "redeploy" {
@@ -51,9 +52,10 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 			thisManifest.Manifest = *jsonParsed
 			err := deploy.DeployManifest(thisManifest, topic_rcvd)
 			if err != nil {
-				log.Info("Manifest redeployed successfully")
-			} else {
 				log.Info("Redeployment unsuccessful")
+			} else {
+				log.Info("Manifest redeployed successfully")
+				
 			}
 
 		} else if topic_rcvd == "stopservice" {
@@ -80,10 +82,11 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 
 				err := deploy.StartDataService(serviceId, serviceVersion)
 				if err != nil {
-					log.Info("Service started!")
+					log.Error(err)
+					
 				}
 			} else {
-				log.Error(err)
+				log.Info("Service started!")
 			}
 
 		} else if topic_rcvd == "undeploy" {
@@ -95,10 +98,10 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 
 				err := deploy.UndeployDataService(serviceId, serviceVersion)
 				if err != nil {
-					log.Info("Undeployment Successful")
+					log.Error(err)
 				}
 			} else {
-				log.Error(err)
+				log.Info("Undeployment Successful")
 			}
 		}
 	}

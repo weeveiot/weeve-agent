@@ -23,7 +23,7 @@
                 "-t",
                 "CheckVersion",
                 "--heartbeat",
-                "300"
+                "600"
             ]
         },
         {

@@ -1,12 +1,356 @@
-2021-11-24 13:41:37 info : Started logging
-2021-11-24 13:41:37 info : Logging level set to info
-2021-11-24 13:41:37 info : Broker host localhost at port 8080 over tcp
-2021-11-24 13:41:37 info : TLS disabled!
-2021-11-24 13:41:37 info : Node already registered!
-2021-11-24 13:41:39 fatal : failed to create publisher connection: network Error : dial tcp [::1]:8080: connectex: No connection could be made because the target machine actively refused it.
-2021-11-24 13:42:29 info : Started logging
-2021-11-24 13:42:29 info : Logging level set to info
-2021-11-24 13:42:29 info : Broker host localhost at port 8080 over tcp
-2021-11-24 13:42:29 info : TLS disabled!
-2021-11-24 13:42:29 info : Node already registered!
-2021-11-24 13:42:31 fatal : failed to create publisher connection: network Error : dial tcp [::1]:8080: connectex: No connection could be made because the target machine actively refused it.
+2021-11-25 18:09:21 info : Started logging
+2021-11-25 18:09:21 info : Logging level set to info
+2021-11-25 18:09:21 info : Broker host localhost at port 8080 over tcp
+2021-11-25 18:09:21 info : TLS disabled!
+2021-11-25 18:09:21 info : Node already registered!
+2021-11-25 18:09:23 fatal : failed to create publisher connection: network Error : dial tcp [::1]:8080: connectex: No connection could be made because the target machine actively refused it.
+2021-11-25 18:14:21 info : Started logging
+2021-11-25 18:14:21 info : Logging level set to info
+2021-11-25 18:14:21 info : Broker host localhost at port 8080 over tcp
+2021-11-25 18:14:21 info : TLS disabled!
+2021-11-25 18:14:21 info : Node already registered!
+2021-11-25 18:14:24 fatal : failed to create publisher connection: network Error : dial tcp [::1]:8080: connectex: No connection could be made because the target machine actively refused it.
+2021-11-25 18:15:56 info : Started logging
+2021-11-25 18:15:56 info : Logging level set to info
+2021-11-25 18:15:56 info : Broker host localhost at port 8080 over tcp
+2021-11-25 18:15:56 info : TLS disabled!
+2021-11-25 18:15:56 info : Node already registered!
+2021-11-25 18:15:58 fatal : failed to create publisher connection: network Error : dial tcp [::1]:8080: connectex: No connection could be made because the target machine actively refused it.
+2021-11-25 18:19:03 info : Started logging
+2021-11-25 18:19:03 info : Logging level set to info
+2021-11-25 18:19:03 info : Broker host localhost at port 8080 over tcp
+2021-11-25 18:19:03 info : TLS disabled!
+2021-11-25 18:19:03 info : Node already registered!
+2021-11-25 18:19:05 fatal : failed to create publisher connection: network Error : dial tcp [::1]:8080: connectex: No connection could be made because the target machine actively refused it.
+2021-11-25 18:22:22 info : Started logging
+2021-11-25 18:22:22 info : Logging level set to info
+2021-11-25 18:22:22 info : Broker host localhost at port 8080 over tcp
+2021-11-25 18:22:22 info : TLS disabled!
+2021-11-25 18:22:22 info : Node already registered!
+2021-11-25 18:22:24 fatal : failed to create publisher connection: network Error : dial tcp [::1]:8080: connectex: No connection could be made because the target machine actively refused it.
+2021-11-25 18:28:31 info : Started logging
+2021-11-25 18:28:31 info : Logging level set to info
+2021-11-25 18:28:31 info : Broker host localhost at port 8080 over tcp
+2021-11-25 18:28:31 info : TLS disabled!
+2021-11-25 18:28:31 info : Node already registered!
+2021-11-25 18:28:31 info : ON connect >> connected >> registered : true
+2021-11-25 18:28:31 info : Sending update >> CheckVersion{local-test-node-1 1637845111800 Available 0 1 [{3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e 1.0.0 DEPLOYED}] {10 10 20}}
+2021-11-25 18:28:31 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637845111800,"status":"Available","activeServiceCount":0,"serviceCount":1,"servicesStatus":[{"manifestId":"3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e","manifestVersion":"1.0.0","status":"DEPLOYED"}],"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-25 18:38:31 info : Sending update >> CheckVersion{local-test-node-1 1637845711855 Available 0 1 [{3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e 1.0.0 DEPLOYED}] {10 10 20}}
+2021-11-25 18:38:31 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637845711855,"status":"Available","activeServiceCount":0,"serviceCount":1,"servicesStatus":[{"manifestId":"3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e","manifestVersion":"1.0.0","status":"DEPLOYED"}],"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-25 18:39:06 info : Received message on topic: nodes/localtest/local-test-node-1/deploy
+2021-11-25 18:39:06 info : Processing the message : deploy
+2021-11-25 18:39:06 info : Data service deploy initiated
+2021-11-25 18:39:06 info : Iterating modules, pulling image into host if missing
+2021-11-25 18:39:06 info : Image 0 weevenetwork/dev-random:latest, already exists on host
+2021-11-25 18:39:07 info : Image 1 weevenetwork/hash-to-int:latest, does not exist on host
+2021-11-25 18:39:07 info : Pulling weevenetwork/hash-to-int:latest{weevenetwork/hash-to-int:latest  }
+2021-11-25 18:39:52 info : Pulled image weevenetwork/hash-to-int:latest into host
+2021-11-25 18:39:52 info : Image 2 weevenetwork/http-egress:latest, does not exist on host
+2021-11-25 18:39:52 info : Pulling weevenetwork/http-egress:latest{weevenetwork/http-egress:latest  }
+2021-11-25 18:40:15 info : Pulled image weevenetwork/http-egress:latest into host
+2021-11-25 18:40:16 info : Create the network
+2021-11-25 18:40:16 info : Created network name MVPDataServ_001
+2021-11-25 18:40:16 info : Start all containers
+2021-11-25 18:40:16 info : man_doc {"ports":[],"mounts":[{"Type":"bind","Source":"/dev/urandom","Target":"/mnt/random","ReadOnly":true}],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}{"mounts":[{"ReadOnly":true,"Source":"/dev/urandom","Target":"/mnt/random","Type":"bind"}],"ports":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}
+2021-11-25 18:40:16 info : Mounts:[{bind /dev/urandom /mnt/random true  <nil> <nil> <nil>}]
+2021-11-25 18:40:16 info : man_doc {"ports":[],"volumes":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}{"ports":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"},"volumes":[]}
+2021-11-25 18:40:16 info : man_doc {"ports":[],"volumes":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}{"ports":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"},"volumes":[]}
+2021-11-25 18:40:16 info : Creating MVPDataServ_001.weevenetwork_dev-random_latest.0 from weevenetwork/dev-random:latest{MVPDataServ_001.weevenetwork_dev-random_latest.0 weevenetwork/dev-random latest [--hash sha256 --interval 30] [VOLUME_CONTAINER=/mnt/random SERVICE_ID=3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e MODULE_NAME=dev-randomv2 MODULE_TYPE=INGRESS INGRESS_HOST=MVPDataServ_001.weevenetwork_dev-random_latest.0 INGRESS_PORT=80 INGRESS_PATH=/ hash=sha256 interval=30 NEXT_CONTAINER_NAME=MVPDataServ_001.weevenetwork_hash-to-int_latest.1 EGRESS_URL=http://MVPDataServ_001.weevenetwork_hash-to-int_latest.1:80/] [] MVPDataServ_001 bridge map[] map[]  {map[]} map[] [{bind /dev/urandom /mnt/random true  <nil> <nil> <nil>}] map[manifestID:3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e name:MVPDataServiceV2 version:1.0.0]}
+2021-11-25 18:40:19 info : Successfully created with args: [--hash sha256 --interval 30] {1d184a49662111a16bbf9d3a5bc2fd91df01dac0360c0666779a56d3360bdcc0 []}
+2021-11-25 18:40:19 info : Started
+2021-11-25 18:40:19 info : Creating MVPDataServ_001.weevenetwork_hash-to-int_latest.1 from weevenetwork/hash-to-int:latest{MVPDataServ_001.weevenetwork_hash-to-int_latest.1 weevenetwork/hash-to-int latest [] [SERVICE_ID=3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e MODULE_NAME=hash-to-int MODULE_TYPE=PROCESS INGRESS_HOST=MVPDataServ_001.weevenetwork_hash-to-int_latest.1 INGRESS_PORT=80 INGRESS_PATH=/ PREV_CONTAINER_NAME=MVPDataServ_001.weevenetwork_dev-random_latest.0 NEXT_CONTAINER_NAME=MVPDataServ_001.weevenetwork_http-egress_latest.2 EGRESS_URL=http://MVPDataServ_001.weevenetwork_http-egress_latest.2:80/] [] MVPDataServ_001 bridge map[] map[]  {map[]} map[] [] map[manifestID:3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e name:MVPDataServiceV2 version:1.0.0]}
+2021-11-25 18:40:23 info : Successfully created with args: [] {480a7bc0faac10b2d84f029fb0286f06d18f9778f2b690e92f9944cb3717fe54 []}
+2021-11-25 18:40:23 info : Started
+2021-11-25 18:40:23 info : Creating MVPDataServ_001.weevenetwork_http-egress_latest.2 from weevenetwork/http-egress:latest{MVPDataServ_001.weevenetwork_http-egress_latest.2 weevenetwork/http-egress latest [] [EGRESS_WEBHOOK_URL=https://hookb.in/2qla9bN0JLFdzq88zqko METHOD=POST TIMESTAMP=Time SERVICE_ID=3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e MODULE_NAME=HTTP Egress MODULE_TYPE=EGRESS EGRESS_URL=None INGRESS_HOST=MVPDataServ_001.weevenetwork_http-egress_latest.2 INGRESS_PORT=80 INGRESS_PATH=/ PREV_CONTAINER_NAME=MVPDataServ_001.weevenetwork_hash-to-int_latest.1] [] MVPDataServ_001 bridge map[] map[]  {map[]} map[] [] map[manifestID:3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e name:MVPDataServiceV2 version:1.0.0]}
+2021-11-25 18:40:26 info : Successfully created with args: [] {0bddaf8cbdd1e1ac44763f575c7acb254161411231d07e8d25432e25bf0d9094 []}
+2021-11-25 18:40:26 info : Started
+2021-11-25 18:40:26 info : Deployment unsuccessful
+2021-11-25 18:48:31 info : Sending update >> CheckVersion{local-test-node-1 1637846311880 Available 0 1 [{3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e 1.0.0 DEPLOYED}] {10 10 20}}
+2021-11-25 18:48:31 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637846311880,"status":"Available","activeServiceCount":0,"serviceCount":1,"servicesStatus":[{"manifestId":"3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e","manifestVersion":"1.0.0","status":"DEPLOYED"}],"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-25 18:53:50 info : Disconnecting.....
+2021-11-25 18:53:50 info : Disconnecting.....
+2021-11-25 18:54:13 info : Started logging
+2021-11-25 18:54:13 info : Logging level set to info
+2021-11-25 18:54:13 info : Broker host localhost at port 8080 over tcp
+2021-11-25 18:54:13 info : TLS disabled!
+2021-11-25 18:54:13 info : Node already registered!
+2021-11-25 18:54:13 info : ON connect >> connected >> registered : true
+2021-11-25 18:54:13 info : Sending update >> CheckVersion{local-test-node-1 1637846653896 Available 0 1 [{3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e 1.0.0 DEPLOYED}] {10 10 20}}
+2021-11-25 18:54:13 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637846653896,"status":"Available","activeServiceCount":0,"serviceCount":1,"servicesStatus":[{"manifestId":"3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e","manifestVersion":"1.0.0","status":"DEPLOYED"}],"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-25 18:54:56 info : Received message on topic: nodes/localtest/local-test-node-1/deploy
+2021-11-25 18:54:56 info : Processing the message : deploy
+2021-11-25 18:54:56 error : Error on parsing message: invalid character '}' looking for beginning of value
+2021-11-25 18:55:35 info : Disconnecting.....
+2021-11-25 18:55:35 info : Disconnecting.....
+2021-11-25 18:55:48 info : Started logging
+2021-11-25 18:55:48 info : Logging level set to info
+2021-11-25 18:55:48 info : Broker host localhost at port 8080 over tcp
+2021-11-25 18:55:48 info : TLS disabled!
+2021-11-25 18:55:48 info : Node already registered!
+2021-11-25 18:55:48 info : ON connect >> connected >> registered : true
+2021-11-25 18:55:48 info : Sending update >> CheckVersion{local-test-node-1 1637846748884 Available 0 1 [{3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e 1.0.0 DEPLOYED}] {10 10 20}}
+2021-11-25 18:55:48 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637846748884,"status":"Available","activeServiceCount":0,"serviceCount":1,"servicesStatus":[{"manifestId":"3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e","manifestVersion":"1.0.0","status":"DEPLOYED"}],"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-25 18:59:04 info : Received message on topic: nodes/localtest/local-test-node-1/deploy
+2021-11-25 18:59:04 info : Processing the message : deploy
+2021-11-25 18:59:04 info : Data service deploy initiated
+2021-11-25 18:59:04 info : Data service 3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e, 1.0.0 already exist
+2021-11-25 18:59:04 info : Manifest deployed successfully
+2021-11-25 19:05:48 info : Sending update >> CheckVersion{local-test-node-1 1637847348921 Available 0 1 [{3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e 1.0.0 DEPLOYED}] {10 10 20}}
+2021-11-25 19:05:48 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637847348921,"status":"Available","activeServiceCount":0,"serviceCount":1,"servicesStatus":[{"manifestId":"3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e","manifestVersion":"1.0.0","status":"DEPLOYED"}],"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-25 19:15:49 info : Sending update >> CheckVersion{local-test-node-1 1637847949008 Available 0 1 [{3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e 1.0.0 DEPLOYED}] {10 10 20}}
+2021-11-25 19:15:49 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637847949008,"status":"Available","activeServiceCount":0,"serviceCount":1,"servicesStatus":[{"manifestId":"3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e","manifestVersion":"1.0.0","status":"DEPLOYED"}],"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-25 19:25:49 info : Sending update >> CheckVersion{local-test-node-1 1637848549105 Available 0 1 [{3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e 1.0.0 DEPLOYED}] {10 10 20}}
+2021-11-25 19:25:49 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637848549105,"status":"Available","activeServiceCount":0,"serviceCount":1,"servicesStatus":[{"manifestId":"3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e","manifestVersion":"1.0.0","status":"DEPLOYED"}],"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-25 19:35:49 info : Sending update >> CheckVersion{local-test-node-1 1637849149161 Available 0 1 [{3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e 1.0.0 DEPLOYED}] {10 10 20}}
+2021-11-25 19:35:49 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637849149161,"status":"Available","activeServiceCount":0,"serviceCount":1,"servicesStatus":[{"manifestId":"3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e","manifestVersion":"1.0.0","status":"DEPLOYED"}],"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-25 19:36:26 info : Disconnecting.....
+2021-11-25 19:36:26 info : Disconnecting.....
+2021-11-26 10:10:44 info : Started logging
+2021-11-26 10:10:44 info : Logging level set to info
+2021-11-26 10:10:44 info : Broker host localhost at port 8080 over tcp
+2021-11-26 10:10:44 info : TLS disabled!
+2021-11-26 10:10:44 info : Node already registered!
+2021-11-26 10:10:44 info : ON connect >> connected >> registered : true
+2021-11-26 10:10:44 info : Sending update >> CheckVersion{local-test-node-1 1637901644716 Available 0 1 [{3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e 1.0.0 DEPLOYED}] {10 10 20}}
+2021-11-26 10:10:44 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637901644716,"status":"Available","activeServiceCount":0,"serviceCount":1,"servicesStatus":[{"manifestId":"3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e","manifestVersion":"1.0.0","status":"DEPLOYED"}],"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-26 10:11:24 info : Received message on topic: nodes/localtest/local-test-node-1/deploy
+2021-11-26 10:11:24 info : Processing the message : deploy
+2021-11-26 10:11:24 info : Data service deploy initiated
+2021-11-26 10:11:25 info : Data service 3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e, 1.0.0 already exist
+2021-11-26 10:11:25 info : Iterating modules, pulling image into host if missing
+2021-11-26 10:11:25 info : Image 0 weevenetwork/dev-random:latest, already exists on host
+2021-11-26 10:11:25 info : Image 1 weevenetwork/hash-to-int:latest, already exists on host
+2021-11-26 10:11:25 info : Image 2 weevenetwork/http-egress:latest, already exists on host
+2021-11-26 10:11:25 info : Create the network
+2021-11-26 10:11:25 info : Created network name MVPDataServ_002
+2021-11-26 10:11:25 info : Start all containers
+2021-11-26 10:11:25 info : man_doc {"ports":[],"mounts":[{"Type":"bind","Source":"/dev/urandom","Target":"/mnt/random","ReadOnly":true}],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}{"mounts":[{"ReadOnly":true,"Source":"/dev/urandom","Target":"/mnt/random","Type":"bind"}],"ports":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}
+2021-11-26 10:11:25 info : Mounts:[{bind /dev/urandom /mnt/random true  <nil> <nil> <nil>}]
+2021-11-26 10:11:25 info : man_doc {"ports":[],"volumes":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}{"ports":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"},"volumes":[]}
+2021-11-26 10:11:25 info : man_doc {"ports":[],"volumes":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}{"ports":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"},"volumes":[]}
+2021-11-26 10:11:25 info : Creating MVPDataServ_002.weevenetwork_dev-random_latest.0 from weevenetwork/dev-random:latest{MVPDataServ_002.weevenetwork_dev-random_latest.0 weevenetwork/dev-random latest [--hash sha256 --interval 30] [VOLUME_CONTAINER=/mnt/random SERVICE_ID=3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e MODULE_NAME=dev-randomv2 MODULE_TYPE=INGRESS INGRESS_HOST=MVPDataServ_002.weevenetwork_dev-random_latest.0 INGRESS_PORT=80 INGRESS_PATH=/ hash=sha256 interval=30 NEXT_CONTAINER_NAME=MVPDataServ_002.weevenetwork_hash-to-int_latest.1 EGRESS_URL=http://MVPDataServ_002.weevenetwork_hash-to-int_latest.1:80/] [] MVPDataServ_002 bridge map[] map[]  {map[]} map[] [{bind /dev/urandom /mnt/random true  <nil> <nil> <nil>}] map[manifestID:3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e name:MVPDataServiceV2 version:1.0.0]}
+2021-11-26 10:11:29 info : Successfully created with args: [--hash sha256 --interval 30] {0e5e16d7976e589c13efcc7da473847dd50c27bd241ab9ea1fc0c3133a387972 []}
+2021-11-26 10:11:29 info : Started
+2021-11-26 10:11:29 info : Creating MVPDataServ_002.weevenetwork_hash-to-int_latest.1 from weevenetwork/hash-to-int:latest{MVPDataServ_002.weevenetwork_hash-to-int_latest.1 weevenetwork/hash-to-int latest [] [SERVICE_ID=3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e MODULE_NAME=hash-to-int MODULE_TYPE=PROCESS INGRESS_HOST=MVPDataServ_002.weevenetwork_hash-to-int_latest.1 INGRESS_PORT=80 INGRESS_PATH=/ PREV_CONTAINER_NAME=MVPDataServ_002.weevenetwork_dev-random_latest.0 NEXT_CONTAINER_NAME=MVPDataServ_002.weevenetwork_http-egress_latest.2 EGRESS_URL=http://MVPDataServ_002.weevenetwork_http-egress_latest.2:80/] [] MVPDataServ_002 bridge map[] map[]  {map[]} map[] [] map[manifestID:3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e name:MVPDataServiceV2 version:1.0.0]}
+2021-11-26 10:11:32 info : Successfully created with args: [] {e31c252e2ea432db17179b58bef314a3e0654c2a61654dd4ad2116370ad290fc []}
+2021-11-26 10:11:32 info : Started
+2021-11-26 10:11:32 info : Creating MVPDataServ_002.weevenetwork_http-egress_latest.2 from weevenetwork/http-egress:latest{MVPDataServ_002.weevenetwork_http-egress_latest.2 weevenetwork/http-egress latest [] [EGRESS_WEBHOOK_URL=https://hookb.in/2qla9bN0JLFdzq88zqko METHOD=POST TIMESTAMP=Time SERVICE_ID=3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e MODULE_NAME=HTTP Egress MODULE_TYPE=EGRESS EGRESS_URL=None INGRESS_HOST=MVPDataServ_002.weevenetwork_http-egress_latest.2 INGRESS_PORT=80 INGRESS_PATH=/ PREV_CONTAINER_NAME=MVPDataServ_002.weevenetwork_hash-to-int_latest.1] [] MVPDataServ_002 bridge map[] map[]  {map[]} map[] [] map[manifestID:3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e name:MVPDataServiceV2 version:1.0.0]}
+2021-11-26 10:11:34 info : Successfully created with args: [] {0a5e91cc4666ebee1f14086b2122e691a0693b6fffb82dfc9233c43ea52a05ab []}
+2021-11-26 10:11:34 info : Started
+2021-11-26 10:11:35 info : Manifest deployed successfully
+2021-11-26 10:12:46 info : Received message on topic: nodes/localtest/local-test-node-1/deploy
+2021-11-26 10:12:46 info : Processing the message : deploy
+2021-11-26 10:12:46 info : Data service deploy initiated
+2021-11-26 10:12:46 info : Data service 3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e, 1.0.0 already exist
+2021-11-26 10:12:46 info : Iterating modules, pulling image into host if missing
+2021-11-26 10:12:46 info : Image 0 weevenetwork/dev-random:latest, already exists on host
+2021-11-26 10:12:46 info : Image 1 weevenetwork/hash-to-int:latest, already exists on host
+2021-11-26 10:12:46 info : Image 2 weevenetwork/http-egress:latest, already exists on host
+2021-11-26 10:12:46 info : Create the network
+2021-11-26 10:12:47 info : Created network name MVPDataServ_003
+2021-11-26 10:12:47 info : Start all containers
+2021-11-26 10:12:47 info : man_doc {"ports":[],"mounts":[{"Type":"bind","Source":"/dev/urandom","Target":"/mnt/random","ReadOnly":true}],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}{"mounts":[{"ReadOnly":true,"Source":"/dev/urandom","Target":"/mnt/random","Type":"bind"}],"ports":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}
+2021-11-26 10:12:47 info : Mounts:[{bind /dev/urandom /mnt/random true  <nil> <nil> <nil>}]
+2021-11-26 10:12:47 info : man_doc {"ports":[],"volumes":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}{"ports":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"},"volumes":[]}
+2021-11-26 10:12:47 info : man_doc {"ports":[],"volumes":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}{"ports":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"},"volumes":[]}
+2021-11-26 10:12:47 info : Creating MVPDataServ_003.weevenetwork_dev-random_latest.0 from weevenetwork/dev-random:latest{MVPDataServ_003.weevenetwork_dev-random_latest.0 weevenetwork/dev-random latest [--hash sha256 --interval 30] [VOLUME_CONTAINER=/mnt/random SERVICE_ID=3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e MODULE_NAME=dev-randomv2 MODULE_TYPE=INGRESS INGRESS_HOST=MVPDataServ_003.weevenetwork_dev-random_latest.0 INGRESS_PORT=80 INGRESS_PATH=/ hash=sha256 interval=30 NEXT_CONTAINER_NAME=MVPDataServ_003.weevenetwork_hash-to-int_latest.1 EGRESS_URL=http://MVPDataServ_003.weevenetwork_hash-to-int_latest.1:80/] [] MVPDataServ_003 bridge map[] map[]  {map[]} map[] [{bind /dev/urandom /mnt/random true  <nil> <nil> <nil>}] map[manifestID:3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e name:MVPDataServiceV2 version:1.0.0]}
+2021-11-26 10:12:49 info : Successfully created with args: [--hash sha256 --interval 30] {c8a63f33fb2e412bf166b839d1d226f338c0d9681503ed2e5b1879ea2f8b97cc []}
+2021-11-26 10:12:49 info : Started
+2021-11-26 10:12:49 info : Creating MVPDataServ_003.weevenetwork_hash-to-int_latest.1 from weevenetwork/hash-to-int:latest{MVPDataServ_003.weevenetwork_hash-to-int_latest.1 weevenetwork/hash-to-int latest [] [SERVICE_ID=3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e MODULE_NAME=hash-to-int MODULE_TYPE=PROCESS INGRESS_HOST=MVPDataServ_003.weevenetwork_hash-to-int_latest.1 INGRESS_PORT=80 INGRESS_PATH=/ PREV_CONTAINER_NAME=MVPDataServ_003.weevenetwork_dev-random_latest.0 NEXT_CONTAINER_NAME=MVPDataServ_003.weevenetwork_http-egress_latest.2 EGRESS_URL=http://MVPDataServ_003.weevenetwork_http-egress_latest.2:80/] [] MVPDataServ_003 bridge map[] map[]  {map[]} map[] [] map[manifestID:3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e name:MVPDataServiceV2 version:1.0.0]}
+2021-11-26 10:12:53 info : Successfully created with args: [] {74bc7b3139246139a2eb4602f3060bb925e7cb0d80178a45384949413b98cd5f []}
+2021-11-26 10:12:53 info : Started
+2021-11-26 10:12:53 info : Creating MVPDataServ_003.weevenetwork_http-egress_latest.2 from weevenetwork/http-egress:latest{MVPDataServ_003.weevenetwork_http-egress_latest.2 weevenetwork/http-egress latest [] [EGRESS_WEBHOOK_URL=https://hookb.in/2qla9bN0JLFdzq88zqko METHOD=POST TIMESTAMP=Time SERVICE_ID=3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e MODULE_NAME=HTTP Egress MODULE_TYPE=EGRESS EGRESS_URL=None INGRESS_HOST=MVPDataServ_003.weevenetwork_http-egress_latest.2 INGRESS_PORT=80 INGRESS_PATH=/ PREV_CONTAINER_NAME=MVPDataServ_003.weevenetwork_hash-to-int_latest.1] [] MVPDataServ_003 bridge map[] map[]  {map[]} map[] [] map[manifestID:3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e name:MVPDataServiceV2 version:1.0.0]}
+2021-11-26 10:12:57 info : Successfully created with args: [] {5f53d49d65b3a654e7b80caa76a659359ba5e5df2759ab226a69d2055983dcaf []}
+2021-11-26 10:12:57 info : Started
+2021-11-26 10:12:57 info : Manifest deployed successfully
+2021-11-26 10:13:39 info : Received message on topic: nodes/localtest/local-test-node-1/deploy
+2021-11-26 10:13:39 info : Processing the message : deploy
+2021-11-26 10:13:39 info : Data service deploy initiated
+2021-11-26 10:13:39 info : Data service 3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e, 1.0.0 already exist
+2021-11-26 10:13:39 info : Iterating modules, pulling image into host if missing
+2021-11-26 10:13:39 info : Image 0 weevenetwork/dev-random:latest, already exists on host
+2021-11-26 10:13:39 info : Image 1 weevenetwork/hash-to-int:latest, already exists on host
+2021-11-26 10:13:39 info : Image 2 weevenetwork/http-egress:latest, already exists on host
+2021-11-26 10:13:39 info : Create the network
+2021-11-26 10:13:40 info : Created network name MVPDataServ_004
+2021-11-26 10:13:40 info : Start all containers
+2021-11-26 10:13:40 info : man_doc {"ports":[],"mounts":[{"Type":"bind","Source":"/dev/urandom","Target":"/mnt/random","ReadOnly":true}],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}{"mounts":[{"ReadOnly":true,"Source":"/dev/urandom","Target":"/mnt/random","Type":"bind"}],"ports":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}
+2021-11-26 10:13:40 info : Mounts:[{bind /dev/urandom /mnt/random true  <nil> <nil> <nil>}]
+2021-11-26 10:13:40 info : man_doc {"ports":[],"volumes":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}{"ports":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"},"volumes":[]}
+2021-11-26 10:13:40 info : man_doc {"ports":[],"volumes":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}{"ports":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"},"volumes":[]}
+2021-11-26 10:13:41 info : Creating MVPDataServ_004.weevenetwork_dev-random_latest.0 from weevenetwork/dev-random:latest{MVPDataServ_004.weevenetwork_dev-random_latest.0 weevenetwork/dev-random latest [--hash sha256 --interval 30] [VOLUME_CONTAINER=/mnt/random SERVICE_ID=3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e MODULE_NAME=dev-randomv2 MODULE_TYPE=INGRESS INGRESS_HOST=MVPDataServ_004.weevenetwork_dev-random_latest.0 INGRESS_PORT=80 INGRESS_PATH=/ hash=sha256 interval=30 NEXT_CONTAINER_NAME=MVPDataServ_004.weevenetwork_hash-to-int_latest.1 EGRESS_URL=http://MVPDataServ_004.weevenetwork_hash-to-int_latest.1:80/] [] MVPDataServ_004 bridge map[] map[]  {map[]} map[] [{bind /dev/urandom /mnt/random true  <nil> <nil> <nil>}] map[manifestID:3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e name:MVPDataServiceV2 version:1.0.0]}
+2021-11-26 10:13:43 info : Successfully created with args: [--hash sha256 --interval 30] {62ea92f09379a951cf3e53c0f2aba32b4d2ad1d084c2db518100ad4718afb0e7 []}
+2021-11-26 10:13:43 info : Started
+2021-11-26 10:13:43 info : Creating MVPDataServ_004.weevenetwork_hash-to-int_latest.1 from weevenetwork/hash-to-int:latest{MVPDataServ_004.weevenetwork_hash-to-int_latest.1 weevenetwork/hash-to-int latest [] [SERVICE_ID=3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e MODULE_NAME=hash-to-int MODULE_TYPE=PROCESS INGRESS_HOST=MVPDataServ_004.weevenetwork_hash-to-int_latest.1 INGRESS_PORT=80 INGRESS_PATH=/ PREV_CONTAINER_NAME=MVPDataServ_004.weevenetwork_dev-random_latest.0 NEXT_CONTAINER_NAME=MVPDataServ_004.weevenetwork_http-egress_latest.2 EGRESS_URL=http://MVPDataServ_004.weevenetwork_http-egress_latest.2:80/] [] MVPDataServ_004 bridge map[] map[]  {map[]} map[] [] map[manifestID:3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e name:MVPDataServiceV2 version:1.0.0]}
+2021-11-26 10:13:45 info : Successfully created with args: [] {d10aa4937898a8f84256a5f686ad2224ec9bf4c6e2c4d6ffa449ac667826b1fe []}
+2021-11-26 10:13:45 info : Started
+2021-11-26 10:13:45 info : Creating MVPDataServ_004.weevenetwork_http-egress_latest.2 from weevenetwork/http-egress:latest{MVPDataServ_004.weevenetwork_http-egress_latest.2 weevenetwork/http-egress latest [] [EGRESS_WEBHOOK_URL=https://hookb.in/2qla9bN0JLFdzq88zqko METHOD=POST TIMESTAMP=Time SERVICE_ID=3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e MODULE_NAME=HTTP Egress MODULE_TYPE=EGRESS EGRESS_URL=None INGRESS_HOST=MVPDataServ_004.weevenetwork_http-egress_latest.2 INGRESS_PORT=80 INGRESS_PATH=/ PREV_CONTAINER_NAME=MVPDataServ_004.weevenetwork_hash-to-int_latest.1] [] MVPDataServ_004 bridge map[] map[]  {map[]} map[] [] map[manifestID:3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e name:MVPDataServiceV2 version:1.0.0]}
+2021-11-26 10:13:48 info : Successfully created with args: [] {d0abe9fa1836343e358fac9e2813909407abc3cbe2ef37d11f5bc8b0935f5993 []}
+2021-11-26 10:13:48 info : Started
+2021-11-26 10:13:48 info : Manifest deployed successfully
+2021-11-26 10:14:29 info : Disconnecting.....
+2021-11-26 10:14:29 info : Disconnecting.....
+2021-11-26 10:18:50 info : Started logging
+2021-11-26 10:18:50 info : Logging level set to info
+2021-11-26 10:18:50 info : Broker host localhost at port 8080 over tcp
+2021-11-26 10:18:50 info : TLS disabled!
+2021-11-26 10:18:50 info : Node already registered!
+2021-11-26 10:18:51 info : ON connect >> connected >> registered : true
+2021-11-26 10:18:51 info : Sending update >> CheckVersion{local-test-node-1 1637902131046 Available 0 1 [{3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e 1.0.0 DEPLOYED}] {10 10 20}}
+2021-11-26 10:18:51 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637902131046,"status":"Available","activeServiceCount":0,"serviceCount":1,"servicesStatus":[{"manifestId":"3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e","manifestVersion":"1.0.0","status":"DEPLOYED"}],"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-26 10:19:19 info : Received message on topic: nodes/localtest/local-test-node-1/deploy
+2021-11-26 10:19:19 info : Processing the message : deploy
+2021-11-26 10:19:19 info : Data service deploy initiated
+2021-11-26 10:19:19 info : Data service 3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e, 1.0.0 already exist
+2021-11-26 10:19:19 info : Manifest deployed successfully
+2021-11-26 10:24:11 info : Received message on topic: nodes/localtest/local-test-node-1/undeploy
+2021-11-26 10:24:12 info : Processing the message : undeploy
+2021-11-26 10:24:12 error : Error on parsing message: invalid character '{' after top-level value
+2021-11-26 10:25:44 info : Received message on topic: nodes/localtest/local-test-node-1/undeploy
+2021-11-26 10:25:44 info : Processing the message : undeploy
+2021-11-26 10:25:44 info : Undeploying data service3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e1.0.0
+2021-11-26 10:25:44 info : Stop And Remove Container - d0abe9fa1836343e358fac9e2813909407abc3cbe2ef37d11f5bc8b0935f5993
+2021-11-26 10:25:55 info : Stop And Remove Container - d10aa4937898a8f84256a5f686ad2224ec9bf4c6e2c4d6ffa449ac667826b1fe
+2021-11-26 10:25:55 info : Stop And Remove Container - 62ea92f09379a951cf3e53c0f2aba32b4d2ad1d084c2db518100ad4718afb0e7
+2021-11-26 10:25:55 info : Stop And Remove Container - 5f53d49d65b3a654e7b80caa76a659359ba5e5df2759ab226a69d2055983dcaf
+2021-11-26 10:26:07 info : Stop And Remove Container - 74bc7b3139246139a2eb4602f3060bb925e7cb0d80178a45384949413b98cd5f
+2021-11-26 10:26:08 info : Stop And Remove Container - c8a63f33fb2e412bf166b839d1d226f338c0d9681503ed2e5b1879ea2f8b97cc
+2021-11-26 10:26:08 info : Stop And Remove Container - 0a5e91cc4666ebee1f14086b2122e691a0693b6fffb82dfc9233c43ea52a05ab
+2021-11-26 10:26:19 info : Stop And Remove Container - e31c252e2ea432db17179b58bef314a3e0654c2a61654dd4ad2116370ad290fc
+2021-11-26 10:26:19 info : Stop And Remove Container - 0e5e16d7976e589c13efcc7da473847dd50c27bd241ab9ea1fc0c3133a387972
+2021-11-26 10:26:19 info : Stop And Remove Container - 0bddaf8cbdd1e1ac44763f575c7acb254161411231d07e8d25432e25bf0d9094
+2021-11-26 10:26:30 info : Stop And Remove Container - 480a7bc0faac10b2d84f029fb0286f06d18f9778f2b690e92f9944cb3717fe54
+2021-11-26 10:26:30 info : Stop And Remove Container - 1d184a49662111a16bbf9d3a5bc2fd91df01dac0360c0666779a56d3360bdcc0
+2021-11-26 10:26:30 info : Remove Image - sha256:7c96ec4238d451203cbf5e4e1804000a852455eaf01f9433cb126c5e35e674c0
+2021-11-26 10:26:31 info : Remove Image - sha256:c3e21c6962c43c321cf7e0ea0ec82ee9007006e819faa70c1b11977303f39f37
+2021-11-26 10:26:31 info : Remove Image - sha256:c6324004caa1e0a87983cac1e1a7b300795ed50ef55119fb1ca4d1975ab31e13
+2021-11-26 10:26:32 info : Pruning networks
+2021-11-26 10:26:34 info : Pruned networks:{[MVPDataServ_002 MVPDataServ_003 MVPDataServ_004 MVPDataServ_001]}
+2021-11-26 10:28:51 info : Sending update >> CheckVersion{local-test-node-1 1637902731068 Available 0 0 [] {10 10 20}}
+2021-11-26 10:28:51 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637902731068,"status":"Available","activeServiceCount":0,"serviceCount":0,"servicesStatus":null,"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-26 10:38:51 info : Sending update >> CheckVersion{local-test-node-1 1637903331091 Available 0 0 [] {10 10 20}}
+2021-11-26 10:38:51 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637903331091,"status":"Available","activeServiceCount":0,"serviceCount":0,"servicesStatus":null,"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-26 10:48:51 info : Sending update >> CheckVersion{local-test-node-1 1637903931140 Available 0 0 [] {10 10 20}}
+2021-11-26 10:48:51 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637903931140,"status":"Available","activeServiceCount":0,"serviceCount":0,"servicesStatus":null,"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-26 10:58:51 info : Sending update >> CheckVersion{local-test-node-1 1637904531202 Available 0 0 [] {10 10 20}}
+2021-11-26 10:58:51 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637904531202,"status":"Available","activeServiceCount":0,"serviceCount":0,"servicesStatus":null,"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-26 11:08:51 info : Sending update >> CheckVersion{local-test-node-1 1637905131249 Available 0 0 [] {10 10 20}}
+2021-11-26 11:08:51 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637905131249,"status":"Available","activeServiceCount":0,"serviceCount":0,"servicesStatus":null,"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-26 11:18:51 info : Sending update >> CheckVersion{local-test-node-1 1637905731271 Available 0 0 [] {10 10 20}}
+2021-11-26 11:18:51 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637905731271,"status":"Available","activeServiceCount":0,"serviceCount":0,"servicesStatus":null,"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-26 11:28:51 info : Sending update >> CheckVersion{local-test-node-1 1637906331297 Available 0 0 [] {10 10 20}}
+2021-11-26 11:28:51 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637906331297,"status":"Available","activeServiceCount":0,"serviceCount":0,"servicesStatus":null,"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-26 11:38:51 info : Sending update >> CheckVersion{local-test-node-1 1637906931320 Available 0 0 [] {10 10 20}}
+2021-11-26 11:38:51 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637906931320,"status":"Available","activeServiceCount":0,"serviceCount":0,"servicesStatus":null,"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-26 11:48:51 info : Sending update >> CheckVersion{local-test-node-1 1637907531364 Available 0 0 [] {10 10 20}}
+2021-11-26 11:48:51 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637907531364,"status":"Available","activeServiceCount":0,"serviceCount":0,"servicesStatus":null,"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-26 11:58:51 info : Sending update >> CheckVersion{local-test-node-1 1637908131378 Available 0 0 [] {10 10 20}}
+2021-11-26 11:58:51 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637908131378,"status":"Available","activeServiceCount":0,"serviceCount":0,"servicesStatus":null,"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-26 12:05:58 info : Connection lostEOF
+2021-11-26 12:05:58 info : Connection lostEOF
+2021-11-26 12:06:39 info : ON connect >> connected >> registered : true
+2021-11-26 12:07:29 info : Disconnecting.....
+2021-11-26 12:07:29 info : Disconnecting.....
+2021-11-26 12:07:46 info : Started logging
+2021-11-26 12:07:46 info : Logging level set to info
+2021-11-26 12:07:46 info : Broker host localhost at port 8080 over tcp
+2021-11-26 12:07:46 info : TLS disabled!
+2021-11-26 12:07:46 info : Node already registered!
+2021-11-26 12:07:46 info : ON connect >> connected >> registered : true
+2021-11-26 12:07:46 info : Sending update >> CheckVersion{local-test-node-1 1637908666567 Available 0 0 [] {10 10 20}}
+2021-11-26 12:07:46 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637908666567,"status":"Available","activeServiceCount":0,"serviceCount":0,"servicesStatus":null,"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-26 12:08:20 info : Received message on topic: nodes/localtest/local-test-node-1/deploy
+2021-11-26 12:08:20 info : Processing the message : deploy
+2021-11-26 12:08:20 info : Data service deploy initiated
+2021-11-26 12:08:20 info : Iterating modules, pulling image into host if missing
+2021-11-26 12:08:20 info : Image 0 weevenetwork/dev-random:latest, does not exist on host
+2021-11-26 12:08:20 info : Pulling weevenetwork/dev-random:latest{weevenetwork/dev-random:latest  }
+2021-11-26 12:08:45 info : Pulled image weevenetwork/dev-random:latest into host
+2021-11-26 12:08:45 info : Image 1 weevenetwork/hash-to-int:latest, does not exist on host
+2021-11-26 12:08:45 info : Pulling weevenetwork/hash-to-int:latest{weevenetwork/hash-to-int:latest  }
+2021-11-26 12:09:06 info : Pulled image weevenetwork/hash-to-int:latest into host
+2021-11-26 12:09:06 info : Image 2 weevenetwork/http-egress:latest, does not exist on host
+2021-11-26 12:09:06 info : Pulling weevenetwork/http-egress:latest{weevenetwork/http-egress:latest  }
+2021-11-26 12:09:30 info : Pulled image weevenetwork/http-egress:latest into host
+2021-11-26 12:09:30 info : Create the network
+2021-11-26 12:09:31 info : Created network name MVPDataServ_001
+2021-11-26 12:09:31 info : Start all containers
+2021-11-26 12:09:31 info : man_doc {"ports":[],"mounts":[{"Type":"bind","Source":"/dev/urandom","Target":"/mnt/random","ReadOnly":true}],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}{"mounts":[{"ReadOnly":true,"Source":"/dev/urandom","Target":"/mnt/random","Type":"bind"}],"ports":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}
+2021-11-26 12:09:31 info : Mounts:[{bind /dev/urandom /mnt/random true  <nil> <nil> <nil>}]
+2021-11-26 12:09:31 info : man_doc {"ports":[],"volumes":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}{"ports":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"},"volumes":[]}
+2021-11-26 12:09:31 info : man_doc {"ports":[],"volumes":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}{"ports":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"},"volumes":[]}
+2021-11-26 12:09:31 info : Creating MVPDataServ_001.weevenetwork_dev-random_latest.0 from weevenetwork/dev-random:latest{MVPDataServ_001.weevenetwork_dev-random_latest.0 weevenetwork/dev-random latest [--hash sha256 --interval 30] [VOLUME_CONTAINER=/mnt/random SERVICE_ID=3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e MODULE_NAME=dev-randomv2 MODULE_TYPE=INGRESS INGRESS_HOST=MVPDataServ_001.weevenetwork_dev-random_latest.0 INGRESS_PORT=80 INGRESS_PATH=/ hash=sha256 interval=30 NEXT_CONTAINER_NAME=MVPDataServ_001.weevenetwork_hash-to-int_latest.1 EGRESS_URL=http://MVPDataServ_001.weevenetwork_hash-to-int_latest.1:80/] [] MVPDataServ_001 bridge map[] map[]  {map[]} map[] [{bind /dev/urandom /mnt/random true  <nil> <nil> <nil>}] map[manifestID:3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e name:MVPDataServiceV2 version:1.0.0]}
+2021-11-26 12:09:33 info : Successfully created with args: [--hash sha256 --interval 30] {1cc6e5a5d5aba7f871850143e48a25f32af7f545cc9c210adb59f8598de3b6d4 []}
+2021-11-26 12:09:33 info : Started
+2021-11-26 12:09:33 info : Creating MVPDataServ_001.weevenetwork_hash-to-int_latest.1 from weevenetwork/hash-to-int:latest{MVPDataServ_001.weevenetwork_hash-to-int_latest.1 weevenetwork/hash-to-int latest [] [SERVICE_ID=3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e MODULE_NAME=hash-to-int MODULE_TYPE=PROCESS INGRESS_HOST=MVPDataServ_001.weevenetwork_hash-to-int_latest.1 INGRESS_PORT=80 INGRESS_PATH=/ PREV_CONTAINER_NAME=MVPDataServ_001.weevenetwork_dev-random_latest.0 NEXT_CONTAINER_NAME=MVPDataServ_001.weevenetwork_http-egress_latest.2 EGRESS_URL=http://MVPDataServ_001.weevenetwork_http-egress_latest.2:80/] [] MVPDataServ_001 bridge map[] map[]  {map[]} map[] [] map[manifestID:3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e name:MVPDataServiceV2 version:1.0.0]}
+2021-11-26 12:09:35 info : Successfully created with args: [] {4a2e6210a56cdf7aaeeb4ad478816d8b59ea125d461793675913711c54711e04 []}
+2021-11-26 12:09:35 info : Started
+2021-11-26 12:09:35 info : Creating MVPDataServ_001.weevenetwork_http-egress_latest.2 from weevenetwork/http-egress:latest{MVPDataServ_001.weevenetwork_http-egress_latest.2 weevenetwork/http-egress latest [] [EGRESS_WEBHOOK_URL=https://hookb.in/2qla9bN0JLFdzq88zqko METHOD=POST TIMESTAMP=Time SERVICE_ID=3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e MODULE_NAME=HTTP Egress MODULE_TYPE=EGRESS EGRESS_URL=None INGRESS_HOST=MVPDataServ_001.weevenetwork_http-egress_latest.2 INGRESS_PORT=80 INGRESS_PATH=/ PREV_CONTAINER_NAME=MVPDataServ_001.weevenetwork_hash-to-int_latest.1] [] MVPDataServ_001 bridge map[] map[]  {map[]} map[] [] map[manifestID:3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e name:MVPDataServiceV2 version:1.0.0]}
+2021-11-26 12:09:37 info : Successfully created with args: [] {972e59c287f92de8ed8fbfa5f0348cd866e70cb50e381ef5bdab70963dd4a4e2 []}
+2021-11-26 12:09:37 info : Started
+2021-11-26 12:09:37 info : Manifest deployed successfully
+2021-11-26 12:11:37 info : Received message on topic: nodes/localtest/local-test-node-1/redeploy
+2021-11-26 12:11:37 info : Processing the message : redeploy
+2021-11-26 12:11:37 info : Data service redeploy initiated
+2021-11-26 12:11:37 info : Undeploying data service3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e1.0.0
+2021-11-26 12:11:37 info : Stop And Remove Container - 972e59c287f92de8ed8fbfa5f0348cd866e70cb50e381ef5bdab70963dd4a4e2
+2021-11-26 12:11:47 info : Stop And Remove Container - 4a2e6210a56cdf7aaeeb4ad478816d8b59ea125d461793675913711c54711e04
+2021-11-26 12:11:47 info : Stop And Remove Container - 1cc6e5a5d5aba7f871850143e48a25f32af7f545cc9c210adb59f8598de3b6d4
+2021-11-26 12:11:48 info : Remove Image - sha256:c3e21c6962c43c321cf7e0ea0ec82ee9007006e819faa70c1b11977303f39f37
+2021-11-26 12:11:48 info : Remove Image - sha256:c6324004caa1e0a87983cac1e1a7b300795ed50ef55119fb1ca4d1975ab31e13
+2021-11-26 12:11:48 info : Remove Image - sha256:7c96ec4238d451203cbf5e4e1804000a852455eaf01f9433cb126c5e35e674c0
+2021-11-26 12:11:48 info : Pruning networks
+2021-11-26 12:11:49 info : Pruned networks:{[MVPDataServ_001]}
+2021-11-26 12:11:49 info : Iterating modules, pulling image into host if missing
+2021-11-26 12:11:49 info : Image 0 weevenetwork/dev-random:latest, does not exist on host
+2021-11-26 12:11:49 info : Pulling weevenetwork/dev-random:latest{weevenetwork/dev-random:latest  }
+2021-11-26 12:12:13 info : Pulled image weevenetwork/dev-random:latest into host
+2021-11-26 12:12:13 info : Image 1 weevenetwork/hash-to-int:latest, does not exist on host
+2021-11-26 12:12:13 info : Pulling weevenetwork/hash-to-int:latest{weevenetwork/hash-to-int:latest  }
+2021-11-26 12:12:34 info : Pulled image weevenetwork/hash-to-int:latest into host
+2021-11-26 12:12:34 info : Image 2 weevenetwork/http-egress:latest, does not exist on host
+2021-11-26 12:12:34 info : Pulling weevenetwork/http-egress:latest{weevenetwork/http-egress:latest  }
+2021-11-26 12:12:57 info : Pulled image weevenetwork/http-egress:latest into host
+2021-11-26 12:12:57 info : Create the network
+2021-11-26 12:12:58 info : Created network name MVPDataServ_001
+2021-11-26 12:12:58 info : Start all containers
+2021-11-26 12:12:58 info : man_doc {"ports":[],"mounts":[{"Type":"bind","Source":"/dev/urandom","Target":"/mnt/random","ReadOnly":true}],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}{"mounts":[{"ReadOnly":true,"Source":"/dev/urandom","Target":"/mnt/random","Type":"bind"}],"ports":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}
+2021-11-26 12:12:58 info : Mounts:[{bind /dev/urandom /mnt/random true  <nil> <nil> <nil>}]
+2021-11-26 12:12:58 info : man_doc {"ports":[],"volumes":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}{"ports":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"},"volumes":[]}
+2021-11-26 12:12:58 info : man_doc {"ports":[],"volumes":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"}}{"ports":[],"restart_policy":{"condition":"on-failure","delay":"10s","max_attempts":3,"window":"120s"},"volumes":[]}
+2021-11-26 12:12:58 info : Creating MVPDataServ_001.weevenetwork_dev-random_latest.0 from weevenetwork/dev-random:latest{MVPDataServ_001.weevenetwork_dev-random_latest.0 weevenetwork/dev-random latest [--hash sha256 --interval 30] [VOLUME_CONTAINER=/mnt/random SERVICE_ID=3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e MODULE_NAME=dev-randomv2 MODULE_TYPE=INGRESS INGRESS_HOST=MVPDataServ_001.weevenetwork_dev-random_latest.0 INGRESS_PORT=80 INGRESS_PATH=/ hash=sha256 interval=30 NEXT_CONTAINER_NAME=MVPDataServ_001.weevenetwork_hash-to-int_latest.1 EGRESS_URL=http://MVPDataServ_001.weevenetwork_hash-to-int_latest.1:80/] [] MVPDataServ_001 bridge map[] map[]  {map[]} map[] [{bind /dev/urandom /mnt/random true  <nil> <nil> <nil>}] map[manifestID:3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e name:MVPDataServiceV2 version:1.0.0]}
+2021-11-26 12:13:01 info : Successfully created with args: [--hash sha256 --interval 30] {a955d748daf59e5390bd8f5edab2a50664caa0806a33faa306519f48f7933319 []}
+2021-11-26 12:13:01 info : Started
+2021-11-26 12:13:01 info : Creating MVPDataServ_001.weevenetwork_hash-to-int_latest.1 from weevenetwork/hash-to-int:latest{MVPDataServ_001.weevenetwork_hash-to-int_latest.1 weevenetwork/hash-to-int latest [] [SERVICE_ID=3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e MODULE_NAME=hash-to-int MODULE_TYPE=PROCESS INGRESS_HOST=MVPDataServ_001.weevenetwork_hash-to-int_latest.1 INGRESS_PORT=80 INGRESS_PATH=/ PREV_CONTAINER_NAME=MVPDataServ_001.weevenetwork_dev-random_latest.0 NEXT_CONTAINER_NAME=MVPDataServ_001.weevenetwork_http-egress_latest.2 EGRESS_URL=http://MVPDataServ_001.weevenetwork_http-egress_latest.2:80/] [] MVPDataServ_001 bridge map[] map[]  {map[]} map[] [] map[manifestID:3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e name:MVPDataServiceV2 version:1.0.0]}
+2021-11-26 12:13:03 info : Successfully created with args: [] {c7fc5da6b6fccb2c8b51b17738e2ac201622da608df30223dc8ec41d72f59084 []}
+2021-11-26 12:13:03 info : Started
+2021-11-26 12:13:03 info : Creating MVPDataServ_001.weevenetwork_http-egress_latest.2 from weevenetwork/http-egress:latest{MVPDataServ_001.weevenetwork_http-egress_latest.2 weevenetwork/http-egress latest [] [EGRESS_WEBHOOK_URL=https://hookb.in/2qla9bN0JLFdzq88zqko METHOD=POST TIMESTAMP=Time SERVICE_ID=3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e MODULE_NAME=HTTP Egress MODULE_TYPE=EGRESS EGRESS_URL=None INGRESS_HOST=MVPDataServ_001.weevenetwork_http-egress_latest.2 INGRESS_PORT=80 INGRESS_PATH=/ PREV_CONTAINER_NAME=MVPDataServ_001.weevenetwork_hash-to-int_latest.1] [] MVPDataServ_001 bridge map[] map[]  {map[]} map[] [] map[manifestID:3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e name:MVPDataServiceV2 version:1.0.0]}
+2021-11-26 12:13:07 info : Successfully created with args: [] {61004260c9103eefbaa5ffdfb7a52a4142c46b660d5caaa347e2419cef7b62c7 []}
+2021-11-26 12:13:07 info : Started
+2021-11-26 12:13:07 info : Manifest redeployed successfully
+2021-11-26 12:16:24 info : Received message on topic: nodes/localtest/local-test-node-1/undeploy
+2021-11-26 12:16:24 info : Processing the message : undeploy
+2021-11-26 12:16:24 info : Undeploying data service3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e1.0.0
+2021-11-26 12:16:24 info : Stop And Remove Container - 61004260c9103eefbaa5ffdfb7a52a4142c46b660d5caaa347e2419cef7b62c7
+2021-11-26 12:16:34 info : Stop And Remove Container - c7fc5da6b6fccb2c8b51b17738e2ac201622da608df30223dc8ec41d72f59084
+2021-11-26 12:16:34 info : Stop And Remove Container - a955d748daf59e5390bd8f5edab2a50664caa0806a33faa306519f48f7933319
+2021-11-26 12:16:34 info : Remove Image - sha256:7c96ec4238d451203cbf5e4e1804000a852455eaf01f9433cb126c5e35e674c0
+2021-11-26 12:16:36 info : Remove Image - sha256:c3e21c6962c43c321cf7e0ea0ec82ee9007006e819faa70c1b11977303f39f37
+2021-11-26 12:16:36 info : Remove Image - sha256:c6324004caa1e0a87983cac1e1a7b300795ed50ef55119fb1ca4d1975ab31e13
+2021-11-26 12:16:37 info : Pruning networks
+2021-11-26 12:16:37 info : Pruned networks:{[MVPDataServ_001]}
+2021-11-26 12:17:46 info : Sending update >> CheckVersion{local-test-node-1 1637909266578 Available 0 0 [] {10 10 20}}
+2021-11-26 12:17:46 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637909266578,"status":"Available","activeServiceCount":0,"serviceCount":0,"servicesStatus":null,"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-26 12:21:35 info : Connection lostEOF
+2021-11-26 12:21:35 info : Connection lostEOF
+2021-11-26 12:27:46 info : Sending update >> CheckVersion{local-test-node-1 1637909866605 Available 0 0 [] {10 10 20}}
+2021-11-26 12:27:46 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637909866605,"status":"Available","activeServiceCount":0,"serviceCount":0,"servicesStatus":null,"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-26 12:37:46 info : Sending update >> CheckVersion{local-test-node-1 1637910466639 Available 0 0 [] {10 10 20}}
+2021-11-26 12:37:46 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637910466639,"status":"Available","activeServiceCount":0,"serviceCount":0,"servicesStatus":null,"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-26 12:47:46 info : Sending update >> CheckVersion{local-test-node-1 1637911066648 Available 0 0 [] {10 10 20}}
+2021-11-26 12:47:46 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637911066648,"status":"Available","activeServiceCount":0,"serviceCount":0,"servicesStatus":null,"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-26 12:57:46 info : Sending update >> CheckVersion{local-test-node-1 1637911666665 Available 0 0 [] {10 10 20}}
+2021-11-26 12:57:46 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637911666665,"status":"Available","activeServiceCount":0,"serviceCount":0,"servicesStatus":null,"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-26 13:07:46 info : Sending update >> CheckVersion{local-test-node-1 1637912266667 Available 0 0 [] {10 10 20}}
+2021-11-26 13:07:46 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637912266667,"status":"Available","activeServiceCount":0,"serviceCount":0,"servicesStatus":null,"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}

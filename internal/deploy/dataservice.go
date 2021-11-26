@@ -16,6 +16,7 @@ import (
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util/jsonlines"
 )
+
 func DeployManifest(man model.Manifest, command string) error {
 	log.Info(fmt.Sprintf("Data service %v initiated", command))
 
@@ -40,13 +41,14 @@ func DeployManifest(man model.Manifest, command string) error {
 		log.Error(err)
 		LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", err.Error())
 		return err
+	
 	}
 	// Check if data service already exist
 	if dataServiceExists {
 		if command == "deploy" {
 			log.Info(fmt.Sprintf("Data service %v, %v already exist", manifestID, version))
 			return err
-			
+
 		} else if command == "redeploy" {
 			// Clean old data service resources
 			result := UndeployDataService(manifestID, version)
@@ -71,14 +73,18 @@ func DeployManifest(man model.Manifest, command string) error {
 
 	for i, imgDetails := range man.ImageNamesWithRegList() {
 		// Check if image exist in local
-		Exists := docker.ImageExists(imgDetails.ImageName)
-		if Exists != nil { // Image already exists, continue
+		exists, err := docker.ImageExists(imgDetails.ImageName)
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+		if exists { // Image already exists, continue
 			log.Info(fmt.Sprintf("Image %v %v, already exists on host", i, imgDetails.ImageName))
 		} else { // Pull this image
 			log.Info(fmt.Sprintf("Image %v %v, does not exist on host", i, imgDetails.ImageName))
 			log.Info("Pulling ", imgDetails.ImageName, imgDetails)
-			Exists = docker.PullImage(imgDetails)
-			if Exists == nil{
+			err = docker.PullImage(imgDetails)
+			if err != nil {
 				msg := "404 - Unable to pull image/s, one or more image/s not found"
 				log.Error(msg)
 				LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", msg)

@@ -90,17 +90,17 @@ func PullImage(imgDetails model.RegistryDetails) error {
 
 // Check if the image exists in the local context
 // Return bool
-func ImageExists(id string) error {
+func ImageExists(id string) (bool, error) {
 	image, err := ReadImage(id)
 
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if image.ID != "" {
-		return nil
+		return true, nil
 	} else {
-		return err
+		return false, nil
 	}
 }
 

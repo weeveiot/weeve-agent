@@ -4,3 +4,542 @@
 2021-11-24 12:12:02 info : TLS disabled!
 2021-11-24 12:12:02 info : Registering node!
 2021-11-24 12:12:05 fatal : failed to create publisher connection: network Error : dial tcp [::1]:8080: connectex: No connection could be made because the target machine actively refused it.
+2021-11-25 15:24:07 info : Started logging
+2021-11-25 15:24:07 info : Logging level set to info
+2021-11-25 15:24:07 info : Broker host localhost at port 8080 over tcp
+2021-11-25 15:24:07 info : TLS disabled!
+2021-11-25 15:24:07 info : Node already registered!
+2021-11-25 15:24:07 info : ON connect >> connected >> registered : true
+2021-11-25 15:24:07 error : File not available! open manifests.jsonl: The system cannot find the file specified.
+2021-11-25 15:24:07 info : Sending update >> CheckVersion{local-test-node-1 1637834047842 Available 0 0 [] {10 10 20}}
+2021-11-25 15:24:07 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637834047842,"status":"Available","activeServiceCount":0,"serviceCount":0,"servicesStatus":null,"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-25 15:29:38 info : Received message on topic: nodes/localtest/local-test-node-1/deploy
+2021-11-25 15:29:38 info : Processing the message : deploy
+2021-11-25 15:29:38 info : Data service deploy initiated
+2021-11-25 15:29:38 error : File not available! open manifests.jsonl: The system cannot find the file specified.
+2021-11-25 15:29:38 info : Iterating modules, pulling image into host if missing
+2021-11-25 15:29:38 info : Image 0 weevenetwork/dev-random:latest, does not exist on host
+2021-11-25 15:29:38 info : Pulling weevenetwork/dev-random:latest{weevenetwork/dev-random:latest  }
+2021-11-25 15:30:57 info : Connection lostEOF
+2021-11-25 15:32:27 info : Connection lostEOF
+2021-11-25 15:32:29 info : Updated image weevenetwork/dev-random:latest into host
+2021-11-25 16:26:33 info : Started logging
+2021-11-25 16:26:33 info : Logging level set to info
+2021-11-25 16:26:33 info : Broker host localhost at port 8080 over tcp
+2021-11-25 16:26:33 info : TLS disabled!
+2021-11-25 16:26:33 info : Node already registered!
+2021-11-25 16:26:33 info : ON connect >> connected >> registered : true
+2021-11-25 16:26:33 info : Sending update >> CheckVersion{local-test-node-1 1637837793485 Available 0 1 [{3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e 1.0.0 DEPLOYING_IN_PROGRESS}] {10 10 20}}
+2021-11-25 16:26:33 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637837793485,"status":"Available","activeServiceCount":0,"serviceCount":1,"servicesStatus":[{"manifestId":"3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e","manifestVersion":"1.0.0","status":"DEPLOYING_IN_PROGRESS"}],"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-25 16:26:53 info : Started logging
+2021-11-25 16:26:53 info : Logging level set to info
+2021-11-25 16:26:53 info : Broker host localhost at port 8080 over tcp
+2021-11-25 16:26:53 info : TLS disabled!
+2021-11-25 16:26:53 info : Node already registered!
+2021-11-25 16:26:53 info : ON connect >> connected >> registered : true
+2021-11-25 16:26:53 info : Sending update >> CheckVersion{local-test-node-1 1637837813415 Available 0 1 [{3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e 1.0.0 DEPLOYING_IN_PROGRESS}] {10 10 20}}
+2021-11-25 16:26:53 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637837813415,"status":"Available","activeServiceCount":0,"serviceCount":1,"servicesStatus":[{"manifestId":"3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e","manifestVersion":"1.0.0","status":"DEPLOYING_IN_PROGRESS"}],"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-25 17:04:53 info : Started logging
+2021-11-25 17:04:53 info : Logging level set to info
+2021-11-25 17:04:53 info : Broker host localhost at port 8080 over tcp
+2021-11-25 17:04:53 info : TLS disabled!
+2021-11-25 17:04:53 info : Node already registered!
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Sending update >> CheckVersion{local-test-node-1 1637840094095 Available 0 1 [{3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e 1.0.0 DEPLOYING_IN_PROGRESS}] {10 10 20}}
+2021-11-25 17:04:54 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637840094095,"status":"Available","activeServiceCount":0,"serviceCount":1,"servicesStatus":[{"manifestId":"3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e","manifestVersion":"1.0.0","status":"DEPLOYING_IN_PROGRESS"}],"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:54 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 error : Error on subscribe connection: write tcp [::1]:55546->[::1]:8080: use of closed network connection
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:04:55 info : ON connect >> connected >> registered : true
+2021-11-25 17:04:55 info : Connection lostEOF
+2021-11-25 17:41:08 info : Started logging
+2021-11-25 17:41:08 info : Logging level set to info
+2021-11-25 17:41:08 info : Broker host localhost at port 8080 over tcp
+2021-11-25 17:41:08 info : TLS disabled!
+2021-11-25 17:41:08 info : Node already registered!
+2021-11-25 17:41:24 info : Started logging
+2021-11-25 17:41:24 info : Logging level set to info
+2021-11-25 17:41:24 info : Broker host localhost at port 8080 over tcp
+2021-11-25 17:41:24 info : TLS disabled!
+2021-11-25 17:41:24 info : Node already registered!
+2021-11-25 17:41:27 fatal : failed to create publisher connection: network Error : dial tcp [::1]:8080: connectex: No connection could be made because the target machine actively refused it.
+2021-11-25 18:20:19 info : Started logging
+2021-11-25 18:20:19 info : Logging level set to info
+2021-11-25 18:20:19 info : Broker host localhost at port 8080 over tcp
+2021-11-25 18:20:19 info : TLS disabled!
+2021-11-25 18:20:19 info : Node already registered!
+2021-11-25 18:20:22 fatal : failed to create publisher connection: network Error : dial tcp [::1]:8080: connectex: No connection could be made because the target machine actively refused it.
