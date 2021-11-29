@@ -41,7 +41,7 @@ func DeployManifest(man model.Manifest, command string) error {
 		log.Error(err)
 		LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", err.Error())
 		return err
-	
+
 	}
 	// Check if data service already exist
 	if dataServiceExists {

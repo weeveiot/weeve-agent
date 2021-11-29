@@ -354,3 +354,80 @@
 2021-11-26 12:57:46 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637911666665,"status":"Available","activeServiceCount":0,"serviceCount":0,"servicesStatus":null,"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
 2021-11-26 13:07:46 info : Sending update >> CheckVersion{local-test-node-1 1637912266667 Available 0 0 [] {10 10 20}}
 2021-11-26 13:07:46 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1637912266667,"status":"Available","activeServiceCount":0,"serviceCount":0,"servicesStatus":null,"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-29 07:48:22 info : Started logging
+2021-11-29 07:48:22 info : Logging level set to info
+2021-11-29 07:48:22 info : Broker host localhost at port 8080 over tcp
+2021-11-29 07:48:22 info : TLS disabled!
+2021-11-29 07:48:22 info : Node already registered!
+2021-11-29 07:48:24 fatal : failed to create publisher connection: network Error : dial tcp [::1]:8080: connectex: No connection could be made because the target machine actively refused it.
+2021-11-29 11:03:07 info : Started logging
+2021-11-29 11:03:07 info : Logging level set to info
+2021-11-29 11:03:07 info : Broker host localhost at port 8080 over tcp
+2021-11-29 11:03:07 info : TLS disabled!
+2021-11-29 11:03:07 info : Node already registered!
+2021-11-29 11:03:07 info : ON connect >> connected >> registered : true
+2021-11-29 11:03:07 info : Sending update >> CheckVersion{local-test-node-1 1638163987133 Available 0 1 [{3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e 1.0.0 DEPLOYED}] {10 10 20}}
+2021-11-29 11:03:07 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1638163987133,"status":"Available","activeServiceCount":0,"serviceCount":1,"servicesStatus":[{"manifestId":"3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e","manifestVersion":"1.0.0","status":"DEPLOYED"}],"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-29 11:04:57 info : Received message on topic: nodes/localtest/local-test-node-1/deploy
+2021-11-29 11:04:57 info : Processing the message : deploy
+2021-11-29 11:04:57 info : Data service deploy initiated
+2021-11-29 11:04:57 info : Data service 3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e, 1.0.0 already exist
+2021-11-29 11:04:57 info : Manifest deployed successfully
+2021-11-29 11:05:14 info : Received message on topic: nodes/localtest/local-test-node-1/deploy
+2021-11-29 11:05:14 info : Processing the message : deploy
+2021-11-29 11:05:14 info : Data service deploy initiated
+2021-11-29 11:05:14 info : Data service 3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e, 1.0.0 already exist
+2021-11-29 11:05:14 info : Manifest deployed successfully
+2021-11-29 11:07:16 info : Received message on topic: nodes/localtest/local-test-node-1/deploy
+2021-11-29 11:07:16 info : Processing the message : deploy
+2021-11-29 11:07:16 info : Data service deploy initiated
+2021-11-29 11:07:17 info : Data service 3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e, 1.0.0 already exist
+2021-11-29 11:07:17 info : Manifest deployed successfully
+2021-11-29 11:07:28 info : Disconnecting.....
+2021-11-29 11:07:28 info : Disconnecting.....
+2021-11-29 11:07:55 info : Started logging
+2021-11-29 11:07:55 info : Logging level set to info
+2021-11-29 11:07:55 info : Broker host localhost at port 8080 over tcp
+2021-11-29 11:07:55 info : TLS disabled!
+2021-11-29 11:07:55 info : Node already registered!
+2021-11-29 11:07:55 info : ON connect >> connected >> registered : true
+2021-11-29 11:07:55 info : Sending update >> CheckVersion{local-test-node-1 1638164275327 Available 0 1 [{3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e 1.0.0 DEPLOYED}] {10 10 20}}
+2021-11-29 11:07:55 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1638164275327,"status":"Available","activeServiceCount":0,"serviceCount":1,"servicesStatus":[{"manifestId":"3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e","manifestVersion":"1.0.0","status":"DEPLOYED"}],"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-29 11:08:18 info : Received message on topic: nodes/localtest/local-test-node-1/deploy
+2021-11-29 11:08:18 info : Processing the message : deploy
+2021-11-29 11:08:18 error : Error on parsing message: invalid character 'u' in literal false (expecting 'a')
+2021-11-29 11:08:39 info : Received message on topic: nodes/localtest/local-test-node-1/deploy
+2021-11-29 11:08:39 info : Processing the message : deploy
+2021-11-29 11:08:39 info : Data service deploy initiated
+2021-11-29 11:08:39 info : Data service 3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e, 1.0.0 already exist
+2021-11-29 11:08:39 info : Manifest deployed successfully
+2021-11-29 11:17:55 info : Sending update >> CheckVersion{local-test-node-1 1638164875335 Available 0 1 [{3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e 1.0.0 DEPLOYED}] {10 10 20}}
+2021-11-29 11:17:55 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1638164875335,"status":"Available","activeServiceCount":0,"serviceCount":1,"servicesStatus":[{"manifestId":"3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e","manifestVersion":"1.0.0","status":"DEPLOYED"}],"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-29 11:21:12 info : Disconnecting.....
+2021-11-29 11:21:12 info : Disconnecting.....
+2021-11-29 11:21:47 info : Started logging
+2021-11-29 11:21:47 info : Logging level set to info
+2021-11-29 11:21:47 info : Broker host localhost at port 8080 over tcp
+2021-11-29 11:21:47 info : TLS disabled!
+2021-11-29 11:21:47 info : Node already registered!
+2021-11-29 11:21:47 info : ON connect >> connected >> registered : true
+2021-11-29 11:21:47 info : Sending update >> CheckVersion{local-test-node-1 1638165107926 Available 0 1 [{3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e 1.0.0 DEPLOYED}] {10 10 20}}
+2021-11-29 11:21:47 info : Publishing message >> manager/localtest/local-test-node-1/CheckVersion {"ID":"local-test-node-1","timestamp":1638165107926,"status":"Available","activeServiceCount":0,"serviceCount":1,"servicesStatus":[{"manifestId":"3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e","manifestVersion":"1.0.0","status":"DEPLOYED"}],"deviceParams":{"sensors":"10","uptime":"10","cputemp":"20"}}
+2021-11-29 11:22:04 info : Received message on topic: nodes/localtest/local-test-node-1/deploy
+2021-11-29 11:22:04 info : Processing the message : deploy
+2021-11-29 11:22:04 info : Data service deploy initiated
+2021-11-29 11:22:04 info : Data service 3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e, 1.0.0 already exist
+2021-11-29 11:22:04 info : Manifest deployed successfully
+2021-11-29 11:22:34 info : Received message on topic: nodes/localtest/local-test-node-1/undeploy
+2021-11-29 11:22:34 info : Processing the message : undeploy
+2021-11-29 11:22:34 info : Undeploying data service3ab346d8-55d3-44bb-a4bf-3f44ba6baa1e1.0.0
+2021-11-29 11:22:34 info : Stop And Remove Container - 79893d50e81ab3d67c8c66ea5932caef25f319d6fc863c5722ec2a8d26f8bbc1
+2021-11-29 11:22:46 info : Stop And Remove Container - e6ad4fb9db1aae04829e81153e902bbf4d5b68dc12120da10a376e22805a38d8
+2021-11-29 11:22:47 info : Stop And Remove Container - 8dc24979b68e5e9b0cbe8823781e4b6ec9d870d167215f2dec27d3be6c4e6aa5
+2021-11-29 11:22:48 info : Remove Image - sha256:7c96ec4238d451203cbf5e4e1804000a852455eaf01f9433cb126c5e35e674c0
+2021-11-29 11:22:49 info : Remove Image - sha256:c3e21c6962c43c321cf7e0ea0ec82ee9007006e819faa70c1b11977303f39f37
+2021-11-29 11:22:49 info : Remove Image - sha256:c6324004caa1e0a87983cac1e1a7b300795ed50ef55119fb1ca4d1975ab31e13
+2021-11-29 11:22:49 info : Pruning networks
+2021-11-29 11:22:50 info : Pruned networks:{[MVPDataServ_001]}
+2021-11-29 11:23:58 info : Disconnecting.....
+2021-11-29 11:23:58 info : Disconnecting.....
