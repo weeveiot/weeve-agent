@@ -3,6 +3,7 @@ package deploy
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -47,7 +48,8 @@ func DeployManifest(man model.Manifest, command string) error {
 	if dataServiceExists {
 		if command == "deploy" {
 			log.Info(fmt.Sprintf("Data service %v, %v already exist", manifestID, version))
-			return err
+			myerror := errors.New("Exited")
+			return myerror
 
 		} else if command == "redeploy" {
 			// Clean old data service resources
@@ -231,6 +233,7 @@ func StartDataService(manifestID string, version string) error {
 }
 
 func UndeployDataService(manifestID string, version string) error {
+	var errorlist string
 	log.Info("Undeploying data service", manifestID, version)
 
 	// Check if data service already exist
@@ -238,12 +241,12 @@ func UndeployDataService(manifestID string, version string) error {
 	if err != nil {
 		log.Error(err)
 		LogStatus(manifestID, version, "UNDEPLOY_FAILED", err.Error())
-		return err
+		errorlist = fmt.Sprintf("%v,%v", errorlist, err)
 	}
 	if !dataServiceExists {
 		log.Error(fmt.Sprintf("Data service %v, %v does not exist", manifestID, version))
 		LogStatus(manifestID, version, "UNDEPLOY_FAILED", fmt.Sprintf("Data service %v, %v does not exist", manifestID, version))
-		return err
+		errorlist = fmt.Sprintf("%v,%v", errorlist, err)
 	}
 
 	// Set up Background Context and Client for Docker API calls
@@ -252,7 +255,7 @@ func UndeployDataService(manifestID string, version string) error {
 	if err != nil {
 		log.Error(err)
 		LogStatus(manifestID, version, "UNDEPLOY_FAILED", err.Error())
-		return err
+		errorlist = fmt.Sprintf("%v,%v", errorlist, err)
 	}
 
 	//******** STEP 1 - Stop and Remove Containers *************//
@@ -264,13 +267,13 @@ func UndeployDataService(manifestID string, version string) error {
 	if err != nil {
 		log.Error("Failed to read all containers.")
 		LogStatus(manifestID, version, "UNDEPLOY_FAILED", "Failed to read all containers")
-		return err
+		errorlist = fmt.Sprintf("%v,%v", errorlist, err)
 	}
 	dsContainers, err := docker.ReadDataServiceContainers(manifestID, version)
 	if err != nil {
 		log.Error("Failed to read data service containers.")
 		LogStatus(manifestID, version, "UNDEPLOY_FAILED", "Failed to read data service containers")
-		return err
+		errorlist = fmt.Sprintf("%v,%v", errorlist, err)
 	}
 	for _, container := range containers {
 
@@ -284,7 +287,7 @@ func UndeployDataService(manifestID string, version string) error {
 				if err != nil {
 					log.Error(err)
 					LogStatus(manifestID, version, "UNDEPLOY_FAILED", err.Error())
-					return err
+					errorlist = fmt.Sprintf("%v,%v", errorlist, err)
 				}
 
 				imageContainers[container.ImageID] = imageContainers[container.ImageID] - 1
@@ -300,7 +303,7 @@ func UndeployDataService(manifestID string, version string) error {
 			if err != nil {
 				log.Error(err)
 				LogStatus(manifestID, version, "UNDEPLOY_FAILED", err.Error())
-				return err
+				errorlist = fmt.Sprintf("%v,%v", errorlist, err)
 			}
 		}
 	}
@@ -315,7 +318,7 @@ func UndeployDataService(manifestID string, version string) error {
 	if err != nil {
 		log.Error(err)
 		LogStatus(manifestID, version, "UNDEPLOY_FAILED", err.Error())
-		return err
+		errorlist = fmt.Sprintf("%v,%v", errorlist, err)
 	}
 	log.Info("Pruned networks:", pruneReport)
 
@@ -327,8 +330,10 @@ func UndeployDataService(manifestID string, version string) error {
 	if !deleted {
 		log.Error("Could not remove old records from manifest.jsonl")
 	}
-
-	return nil
+	if errorlist != "" {
+		log.Error(err)
+	}
+	return err
 }
 
 // DataServiceExist returns status of data service existance as true or false

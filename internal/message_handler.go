@@ -43,7 +43,7 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 				log.Info("Deployment unsuccessful")
 			} else {
 				log.Info("Manifest deployed successfully")
-				
+
 			}
 
 		} else if topic_rcvd == "redeploy" {
@@ -55,7 +55,7 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 				log.Info("Redeployment unsuccessful")
 			} else {
 				log.Info("Manifest redeployed successfully")
-				
+
 			}
 
 		} else if topic_rcvd == "stopservice" {
@@ -83,7 +83,7 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 				err := deploy.StartDataService(serviceId, serviceVersion)
 				if err != nil {
 					log.Error(err)
-					
+
 				}
 			} else {
 				log.Info("Service started!")
@@ -99,9 +99,9 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 				err := deploy.UndeployDataService(serviceId, serviceVersion)
 				if err != nil {
 					log.Error(err)
+				} else {
+					log.Info("Undeployment Successful")
 				}
-			} else {
-				log.Info("Undeployment Successful")
 			}
 		}
 	}
