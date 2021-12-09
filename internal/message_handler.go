@@ -67,10 +67,13 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 
 				err := deploy.StopDataService(serviceId, serviceVersion)
 				if err != nil {
+					log.Error(err)
+
+				} else {
 					log.Info("Service stopped!")
+
 				}
-			} else {
-				log.Error(err)
+
 			}
 
 		} else if topic_rcvd == "startservice" {
@@ -84,9 +87,9 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 				if err != nil {
 					log.Error(err)
 
+				} else {
+					log.Info("Service started!")
 				}
-			} else {
-				log.Info("Service started!")
 			}
 
 		} else if topic_rcvd == "undeploy" {

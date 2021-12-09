@@ -53,9 +53,9 @@ func TestDeployManifest(t *testing.T) {
 	version = thisManifest.Manifest.Search("version").Data().(string)
 	log.Info(version)
 
-	resp := deploy.DeployManifest(thisManifest, "deploy")
+	err = deploy.DeployManifest(thisManifest, "deploy")
 	if err != nil {
-		t.Errorf("DeployManifest returned %v status", resp)
+		t.Errorf("DeployManifest returned %v status", err)
 	}
 
 	// Check if network exists
