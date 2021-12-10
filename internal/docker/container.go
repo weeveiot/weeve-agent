@@ -176,20 +176,20 @@ func StopContainers() bool {
 	return true
 }
 
-func StopContainer(containerId string) bool {
+func StopContainer(containerId string) error {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
-		return false
+		return err
 	}
 
 	if err := cli.ContainerStop(ctx, containerId, nil); err != nil {
 		log.Error(err)
-		return false
+		return err
 	}
 
-	return true
+	return nil
 }
 
 // StartCreateContainer is a utility function based on the Docker SDK

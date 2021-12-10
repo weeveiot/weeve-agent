@@ -53,9 +53,9 @@ func TestDeployManifest(t *testing.T) {
 	version = thisManifest.Manifest.Search("version").Data().(string)
 	log.Info(version)
 
-	resp := deploy.DeployManifest(thisManifest, "deploy")
-	if !resp {
-		t.Errorf("DeployManifest returned %v status", resp)
+	err = deploy.DeployManifest(thisManifest, "deploy")
+	if err != nil {
+		t.Errorf("DeployManifest returned %v status", err)
 	}
 
 	// Check if network exists
@@ -114,8 +114,8 @@ func TestStopDataServiceWrongDetails(t *testing.T) {
 	}
 
 	// run tested method
-	resp := deploy.StopDataService(wrongManifesetID, wrongVersion)
-	if resp {
+	err := deploy.StopDataService(wrongManifesetID, wrongVersion)
+	if err != nil {
 		t.Errorf("StopDataService returned True status, but should return False as manifestID is wrong")
 	}
 
@@ -139,9 +139,9 @@ func TestStopDataService(t *testing.T) {
 	var wrongStatusContainerList []string
 
 	// run tested method
-	resp := deploy.StopDataService(manifestID, version)
-	if !resp {
-		t.Errorf("StopDataService returned %v status", resp)
+	err := deploy.StopDataService(manifestID, version)
+	if err != nil {
+		t.Errorf("StopDataService returned %v status", err)
 	}
 
 	// check container status
@@ -174,9 +174,9 @@ func TestStartDataServiceWrongDetails(t *testing.T) {
 	}
 
 	// run tested method
-	resp := deploy.StartDataService(wrongServiceID, wrongServiceName)
-	if !resp {
-		t.Errorf("StartDataService returned %v status", resp)
+	err := deploy.StartDataService(wrongServiceID, wrongServiceName)
+	if err != nil {
+		t.Errorf("StartDataService returned %v status", err)
 	}
 
 	// check container status after executing tested function
@@ -199,9 +199,9 @@ func TestStartDataService(t *testing.T) {
 	var wrongStatusContainerList []string
 
 	// run tested method
-	resp := deploy.StartDataService(manifestID, version)
-	if !resp {
-		t.Errorf("StartDataService returned %v status", resp)
+	err := deploy.StartDataService(manifestID, version)
+	if err != nil {
+		t.Errorf("StartDataService returned %v status", err)
 	}
 
 	// check container status
@@ -220,9 +220,9 @@ func TestUndeployDataService(t *testing.T) {
 	log.Info("TESTING UNDEPLOYMENT...")
 
 	// run tested method
-	resp := deploy.UndeployDataService(manifestID, version)
-	if !resp {
-		t.Errorf("UndeployDataService returned %v status", resp)
+	err := deploy.UndeployDataService(manifestID, version)
+	if err != nil {
+		t.Errorf("UndeployDataService returned %v status", err)
 	}
 
 	// check if containers are removed
@@ -263,9 +263,9 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	version = thisManifest.Manifest.Search("version").Data().(string)
 	log.Info(version)
 
-	resp := deploy.DeployManifest(thisManifest, "deploy")
-	if !resp {
-		t.Errorf("DeployManifest returned %v status", resp)
+	err = deploy.DeployManifest(thisManifest, "deploy")
+	if err != nil {
+		t.Errorf("DeployManifest returned %v status", err)
 	}
 
 	// ***** DEPLOY SECOND IDENTICAL DATA SERVICE ********* //
@@ -289,17 +289,17 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	version2 = thisManifest2.Manifest.Search("version").Data().(string)
 	log.Info(version2)
 
-	resp = deploy.DeployManifest(thisManifest2, "deploy")
-	if !resp {
-		t.Errorf("DeployManifest returned %v status", resp)
+	err = deploy.DeployManifest(thisManifest2, "deploy")
+	if err != nil {
+		t.Errorf("DeployManifest returned %v status", err)
 	}
 
 	// ***** TEST UNDEPLOY FOR ORIGINAL DATA SERVICE ********* //
 
 	// run tested method
-	resp = deploy.UndeployDataService(manifestID, version)
-	if !resp {
-		t.Errorf("UndeployDataService returned %v status", resp)
+	err = deploy.UndeployDataService(manifestID, version)
+	if err != nil {
+		t.Errorf("UndeployDataService returned %v status", err)
 	}
 
 	// check if containers are removed
@@ -328,9 +328,9 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	}
 
 	// clean up and remove second data service
-	resp = deploy.UndeployDataService(manifestID2, version2)
-	if !resp {
-		t.Errorf("UndeployDataService returned %v status", resp)
+	err = deploy.UndeployDataService(manifestID2, version2)
+	if err != nil {
+		t.Errorf("UndeployDataService returned %v status", err)
 	}
 
 }
@@ -357,9 +357,9 @@ func TestRedeployDataService(t *testing.T) {
 	version = thisManifest.Manifest.Search("version").Data().(string)
 	log.Info(version)
 
-	resp := deploy.DeployManifest(thisManifest, "deploy")
-	if !resp {
-		t.Errorf("DeployManifest returned %v status", resp)
+	err = deploy.DeployManifest(thisManifest, "deploy")
+	if err != nil {
+		t.Errorf("DeployManifest returned %v status", err)
 	}
 
 	// ***************** SAVE ORIGINAL DATA SERVICE TIMESTAMP AND ID ******************** //
@@ -394,9 +394,9 @@ func TestRedeployDataService(t *testing.T) {
 	var thisManifestRedeploy = model.Manifest{}
 	thisManifestRedeploy.Manifest = *jsonParsed
 
-	resp = deploy.DeployManifest(thisManifestRedeploy, "redeploy")
-	if !resp {
-		t.Errorf("DeployManifest returned %v status", resp)
+	err = deploy.DeployManifest(thisManifestRedeploy, "redeploy")
+	if err != nil {
+		t.Errorf("DeployManifest returned %v status", err)
 	}
 
 	// ***************** CHECK REDEPLOYMENT's SUCCESS ******************** //
@@ -414,9 +414,9 @@ func TestRedeployDataService(t *testing.T) {
 	log.Info("Cleaning after testing...")
 	redeployedManifestID := thisManifestRedeploy.Manifest.Search("id").Data().(string)
 	redeployedVersion := thisManifestRedeploy.Manifest.Search("version").Data().(string)
-	resp = deploy.UndeployDataService(redeployedManifestID, redeployedVersion)
-	if !resp {
-		t.Errorf("UndeployDataService returned %v status", resp)
+	err = deploy.UndeployDataService(redeployedManifestID, redeployedVersion)
+	if err != nil {
+		t.Errorf("UndeployDataService returned %v status", err)
 	}
 }
 

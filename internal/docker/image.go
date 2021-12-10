@@ -18,12 +18,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func PullImage(imgDetails model.RegistryDetails) bool {
+func PullImage(imgDetails model.RegistryDetails) error {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
-		return false
+		return err
 	}
 
 	authConfig := types.AuthConfig{
@@ -34,7 +34,7 @@ func PullImage(imgDetails model.RegistryDetails) bool {
 	encodedJSON, err := json.Marshal(authConfig)
 	if err != nil {
 		log.Error(err)
-		return false
+		return err
 	}
 
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
@@ -42,7 +42,7 @@ func PullImage(imgDetails model.RegistryDetails) bool {
 	events, err := cli.ImagePull(ctx, imgDetails.ImageName, types.ImagePullOptions{RegistryAuth: authStr})
 	if err != nil {
 		log.Error(err)
-		return false
+		return err
 	}
 	// defer out.Close()
 
@@ -68,7 +68,7 @@ func PullImage(imgDetails model.RegistryDetails) bool {
 				break
 			}
 			log.Error(err)
-			return false
+			return err
 		}
 	}
 
@@ -85,18 +85,22 @@ func PullImage(imgDetails model.RegistryDetails) bool {
 		}
 	}
 
-	return true
+	return nil
 }
 
 // Check if the image exists in the local context
 // Return bool
-func ImageExists(id string) bool {
-	image := ReadImage(id)
+func ImageExists(id string) (bool, error) {
+	image, err := ReadImage(id)
+
+	if err != nil {
+		return false, err
+	}
 
 	if image.ID != "" {
-		return true
+		return true, nil
 	} else {
-		return false
+		return false, nil
 	}
 }
 
@@ -125,21 +129,21 @@ func ReadAllImages() []types.ImageSummary {
 }
 
 // ReadImage by ImageId
-func ReadImage(id string) types.ImageInspect {
+func ReadImage(id string) (types.ImageInspect, error) {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
-		return types.ImageInspect{}
+		return types.ImageInspect{}, err
 	}
 
 	images, bytes, err := cli.ImageInspectWithRaw(ctx, id)
 	if err != nil && bytes != nil {
 		log.Error(err)
-		return types.ImageInspect{}
+		return types.ImageInspect{}, err
 	}
 
-	return images
+	return images, nil
 }
 
 // SearchImages returns images based on filter (Currently working without filters)

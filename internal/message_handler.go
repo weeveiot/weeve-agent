@@ -38,22 +38,24 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 
 			var thisManifest = model.Manifest{}
 			thisManifest.Manifest = *jsonParsed
-			status := deploy.DeployManifest(thisManifest, topic_rcvd)
-			if status {
-				log.Info("Manifest deployed successfully")
-			} else {
+			err := deploy.DeployManifest(thisManifest, topic_rcvd)
+			if err != nil {
 				log.Info("Deployment unsuccessful")
+			} else {
+				log.Info("Manifest deployed successfully")
+
 			}
 
 		} else if topic_rcvd == "redeploy" {
 
 			var thisManifest = model.Manifest{}
 			thisManifest.Manifest = *jsonParsed
-			status := deploy.DeployManifest(thisManifest, topic_rcvd)
-			if status {
-				log.Info("Manifest redeployed successfully")
-			} else {
+			err := deploy.DeployManifest(thisManifest, topic_rcvd)
+			if err != nil {
 				log.Info("Redeployment unsuccessful")
+			} else {
+				log.Info("Manifest redeployed successfully")
+
 			}
 
 		} else if topic_rcvd == "stopservice" {
@@ -63,12 +65,15 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 				serviceId := jsonParsed.Search("id").Data().(string)
 				serviceVersion := jsonParsed.Search("version").Data().(string)
 
-				status := deploy.StopDataService(serviceId, serviceVersion)
-				if status {
+				err := deploy.StopDataService(serviceId, serviceVersion)
+				if err != nil {
+					log.Error(err)
+
+				} else {
 					log.Info("Service stopped!")
+
 				}
-			} else {
-				log.Error(err)
+
 			}
 
 		} else if topic_rcvd == "startservice" {
@@ -78,12 +83,13 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 				serviceId := jsonParsed.Search("id").Data().(string)
 				serviceVersion := jsonParsed.Search("version").Data().(string)
 
-				status := deploy.StartDataService(serviceId, serviceVersion)
-				if status {
+				err := deploy.StartDataService(serviceId, serviceVersion)
+				if err != nil {
+					log.Error(err)
+
+				} else {
 					log.Info("Service started!")
 				}
-			} else {
-				log.Error(err)
 			}
 
 		} else if topic_rcvd == "undeploy" {
@@ -93,12 +99,12 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 				serviceId := jsonParsed.Search("id").Data().(string)
 				serviceVersion := jsonParsed.Search("version").Data().(string)
 
-				status := deploy.UndeployDataService(serviceId, serviceVersion)
-				if status {
+				err := deploy.UndeployDataService(serviceId, serviceVersion)
+				if err != nil {
+					log.Error(err)
+				} else {
 					log.Info("Undeployment Successful")
 				}
-			} else {
-				log.Error(err)
 			}
 		}
 	}
