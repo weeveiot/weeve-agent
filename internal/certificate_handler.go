@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"path"
 	"path/filepath"
-	"runtime"
 
 	"os"
 
@@ -20,6 +19,7 @@ const CertificateKey = "Certificate"
 const PrivateKeyKay = "PrivateKey"
 const NodeIdKey = "NodeId"
 const AWSRootCertKey = "AWSRootCert"
+const RootPath = "/"
 
 func DownloadCertificates(payload []byte) map[string]string {
 
@@ -48,8 +48,11 @@ func DownloadCertificates(payload []byte) map[string]string {
 		defer resp.Body.Close()
 
 		// Root folder of this project
-		_, b, _, _ := runtime.Caller(0)
-		Root := filepath.Join(filepath.Dir(b), "../")
+		dir := filepath.Join(filepath.Dir(os.Args[1]) + RootPath)
+		Root, err := filepath.Abs(dir)
+		if err != nil {
+			return nil
+		}
 		fileName := filepath.Base(resp.Request.URL.Path)
 		fileNameWithPath := path.Join(Root, fileName)
 
@@ -102,8 +105,11 @@ func UpdateNodeConfig(attrs map[string]string) bool {
 	file, _ := json.MarshalIndent(configs, "", " ")
 
 	// Root folder of this project
-	_, b, _, _ := runtime.Caller(0)
-	Root := filepath.Join(filepath.Dir(b), "../")
+	dir := filepath.Join(filepath.Dir(os.Args[1]) + RootPath)
+	Root, err := filepath.Abs(dir)
+	if err != nil {
+		return false
+	}
 	NodeConfigFilePath := path.Join(Root, NodeConfigFileName)
 	_ = ioutil.WriteFile(NodeConfigFilePath, file, 0644)
 
@@ -112,8 +118,11 @@ func UpdateNodeConfig(attrs map[string]string) bool {
 
 func ReadNodeConfig() map[string]string {
 	// Root folder of this project
-	_, b, _, _ := runtime.Caller(0)
-	Root := filepath.Join(filepath.Dir(b), "../")
+	dir := filepath.Join(filepath.Dir(os.Args[1]) + RootPath)
+	Root, err := filepath.Abs(dir)
+	if err != nil {
+		return nil
+	}
 	NodeConfigFilePath := path.Join(Root, NodeConfigFileName)
 
 	// Open our jsonFile

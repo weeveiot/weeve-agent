@@ -15,11 +15,11 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"syscall"
 	"time"
 
+	"github.com/Jeffail/gabs/v2"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/jessevdk/go-flags"
 	log "github.com/sirupsen/logrus"
@@ -66,6 +66,8 @@ var nodeId string
 var parser = flags.NewParser(&opt, flags.Default)
 var registered = false
 var connected = false
+
+const RootPath = "/"
 
 // logging into the terminal and files
 func init() {
@@ -262,8 +264,11 @@ func InitBrokerChannel(nodeConfig map[string]string, pubsubClientId string, isSu
 
 func NewTLSConfig(nodeConfig map[string]string) (config *tls.Config, err error) {
 	// Root folder of this project
-	_, b, _, _ := runtime.Caller(0)
-	Root := filepath.Join(filepath.Dir(b), "../..")
+	dir := filepath.Join(filepath.Dir(os.Args[1]) + RootPath)
+	Root, err := filepath.Abs(dir)
+	if err != nil {
+		return nil, err
+	}
 
 	rootCert := path.Join(Root, nodeConfig[internal.AWSRootCertKey])
 	nodeCert := path.Join(Root, nodeConfig[internal.CertificateKey])
@@ -365,7 +370,10 @@ func DisconnectBroker(publisher mqtt.Client, subscriber mqtt.Client) {
 }
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	log.Info("Received message on topic: ", msg.Topic())
+	jsonParsed, err := gabs.ParseJSON(msg.Payload())
+	if err != nil {
+		log.Info("Received message on topic: ", msg.Topic(), *jsonParsed)
+	}
 
 	topic_rcvd := ""
 
@@ -376,6 +384,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 			marked := internal.MarkNodeRegistered(nodeId, certificates)
 			if marked {
 				registered = true
+				log.Info("Node registered successfully")
 			}
 		}
 	} else {

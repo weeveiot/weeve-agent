@@ -7,7 +7,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
@@ -15,6 +14,8 @@ import (
 )
 
 var manifestBytesMVP []byte
+
+const RootPath = "/"
 
 func TestMain(m *testing.M) {
 
@@ -30,15 +31,14 @@ func TestMain(m *testing.M) {
 }
 
 func LoadJsonBytes(filePath string) []byte {
-	var (
-		_, b, _, _ = runtime.Caller(0)
-	)
-	root := filepath.Join(filepath.Dir(b), "../..")
-
-	manifestPath := path.Join(root, filePath)
+	dir := filepath.Join(filepath.Dir(os.Args[1]) + RootPath)
+	Root, err := filepath.Abs(dir)
+	if err != nil {
+		return nil
+	}
+	manifestPath := path.Join(Root, filePath)
 	//fmt.Println("Loading manifest from ", manifestPath)
 
-	var err error = nil
 	manifestBytes, err := ioutil.ReadFile(manifestPath)
 	if err != nil {
 		log.Fatal(err)
