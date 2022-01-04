@@ -8,9 +8,9 @@ package deploy_test
 import (
 	"context"
 	"io/ioutil"
+	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/Jeffail/gabs/v2"
@@ -31,6 +31,7 @@ var version2 = "PLACEHOLDER"
 const manifestPath = "testdata/manifest/test_manifest.json"
 const manifestPath2 = "testdata/manifest/test_manifest_copy.json"
 const manifestPathRedeploy = "testdata/manifest/test_manifest_redeploy.json"
+const RootPath = "/"
 
 func TestDeployManifest(t *testing.T) {
 	log.Info("TESTING DEPLOYMENT...")
@@ -422,10 +423,12 @@ func TestRedeployDataService(t *testing.T) {
 
 // LoadJsonBytes reads file containts into byte[]
 func LoadJSONBytes(manName string) []byte {
-
-	_, b, _, _ := runtime.Caller(0)
 	// Root folder of this project
-	Root := filepath.Join(filepath.Dir(b), "../..")
+	dir := filepath.Join(filepath.Dir(os.Args[1]) + RootPath)
+	Root, err := filepath.Abs(dir)
+	if err != nil {
+		return nil
+	}
 	manifestPath := path.Join(Root, manName)
 
 	manifestBytes, err := ioutil.ReadFile(manifestPath)

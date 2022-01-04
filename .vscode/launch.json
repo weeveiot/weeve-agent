@@ -38,13 +38,13 @@
                 "-b",
                 "tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883",
                 "-s",
-                "nodes/awsdev",
+                "nodes/awsdemo",
                 "-c",
-                "manager/awsdev",
+                "manager/awsdemo",
                 "-t",
-                "CheckVersion",
+                "status",
                 "--heartbeat",
-                "3600"
+                "120"
             ]
         },
         {
