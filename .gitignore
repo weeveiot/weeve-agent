@@ -1,3 +1,5 @@
+.vscode/
+.vscode/*
 /.project
 /bin/
 /.classpath
@@ -13,3 +15,5 @@ build/
 node_listener
 node-service
 nodeconfig.json
+agent_darwin_amd64
+.vscode/launch.json

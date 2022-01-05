@@ -1,7 +1,7 @@
 image: golang:latest
 
 variables:
-  REPO_NAME: gitlab.com/weeve/edge-server/edge-pipeline-service
+  REPO_NAME: gitlab.com/weeve/platform/agent
 
 cache:
   paths:
@@ -11,26 +11,95 @@ cache:
     - /go/src/google.golang.org
     - /go/src/gopkg.in
 
-stages:
-  - test
-  - build
-  - deploy
+# stages:
+#   - test
+#   - build
+#   - deploy
 
 before_script:
   - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
   - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
   - cd $GOPATH/src/$REPO_NAME
 
-validate:
-  stage: test
-  script:
-    - go vet $(dirname $REPO_NAME)/edge-pipeline-service
+# validate:
+#   stage: test
+#   script:
+#     - go vet $(dirname $REPO_NAME)/edge-pipeline-service
 
-compile:
-  stage: build
+# compile:
+#   stage: build
+#   script:
+#     - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/edge-pipeline-service ./cmd/node-service.go
+#     # - env GOOS=linux go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/edge-pipeline-service ./cmd/main.go
+#   artifacts:
+#     paths:
+#       - edge-pipeline-service
+
+deploy_dev:
+  stage: deploy
+  environment:
+    name: dev
+  only:
+    - dev
   script:
-    - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/edge-pipeline-service ./cmd/node-service.go
-    # - env GOOS=linux go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/edge-pipeline-service ./cmd/main.go
-  artifacts:
-    paths:
-      - edge-pipeline-service
+    - bash build.sh awsdev
+
+deploy_demo:
+  stage: deploy
+  environment:
+    name: demo
+  only:
+    - demo
+  script:
+    - bash build.sh awsdemo
+
+deploy_qa:
+  stage: deploy
+  environment:
+    name: qa
+  only:
+    - qa
+  script:
+    - bash build.sh awsqa
+
+deploy_prod:
+  stage: deploy
+  environment:
+    name: prod
+  only:
+    - main
+  script:
+    - bash build.sh awsprod
+
+    # - export UPLOAD_DIR=manage_server/poc
+    # - serverless deploy -v --stage awspoc --region $AWS_REGION --accountId $AWS_ACCOUNT_ID
+    # - GOOS=android GOARCH=arm go build -o agent_android_arm cmd/agent/agent.go
+    # - GOOS=darwin GOARCH=386 go build -o agent_darwin_386 cmd/agent/agent.go
+    # - GOOS=darwin GOARCH=amd64 go build -o agent_darwin_amd64 cmd/agent/agent.go
+    # - GOOS=darwin GOARCH=arm go build -o agent_darwin_arm cmd/agent/agent.go
+    # - GOOS=darwin GOARCH=arm64 go build -o agent_darwin_arm64 cmd/agent/agent.go
+    # - GOOS=dragonfly GOARCH=amd64 go build -o agent_dragon_amd64 cmd/agent/agent.go
+    # - GOOS=freebsd GOARCH=386 go build -o agent_freebsd_386 cmd/agent/agent.go
+    # - GOOS=freebsd GOARCH=amd64 go build -o agent_freebsd_amd64 cmd/agent/agent.go
+    # - GOOS=freebsd GOARCH=arm go build -o agent_freebsd_arm cmd/agent/agent.go
+    # - GOOS=windows GOARCH=amd64 go build -o agent_win_amd64.exe cmd/agent/agent.go
+    # - GOOS=windows GOARCH=386 go build -o agent_win_386.exe cmd/agent/agent.go
+    # - GOOS=linux GOARCH=386 go build -o agent_linux_386 cmd/agent/agent.go
+    # - GOOS=linux GOARCH=amd64 go build -o agent_linux_amd64 cmd/agent/agent.go
+    # - GOOS=linux GOARCH=arm go build -o agent_linux_arm cmd/agent/agent.go
+    # - GOOS=linux GOARCH=arm64 go build -o agent_linux_arm64 cmd/agent/agent.go
+    # - GOOS=linux GOARCH=ppc64 go build -o agent_linux_ppc64 cmd/agent/agent.go
+    # - GOOS=linux GOARCH=ppc64le go build -o agent_linux_ppc64le cmd/agent/agent.go
+    # - GOOS=linux GOARCH=mips go build -o agent_linux_mips cmd/agent/agent.go
+    # - GOOS=linux GOARCH=mipsle go build -o agent_linux_mipsle cmd/agent/agent.go
+    # - GOOS=linux GOARCH=mips64 go build -o agent_linux_mips64 cmd/agent/agent.go
+    # - GOOS=linux GOARCH=mips64le go build -o agent_linux_mips64le cmd/agent/agent.go
+    # - GOOS=netbsd GOARCH=386 go build -o agent_netbsd_386 cmd/agent/agent.go
+    # - GOOS=netbsd GOARCH=amd64 go build -o agent_netbsd_amd64 cmd/agent/agent.go
+    # - GOOS=netbsd GOARCH=arm go build -o agent_netbsd_arm cmd/agent/agent.go
+    # - GOOS=openbsd GOARCH=386 go build -o agent_openbsd_386 cmd/agent/agent.go
+    # - GOOS=openbsd GOARCH=amd64 go build -o agent_openbsd_amd64 cmd/agent/agent.go
+    # - GOOS=openbsd GOARCH=arm go build -o agent_openbsd_arm cmd/agent/agent.go
+    # - GOOS=plan9 GOARCH=386 go build -o agent_plan9_386 cmd/agent/agent.go
+    # - GOOS=plan9 GOARCH=amd64 go build -o agent_plan9_amd64 cmd/agent/agent.go
+    # - GOOS=solaris GOARCH=amd64 go build -o agent_solaris_amd64 cmd/agent/agent.go
