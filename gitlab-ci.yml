@@ -40,7 +40,7 @@ deploy_dev:
   environment:
     name: dev
   only:
-    - dev
+    - TTD-1492-Build-binaries
   script:
     - bash build.sh awsdev
 
