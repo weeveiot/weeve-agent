@@ -35,15 +35,15 @@ echo $cmd
 
 aws s3 sync bin s3://weeve-resource-772697371069-us-east-1/agent_binaries/$stage/
 
-export DOCKER_BUILDKIT=1
-git clone git://github.com/docker/buildx ./docker-buildx
-docker build --platform=local -o . ./docker-buildx
-mkdir -p ~/.docker/cli-plugins
-mv buildx ~/.docker/cli-plugins/docker-buildx
-docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-docker buildx create --use --name mybuilder
-docker buildx build --platform $cross_pfrm --push -t "$CI_REGISTRY/weevenetwork/weeve_agent:1.0.0" -t "$CI_REGISTRY/weevenetwork/weeve_agent:latest" .
+# export DOCKER_BUILDKIT=1
+# git clone git://github.com/docker/buildx ./docker-buildx
+# docker build --platform=local -o . ./docker-buildx
+# mkdir -p ~/.docker/cli-plugins
+# mv buildx ~/.docker/cli-plugins/docker-buildx
+# docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+# docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+# docker buildx create --use --name mybuilder
+# docker buildx build --platform $cross_pfrm --push -t "$CI_REGISTRY/weevenetwork/weeve_agent:1.0.0" -t "$CI_REGISTRY/weevenetwork/weeve_agent:latest" .
 
 
 
