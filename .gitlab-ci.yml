@@ -1,5 +1,5 @@
-# image: golang:latest
-image: docker:latest
+image: golang:latest
+# image: docker:latest
 
 services:
   - docker:dind
@@ -7,13 +7,13 @@ services:
 variables:
   REPO_NAME: gitlab.com/weeve/platform/agent
 
-# cache:
-#   paths:
-#     - /apt-cache
-#     - /go/src/github.com
-#     - /go/src/golang.org
-#     - /go/src/google.golang.org
-#     - /go/src/gopkg.in
+cache:
+  paths:
+    - /apt-cache
+    - /go/src/github.com
+    - /go/src/golang.org
+    - /go/src/google.golang.org
+    - /go/src/gopkg.in
 
 # stages:
 #   - test
@@ -24,12 +24,43 @@ before_script:
   # - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
   # - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
   # - cd $GOPATH/src/$REPO_NAME
-  - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-  - docker buildx create --name crossbuilder
-  - docker buildx use crossbuilder
-  - docker version
-  - docker buildx
-  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  # - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+  # - docker buildx create --name crossbuilder --use
+  # - docker version
+  # - docker buildx
+  # - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+buildx:
+  image: docker:19.03-git
+  stage: buildx
+  variables:
+    GIT_STRATEGY: none
+  artifacts:
+    paths:
+      - buildx
+    expire_in: 1 hour
+  services:
+    - docker:20-dind
+  script:
+    - export DOCKER_BUILDKIT=1
+    - git clone git://github.com/docker/buildx ./docker-buildx
+    - docker build --platform=local -o . ./docker-buildx
+
+deploy:
+  image: docker:19.03
+  stage: deploy
+  services:
+    - name: docker:20-dind
+      command: ["--experimental"]
+  before_script:
+    - mkdir -p ~/.docker/cli-plugins
+    - mv buildx ~/.docker/cli-plugins/docker-buildx
+    - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+  script:
+    # - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker buildx create --use --name mybuilder
+    - docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 --push -t "weevenetwork/weeve-agent:1.0.0" .
 
 # validate:
 #   stage: test
@@ -50,7 +81,8 @@ deploy_dev:
   environment:
     name: dev
   only:
-    - TTD-1492-Build-binaries
+    # - TTD-1492-Build-binaries
+    - dev
   script:
     # - bash build.sh awsdev
     - docker buildx build --push -t "weevenetwork/weeve-agent:1.0.0" --platform linux/amd64 .
@@ -81,36 +113,3 @@ deploy_prod:
     - main
   script:
     - bash build.sh awsprod
-
-    # - export UPLOAD_DIR=manage_server/poc
-    # - serverless deploy -v --stage awspoc --region $AWS_REGION --accountId $AWS_ACCOUNT_ID
-    # - GOOS=android GOARCH=arm go build -o agent_android_arm cmd/agent/agent.go
-    # - GOOS=darwin GOARCH=386 go build -o agent_darwin_386 cmd/agent/agent.go
-    # - GOOS=darwin GOARCH=amd64 go build -o agent_darwin_amd64 cmd/agent/agent.go
-    # - GOOS=darwin GOARCH=arm go build -o agent_darwin_arm cmd/agent/agent.go
-    # - GOOS=darwin GOARCH=arm64 go build -o agent_darwin_arm64 cmd/agent/agent.go
-    # - GOOS=dragonfly GOARCH=amd64 go build -o agent_dragon_amd64 cmd/agent/agent.go
-    # - GOOS=freebsd GOARCH=386 go build -o agent_freebsd_386 cmd/agent/agent.go
-    # - GOOS=freebsd GOARCH=amd64 go build -o agent_freebsd_amd64 cmd/agent/agent.go
-    # - GOOS=freebsd GOARCH=arm go build -o agent_freebsd_arm cmd/agent/agent.go
-    # - GOOS=windows GOARCH=amd64 go build -o agent_win_amd64.exe cmd/agent/agent.go
-    # - GOOS=windows GOARCH=386 go build -o agent_win_386.exe cmd/agent/agent.go
-    # - GOOS=linux GOARCH=386 go build -o agent_linux_386 cmd/agent/agent.go
-    # - GOOS=linux GOARCH=amd64 go build -o agent_linux_amd64 cmd/agent/agent.go
-    # - GOOS=linux GOARCH=arm go build -o agent_linux_arm cmd/agent/agent.go
-    # - GOOS=linux GOARCH=arm64 go build -o agent_linux_arm64 cmd/agent/agent.go
-    # - GOOS=linux GOARCH=ppc64 go build -o agent_linux_ppc64 cmd/agent/agent.go
-    # - GOOS=linux GOARCH=ppc64le go build -o agent_linux_ppc64le cmd/agent/agent.go
-    # - GOOS=linux GOARCH=mips go build -o agent_linux_mips cmd/agent/agent.go
-    # - GOOS=linux GOARCH=mipsle go build -o agent_linux_mipsle cmd/agent/agent.go
-    # - GOOS=linux GOARCH=mips64 go build -o agent_linux_mips64 cmd/agent/agent.go
-    # - GOOS=linux GOARCH=mips64le go build -o agent_linux_mips64le cmd/agent/agent.go
-    # - GOOS=netbsd GOARCH=386 go build -o agent_netbsd_386 cmd/agent/agent.go
-    # - GOOS=netbsd GOARCH=amd64 go build -o agent_netbsd_amd64 cmd/agent/agent.go
-    # - GOOS=netbsd GOARCH=arm go build -o agent_netbsd_arm cmd/agent/agent.go
-    # - GOOS=openbsd GOARCH=386 go build -o agent_openbsd_386 cmd/agent/agent.go
-    # - GOOS=openbsd GOARCH=amd64 go build -o agent_openbsd_amd64 cmd/agent/agent.go
-    # - GOOS=openbsd GOARCH=arm go build -o agent_openbsd_arm cmd/agent/agent.go
-    # - GOOS=plan9 GOARCH=386 go build -o agent_plan9_386 cmd/agent/agent.go
-    # - GOOS=plan9 GOARCH=amd64 go build -o agent_plan9_amd64 cmd/agent/agent.go
-    # - GOOS=solaris GOARCH=amd64 go build -o agent_solaris_amd64 cmd/agent/agent.go
