@@ -1,34 +1,11 @@
-#########################################
-### BUILDER
-#########################################
-FROM golang:1.15-alpine3.12 as builder
+FROM golang:latest
+# ADD / /app
+WORKDIR /
 
-RUN apk add --no-cache git tree
-#\
-#  && mkdir -p /opt/node-service
+COPY go.mod go.sum ./
+RUN go get -d -v
+RUN go mod download
 
-# RUN mkdir /app
-# COPY ./cmd ./internal /app/
-# COPY go.mod go.sum /app/
-COPY . /app/
-WORKDIR /app/
+RUN go build -o weeve_agent /cmd/agent/agent.go
 
-# RUN go get -d -v
-RUN go build ./cmd/node-service.go
-
-#########################################
-### DIST IMAGE
-#########################################
-FROM alpine
-
-LABEL service="node-service"
-
-# install deps
-# RUN apk add --no-cache --no-progress curl tini ca-certificates
-
-# copy node-service binary
-COPY --from=builder /app/node-service /usr/bin/node-service
-
-# ENTRYPOINT ["/sbin/tini", "--"]
-ENTRYPOINT [ "node-service" ]
-# CMD ["node-service"]
+ENTRYPOINT ["/cmd/agent/agent.go"]
