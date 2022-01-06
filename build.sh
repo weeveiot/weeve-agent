@@ -1,6 +1,9 @@
 #!/bin/sh
 
 stage=$1
+CI_REGISTRY=$2
+CI_REGISTRY_USER=$3
+CI_REGISTRY_PASSWORD=$4
 listarch=$(go tool dist list)
 # aix/ppc64        freebsd/amd64   linux/mipsle   openbsd/386
 # android/386      freebsd/arm     linux/ppc64    openbsd/amd64
@@ -40,7 +43,7 @@ mv buildx ~/.docker/cli-plugins/docker-buildx
 docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
 docker buildx create --use --name mybuilder
-docker buildx build --platform $cross_pfrm --push -t "weevenetwork/weeve_agent:1.0.0" .
+docker buildx build --platform $cross_pfrm --push -t "$CI_REGISTRY/weevenetwork/weeve_agent:1.0.0" -t "$CI_REGISTRY/weevenetwork/weeve_agent:latest" .
 
 
 

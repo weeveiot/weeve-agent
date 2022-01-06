@@ -6,10 +6,10 @@ ARG TARGETOS
 ARG TARGETARCH
 
 
-# # ADD / /app
+# ADD / /app
 # WORKDIR /
 
-COPY go.mod go.sum ./
+COPY go.mod go.sum ./ cmd/ internal/
 # RUN go get -d -v
 RUN go mod download
 
