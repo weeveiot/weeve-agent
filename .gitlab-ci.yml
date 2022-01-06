@@ -16,12 +16,14 @@ cache:
     - /go/src/google.golang.org
     - /go/src/gopkg.in
 
-stages:
-#   - test
-  - buildx
-  - deploy
+# stages:
+# #   - test
+#   - buildx
+#   - deploy
 
 before_script:
+  - apt-get install -y -qq python3-dev python3-pip
+  - apt-get install -y jq
   - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
   - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
   - cd $GOPATH/src/$REPO_NAME
