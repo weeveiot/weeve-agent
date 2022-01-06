@@ -8,8 +8,11 @@ ARG TARGETARCH
 
 # ADD / /app
 # WORKDIR /
-
-COPY go.mod go.sum ./ cmd/ internal/
+# go env -w GO111MODULE=auto
+COPY go.mod ./
+COPY go.sum ./
+COPY cmd/ ./
+COPY internal/ ./
 # RUN go get -d -v
 RUN go mod download
 
