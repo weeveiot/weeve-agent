@@ -1,7 +1,7 @@
 #!/bin/sh
 
 stage=$1
-listarchg=$(go tool dist list)
+listarch=$(go tool dist list)
 # aix/ppc64        freebsd/amd64   linux/mipsle   openbsd/386
 # android/386      freebsd/arm     linux/ppc64    openbsd/amd64
 # android/amd64    illumos/amd64   linux/ppc64le  openbsd/arm
@@ -15,15 +15,32 @@ listarchg=$(go tool dist list)
 # freebsd/386      linux/mips64le  netbsd/arm64   windows/arm
 
 echo $stage
-echo $listarchg
+echo $listarch
 
-for arch in ${listarchg[@]}
+cmd=''
+
+for arch in ${listarch[@]}
 do
     # echo $arch
+    cmd=$cmd,$arch
     arrIN=(${arch//// })
     echo ${arrIN[0]} ${arrIN[1]} agent_${arrIN[0]}_${arrIN[1]}
     GOOS=${arrIN[0]} GOARCH=${arrIN[1]} go build -o agent_${arrIN[0]}_${arrIN[1]} cmd/agent/agent.go
 done
+echo $cmd
+
+aws s3 sync . s3://weeve-resource-772697371069-us-east-1/agent_binaries/$stage/
+
+
+docker build --platform=local -o . git://github.com/docker/buildx
+mkdir -p ~/.docker/cli-plugins && mv buildx ~/.docker/cli-plugins/docker-buildx
+
+docker buildx create --name crossbuilder
+docker buildx use crossbuilder
+docker buildx build --platform $cmd -t "weevenetwork/weeve-agent:1.0.0" --push .
+
+
+
 
 # GOOS=android GOARCH=arm go build -o agent_android_arm cmd/agent/agent.go
 # GOOS=darwin GOARCH=386 go build -o agent_darwin_386 cmd/agent/agent.go
@@ -56,4 +73,3 @@ done
 # GOOS=plan9 GOARCH=amd64 go build -o agent_plan9_amd64 cmd/agent/agent.go
 # GOOS=solaris GOARCH=amd64 go build -o agent_solaris_amd64 cmd/agent/agent.go
 
-aws s3 sync . s3://weeve-resource-772697371069-us-east-1/agent_binaries/$stage/
