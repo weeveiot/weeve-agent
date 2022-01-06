@@ -25,6 +25,7 @@ before_script:
   - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
   - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
   - cd $GOPATH/src/$REPO_NAME
+  - pip3 install --upgrade awscli
   # - listarch=$(go tool dist list)
   # - |
   #   for arch in ${listarch[@]}
