@@ -52,7 +52,7 @@ deploy_dev:
     - TTD-1492-Build-binaries
   script:
     # - bash build.sh awsdev
-    - docker buildx build --push --platform $cmd -t "weevenetwork/weeve-agent:1.0.0" .
+    - docker buildx build --push -t "weevenetwork/weeve-agent:1.0.0" --platform linux/amd64 .
 
 deploy_demo:
   stage: deploy
