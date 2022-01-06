@@ -17,6 +17,7 @@ listarch=$(go tool dist list)
 echo $stage
 echo $listarch
 
+mkdir target
 cmd=''
 
 for arch in ${listarch[@]}
@@ -25,12 +26,11 @@ do
     cmd=$cmd,$arch
     arrIN=(${arch//// })
     echo ${arrIN[0]} ${arrIN[1]} agent_${arrIN[0]}_${arrIN[1]}
-    # GOOS=${arrIN[0]} GOARCH=${arrIN[1]} go build -o agent_${arrIN[0]}_${arrIN[1]} cmd/agent/agent.go
+    GOOS=${arrIN[0]} GOARCH=${arrIN[1]} go build -o target/agent_${arrIN[0]}_${arrIN[1]} cmd/agent/agent.go
 done
 echo $cmd
 
-aws s3 sync . s3://weeve-resource-772697371069-us-east-1/agent_binaries/$stage/
-
+aws s3 sync target s3://weeve-resource-772697371069-us-east-1/agent_binaries/$stage/
 
 docker build --platform=local -o . git://github.com/docker/buildx
 mkdir -p ~/.docker/cli-plugins && mv buildx ~/.docker/cli-plugins/docker-buildx
