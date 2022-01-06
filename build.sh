@@ -17,28 +17,30 @@ listarch=$(go tool dist list)
 echo $stage
 echo $listarch
 
-mkdir target
-cmd=''
+mkdir bin
+cross_pfrm=''
 
 for arch in ${listarch[@]}
 do
     # echo $arch
-    cmd=$cmd,$arch
+    cross_pfrm=$cross_pfrm,$arch
     arrIN=(${arch//// })
     echo ${arrIN[0]} ${arrIN[1]} agent_${arrIN[0]}_${arrIN[1]}
-    GOOS=${arrIN[0]} GOARCH=${arrIN[1]} go build -o target/agent_${arrIN[0]}_${arrIN[1]} cmd/agent/agent.go
+    GOOS=${arrIN[0]} GOARCH=${arrIN[1]} go build -o bin/agent_${arrIN[0]}_${arrIN[1]} cmd/agent/agent.go
 done
 echo $cmd
 
-aws s3 sync target s3://weeve-resource-772697371069-us-east-1/agent_binaries/$stage/
+aws s3 sync bin s3://weeve-resource-772697371069-us-east-1/agent_binaries/$stage/
 
-docker build --platform=local -o . git://github.com/docker/buildx
-mkdir -p ~/.docker/cli-plugins && mv buildx ~/.docker/cli-plugins/docker-buildx
-
-docker buildx create --name crossbuilder
-docker buildx use crossbuilder
-docker buildx build --platform $cmd -t "weevenetwork/weeve-agent:1.0.0" --push .
-
+export DOCKER_BUILDKIT=1
+git clone git://github.com/docker/buildx ./docker-buildx
+docker build --platform=local -o . ./docker-buildx
+mkdir -p ~/.docker/cli-plugins
+mv buildx ~/.docker/cli-plugins/docker-buildx
+docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+docker buildx create --use --name mybuilder
+docker buildx build --platform $cross_pfrm --push -t "weevenetwork/weeve_agent:1.0.0" .
 
 
 
