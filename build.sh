@@ -25,7 +25,7 @@ do
     cmd=$cmd,$arch
     arrIN=(${arch//// })
     echo ${arrIN[0]} ${arrIN[1]} agent_${arrIN[0]}_${arrIN[1]}
-    GOOS=${arrIN[0]} GOARCH=${arrIN[1]} go build -o agent_${arrIN[0]}_${arrIN[1]} cmd/agent/agent.go
+    # GOOS=${arrIN[0]} GOARCH=${arrIN[1]} go build -o agent_${arrIN[0]}_${arrIN[1]} cmd/agent/agent.go
 done
 echo $cmd
 
