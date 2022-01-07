@@ -78,8 +78,8 @@ before_script:
 #   script:
 #     - go vet $(dirname $REPO_NAME)/edge-pipeline-service
 
-deploy_dev:
-  stage: deploy
+build_dev:
+  stage: build
   environment:
     name: dev
   only:
@@ -87,10 +87,9 @@ deploy_dev:
     - dev
   script:
     - bash build.sh awsdev $CI_REGISTRY $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
-    # - docker buildx build --push -t "weevenetwork/weeve-agent:1.0.0" --platform linux/amd64 .
 
-deploy_demo:
-  stage: deploy
+build_demo:
+  stage: build
   environment:
     name: demo
   only:
@@ -98,20 +97,21 @@ deploy_demo:
   script:
     - bash build.sh awsdemo $CI_REGISTRY $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD 
 
-deploy_qa:
-  stage: deploy
+build_qa:
+  stage: build
   environment:
     name: qa
   only:
     - qa
   script:
-    - bash build.sh awsqa
+    - bash build.sh awsqa $CI_REGISTRY $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
 
-deploy_prod:
-  stage: deploy
+build_prod:
+  stage: build
   environment:
     name: prod
   only:
     - main
+    - master
   script:
-    - bash build.sh awsprod
+    - bash build.sh awsprod $CI_REGISTRY $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD

@@ -12,7 +12,7 @@ ARG TARGETARCH
 COPY go.mod ./
 COPY go.sum ./
 COPY cmd/ ./
-COPY internal/ ./
+COPY go.mod go.sum cmd/ internal/ ./
 # RUN go get -d -v
 RUN go mod download
 
