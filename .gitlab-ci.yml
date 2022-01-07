@@ -1,0 +1,117 @@
+image: golang:latest
+# image: docker:latest
+
+services:
+  - docker:dind
+
+variables:
+  REPO_NAME: gitlab.com/weeve/platform/agent
+  CROSS_PLATFORMS: ''
+
+cache:
+  paths:
+    - /apt-cache
+    - /go/src/github.com
+    - /go/src/golang.org
+    - /go/src/google.golang.org
+    - /go/src/gopkg.in
+
+# stages:
+# #   - test
+#   - buildx
+#   - deploy
+
+before_script:
+  - apt-get update
+  - apt-get install -y -qq python3-dev python3-pip
+  - apt-get install -y jq
+  - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
+  - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
+  - cd $GOPATH/src/$REPO_NAME
+  - pip3 install --upgrade awscli
+  # - listarch=$(go tool dist list)
+  # - |
+  #   for arch in ${listarch[@]}
+  #   do
+  #     CROSS_PLATFORMS=$CROSS_PLATFORMS,$arch
+  #   done
+  # - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+  # - docker buildx create --name crossbuilder --use
+  # - docker version
+  # - docker buildx
+  # - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+# buildx:
+#   image: docker:19.03-git
+#   stage: buildx
+#   variables:
+#     GIT_STRATEGY: none
+#   artifacts:
+#     paths:
+#       - buildx
+#     expire_in: 1 hour
+#   services:
+#     - docker:20-dind
+#   script:
+#     - export DOCKER_BUILDKIT=1
+#     - git clone git://github.com/docker/buildx ./docker-buildx
+#     - docker build --platform=local -o . ./docker-buildx
+
+# deploy:
+#   image: docker:19.03
+#   stage: deploy
+#   services:
+#     - name: docker:20-dind
+#       command: ["--experimental"]
+#   before_script:
+#     - mkdir -p ~/.docker/cli-plugins
+#     - mv buildx ~/.docker/cli-plugins/docker-buildx
+#     - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+#   script:
+#     # - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+#     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+#     - docker buildx create --use --name mybuilder
+#     - docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 --push -t "$CI_REGISTRY/weevenetwork/weeve_agent:1.0.0" .    
+
+# validate:
+#   stage: test
+#   script:
+#     - go vet $(dirname $REPO_NAME)/edge-pipeline-service
+
+build_dev:
+  stage: build
+  environment:
+    name: dev
+  only:
+    - TTD-1492-Build-binaries
+    - dev
+  script:
+    - bash build.sh awsdev $CI_REGISTRY $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
+
+build_demo:
+  stage: build
+  environment:
+    name: demo
+  only:
+    - demo
+  script:
+    - bash build.sh awsdemo $CI_REGISTRY $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD 
+
+build_qa:
+  stage: build
+  environment:
+    name: qa
+  only:
+    - qa
+  script:
+    - bash build.sh awsqa $CI_REGISTRY $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
+
+build_prod:
+  stage: build
+  environment:
+    name: prod
+  only:
+    - main
+    - master
+  script:
+    - bash build.sh awsprod $CI_REGISTRY $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
