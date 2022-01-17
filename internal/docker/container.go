@@ -204,7 +204,7 @@ func StopContainer(containerId string) error {
 func StartCreateContainer(imageName string, startCommand model.ContainerConfig) (container.ContainerCreateCreatedBody, error) {
 	var containerName = startCommand.ContainerName
 
-	log.Debug("Creating from " + imageName + " container " + containerName)
+	log.Debug("Creating container "+containerName, "from "+imageName)
 	ctx := context.Background()
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -260,7 +260,7 @@ func StartCreateContainer(imageName string, startCommand model.ContainerConfig) 
 		log.Error(err)
 		return containerCreateResponse, err
 	}
-	log.Debug("Started container")
+	log.Debug("Started container!")
 
 	return containerCreateResponse, nil
 }
