@@ -18,3 +18,4 @@ nodeconfig.json
 agent_darwin_amd64
 .vscode/launch.json
 weeve_agent
+nodeconfig.json

@@ -23,7 +23,7 @@ const RootPath = "/"
 
 func DownloadCertificates(payload []byte) map[string]string {
 
-	log.Info("Downloading certificates")
+	log.Info("Downloading certificates ...")
 
 	jsonParsed, err := gabs.ParseJSON(payload)
 	if err != nil {

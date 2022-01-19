@@ -40,7 +40,7 @@ type Params struct {
 	MqttLogs     bool   `long:"mqttlogs" short:"m" description:"For developer - Display detailed MQTT logging messages" required:"false"`
 	NoTLS        bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
 	LogLevel     string `long:"loglevel" short:"l" default:"info" description:"Set the logging level" required:"false"`
-	LogFileName  string `long:"logfilename" default:"logs" description:"Set the name of the log file" required:"false"`
+	LogFileName  string `long:"logfilename" default:"Weeve_Agent.log" description:"Set the name of the log file" required:"false"`
 	LogSize      int    `long:"logsize" default:"1" description:"Set the size of each log files (MB)" required:"false"`
 	LogAge       int    `long:"logage" default:"1" description:"Set the time period to retain the log files (days)" required:"false"`
 	LogBackup    int    `long:"logbackup" default:"5" description:"Set the max number of log files to retain" required:"false"`
@@ -115,9 +115,9 @@ func main() {
 		mqtt.DEBUG = golog.New(logger, "[DEBUG] ", 0)
 	}
 
-	log.Info("Started logging")
+	log.Info("Started logging!")
 
-	log.Info("Logging level set to ", log.GetLevel())
+	log.Info("Logging level set to ", log.GetLevel(), "!")
 
 	// OPTION: Parse and validate the Broker url
 	u, err := url.Parse(opt.Broker)
@@ -133,9 +133,9 @@ func main() {
 		log.Fatalf("Error in --broker option: Specify both protocol:\\\\host in the Broker URL")
 	}
 
-	log.Info(fmt.Sprintf("Broker host %v at port %v over %v", host, port, u.Scheme))
+	log.Info(fmt.Sprintf("Broker host->%v at port->%v over %v", host, port, u.Scheme))
 
-	log.Debug("Broker: ", opt.Broker)
+	log.Debug("Broker >> ", opt.Broker)
 
 	// FLAG: Optionally disable TLS
 	if opt.NoTLS {
@@ -165,7 +165,7 @@ func main() {
 	}
 
 	if !isRegistered {
-		log.Info("Registering node!")
+		log.Info("Registering node and downloading certificate and key ...")
 		registered = false
 		publisher = InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId+"/Registration", false)
 		subscriber = InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId+"/Certificate", true)
@@ -190,7 +190,7 @@ func main() {
 	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		for {
-			log.Debug("Node registered > ", registered, " connected > ", connected)
+			log.Debug("Node registered >> ", registered, " | connected >> ", connected)
 			if registered {
 				if !connected {
 					DisconnectBroker(publisher, subscriber)
@@ -217,7 +217,7 @@ func InitBrokerChannel(nodeConfig map[string]string, pubsubClientId string, isSu
 
 	// var pubsubClient mqtt.Client
 
-	log.Debug("Client id >> : ", pubsubClientId, " is subscription > ", isSubscribe)
+	log.Debug("Client id >> ", pubsubClientId, " | subscription >> ", isSubscribe)
 
 	// Build the options for the mqtt client
 	channelOptions := mqtt.NewClientOptions()
@@ -237,12 +237,12 @@ func InitBrokerChannel(nodeConfig map[string]string, pubsubClientId string, isSu
 		}
 		// log.Debug("Tls Config >> ", tlsconfig)
 		channelOptions.SetTLSConfig(tlsconfig)
-		log.Debug("TLS set on options")
+		log.Debug("TLS set on options.")
 	}
 
-	log.Debug("options:\n", channelOptions)
+	log.Debug("options >> ", channelOptions)
 
-	log.Debug("Finished parsing and MQTT configuration")
+	log.Debug("Parsing done! | MQTT configuration done!")
 
 	pubsubClient := mqtt.NewClient(channelOptions)
 	if token := pubsubClient.Connect(); token.Wait() && token.Error() != nil {
@@ -253,9 +253,9 @@ func InitBrokerChannel(nodeConfig map[string]string, pubsubClientId string, isSu
 		}
 	} else {
 		if isSubscribe {
-			log.Debug("MQTT subscriber connected")
+			log.Debug("MQTT subscriber connected!")
 		} else {
-			log.Debug("MQTT Publisher connected")
+			log.Debug("MQTT Publisher connected!")
 		}
 	}
 
@@ -273,7 +273,8 @@ func NewTLSConfig(nodeConfig map[string]string) (config *tls.Config, err error) 
 	rootCert := path.Join(Root, nodeConfig[internal.AWSRootCertKey])
 	nodeCert := path.Join(Root, nodeConfig[internal.CertificateKey])
 	pvtKey := path.Join(Root, nodeConfig[internal.PrivateKeyKay])
-	log.Debug("MQTT cert paths", pvtKey, " >> ", nodeCert, " >> ")
+	log.Debug("MQTT cert path >> ", nodeCert)
+	log.Debug("MQTT key path >> ", pvtKey)
 	certpool := x509.NewCertPool()
 	pemCerts, err := ioutil.ReadFile(rootCert)
 	if err != nil {
@@ -384,7 +385,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 			marked := internal.MarkNodeRegistered(nodeId, certificates)
 			if marked {
 				registered = true
-				log.Info("Node registered successfully")
+				log.Info("Node registration done | Certificates downloaded!")
 			}
 		}
 	} else {

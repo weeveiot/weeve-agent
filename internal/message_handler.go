@@ -24,11 +24,11 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 		}
 	}()
 
-	log.Info("Processing the message : ", topic_rcvd)
+	log.Info("Processing the message >> ", topic_rcvd)
 
 	jsonParsed, err := gabs.ParseJSON(payload)
 	if err != nil {
-		log.Error("Error on parsing message: ", err)
+		log.Error("Error on parsing message : ", err)
 	} else {
 		log.Debug("Parsed JSON >> ", jsonParsed)
 
@@ -40,9 +40,9 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 			thisManifest.Manifest = *jsonParsed
 			err := deploy.DeployManifest(thisManifest, topic_rcvd)
 			if err != nil {
-				log.Info("Deployment unsuccessful")
+				log.Info("Deployment failed! CAUSE --> ", err, "!")
 			} else {
-				log.Info("Manifest deployed successfully")
+				log.Info("Deployment done!")
 
 			}
 
@@ -52,9 +52,9 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 			thisManifest.Manifest = *jsonParsed
 			err := deploy.DeployManifest(thisManifest, topic_rcvd)
 			if err != nil {
-				log.Info("Redeployment unsuccessful")
+				log.Info("Redeployment failed! CAUSE --> ", err, "!")
 			} else {
-				log.Info("Manifest redeployed successfully")
+				log.Info("Redeployment done!")
 
 			}
 
@@ -103,7 +103,7 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 				if err != nil {
 					log.Error(err)
 				} else {
-					log.Info("Undeployment Successful")
+					log.Info("Undeployment done!")
 				}
 			}
 		}
