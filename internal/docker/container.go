@@ -220,14 +220,14 @@ func StartCreateContainer(imageName string, startCommand model.ContainerConfig) 
 		Cmd:          startCommand.EntryPointArgs,
 		Env:          startCommand.EnvArgs,
 		Tty:          false,
-		ExposedPorts: nil,
+		ExposedPorts: startCommand.ExposedPorts,
 		Labels:       startCommand.Labels,
 		//Volumes:      startCommand.Volumes, // TODO: Remove this later and use only Mounts instead
 	}
 
 	hostConfig := &container.HostConfig{
 		// Binds:        vols_bind, // TODO: Remove once Volumes removed
-		PortBindings: nil,
+		PortBindings: startCommand.PortBinding,
 		NetworkMode:  container.NetworkMode(startCommand.NetworkDriver),
 		RestartPolicy: container.RestartPolicy{
 			Name:              "on-failure",
