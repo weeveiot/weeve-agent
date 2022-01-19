@@ -51,8 +51,7 @@ func DeployManifest(man model.Manifest, command string) error {
 			// msg := "Data service already Exist!"
 			// log.Error(msg)
 			log.Info(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", manifestID, version))
-			ErrorMsg := errors.New("data service already exist")
-			return ErrorMsg
+			return errors.New("data service already exist")
 
 		} else if command == "redeploy" {
 			// Clean old data service resources
@@ -60,8 +59,8 @@ func DeployManifest(man model.Manifest, command string) error {
 			if err != nil {
 				log.Error(deploymentID, "Error while cleaning old data service -> ", err)
 				LogStatus(manifestID, version, "REDEPLOY_FAILED", "Undeployment failed")
-				ErrorMsg := errors.New("redeployment failed")
-				return ErrorMsg
+				return errors.New("redeployment failed")
+
 			}
 		}
 	}
@@ -82,8 +81,8 @@ func DeployManifest(man model.Manifest, command string) error {
 		exists, err := docker.ImageExists(imgDetails.ImageName)
 		if err != nil {
 			log.Error(deploymentID, err)
-			ErrorMsg := errors.New("images exists")
-			return ErrorMsg
+			return errors.New("images exists")
+
 		}
 		if exists { // Image already exists, continue
 			log.Info(deploymentID, fmt.Sprintf("Image %v %v, already exists on host", i, imgDetails.ImageName))
@@ -95,16 +94,15 @@ func DeployManifest(man model.Manifest, command string) error {
 				msg := "404 - Unable to pull image/s, one or more image/s not found"
 				log.Error(deploymentID, msg)
 				LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", msg)
-				ErrorMsg := errors.New("unable to pull image/s, one or more image/s not found")
-				return ErrorMsg
+				return errors.New("unable to pull image/s, one or more image/s not found")
+
 			}
 		}
 	}
 
 	if failed {
 		LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", "Process failed")
-		ErrorMsg := errors.New("failed to pull images")
-		return ErrorMsg
+		return errors.New("failed to pull images")
 	}
 
 	//******** STEP 3 - Create the network *************//
@@ -126,8 +124,7 @@ func DeployManifest(man model.Manifest, command string) error {
 	if networkName == "" {
 		log.Error(deploymentID, "Failed to generate Network Name")
 		LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", "Failed to generate Network Name")
-		ErrorMsg := errors.New("failed to generate network name")
-		return ErrorMsg
+		return errors.New("failed to generate network name")
 
 	}
 
@@ -135,8 +132,7 @@ func DeployManifest(man model.Manifest, command string) error {
 	if err != nil {
 		log.Error(deploymentID, err)
 		LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", err.Error())
-		ErrorMsg := errors.New("failed to create network")
-		return ErrorMsg
+		return errors.New("failed to create network")
 	}
 	log.Info("deploymentID, Created network >> ", networkName)
 
@@ -174,8 +170,7 @@ func DeployManifest(man model.Manifest, command string) error {
 	if failed {
 		LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", "Process failed")
 		UndeployDataService(manifestID, version)
-		ErrorMsg := errors.New("failed to start and create containers")
-		return ErrorMsg
+		return errors.New("failed to start and create containers")
 	}
 	LogStatus(manifestID, version, strings.ToUpper(command)+"ED", strings.Title(command)+"ed successfully")
 
@@ -190,8 +185,7 @@ func StopDataService(manifestID string, version string) error {
 	if err != nil {
 		log.Error("Failed to read data service containers.")
 		LogStatus(manifestID, version, "STOP_SERVICE_FAILED", "Failed to read data service containers")
-		ErrorMsg := errors.New("failed to read data service containers")
-		return ErrorMsg
+		return errors.New("failed to read data service containers")
 	}
 	if len(containers) == 0 {
 		LogStatus(manifestID, version, "STOPPED", "Stopped successfully")
@@ -204,8 +198,8 @@ func StopDataService(manifestID string, version string) error {
 			if err != nil {
 				log.Error("Could not stop a container")
 				LogStatus(manifestID, version, "STOP_CONTAINER_FAILED", "Could not stop a container")
-				ErrorMsg := errors.New("failed to stop container")
-				return ErrorMsg
+				return errors.New("failed to stop container")
+
 			}
 			log.Info(strings.Join(container.Names[:], ","), ": ", container.Status, " --> exited")
 		}
@@ -224,13 +218,11 @@ func StartDataService(manifestID string, version string) error {
 	if err != nil {
 		log.Error("Failed to read data service containers.")
 		LogStatus(manifestID, version, "UNDEPLOY_FAILED", "Failed to read data service containers")
-		ErrorMsg := errors.New("failed to read data service container")
-		return ErrorMsg
+		return errors.New("failed to read data service container")
 	}
 	if len(containers) == 0 {
 		LogStatus(manifestID, version, "START_FAILED", "No data service containers found")
-		ErrorMsg := errors.New("no data service containers found")
-		return ErrorMsg
+		return errors.New("no data service containers found")
 	}
 	for _, container := range containers {
 		if container.State == "exited" || container.State == "created" || container.State == "paused" {
@@ -239,8 +231,8 @@ func StartDataService(manifestID string, version string) error {
 			if !status {
 				log.Error("Could not start a container")
 				LogStatus(manifestID, version, "START_FAILED", "Could not start a container")
-				ErrorMsg := errors.New("failed to start container")
-				return ErrorMsg
+				return errors.New("failed to start container")
+
 			}
 			log.Info(strings.Join(container.Names[:], ","), ": ", container.State, "--> running")
 		}

@@ -40,7 +40,7 @@ type Params struct {
 	MqttLogs     bool   `long:"mqttlogs" short:"m" description:"For developer - Display detailed MQTT logging messages" required:"false"`
 	NoTLS        bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
 	LogLevel     string `long:"loglevel" short:"l" default:"info" description:"Set the logging level" required:"false"`
-	LogFileName  string `long:"logfilename" default:"logs" description:"Set the name of the log file" required:"false"`
+	LogFileName  string `long:"logfilename" default:"Weeve_Agent.log" description:"Set the name of the log file" required:"false"`
 	LogSize      int    `long:"logsize" default:"1" description:"Set the size of each log files (MB)" required:"false"`
 	LogAge       int    `long:"logage" default:"1" description:"Set the time period to retain the log files (days)" required:"false"`
 	LogBackup    int    `long:"logbackup" default:"5" description:"Set the max number of log files to retain" required:"false"`
