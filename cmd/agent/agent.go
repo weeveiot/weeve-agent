@@ -155,12 +155,12 @@ func main() {
 	// Read node configurations
 	nodeConfig = internal.ReadNodeConfig()
 
-	isRegistered := len(nodeConfig[internal.NodeIdKey]) > 0
+	isRegistered := len(nodeConfig[constants.KeyNodeId]) > 0
 
 	if opt.NodeId == "register" && !isRegistered {
 		nodeId = uuid.New().String()
 	} else {
-		nodeId = nodeConfig[internal.NodeIdKey]
+		nodeId = nodeConfig[constants.KeyNodeId]
 		registered = true
 	}
 
@@ -270,9 +270,9 @@ func NewTLSConfig(nodeConfig map[string]string) (config *tls.Config, err error) 
 		return nil, err
 	}
 
-	rootCert := path.Join(Root, nodeConfig[internal.AWSRootCertKey])
-	nodeCert := path.Join(Root, nodeConfig[internal.CertificateKey])
-	pvtKey := path.Join(Root, nodeConfig[internal.PrivateKeyKay])
+	rootCert := path.Join(Root, nodeConfig[constants.KeyAWSRootCert])
+	nodeCert := path.Join(Root, nodeConfig[constants.KeyCertificate])
+	pvtKey := path.Join(Root, nodeConfig[constants.KeyPrivateKey])
 	log.Debug("MQTT cert path >> ", nodeCert)
 	log.Debug("MQTT key path >> ", pvtKey)
 	certpool := x509.NewCertPool()

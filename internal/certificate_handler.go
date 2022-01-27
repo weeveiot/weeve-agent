@@ -5,21 +5,15 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path"
 	"path/filepath"
 
-	"os"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/constants"
 
 	"github.com/Jeffail/gabs/v2"
 	log "github.com/sirupsen/logrus"
 )
-
-const NodeConfigFileName = "nodeconfig.json"
-const CertificateKey = "Certificate"
-const PrivateKeyKay = "PrivateKey"
-const NodeIdKey = "NodeId"
-const AWSRootCertKey = "AWSRootCert"
-const RootPath = "/"
 
 func DownloadCertificates(payload []byte) map[string]string {
 
@@ -30,16 +24,15 @@ func DownloadCertificates(payload []byte) map[string]string {
 		log.Error("Error on parsing message: ", err)
 	}
 
-	json := *jsonParsed
 	certificates := map[string]string{
-		CertificateKey: json.Search(CertificateKey).Data().(string),
-		PrivateKeyKay:  json.Search(PrivateKeyKay).Data().(string),
+		constants.KeyCertificate: jsonParsed.Search(constants.KeyCertificate).Data().(string),
+		constants.KeyPrivateKey:  jsonParsed.Search(constants.KeyPrivateKey).Data().(string),
 	}
 
-	for key, certPath := range certificates {
+	for key, certUrl := range certificates {
 
 		// Get the data
-		resp, err := http.Get(certPath)
+		resp, err := http.Get(certUrl)
 		if err != nil {
 			log.Error("Error to download certificate: ", err)
 			return nil
@@ -47,14 +40,9 @@ func DownloadCertificates(payload []byte) map[string]string {
 
 		defer resp.Body.Close()
 
-		// Root folder of this project
-		dir := filepath.Join(filepath.Dir(os.Args[1]) + RootPath)
-		Root, err := filepath.Abs(dir)
-		if err != nil {
-			return nil
-		}
+		dir, _ := os.Getwd()
 		fileName := filepath.Base(resp.Request.URL.Path)
-		fileNameWithPath := path.Join(Root, fileName)
+		fileNameWithPath := path.Join(dir, "..", "..", fileName)
 
 		out, err := os.Create(fileNameWithPath)
 		if err != nil {
@@ -79,15 +67,15 @@ func DownloadCertificates(payload []byte) map[string]string {
 func CheckIfNodeAlreadyRegistered() bool {
 
 	config := ReadNodeConfig()
-	return len(config[NodeIdKey]) > 0
+	return len(config[constants.KeyNodeId]) > 0
 }
 
 func MarkNodeRegistered(nodeId string, certificates map[string]string) bool {
 
 	nodeConfig := map[string]string{
-		NodeIdKey:      nodeId,
-		CertificateKey: certificates[CertificateKey],
-		PrivateKeyKay:  certificates[PrivateKeyKay],
+		constants.KeyNodeId:      nodeId,
+		constants.KeyCertificate: certificates[constants.KeyCertificate],
+		constants.KeyPrivateKey:  certificates[constants.KeyPrivateKey],
 	}
 
 	UpdateNodeConfig(nodeConfig)
@@ -104,26 +92,16 @@ func UpdateNodeConfig(attrs map[string]string) bool {
 
 	file, _ := json.MarshalIndent(configs, "", " ")
 
-	// Root folder of this project
-	dir := filepath.Join(filepath.Dir(os.Args[1]) + RootPath)
-	Root, err := filepath.Abs(dir)
-	if err != nil {
-		return false
-	}
-	NodeConfigFilePath := path.Join(Root, NodeConfigFileName)
+	dir, _ := os.Getwd()
+	NodeConfigFilePath := path.Join(dir, "..", "..", constants.NodeConfigFile)
 	_ = ioutil.WriteFile(NodeConfigFilePath, file, 0644)
 
 	return true
 }
 
 func ReadNodeConfig() map[string]string {
-	// Root folder of this project
-	dir := filepath.Join(filepath.Dir(os.Args[1]) + RootPath)
-	Root, err := filepath.Abs(dir)
-	if err != nil {
-		return nil
-	}
-	NodeConfigFilePath := path.Join(Root, NodeConfigFileName)
+	dir, _ := os.Getwd()
+	NodeConfigFilePath := path.Join(dir, "..", "..", constants.NodeConfigFile)
 
 	// Open our jsonFile
 	jsonFile, err := os.Open(NodeConfigFilePath)
