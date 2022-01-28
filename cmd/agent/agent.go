@@ -27,7 +27,6 @@ import (
 
 	"github.com/google/uuid"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/constants"
 )
 
 type Params struct {
@@ -155,12 +154,12 @@ func main() {
 	// Read node configurations
 	nodeConfig = internal.ReadNodeConfig()
 
-	isRegistered := len(nodeConfig[constants.KeyNodeId]) > 0
+	isRegistered := len(nodeConfig[internal.KeyNodeId]) > 0
 
 	if opt.NodeId == "register" && !isRegistered {
 		nodeId = uuid.New().String()
 	} else {
-		nodeId = nodeConfig[constants.KeyNodeId]
+		nodeId = nodeConfig[internal.KeyNodeId]
 		registered = true
 	}
 
@@ -170,7 +169,7 @@ func main() {
 		publisher = InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId+"/Registration", false)
 		subscriber = InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId+"/Certificate", true)
 		for {
-			published := PublishMessages(publisher, nodeId, nodeConfig[constants.KeyNodeName], "Registration")
+			published := PublishMessages(publisher, nodeId, nodeConfig[internal.KeyNodeName], "Registration")
 			if published {
 				break
 			}
@@ -270,9 +269,9 @@ func NewTLSConfig(nodeConfig map[string]string) (config *tls.Config, err error) 
 		return nil, err
 	}
 
-	rootCert := path.Join(Root, nodeConfig[constants.KeyAWSRootCert])
-	nodeCert := path.Join(Root, nodeConfig[constants.KeyCertificate])
-	pvtKey := path.Join(Root, nodeConfig[constants.KeyPrivateKey])
+	rootCert := path.Join(Root, nodeConfig[internal.KeyAWSRootCert])
+	nodeCert := path.Join(Root, nodeConfig[internal.KeyCertificate])
+	pvtKey := path.Join(Root, nodeConfig[internal.KeyPrivateKey])
 	log.Debug("MQTT cert path >> ", nodeCert)
 	log.Debug("MQTT key path >> ", pvtKey)
 	certpool := x509.NewCertPool()
@@ -420,30 +419,30 @@ func validateUpdateConfig(nodeConfigs map[string]string) {
 	var configChanged bool
 	nodeConfig := map[string]string{}
 	if opt.NodeId != "register" {
-		nodeConfig[constants.KeyNodeId] = opt.NodeId
+		nodeConfig[internal.KeyNodeId] = opt.NodeId
 		configChanged = true
 	}
 	if len(opt.CertPath) > 0 {
-		nodeConfig[constants.KeyCertificate] = opt.CertPath
+		nodeConfig[internal.KeyCertificate] = opt.CertPath
 		configChanged = true
 	}
 
 	if len(opt.CertPath) > 0 {
-		nodeConfig[constants.KeyPrivateKey] = opt.KeyPath
+		nodeConfig[internal.KeyPrivateKey] = opt.KeyPath
 		configChanged = true
 	}
 
 	if len(opt.NodeName) > 0 {
-		nodeConfig[constants.KeyNodeName] = opt.NodeName
+		nodeConfig[internal.KeyNodeName] = opt.NodeName
 		configChanged = true
 	} else {
-		nodeNm := nodeConfigs[constants.KeyNodeName]
+		nodeNm := nodeConfigs[internal.KeyNodeName]
 		if nodeNm == "" {
 			nodeNm = "New Node"
 		}
 		if nodeNm == "New Node" {
 			nodeNm = fmt.Sprintf("%s%d", nodeNm, mathrand.Intn(10000))
-			nodeConfig[constants.KeyNodeName] = nodeNm
+			nodeConfig[internal.KeyNodeName] = nodeNm
 			configChanged = true
 		}
 	}

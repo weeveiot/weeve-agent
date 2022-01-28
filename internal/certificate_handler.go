@@ -9,8 +9,6 @@ import (
 	"path"
 	"path/filepath"
 
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/constants"
-
 	"github.com/Jeffail/gabs/v2"
 	log "github.com/sirupsen/logrus"
 )
@@ -19,14 +17,14 @@ func DownloadCertificates(payload []byte) map[string]string {
 
 	log.Info("Downloading certificates ...")
 
-	jsonParsed, err := gabs.ParseJSON(payload)
+	json, err := gabs.ParseJSON(payload)
 	if err != nil {
 		log.Error("Error on parsing message: ", err)
 	}
 
 	certificates := map[string]string{
-		constants.KeyCertificate: jsonParsed.Search(constants.KeyCertificate).Data().(string),
-		constants.KeyPrivateKey:  jsonParsed.Search(constants.KeyPrivateKey).Data().(string),
+		KeyCertificate: json.Search(KeyCertificate).Data().(string),
+		KeyPrivateKey:  json.Search(KeyPrivateKey).Data().(string),
 	}
 
 	for key, certUrl := range certificates {
@@ -67,15 +65,15 @@ func DownloadCertificates(payload []byte) map[string]string {
 func CheckIfNodeAlreadyRegistered() bool {
 
 	config := ReadNodeConfig()
-	return len(config[constants.KeyNodeId]) > 0
+	return len(config[KeyNodeId]) > 0
 }
 
 func MarkNodeRegistered(nodeId string, certificates map[string]string) bool {
 
 	nodeConfig := map[string]string{
-		constants.KeyNodeId:      nodeId,
-		constants.KeyCertificate: certificates[constants.KeyCertificate],
-		constants.KeyPrivateKey:  certificates[constants.KeyPrivateKey],
+		KeyNodeId:      nodeId,
+		KeyCertificate: certificates[KeyCertificate],
+		KeyPrivateKey:  certificates[KeyPrivateKey],
 	}
 
 	UpdateNodeConfig(nodeConfig)
@@ -93,7 +91,7 @@ func UpdateNodeConfig(attrs map[string]string) bool {
 	file, _ := json.MarshalIndent(configs, "", " ")
 
 	dir, _ := os.Getwd()
-	NodeConfigFilePath := path.Join(dir, "..", "..", constants.NodeConfigFile)
+	NodeConfigFilePath := path.Join(dir, "..", "..", NodeConfigFile)
 	_ = ioutil.WriteFile(NodeConfigFilePath, file, 0644)
 
 	return true
@@ -101,7 +99,7 @@ func UpdateNodeConfig(attrs map[string]string) bool {
 
 func ReadNodeConfig() map[string]string {
 	dir, _ := os.Getwd()
-	NodeConfigFilePath := path.Join(dir, "..", "..", constants.NodeConfigFile)
+	NodeConfigFilePath := path.Join(dir, "..", "..", NodeConfigFile)
 
 	// Open our jsonFile
 	jsonFile, err := os.Open(NodeConfigFilePath)

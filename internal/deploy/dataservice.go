@@ -12,7 +12,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/constants"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/docker"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util/jsonlines"
@@ -29,7 +28,7 @@ func DeployManifest(man model.Manifest, command string) error {
 	// Check if process is failed and needs to return
 	failed := false
 
-	jsonlines.Insert(constants.ManifestLogFile, man.Manifest.String())
+	jsonlines.Insert(ManifestLogFile, man.Manifest.String())
 
 	//******** STEP 1 - Deploy or Redeploy process *************//
 	manifestID := man.Manifest.Search("id").Data().(string)
@@ -66,11 +65,11 @@ func DeployManifest(man model.Manifest, command string) error {
 	}
 
 	filter := map[string]string{"id": man.Manifest.Search("id").Data().(string), "version": man.Manifest.Search("version").Data().(string)}
-	jsonlines.Delete(constants.ManifestFile, "", "", filter, true)
+	jsonlines.Delete(ManifestFile, "", "", filter, true)
 
 	// need to set some default manifest in manifest.jsonl so later could log without errors
 	man.Manifest.Set("DEPLOYING_IN_PROGRESS", "status")
-	jsonlines.Insert(constants.ManifestFile, man.Manifest.String())
+	jsonlines.Insert(ManifestFile, man.Manifest.String())
 
 	//******** STEP 2 - Pull all images *************//
 	// Pull all images as required
@@ -339,7 +338,7 @@ func UndeployDataService(manifestID string, version string) error {
 
 	// Remove records from manifest.jsonl
 	filterLog := map[string]string{"id": manifestID, "version": version}
-	deleted := jsonlines.Delete(constants.ManifestFile, "", "", filterLog, true)
+	deleted := jsonlines.Delete(ManifestFile, "", "", filterLog, true)
 	if !deleted {
 		log.Error(deploymentID, "Could not remove old records from manifest.jsonl")
 	}
@@ -376,8 +375,8 @@ func DataServiceExist(manifestID string, version string) (bool, error) {
 
 func LogStatus(manifestID string, manifestVersion string, statusVal string, statusReason string) {
 	filter := map[string]string{"id": manifestID, "version": manifestVersion}
-	mani := jsonlines.Read(constants.ManifestFile, "", "", filter, false)
-	deleted := jsonlines.Delete(constants.ManifestFile, "", "", filter, true)
+	mani := jsonlines.Read(ManifestFile, "", "", filter, false)
+	deleted := jsonlines.Delete(ManifestFile, "", "", filter, true)
 	if !deleted {
 		log.Error("Could not remove old records from manifest.jsonl")
 	}
@@ -389,7 +388,7 @@ func LogStatus(manifestID string, manifestVersion string, statusVal string, stat
 		if err != nil {
 			log.Error("Could not convert map to json when logging status of the manifest")
 		}
-		inserted := jsonlines.Insert(constants.ManifestFile, string(maniJSON))
+		inserted := jsonlines.Insert(ManifestFile, string(maniJSON))
 		if !inserted {
 			log.Error("Could not log manifest status")
 		}

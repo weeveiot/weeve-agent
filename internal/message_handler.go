@@ -6,10 +6,8 @@ import (
 	"github.com/Jeffail/gabs/v2"
 	log "github.com/sirupsen/logrus"
 
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
-
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/constants"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/deploy"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util/jsonlines"
 )
 
@@ -113,7 +111,7 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 }
 
 func GetStatusMessage(nodeId string) model.StatusMessage {
-	manifests := jsonlines.Read(constants.ManifestFile, "", "", nil, false)
+	manifests := jsonlines.Read(deploy.ManifestFile, "", "", nil, false)
 
 	var mani []model.ManifestStatus
 	var deviceParams = model.DeviceParams{Sensors: "10", Uptime: "10", CpuTemp: "20"}
