@@ -1,10 +1,8 @@
 .vscode/
-.vscode/*
 /.project
-/bin/
 /.classpath
+/bin/
 /pkg/
-/src/*.exe
 *.exe
 build/
 *.pem
@@ -14,8 +12,6 @@ build/
 *.jsonl
 node_listener
 node-service
-nodeconfig.json
 agent_darwin_amd64
-.vscode/launch.json
 weeve_agent
 nodeconfig.json
