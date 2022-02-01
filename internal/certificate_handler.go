@@ -13,6 +13,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const NodeConfigFile = "nodeconfig.json"
+const KeyCertificate = "Certificate"
+const KeyPrivateKey = "PrivateKey"
+const KeyNodeId = "NodeId"
+const KeyNodeName = "NodeName"
+const KeyAWSRootCert = "AWSRootCert"
+
 func DownloadCertificates(payload []byte) map[string]string {
 
 	log.Info("Downloading certificates ...")
@@ -38,10 +45,17 @@ func DownloadCertificates(payload []byte) map[string]string {
 
 		defer resp.Body.Close()
 
-		dir, _ := os.Getwd()
-		fileName := filepath.Base(resp.Request.URL.Path)
-		fileNameWithPath := path.Join(dir, "..", "..", fileName)
+		// Create a new dir for certificates if not already created
+		const certDirName = "certs"
+		certDir := path.Join(getExeDir(), certDirName)
+		err = os.MkdirAll(certDir, 0755)
+		if err != nil {
+			log.Error("Could not create the directory ", certDir, err)
+		}
 
+		// Create a new file to put the certificate in
+		fileName := filepath.Base(resp.Request.URL.Path)
+		fileNameWithPath := path.Join(certDir, fileName)
 		out, err := os.Create(fileNameWithPath)
 		if err != nil {
 			log.Error("Error to create file: ", fileName, err)
@@ -68,7 +82,7 @@ func CheckIfNodeAlreadyRegistered() bool {
 	return len(config[KeyNodeId]) > 0
 }
 
-func MarkNodeRegistered(nodeId string, certificates map[string]string) bool {
+func MarkNodeRegistered(nodeId string, certificates map[string]string) {
 
 	nodeConfig := map[string]string{
 		KeyNodeId:      nodeId,
@@ -77,10 +91,9 @@ func MarkNodeRegistered(nodeId string, certificates map[string]string) bool {
 	}
 
 	UpdateNodeConfig(nodeConfig)
-	return true
 }
 
-func UpdateNodeConfig(attrs map[string]string) bool {
+func UpdateNodeConfig(attrs map[string]string) {
 	configs := ReadNodeConfig()
 
 	for k, v := range attrs {
@@ -90,33 +103,36 @@ func UpdateNodeConfig(attrs map[string]string) bool {
 
 	file, _ := json.MarshalIndent(configs, "", " ")
 
-	dir, _ := os.Getwd()
-	NodeConfigFilePath := path.Join(dir, "..", "..", NodeConfigFile)
+	NodeConfigFilePath := path.Join(getExeDir(), NodeConfigFile)
 	_ = ioutil.WriteFile(NodeConfigFilePath, file, 0644)
-
-	return true
 }
 
 func ReadNodeConfig() map[string]string {
-	dir, _ := os.Getwd()
-	NodeConfigFilePath := path.Join(dir, "..", "..", NodeConfigFile)
+	NodeConfigFilePath := path.Join(getExeDir(), NodeConfigFile)
 
-	// Open our jsonFile
 	jsonFile, err := os.Open(NodeConfigFilePath)
 	if err != nil {
 		log.Fatalf("Unable to open node configuration file: %v", err)
 	}
+	defer jsonFile.Close()
 	// read our opened jsonFile as a byte array.
 	byteValue, err := ioutil.ReadAll(jsonFile)
 	if err != nil {
 		log.Fatalf("Unable to read node configuration file: %v", err)
 	}
 
-	// we initialize our Users array
 	var config map[string]string
 
-	// unmarshal byteArray
 	json.Unmarshal(byteValue, &config)
 
 	return config
+}
+
+func getExeDir() string {
+	exePath, err := os.Executable()
+	if err != nil {
+		log.Fatal("Could not get the path to the executable.")
+	}
+	dir := filepath.Dir(exePath)
+	return dir
 }

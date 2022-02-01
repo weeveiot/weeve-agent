@@ -17,6 +17,9 @@ import (
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util/jsonlines"
 )
 
+const ManifestFile = "manifests.jsonl"
+const ManifestLogFile = "manifests_log.jsonl"
+
 func DeployManifest(man model.Manifest, command string) error {
 
 	var err = model.ValidateManifest(man)

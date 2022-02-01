@@ -160,7 +160,6 @@ func main() {
 		nodeId = uuid.New().String()
 	} else {
 		nodeId = nodeConfig[internal.KeyNodeId]
-		registered = true
 	}
 
 	if !isRegistered {
@@ -175,18 +174,15 @@ func main() {
 			}
 			time.Sleep(time.Second * 5)
 		}
-
 	} else {
 		log.Info("Node already registered!")
 		registered = true
 	}
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-
-	// MAIN LOOP
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
+
+	// MAIN LOOP
 	go func() {
 		for {
 			log.Debug("Node registered >> ", registered, " | connected >> ", connected)
@@ -198,17 +194,16 @@ func main() {
 					subscriber = InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId, true)
 					connected = true
 				}
-				CheckBrokerConnection(publisher, subscriber)
+				ReconnectIfNecessary(publisher, subscriber)
 				PublishMessages(publisher, nodeId, "", "All")
 			}
 
 			time.Sleep(time.Second * time.Duration(opt.Heartbeat))
 		}
 	}()
-	<-done
 
 	// Cleanup on ending the process
-	<-c
+	<-done
 	DisconnectBroker(publisher, subscriber)
 }
 
@@ -295,7 +290,7 @@ func NewTLSConfig(nodeConfig map[string]string) (config *tls.Config, err error) 
 	return config, nil
 }
 
-func CheckBrokerConnection(publisher mqtt.Client, subscriber mqtt.Client) {
+func ReconnectIfNecessary(publisher mqtt.Client, subscriber mqtt.Client) {
 	// Attempt reconnect
 	if !publisher.IsConnected() {
 		log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
@@ -309,7 +304,7 @@ func CheckBrokerConnection(publisher mqtt.Client, subscriber mqtt.Client) {
 		log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
 
 		if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
-			log.Errorf("failed to create subscriber connection: %v", token.Error())
+			log.Error("failed to create subscriber connection: ", token.Error())
 		}
 	}
 }
@@ -381,11 +376,9 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 		certificates := internal.DownloadCertificates(msg.Payload())
 		if certificates != nil {
 			time.Sleep(time.Second * 10)
-			marked := internal.MarkNodeRegistered(nodeId, certificates)
-			if marked {
-				registered = true
-				log.Info("Node registration done | Certificates downloaded!")
-			}
+			internal.MarkNodeRegistered(nodeId, certificates)
+			registered = true
+			log.Info("Node registration done | Certificates downloaded!")
 		}
 	} else {
 		if strings.HasPrefix(msg.Topic(), opt.SubClientId+"/"+nodeId+"/") {
@@ -394,7 +387,6 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 
 		internal.ProcessMessage(topic_rcvd, msg.Payload(), false)
 	}
-
 }
 
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
@@ -422,12 +414,9 @@ func validateUpdateConfig(nodeConfigs map[string]string) {
 		nodeConfig[internal.KeyNodeId] = opt.NodeId
 		configChanged = true
 	}
-	if len(opt.CertPath) > 0 {
-		nodeConfig[internal.KeyCertificate] = opt.CertPath
-		configChanged = true
-	}
 
 	if len(opt.CertPath) > 0 {
+		nodeConfig[internal.KeyCertificate] = opt.CertPath
 		nodeConfig[internal.KeyPrivateKey] = opt.KeyPath
 		configChanged = true
 	}
@@ -446,6 +435,7 @@ func validateUpdateConfig(nodeConfigs map[string]string) {
 			configChanged = true
 		}
 	}
+
 	if configChanged {
 		internal.UpdateNodeConfig(nodeConfig)
 	}
