@@ -11,6 +11,7 @@ import (
 
 	"github.com/Jeffail/gabs/v2"
 	log "github.com/sirupsen/logrus"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
 )
 
 const NodeConfigFile = "nodeconfig.json"
@@ -19,6 +20,7 @@ const KeyPrivateKey = "PrivateKey"
 const KeyNodeId = "NodeId"
 const KeyNodeName = "NodeName"
 const KeyAWSRootCert = "AWSRootCert"
+const CertDirName = "certs"
 
 func DownloadCertificates(payload []byte) map[string]string {
 
@@ -46,9 +48,8 @@ func DownloadCertificates(payload []byte) map[string]string {
 		defer resp.Body.Close()
 
 		// Create a new dir for certificates if not already created
-		const certDirName = "certs"
-		certDir := path.Join(getExeDir(), certDirName)
-		err = os.MkdirAll(certDir, 0755)
+		certDir := path.Join(util.GetExeDir(), CertDirName)
+		err = os.MkdirAll(certDir, 0700)
 		if err != nil {
 			log.Error("Could not create the directory ", certDir, err)
 		}
@@ -103,12 +104,12 @@ func UpdateNodeConfig(attrs map[string]string) {
 
 	file, _ := json.MarshalIndent(configs, "", " ")
 
-	NodeConfigFilePath := path.Join(getExeDir(), NodeConfigFile)
+	NodeConfigFilePath := path.Join(util.GetExeDir(), NodeConfigFile)
 	_ = ioutil.WriteFile(NodeConfigFilePath, file, 0644)
 }
 
 func ReadNodeConfig() map[string]string {
-	NodeConfigFilePath := path.Join(getExeDir(), NodeConfigFile)
+	NodeConfigFilePath := path.Join(util.GetExeDir(), NodeConfigFile)
 
 	jsonFile, err := os.Open(NodeConfigFilePath)
 	if err != nil {
@@ -126,13 +127,4 @@ func ReadNodeConfig() map[string]string {
 	json.Unmarshal(byteValue, &config)
 
 	return config
-}
-
-func getExeDir() string {
-	exePath, err := os.Executable()
-	if err != nil {
-		log.Fatal("Could not get the path to the executable.")
-	}
-	dir := filepath.Dir(exePath)
-	return dir
 }

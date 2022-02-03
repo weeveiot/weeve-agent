@@ -27,6 +27,7 @@ import (
 
 	"github.com/google/uuid"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
 )
 
 type Params struct {
@@ -65,8 +66,6 @@ var nodeId string
 var parser = flags.NewParser(&opt, flags.Default)
 var registered = false
 var connected = false
-
-const RootPath = "/"
 
 // logging into the terminal and files
 func init() {
@@ -257,18 +256,14 @@ func InitBrokerChannel(nodeConfig map[string]string, pubsubClientId string, isSu
 }
 
 func NewTLSConfig(nodeConfig map[string]string) (config *tls.Config, err error) {
-	// Root folder of this project
-	dir := filepath.Join(filepath.Dir(os.Args[1]) + RootPath)
-	Root, err := filepath.Abs(dir)
-	if err != nil {
-		return nil, err
-	}
+	certDir := path.Join(util.GetExeDir(), internal.CertDirName)
+	rootCert := path.Join(certDir, nodeConfig[internal.KeyAWSRootCert])
+	nodeCert := path.Join(certDir, nodeConfig[internal.KeyCertificate])
+	pvtKey := path.Join(certDir, nodeConfig[internal.KeyPrivateKey])
 
-	rootCert := path.Join(Root, nodeConfig[internal.KeyAWSRootCert])
-	nodeCert := path.Join(Root, nodeConfig[internal.KeyCertificate])
-	pvtKey := path.Join(Root, nodeConfig[internal.KeyPrivateKey])
 	log.Debug("MQTT cert path >> ", nodeCert)
 	log.Debug("MQTT key path >> ", pvtKey)
+
 	certpool := x509.NewCertPool()
 	pemCerts, err := ioutil.ReadFile(rootCert)
 	if err != nil {

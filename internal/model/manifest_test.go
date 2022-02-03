@@ -5,8 +5,6 @@ import (
 	"os"
 	"testing"
 
-	// "gitlab.com/weeve/poc-festo/poc-festo-mqtts-ethereum-gateway/internal/parser"
-
 	_ "gitlab.com/weeve/edge-server/edge-pipeline-service/testing"
 )
 

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -70,4 +72,13 @@ func StringArrayContains(stringArray []string, findString string) bool {
 		}
 	}
 	return false
+}
+
+func GetExeDir() string {
+	exePath, err := os.Executable()
+	if err != nil {
+		log.Fatal("Could not get the path to the executable.")
+	}
+	dir := filepath.Dir(exePath)
+	return dir
 }
