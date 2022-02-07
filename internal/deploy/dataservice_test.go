@@ -8,9 +8,7 @@ package deploy_test
 import (
 	"context"
 	"io/ioutil"
-	"os"
 	"path"
-	"path/filepath"
 	"testing"
 
 	"github.com/Jeffail/gabs/v2"
@@ -21,6 +19,7 @@ import (
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/deploy"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/docker"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
 )
 
 var manifestID = "PLACEHOLDER"
@@ -31,7 +30,6 @@ var version2 = "PLACEHOLDER"
 const manifestPath = "testdata/manifest/test_manifest.json"
 const manifestPath2 = "testdata/manifest/test_manifest_copy.json"
 const manifestPathRedeploy = "testdata/manifest/test_manifest_redeploy.json"
-const RootPath = "/"
 
 func TestDeployManifest(t *testing.T) {
 	log.Info("TESTING DEPLOYMENT...")
@@ -423,13 +421,7 @@ func TestRedeployDataService(t *testing.T) {
 
 // LoadJsonBytes reads file containts into byte[]
 func LoadJSONBytes(manName string) []byte {
-	// Root folder of this project
-	dir := filepath.Join(filepath.Dir(os.Args[1]) + RootPath)
-	Root, err := filepath.Abs(dir)
-	if err != nil {
-		return nil
-	}
-	manifestPath := path.Join(Root, manName)
+	manifestPath := path.Join(util.GetExeDir(), manName)
 
 	manifestBytes, err := ioutil.ReadFile(manifestPath)
 	if err != nil {

@@ -27,7 +27,7 @@ import (
 
 	"github.com/google/uuid"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/constants"
+	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
 )
 
 type Params struct {
@@ -66,8 +66,6 @@ var nodeId string
 var parser = flags.NewParser(&opt, flags.Default)
 var registered = false
 var connected = false
-
-const RootPath = "/"
 
 // logging into the terminal and files
 func init() {
@@ -155,13 +153,12 @@ func main() {
 	// Read node configurations
 	nodeConfig = internal.ReadNodeConfig()
 
-	isRegistered := len(nodeConfig[internal.NodeIdKey]) > 0
+	isRegistered := len(nodeConfig[internal.KeyNodeId]) > 0
 
 	if opt.NodeId == "register" && !isRegistered {
 		nodeId = uuid.New().String()
 	} else {
-		nodeId = nodeConfig[internal.NodeIdKey]
-		registered = true
+		nodeId = nodeConfig[internal.KeyNodeId]
 	}
 
 	if !isRegistered {
@@ -170,24 +167,21 @@ func main() {
 		publisher = InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId+"/Registration", false)
 		subscriber = InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId+"/Certificate", true)
 		for {
-			published := PublishMessages(publisher, nodeId, nodeConfig[constants.KeyNodeName], "Registration")
+			published := PublishMessages(publisher, nodeId, nodeConfig[internal.KeyNodeName], "Registration")
 			if published {
 				break
 			}
 			time.Sleep(time.Second * 5)
 		}
-
 	} else {
 		log.Info("Node already registered!")
 		registered = true
 	}
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-
-	// MAIN LOOP
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
+
+	// MAIN LOOP
 	go func() {
 		for {
 			log.Debug("Node registered >> ", registered, " | connected >> ", connected)
@@ -199,17 +193,16 @@ func main() {
 					subscriber = InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId, true)
 					connected = true
 				}
-				CheckBrokerConnection(publisher, subscriber)
+				ReconnectIfNecessary(publisher, subscriber)
 				PublishMessages(publisher, nodeId, "", "All")
 			}
 
 			time.Sleep(time.Second * time.Duration(opt.Heartbeat))
 		}
 	}()
-	<-done
 
 	// Cleanup on ending the process
-	<-c
+	<-done
 	DisconnectBroker(publisher, subscriber)
 }
 
@@ -263,18 +256,14 @@ func InitBrokerChannel(nodeConfig map[string]string, pubsubClientId string, isSu
 }
 
 func NewTLSConfig(nodeConfig map[string]string) (config *tls.Config, err error) {
-	// Root folder of this project
-	dir := filepath.Join(filepath.Dir(os.Args[1]) + RootPath)
-	Root, err := filepath.Abs(dir)
-	if err != nil {
-		return nil, err
-	}
+	certDir := path.Join(util.GetExeDir(), internal.CertDirName)
+	rootCert := path.Join(certDir, nodeConfig[internal.KeyAWSRootCert])
+	nodeCert := path.Join(certDir, nodeConfig[internal.KeyCertificate])
+	pvtKey := path.Join(certDir, nodeConfig[internal.KeyPrivateKey])
 
-	rootCert := path.Join(Root, nodeConfig[internal.AWSRootCertKey])
-	nodeCert := path.Join(Root, nodeConfig[internal.CertificateKey])
-	pvtKey := path.Join(Root, nodeConfig[internal.PrivateKeyKay])
 	log.Debug("MQTT cert path >> ", nodeCert)
 	log.Debug("MQTT key path >> ", pvtKey)
+
 	certpool := x509.NewCertPool()
 	pemCerts, err := ioutil.ReadFile(rootCert)
 	if err != nil {
@@ -296,7 +285,7 @@ func NewTLSConfig(nodeConfig map[string]string) (config *tls.Config, err error) 
 	return config, nil
 }
 
-func CheckBrokerConnection(publisher mqtt.Client, subscriber mqtt.Client) {
+func ReconnectIfNecessary(publisher mqtt.Client, subscriber mqtt.Client) {
 	// Attempt reconnect
 	if !publisher.IsConnected() {
 		log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
@@ -310,7 +299,7 @@ func CheckBrokerConnection(publisher mqtt.Client, subscriber mqtt.Client) {
 		log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
 
 		if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
-			log.Errorf("failed to create subscriber connection: %v", token.Error())
+			log.Error("failed to create subscriber connection: ", token.Error())
 		}
 	}
 }
@@ -382,11 +371,9 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 		certificates := internal.DownloadCertificates(msg.Payload())
 		if certificates != nil {
 			time.Sleep(time.Second * 10)
-			marked := internal.MarkNodeRegistered(nodeId, certificates)
-			if marked {
-				registered = true
-				log.Info("Node registration done | Certificates downloaded!")
-			}
+			internal.MarkNodeRegistered(nodeId, certificates)
+			registered = true
+			log.Info("Node registration done | Certificates downloaded!")
 		}
 	} else {
 		if strings.HasPrefix(msg.Topic(), opt.SubClientId+"/"+nodeId+"/") {
@@ -395,7 +382,6 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 
 		internal.ProcessMessage(topic_rcvd, msg.Payload(), false)
 	}
-
 }
 
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
@@ -420,33 +406,31 @@ func validateUpdateConfig(nodeConfigs map[string]string) {
 	var configChanged bool
 	nodeConfig := map[string]string{}
 	if opt.NodeId != "register" {
-		nodeConfig[constants.KeyNodeId] = opt.NodeId
-		configChanged = true
-	}
-	if len(opt.CertPath) > 0 {
-		nodeConfig[constants.KeyCertificate] = opt.CertPath
+		nodeConfig[internal.KeyNodeId] = opt.NodeId
 		configChanged = true
 	}
 
 	if len(opt.CertPath) > 0 {
-		nodeConfig[constants.KeyPrivateKey] = opt.KeyPath
+		nodeConfig[internal.KeyCertificate] = opt.CertPath
+		nodeConfig[internal.KeyPrivateKey] = opt.KeyPath
 		configChanged = true
 	}
 
 	if len(opt.NodeName) > 0 {
-		nodeConfig[constants.KeyNodeName] = opt.NodeName
+		nodeConfig[internal.KeyNodeName] = opt.NodeName
 		configChanged = true
 	} else {
-		nodeNm := nodeConfigs[constants.KeyNodeName]
+		nodeNm := nodeConfigs[internal.KeyNodeName]
 		if nodeNm == "" {
 			nodeNm = "New Node"
 		}
 		if nodeNm == "New Node" {
 			nodeNm = fmt.Sprintf("%s%d", nodeNm, mathrand.Intn(10000))
-			nodeConfig[constants.KeyNodeName] = nodeNm
+			nodeConfig[internal.KeyNodeName] = nodeNm
 			configChanged = true
 		}
 	}
+
 	if configChanged {
 		internal.UpdateNodeConfig(nodeConfig)
 	}

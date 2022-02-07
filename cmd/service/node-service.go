@@ -7,7 +7,6 @@ import (
 
 	"github.com/jessevdk/go-flags"
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal"
-	// "gitlab.com/weeve/edge-server/edge-pipeline-service/internal/constants"
 )
 
 type Options struct {
