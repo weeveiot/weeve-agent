@@ -55,13 +55,14 @@ In a new terminal instance, subscribe to all topics for that broker; `mosquitto_
 #### Terminal: Weeve agent
 In a final terminal, run the weeve agent and connect to the broker to publish status messages;
 ```bash
-go run ./cmd/agent/agent.go -v --notls \
+go run <path-to-agent>/agent.go -v --notls \
     --broker tcp://localhost:8080 \ # Broker to connect to \
     --subClientId nodes/localtest \ # Subscriber ClientId \
     --pubClientId manager/localtest \ # Publisher ClientId \
     --publish CheckVersion  \ # Topic Name \
 	--heartbeat 3 # Status message publishing interval
     --nodeId local-test-node-1 \ # ID of this node optional \
+	--config <path-to-config>
 ```
 
 The `-v` flag enables logs in terminal, and the `--notls` flag disables TLS configuation. Further logs from the `paho` MQTT client can be enabled with the `--mqttlogs` flag, and the `--loglevel` flag enables to set desired logging level.
@@ -69,15 +70,14 @@ The `-v` flag enables logs in terminal, and the `--notls` flag disables TLS conf
 ### With TLS
 
 #### Manual Node Provisioning
-Start with registering a new Node with GraphQL or with weeve UI. Then download corresponding pem certificate and key from AWS S3 to your device,
-and place them in a root directory of a cloned weeve Agent code. Download AmazonRootCA1.pem from Google.
-Since TLS configuration requires the full path to all secrets and certificates, executed the following code in weeve Agent directory:
+Start with registering a new Node with GraphQL or with weeve UI. Then download corresponding pem certificate and key from AWS S3 to your device as well as AmazonRootCA1.pem from Google.
+Since TLS configuration requires the full path to all secrets and certificates, execute the following code:
 
 ```bash
-SERVER_CERTIFICATE=AmazonRootCA1.pem
-CLIENT_CERTIFICATE=<nodeid>-certificate.pem.crt
-CLIENT_PRIVATE_KEY=<nodeid>-private.pem.key
-go run ./cmd/agent/agent.go -v \
+SERVER_CERTIFICATE=<path-to-root-cert>/AmazonRootCA1.pem
+CLIENT_CERTIFICATE=<path-to-cert>/<nodeid>-certificate.pem.crt
+CLIENT_PRIVATE_KEY=<path-to-private-key>/<nodeid>-private.pem.key
+go run <path-to-agent>/agent.go -v \
 	--nodeId awsdev-test-node-1 \ # ID of this node (optional here)\
 	--name awsdev-test-node-1 \ # Name of this node (optional here)\
     --broker tls://<broker host url>:8883 \ # Broker to connect to \
@@ -85,6 +85,7 @@ go run ./cmd/agent/agent.go -v \
     --pubClientId manager/awsdev \ # Publisher ClientId \
     --publish status \ # Topic bame for publishing status messages \
 	--heartbeat 10   # Status message publishing interval \
+	--config <path-to-config>
 	# --mqttlogs # Enable detailed debug logs for the MQTT connection
 ```
 
@@ -97,33 +98,34 @@ Download AmazonRootCA1.pem from Google. Then, follow the steps:
 1) Set up nodeconfig.json with bootstrap details (see [Config Options](#config-options)):
 ```json
 {
-	"AWSRootCert": "AmazonRootCA1.pem",
-	"Certificate": "<bootstrap_id>-certificate.pem.crt",
+	"AWSRootCert": "/path/to/AmazonRootCA1.pem",
+	"Certificate": "/path/to/<bootstrap_id>-certificate.pem.crt",
 	"NodeId": "",
 	"NodeName": "Node-Sample-1",
-	"PrivateKey": "<bootstrap_id>-private.pem.key"
+	"PrivateKey": "/path/to/<bootstrap_id>-private.pem.key"
 }
 ```
 
-2) Run command in weeve Agent root directory:
+1) Run command:
 ```bash
-go run ./cmd/agent/agent.go -v \
+go run <path-to-agent>/agent.go -v \
 	--broker tls://<broker host url>:8883 \ # Broker to connect to \
 	--subClientId nodes/awsdev \ # Subscriber ClientId \
 	--pubClientId manager/awsdev \  # Publisher ClientId \
 	--publish CheckVersion \ # Topic bame for publishing status messages \
 	--heartbeat 60 # Status message publishing interval \
+	--config <path-to-config>
 ```
 
 # Config options
 All the below params can be updated into json instead of arguments as above
 ```json
 {
-    "AWSRootCert": "AmazonRootCA1.pem",
-	"PrivateKey": "<node private key/bootstrap private key file name>",
-    "Certificate": "<node certificate/bootstrap certificate file name>",
-    "NodeId": "<node id>" //Empty initially for auto registration    
-	"NodeName": "<node name>" //Node name for auto registration  
+    "AWSRootCert": "/path/to/AmazonRootCA1.pem",
+	"PrivateKey": "/path/to/<node private key/bootstrap private key file name>",
+    "Certificate": "/path/to/<node certificate/bootstrap certificate file name>",
+    "NodeId": "<node id>" //Empty initially for auto registration
+	"NodeName": "<node name>" //Node name for auto registration
 }
 ```
 

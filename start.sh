@@ -1,11 +1,15 @@
-NODE_ID=7ced3826-7738-4c9f-84b8-9302cb436e89
+#!/usr/bin/bash
+NODE_ID=4be43aa6f1
 
+# source: https://stackoverflow.com/questions/59895/how-can-i-get-the-source-directory-of-a-bash-script-from-within-the-script-itsel
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-SERVER_CERTIFICATE=./AmazonRootCA1.pem
-CLIENT_CERTIFICATE=./$NODE_ID-certificate.pem.crt
-CLIENT_PRIVATE_KEY=./$NODE_ID-private.pem.key
+SERVER_CERTIFICATE=$SCRIPT_DIR/certs/AmazonRootCA1.pem
+CLIENT_CERTIFICATE=$SCRIPT_DIR/certs/$NODE_ID-certificate.pem.crt
+CLIENT_PRIVATE_KEY=$SCRIPT_DIR/certs/$NODE_ID-private.pem.key
 
-sudo ./agent -v \
+go run $SCRIPT_DIR/cmd/agent/agent.go \
+    -v \ # verbose \
     --nodeId $NODE_ID \ # ID of this node \
     --broker tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883 \ # Broker to connect to \
     --rootcert $SERVER_CERTIFICATE \ #\
@@ -14,4 +18,6 @@ sudo ./agent -v \
     --subClientId nodes/awsdemo \ # Subscriber ClientId \
     --pubClientId manager/awsdemo \ # Publisher ClientId \
     --publish status \ # Topic bame for publishing status messages \
-    --heartbeat 10
+    --heartbeat 10 \
+    --loglevel debug \
+    --config $SCRIPT_DIR/nodeconfig.json
