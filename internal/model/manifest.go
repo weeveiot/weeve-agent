@@ -186,11 +186,11 @@ func (m Manifest) GetContainerStart(networkName string) []ContainerConfig {
 		thisStartCommand.Labels = m.GetLabels()
 		thisStartCommand.NetworkDriver = m.Manifest.Search("networks").Search("driver").Data().(string)
 
-		// Set placeholders for ports binding values HostIP and HostPort
 		var doc_data = mod.Search("document").Data()
 		if doc_data != nil {
 			ParseDocumentTag(mod.Search("document").Data(), &thisStartCommand)
 
+			/* BELOW IS A TEMPORARY SOLUTION TO PORT BINDINGS - NEEDS TO BE REFACTORED */
 			// Read which environmental variables are for ports binding
 			var document = doc_data.(string)
 			document = strings.ReplaceAll(document, "'", "\"")
@@ -200,6 +200,7 @@ func (m Manifest) GetContainerStart(networkName string) []ContainerConfig {
 			}
 			ports_values_map := man_doc.Search("ports").ChildrenMap()
 			if len(ports_values_map) != 0 {
+				// Set placeholders for ports binding values HostIP and HostPort
 				var hostIP = ""
 				var hostPort = ""
 				hostIP_tag := ports_values_map["HostIP"].Data().(string)
@@ -229,6 +230,8 @@ func (m Manifest) GetContainerStart(networkName string) []ContainerConfig {
 							},
 						},
 					}
+				} else {
+					log.Error("Failed ports binding - module environments passed in manifest document ports section do not exist.")
 				}
 			}
 		}
