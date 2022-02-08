@@ -189,6 +189,51 @@ func (m Manifest) GetContainerStart(networkName string) []ContainerConfig {
 		var doc_data = mod.Search("document").Data()
 		if doc_data != nil {
 			ParseDocumentTag(mod.Search("document").Data(), &thisStartCommand)
+
+			/* BELOW IS A TEMPORARY SOLUTION TO PORT BINDINGS - NEEDS TO BE REFACTORED */
+			// Read which environmental variables are for ports binding
+			var document = doc_data.(string)
+			document = strings.ReplaceAll(document, "'", "\"")
+			man_doc, err := gabs.ParseJSON([]byte(document))
+			if err != nil {
+				log.Error("Error on parsing document tag ", err)
+			}
+			ports_values_map := man_doc.Search("ports").ChildrenMap()
+			if len(ports_values_map) != 0 {
+				// Set placeholders for ports binding values HostIP and HostPort
+				var hostIP = ""
+				var hostPort = ""
+				hostIP_tag := ports_values_map["HostIP"].Data().(string)
+				hostPort_tag := ports_values_map["HostPort"].Data().(string)
+
+				for _, env := range mod.Search("environments").Children() {
+					if env.Search("key").Data().(string) == hostIP_tag {
+						hostIP = env.Search("value").Data().(string)
+					}
+					if env.Search("key").Data().(string) == hostPort_tag {
+						hostPort = env.Search("value").Data().(string)
+					}
+				}
+
+				// Handle Ports Binding
+				if hostIP != "" && hostPort != "" {
+					// expose 80/tcp as weeve default port in containers
+					thisStartCommand.ExposedPorts = nat.PortSet{
+						nat.Port("80/tcp"): struct{}{},
+					}
+
+					thisStartCommand.PortBinding = nat.PortMap{
+						nat.Port("80/tcp"): []nat.PortBinding{
+							{
+								HostIP:   hostIP,
+								HostPort: hostPort,
+							},
+						},
+					}
+				} else {
+					log.Error("Failed ports binding - module environments passed in manifest document ports section do not exist.")
+				}
+			}
 		}
 
 		//Populate Environment variables
@@ -234,53 +279,55 @@ func (m Manifest) GetContainerStart(networkName string) []ContainerConfig {
 		var cmdArgs = ParseArguments(mod.Search("commands").Children(), true)
 		thisStartCommand.EntryPointArgs = cmdArgs
 
-		// Handle the options
-		var ExposedPorts string
-		for _, option := range thisStartCommand.Options {
-			// ExposedPorts is a simple option, just apply it to the struct
-			if option.key == "ExposedPorts" {
-				ExposedPorts = option.val
-				thisStartCommand.ExposedPorts = nat.PortSet{
-					nat.Port(option.val): struct{}{},
-				}
-			}
-			// HostIP is always found with HostPort
-			// TODO: Refactor!
-			if option.key == "HostIP" {
-				HostIP := option.val
-				HostPort := ""
-				for _, subOpt := range thisStartCommand.Options {
-					if subOpt.key == "HostPort" {
-						HostPort = subOpt.val
+		/*
+			// Handle the options
+			var ExposedPorts string
+			for _, option := range thisStartCommand.Options {
+				// ExposedPorts is a simple option, just apply it to the struct
+				if option.key == "ExposedPorts" {
+					ExposedPorts = option.val
+					thisStartCommand.ExposedPorts = nat.PortSet{
+						nat.Port(option.val): struct{}{},
 					}
 				}
-				// Make sure HostPort was seen in the options!
-				if HostPort == "" {
-					// Set default HostPort as in Modules and Intercontainer Communication Spec 1.0.0
-					HostPort = "80"
-				}
+				// HostIP is always found with HostPort
+				// TODO: Refactor!
+				if option.key == "HostIP" {
+					HostIP := option.val
+					HostPort := ""
+					for _, subOpt := range thisStartCommand.Options {
+						if subOpt.key == "HostPort" {
+							HostPort = subOpt.val
+						}
+					}
+					// Make sure HostPort was seen in the options!
+					if HostPort == "" {
+						// Set default HostPort as in Modules and Intercontainer Communication Spec 1.0.0
+						HostPort = "80"
+					}
 
-				// Finally, build the PortBindings struct
-				thisStartCommand.PortBinding = nat.PortMap{
-					nat.Port(ExposedPorts): []nat.PortBinding{
-						{
-							HostIP:   HostIP,
-							HostPort: HostPort,
+					// Finally, build the PortBindings struct
+					thisStartCommand.PortBinding = nat.PortMap{
+						nat.Port(ExposedPorts): []nat.PortBinding{
+							{
+								HostIP:   HostIP,
+								HostPort: HostPort,
+							},
 						},
-					},
+					}
 				}
-			}
 
-			if option.key == "network" {
-				thisStartCommand.NetworkMode = container.NetworkMode(option.val)
-			}
+				if option.key == "network" {
+					thisStartCommand.NetworkMode = container.NetworkMode(option.val)
+				}
 
-			networkConfig := &network.NetworkingConfig{
-				EndpointsConfig: map[string]*network.EndpointSettings{},
-			}
+				networkConfig := &network.NetworkingConfig{
+					EndpointsConfig: map[string]*network.EndpointSettings{},
+				}
 
-			thisStartCommand.NetworkConfig = *networkConfig
-		}
+				thisStartCommand.NetworkConfig = *networkConfig
+			}
+		*/
 
 		startCommands = append(startCommands, thisStartCommand)
 	}
