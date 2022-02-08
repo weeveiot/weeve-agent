@@ -23,7 +23,7 @@
                 "-t",
                 "CheckVersion",
                 "--heartbeat",
-                "600"
+                "600",
             ]
         },
         {
@@ -45,6 +45,29 @@
                 "status",
                 "--heartbeat",
                 "120"
+            ]
+        },
+        {
+            "name": "WeeveAgentDev",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/agent/agent.go",
+            "showLog": true,
+            "args": [
+                "-v",
+                "-b",
+                "tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883",
+                "-s",
+                "nodes/awsdev",
+                "-c",
+                "manager/awsdev",
+                "-t",
+                "status",
+                "--heartbeat",
+                "120",
+                "loglevel",
+                "debug"
             ]
         },
         {
