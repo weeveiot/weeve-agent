@@ -35,5 +35,3 @@ require (
 	google.golang.org/grpc v1.33.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
-
-// github.com/docker/docker v17.12.0-ce-rc1.0.20200915235308-f99814d749d7+incompatible
