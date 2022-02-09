@@ -50,6 +50,7 @@ type Params struct {
 	RootCertPath string `long:"rootcert" short:"r" description:"Path to MQTT broker (server) certificate" required:"false"`
 	CertPath     string `long:"cert" short:"f" description:"Path to certificate to authenticate to Broker" required:"false"`
 	KeyPath      string `long:"key" short:"k" description:"Path to private key to authenticate to Broker" required:"false"`
+	ConfigPath   string `long:"config" description:"Path to the .json config file" required:"false"`
 }
 
 type PlainFormatter struct {
@@ -57,7 +58,7 @@ type PlainFormatter struct {
 }
 
 func (f *PlainFormatter) Format(entry *log.Entry) ([]byte, error) {
-	timestamp := fmt.Sprintf(entry.Time.Format(f.TimestampFormat))
+	timestamp := entry.Time.Format(f.TimestampFormat)
 	return []byte(fmt.Sprintf("%s %s : %s\n", timestamp, entry.Level, entry.Message)), nil
 }
 
@@ -82,6 +83,13 @@ func main() {
 	if _, err := parser.Parse(); err != nil {
 		log.Error("Error on command line parser ", err)
 		os.Exit(1)
+	}
+
+	if len(opt.ConfigPath) > 0 {
+		internal.ConfigPath = opt.ConfigPath
+	} else {
+		// use the default path and filename
+		internal.ConfigPath = path.Join(util.GetExeDir(), internal.NodeConfigFile)
 	}
 
 	// FLAG: LogLevel
@@ -128,7 +136,7 @@ func main() {
 
 	// Strictly require protocol and host in Broker specification
 	if (len(strings.TrimSpace(host)) == 0) || (len(strings.TrimSpace(u.Scheme)) == 0) {
-		log.Fatalf("Error in --broker option: Specify both protocol:\\\\host in the Broker URL")
+		log.Fatal("Error in --broker option: Specify both protocol:\\\\host in the Broker URL")
 	}
 
 	log.Info(fmt.Sprintf("Broker host->%v at port->%v over %v", host, port, u.Scheme))
@@ -256,22 +264,19 @@ func InitBrokerChannel(nodeConfig map[string]string, pubsubClientId string, isSu
 }
 
 func NewTLSConfig(nodeConfig map[string]string) (config *tls.Config, err error) {
-	certDir := path.Join(util.GetExeDir(), internal.CertDirName)
-	rootCert := path.Join(certDir, nodeConfig[internal.KeyAWSRootCert])
-	nodeCert := path.Join(certDir, nodeConfig[internal.KeyCertificate])
-	pvtKey := path.Join(certDir, nodeConfig[internal.KeyPrivateKey])
-
-	log.Debug("MQTT cert path >> ", nodeCert)
-	log.Debug("MQTT key path >> ", pvtKey)
+	log.Debug("MQTT root cert path >> ", nodeConfig[internal.KeyAWSRootCert])
 
 	certpool := x509.NewCertPool()
-	pemCerts, err := ioutil.ReadFile(rootCert)
+	pemCerts, err := ioutil.ReadFile(nodeConfig[internal.KeyAWSRootCert])
 	if err != nil {
 		return nil, err
 	}
 	certpool.AppendCertsFromPEM(pemCerts)
 
-	cert, err := tls.LoadX509KeyPair(nodeCert, pvtKey)
+	log.Debug("MQTT cert path >> ", nodeConfig[internal.KeyCertificate])
+	log.Debug("MQTT key path >> ", nodeConfig[internal.KeyPrivateKey])
+
+	cert, err := tls.LoadX509KeyPair(nodeConfig[internal.KeyCertificate], nodeConfig[internal.KeyPrivateKey])
 	if err != nil {
 		return nil, err
 	}
@@ -288,7 +293,7 @@ func NewTLSConfig(nodeConfig map[string]string) (config *tls.Config, err error) 
 func ReconnectIfNecessary(publisher mqtt.Client, subscriber mqtt.Client) {
 	// Attempt reconnect
 	if !publisher.IsConnected() {
-		log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
+		log.Infoln("Connecting.....", time.Now().String(), time.Now().UnixNano())
 
 		if token := publisher.Connect(); token.Wait() && token.Error() != nil {
 			log.Error("failed to create publisher connection: ", token.Error())
@@ -296,7 +301,7 @@ func ReconnectIfNecessary(publisher mqtt.Client, subscriber mqtt.Client) {
 	}
 
 	if !subscriber.IsConnected() {
-		log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
+		log.Infoln("Connecting.....", time.Now().String(), time.Now().UnixNano())
 
 		if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
 			log.Error("failed to create subscriber connection: ", token.Error())
@@ -307,7 +312,7 @@ func ReconnectIfNecessary(publisher mqtt.Client, subscriber mqtt.Client) {
 func PublishMessages(publisher mqtt.Client, pubNodeId string, nodeName string, msgType string) bool {
 
 	if !publisher.IsConnected() {
-		log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
+		log.Infoln("Connecting.....", time.Now().String(), time.Now().UnixNano())
 
 		if token := publisher.Connect(); token.Wait() && token.Error() != nil {
 			log.Error("failed to create publisher connection: ", token.Error())
@@ -322,7 +327,7 @@ func PublishMessages(publisher mqtt.Client, pubNodeId string, nodeName string, m
 		topicNm = opt.PubClientId + "/" + pubNodeId + "/" + "Registration"
 
 		msg := internal.GetRegistrationMessage(pubNodeId, nodeName)
-		log.Info("Sending registration request.", "Registration", msg)
+		log.Infoln("Sending registration request.", "Registration", msg)
 		b_msg, err = json.Marshal(msg)
 		if err != nil {
 			log.Fatalf("Marshall error: %v", err)
@@ -331,14 +336,14 @@ func PublishMessages(publisher mqtt.Client, pubNodeId string, nodeName string, m
 	} else {
 		topicNm = opt.PubClientId + "/" + pubNodeId + "/" + opt.TopicName
 		msg := internal.GetStatusMessage(pubNodeId)
-		log.Info("Sending update >> ", opt.TopicName, msg)
+		log.Info("Sending update >> ", "Topic: ", opt.TopicName, " >> Body: ", msg)
 		b_msg, err = json.Marshal(msg)
 		if err != nil {
 			log.Fatalf("Marshall error: %v", err)
 		}
 	}
 
-	log.Info("Publishing message >> ", topicNm, " ", string(b_msg))
+	log.Debugln("Publishing message >> ", topicNm, string(b_msg))
 	if token := publisher.Publish(topicNm, 0, false, b_msg); token.Wait() && token.Error() != nil {
 		log.Fatalf("failed to send update: %v", token.Error())
 		return false
@@ -362,7 +367,7 @@ func DisconnectBroker(publisher mqtt.Client, subscriber mqtt.Client) {
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	jsonParsed, err := gabs.ParseJSON(msg.Payload())
 	if err != nil {
-		log.Info("Received message on topic: ", msg.Topic(), *jsonParsed)
+		log.Infoln("Received message on topic: ", msg.Topic(), *jsonParsed)
 	}
 
 	topic_rcvd := ""
@@ -410,8 +415,17 @@ func validateUpdateConfig(nodeConfigs map[string]string) {
 		configChanged = true
 	}
 
+	if len(opt.RootCertPath) > 0 {
+		nodeConfig[internal.KeyAWSRootCert] = opt.RootCertPath
+		configChanged = true
+	}
+
 	if len(opt.CertPath) > 0 {
 		nodeConfig[internal.KeyCertificate] = opt.CertPath
+		configChanged = true
+	}
+
+	if len(opt.KeyPath) > 0 {
 		nodeConfig[internal.KeyPrivateKey] = opt.KeyPath
 		configChanged = true
 	}

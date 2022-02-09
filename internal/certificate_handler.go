@@ -11,7 +11,6 @@ import (
 
 	"github.com/Jeffail/gabs/v2"
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
 )
 
 const NodeConfigFile = "nodeconfig.json"
@@ -21,6 +20,8 @@ const KeyNodeId = "NodeId"
 const KeyNodeName = "NodeName"
 const KeyAWSRootCert = "AWSRootCert"
 const CertDirName = "certs"
+
+var ConfigPath string
 
 func DownloadCertificates(payload []byte) map[string]string {
 
@@ -36,6 +37,8 @@ func DownloadCertificates(payload []byte) map[string]string {
 		KeyPrivateKey:  json.Search(KeyPrivateKey).Data().(string),
 	}
 
+	nodeConfig := ReadNodeConfig()
+
 	for key, certUrl := range certificates {
 
 		// Get the data
@@ -47,15 +50,9 @@ func DownloadCertificates(payload []byte) map[string]string {
 
 		defer resp.Body.Close()
 
-		// Create a new dir for certificates if not already created
-		certDir := path.Join(util.GetExeDir(), CertDirName)
-		err = os.MkdirAll(certDir, 0700)
-		if err != nil {
-			log.Error("Could not create the directory ", certDir, err)
-		}
-
 		// Create a new file to put the certificate in
 		fileName := filepath.Base(resp.Request.URL.Path)
+		certDir := filepath.Dir(nodeConfig[key])
 		fileNameWithPath := path.Join(certDir, fileName)
 		out, err := os.Create(fileNameWithPath)
 		if err != nil {
@@ -64,6 +61,8 @@ func DownloadCertificates(payload []byte) map[string]string {
 		}
 		defer out.Close()
 
+		log.Info("Downloaded ", fileName, ". Writing it into ", certDir, "...")
+
 		// Write the body to file
 		_, err = io.Copy(out, resp.Body)
 		if err != nil {
@@ -71,7 +70,7 @@ func DownloadCertificates(payload []byte) map[string]string {
 			return nil
 		}
 
-		certificates[key] = fileName
+		certificates[key] = fileNameWithPath
 	}
 
 	return certificates
@@ -98,20 +97,17 @@ func UpdateNodeConfig(attrs map[string]string) {
 	configs := ReadNodeConfig()
 
 	for k, v := range attrs {
-		log.Debug(k, "value is", v)
+		log.Debug(k, " value is ", v)
 		configs[k] = v
 	}
 
 	file, _ := json.MarshalIndent(configs, "", " ")
 
-	NodeConfigFilePath := path.Join(util.GetExeDir(), NodeConfigFile)
-	_ = ioutil.WriteFile(NodeConfigFilePath, file, 0644)
+	_ = ioutil.WriteFile(ConfigPath, file, 0644)
 }
 
 func ReadNodeConfig() map[string]string {
-	NodeConfigFilePath := path.Join(util.GetExeDir(), NodeConfigFile)
-
-	jsonFile, err := os.Open(NodeConfigFilePath)
+	jsonFile, err := os.Open(ConfigPath)
 	if err != nil {
 		log.Fatalf("Unable to open node configuration file: %v", err)
 	}

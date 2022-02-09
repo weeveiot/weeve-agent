@@ -24,6 +24,8 @@
                 "CheckVersion",
                 "--heartbeat",
                 "600",
+                "--config",
+                "${workspaceRoot}/nodeconfig.json"
             ]
         },
         {
@@ -44,7 +46,9 @@
                 "-t",
                 "status",
                 "--heartbeat",
-                "120"
+                "120",
+                "--config",
+                "${workspaceRoot}/nodeconfig.json"
             ]
         },
         {
@@ -66,8 +70,10 @@
                 "status",
                 "--heartbeat",
                 "120",
-                "loglevel",
-                "debug"
+                "--loglevel",
+                "debug",
+                "--config",
+                "${workspaceRoot}/nodeconfig.json"
             ]
         },
         {
