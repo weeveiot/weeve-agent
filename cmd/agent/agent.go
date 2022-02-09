@@ -58,7 +58,7 @@ type PlainFormatter struct {
 }
 
 func (f *PlainFormatter) Format(entry *log.Entry) ([]byte, error) {
-	timestamp := fmt.Sprint(entry.Time.Format(f.TimestampFormat))
+	timestamp := entry.Time.Format(f.TimestampFormat)
 	return []byte(fmt.Sprintf("%s %s : %s\n", timestamp, entry.Level, entry.Message)), nil
 }
 
@@ -136,7 +136,7 @@ func main() {
 
 	// Strictly require protocol and host in Broker specification
 	if (len(strings.TrimSpace(host)) == 0) || (len(strings.TrimSpace(u.Scheme)) == 0) {
-		log.Fatalf("Error in --broker option: Specify both protocol:\\\\host in the Broker URL")
+		log.Fatal("Error in --broker option: Specify both protocol:\\\\host in the Broker URL")
 	}
 
 	log.Info(fmt.Sprintf("Broker host->%v at port->%v over %v", host, port, u.Scheme))
@@ -293,7 +293,7 @@ func NewTLSConfig(nodeConfig map[string]string) (config *tls.Config, err error) 
 func ReconnectIfNecessary(publisher mqtt.Client, subscriber mqtt.Client) {
 	// Attempt reconnect
 	if !publisher.IsConnected() {
-		log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
+		log.Infoln("Connecting.....", time.Now().String(), time.Now().UnixNano())
 
 		if token := publisher.Connect(); token.Wait() && token.Error() != nil {
 			log.Error("failed to create publisher connection: ", token.Error())
@@ -301,7 +301,7 @@ func ReconnectIfNecessary(publisher mqtt.Client, subscriber mqtt.Client) {
 	}
 
 	if !subscriber.IsConnected() {
-		log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
+		log.Infoln("Connecting.....", time.Now().String(), time.Now().UnixNano())
 
 		if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
 			log.Error("failed to create subscriber connection: ", token.Error())
@@ -312,7 +312,7 @@ func ReconnectIfNecessary(publisher mqtt.Client, subscriber mqtt.Client) {
 func PublishMessages(publisher mqtt.Client, pubNodeId string, nodeName string, msgType string) bool {
 
 	if !publisher.IsConnected() {
-		log.Info("Connecting.....", time.Now().String(), time.Now().UnixNano())
+		log.Infoln("Connecting.....", time.Now().String(), time.Now().UnixNano())
 
 		if token := publisher.Connect(); token.Wait() && token.Error() != nil {
 			log.Error("failed to create publisher connection: ", token.Error())
@@ -327,7 +327,7 @@ func PublishMessages(publisher mqtt.Client, pubNodeId string, nodeName string, m
 		topicNm = opt.PubClientId + "/" + pubNodeId + "/" + "Registration"
 
 		msg := internal.GetRegistrationMessage(pubNodeId, nodeName)
-		log.Info("Sending registration request.", "Registration", msg)
+		log.Infoln("Sending registration request.", "Registration", msg)
 		b_msg, err = json.Marshal(msg)
 		if err != nil {
 			log.Fatalf("Marshall error: %v", err)
@@ -343,7 +343,7 @@ func PublishMessages(publisher mqtt.Client, pubNodeId string, nodeName string, m
 		}
 	}
 
-	log.Debug("Publishing message >> ", topicNm, " ", string(b_msg))
+	log.Debugln("Publishing message >> ", topicNm, string(b_msg))
 	if token := publisher.Publish(topicNm, 0, false, b_msg); token.Wait() && token.Error() != nil {
 		log.Fatalf("failed to send update: %v", token.Error())
 		return false
@@ -367,7 +367,7 @@ func DisconnectBroker(publisher mqtt.Client, subscriber mqtt.Client) {
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	jsonParsed, err := gabs.ParseJSON(msg.Payload())
 	if err != nil {
-		log.Info("Received message on topic: ", msg.Topic(), *jsonParsed)
+		log.Infoln("Received message on topic: ", msg.Topic(), *jsonParsed)
 	}
 
 	topic_rcvd := ""
