@@ -33,6 +33,7 @@ A data model for the manifest object and supporting structures is found in the i
 | rootcert    | r     | false    | Path to MQTT broker (server) certificate               |          |
 | cert        | f     | false    | Path to certificate to authenticate to Broker          |          |
 | key         | k     | false    | Path to private key to authenticate to Broker          |          |
+| config      |       | false    | Path to the .json config file                          |<exe dir> |
 
 ## Getting started
 
@@ -56,12 +57,12 @@ In a new terminal instance, subscribe to all topics for that broker; `mosquitto_
 In a final terminal, run the weeve agent and connect to the broker to publish status messages;
 ```bash
 go run <path-to-agent>/agent.go -v --notls \
-    --broker tcp://localhost:8080 \ # Broker to connect to \
-    --subClientId nodes/localtest \ # Subscriber ClientId \
-    --pubClientId manager/localtest \ # Publisher ClientId \
-    --publish CheckVersion  \ # Topic Name \
+	--broker tcp://localhost:8080 \ # Broker to connect to \
+	--subClientId nodes/localtest \ # Subscriber ClientId \
+	--pubClientId manager/localtest \ # Publisher ClientId \
+	--publish CheckVersion  \ # Topic Name \
 	--heartbeat 3 # Status message publishing interval
-    --nodeId local-test-node-1 \ # ID of this node optional \
+	--nodeId local-test-node-1 \ # ID of this node optional \
 	--config <path-to-config>
 ```
 
@@ -80,10 +81,10 @@ CLIENT_PRIVATE_KEY=<path-to-private-key>/<nodeid>-private.pem.key
 go run <path-to-agent>/agent.go -v \
 	--nodeId awsdev-test-node-1 \ # ID of this node (optional here)\
 	--name awsdev-test-node-1 \ # Name of this node (optional here)\
-    --broker tls://<broker host url>:8883 \ # Broker to connect to \
-    --subClientId nodes/awsdev \ # Subscriber ClientId \
-    --pubClientId manager/awsdev \ # Publisher ClientId \
-    --publish status \ # Topic bame for publishing status messages \
+	--broker tls://<broker host url>:8883 \ # Broker to connect to \
+	--subClientId nodes/awsdev \ # Subscriber ClientId \
+	--pubClientId manager/awsdev \ # Publisher ClientId \
+	--publish status \ # Topic bame for publishing status messages \
 	--heartbeat 10   # Status message publishing interval \
 	--config <path-to-config>
 	# --mqttlogs # Enable detailed debug logs for the MQTT connection
@@ -121,10 +122,10 @@ go run <path-to-agent>/agent.go -v \
 All the below params can be updated into json instead of arguments as above
 ```json
 {
-    "AWSRootCert": "/path/to/AmazonRootCA1.pem",
+	"AWSRootCert": "/path/to/AmazonRootCA1.pem",
 	"PrivateKey": "/path/to/<node private key/bootstrap private key file name>",
-    "Certificate": "/path/to/<node certificate/bootstrap certificate file name>",
-    "NodeId": "<node id>" //Empty initially for auto registration
+	"Certificate": "/path/to/<node certificate/bootstrap certificate file name>",
+	"NodeId": "<node id>" //Empty initially for auto registration
 	"NodeName": "<node name>" //Node name for auto registration
 }
 ```
@@ -220,9 +221,9 @@ The same testing UI can be used to publish back to the agent.
 
 ### Testing with mosquitto
 mosquitto_pub \
-    -h asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com -p 8883 \
-    --cafile ~/weeve/edge-pipeline-service/adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-certificate.pem.crt \
-    -t test -m testing
+	-h asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com -p 8883 \
+	--cafile ~/weeve/edge-pipeline-service/adcdbef7432bc42cdcae27b5e9b720851a9963dc0251689ae05e0f7f524b128c-certificate.pem.crt \
+	-t test -m testing
 
 
 mosquitto_pub -h asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com -p 8883 --cafile AmazonRootCA1.pem -t test -m testing
