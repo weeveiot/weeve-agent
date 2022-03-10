@@ -378,7 +378,7 @@ func DataServiceExist(manifestID string, version string) (bool, error) {
 
 func LogStatus(manifestID string, manifestVersion string, statusVal string, statusReason string) {
 	filter := map[string]string{"id": manifestID, "version": manifestVersion}
-	mani := jsonlines.Read(ManifestFile, "", "", filter, false)
+	mani := jsonlines.Read(ManifestFile, "", "", filter, false, true)
 	deleted := jsonlines.Delete(ManifestFile, "", "", filter, true)
 	if !deleted {
 		log.Error("Could not remove old records from manifest.jsonl")

@@ -72,11 +72,18 @@ func Encode(w io.Writer, ptrToSlice interface{}) error {
 	return nil
 }
 
-func Read(jsonFile string, pkField string, pkVal string, filter map[string]string, excludeKey bool) []map[string]interface{} {
+func Read(jsonFile string, pkField string, pkVal string, filter map[string]string, excludeKey bool, createIfNotExist bool) []map[string]interface{} {
 	var val []map[string]interface{}
 	file, err := os.Open(jsonFile)
 	if err != nil {
-		log.Error("File not available! ", err)
+		if createIfNotExist {
+			_, err = os.Create(jsonFile)
+		}
+
+		if err != nil {
+			log.Error("Unable to open file! ", err)
+		}
+
 		return val
 	}
 
@@ -140,7 +147,7 @@ func Insert(jsonFile string, jsonString string) bool {
 
 func Delete(jsonFile string, pkField string, pkVal string, filter map[string]string, excludeKey bool) bool {
 	log.Debug("jsonlines >> Delete()")
-	allExceptPk := Read(jsonFile, pkField, pkVal, filter, excludeKey)
+	allExceptPk := Read(jsonFile, pkField, pkVal, filter, excludeKey, true)
 
 	var err = os.Remove(jsonFile)
 	if err != nil {
