@@ -14,8 +14,6 @@ import (
 
 	"strings"
 
-	_ "gitlab.com/weeve/edge-server/edge-pipeline-service/docs"
-
 	httpSwagger "github.com/swaggo/http-swagger"
 
 	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/controller"
