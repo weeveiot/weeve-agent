@@ -143,9 +143,6 @@ The `-v` verbose flag is optional and will present the Debug level logging messa
 ### Docker container
 Currently, running the project with Docker is not supported. Since the main function of the Weeve Node Service is to orchestrate a set of docker containers, running the project inside docker presents additional complexities due to the interaction with the host machine. A docker file is present to facilitate unit testing only.
 
-## Documentation
-A postman collection is found in the /docs folder. The collection is (published)[https://documenter.getpostman.com/view/12141960/TVYQ3ubM].
-
 ## Getting started for Developers
 
 ### Prerequisites
