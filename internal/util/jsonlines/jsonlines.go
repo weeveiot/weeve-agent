@@ -72,19 +72,12 @@ func Encode(w io.Writer, ptrToSlice interface{}) error {
 	return nil
 }
 
-func Read(jsonFile string, pkField string, pkVal string, filter map[string]string, excludeKey bool, createIfNotExist bool) []map[string]interface{} {
+func Read(jsonFile string, pkField string, pkVal string, filter map[string]string, excludeKey bool) ([]map[string]interface{}, error) {
 	var val []map[string]interface{}
-	file, err := os.Open(jsonFile)
+	file, err := os.OpenFile(jsonFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		if createIfNotExist {
-			_, err = os.Create(jsonFile)
-		}
-
-		if err != nil {
-			log.Error("Unable to open file! ", err)
-		}
-
-		return val
+		log.Error("Unable to open file! ", err)
+		return val, err
 	}
 
 	defer file.Close()
@@ -127,7 +120,7 @@ func Read(jsonFile string, pkField string, pkVal string, filter map[string]strin
 		}
 	}
 
-	return val
+	return val, err
 }
 
 func Insert(jsonFile string, jsonString string) bool {
@@ -147,9 +140,12 @@ func Insert(jsonFile string, jsonString string) bool {
 
 func Delete(jsonFile string, pkField string, pkVal string, filter map[string]string, excludeKey bool) bool {
 	log.Debug("jsonlines >> Delete()")
-	allExceptPk := Read(jsonFile, pkField, pkVal, filter, excludeKey, true)
+	allExceptPk, err := Read(jsonFile, pkField, pkVal, filter, excludeKey)
+	if err != nil {
+		return false
+	}
 
-	var err = os.Remove(jsonFile)
+	err = os.Remove(jsonFile)
 	if err != nil {
 		return false
 	}

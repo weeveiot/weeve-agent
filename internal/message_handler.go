@@ -111,7 +111,12 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 }
 
 func GetStatusMessage(nodeId string) model.StatusMessage {
-	manifests := jsonlines.Read(deploy.ManifestFile, "", "", nil, false, true)
+	manifests, err := jsonlines.Read(deploy.ManifestFile, "", "", nil, false)
+
+	if err != nil {
+		log.Error(err)
+		return model.StatusMessage{}
+	}
 
 	var mani []model.ManifestStatus
 	var deviceParams = model.DeviceParams{Sensors: "10", Uptime: "10", CpuTemp: "20"}
