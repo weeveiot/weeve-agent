@@ -2,7 +2,6 @@
 package docker
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -10,22 +9,12 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/registry"
-	"github.com/docker/docker/client"
 	"github.com/weeveiot/weeve-agent/internal/model"
 
 	log "github.com/sirupsen/logrus"
 )
 
 func PullImage(imgDetails model.RegistryDetails) error {
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-
 	authConfig := types.AuthConfig{
 		Username: imgDetails.UserName,
 		Password: imgDetails.Password,
@@ -39,7 +28,7 @@ func PullImage(imgDetails model.RegistryDetails) error {
 
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
 
-	events, err := cli.ImagePull(ctx, imgDetails.ImageName, types.ImagePullOptions{RegistryAuth: authStr})
+	events, err := dockerClient.ImagePull(ctx, imgDetails.ImageName, types.ImagePullOptions{RegistryAuth: authStr})
 	if err != nil {
 		log.Error(err)
 		return err
@@ -104,67 +93,13 @@ func ImageExists(id string) (bool, error) {
 	}
 }
 
-// To be listed for selection of images in management app
-func ReadAllImages() []types.ImageSummary {
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-
-	images, err := cli.ImageList(ctx, types.ImageListOptions{})
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-
-	if false {
-		for _, image := range images {
-			fmt.Println(image.ID)
-		}
-	}
-
-	return images
-}
-
 // ReadImage by ImageId
 func ReadImage(id string) (types.ImageInspect, error) {
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(err)
-		return types.ImageInspect{}, err
-	}
-
-	images, bytes, err := cli.ImageInspectWithRaw(ctx, id)
+	images, bytes, err := dockerClient.ImageInspectWithRaw(ctx, id)
 	if err != nil && bytes != nil {
 		log.Error(err)
 		return types.ImageInspect{}, err
 	}
 
 	return images, nil
-}
-
-// SearchImages returns images based on filter (Currently working without filters)
-func SearchImages(term string, id string, tag string) []registry.SearchResult {
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-
-	var searchFilter filters.Args
-	options := types.ImageSearchOptions{Filters: searchFilter, Limit: 5}
-	images, err := cli.ImageSearch(ctx, term, options)
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-
-	for k, image := range images {
-		fmt.Println(k, image)
-	}
-	return images
 }

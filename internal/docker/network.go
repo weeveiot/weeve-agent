@@ -1,7 +1,6 @@
 package docker
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -9,19 +8,13 @@ import (
 	linq "github.com/ahmetb/go-linq/v3"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 )
 
 func ReadAllNetworks() []types.NetworkResource {
 	log.Debug("Docker_container -> ReadAllNetworks")
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
 
-	networks, err := cli.NetworkList(context.Background(), types.NetworkListOptions{})
+	networks, err := dockerClient.NetworkList(ctx, types.NetworkListOptions{})
 	if err != nil {
 		log.Error(err)
 		return nil
@@ -69,16 +62,8 @@ func GetNetworkName(name string) string {
 }
 
 func AttachContainerNetwork(containerID string, networkName string) error {
-	log.Debug("Build context and client")
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-
 	var netConfig network.EndpointSettings
-	err = cli.NetworkConnect(ctx, networkName, containerID, &netConfig)
+	err = dockerClient.NetworkConnect(ctx, networkName, containerID, &netConfig)
 	if err != nil {
 		return err
 	}
