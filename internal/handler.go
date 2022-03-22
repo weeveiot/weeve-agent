@@ -15,9 +15,9 @@ import (
 
 	httpSwagger "github.com/swaggo/http-swagger"
 
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/controller"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
+	"github.com/weeveiot/weeve-agent/internal/controller"
+	"github.com/weeveiot/weeve-agent/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/util"
 
 	"github.com/gorilla/mux"
 )

@@ -16,8 +16,8 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
+	"github.com/weeveiot/weeve-agent/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/util"
 )
 
 func StartContainers() bool {

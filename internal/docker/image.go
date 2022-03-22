@@ -13,7 +13,7 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/model"
 
 	log "github.com/sirupsen/logrus"
 )

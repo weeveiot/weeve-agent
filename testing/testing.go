@@ -4,7 +4,7 @@ import (
 	"os"
 
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
+	"github.com/weeveiot/weeve-agent/internal/util"
 )
 
 func init() {

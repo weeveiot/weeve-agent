@@ -1,6 +1,4 @@
-module gitlab.com/weeve/edge-server/edge-pipeline-service
-
-// https://gitlab.com/weeve/platform/agent
+module github.com/weeveiot/weeve-agent
 
 go 1.15
 

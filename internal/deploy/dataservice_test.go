@@ -16,10 +16,10 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/deploy"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/docker"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
+	"github.com/weeveiot/weeve-agent/internal/deploy"
+	"github.com/weeveiot/weeve-agent/internal/docker"
+	"github.com/weeveiot/weeve-agent/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/util"
 )
 
 var manifestID = "PLACEHOLDER"

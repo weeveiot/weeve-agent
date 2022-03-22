@@ -6,9 +6,9 @@ import (
 	"github.com/Jeffail/gabs/v2"
 	log "github.com/sirupsen/logrus"
 
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/deploy"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util/jsonlines"
+	"github.com/weeveiot/weeve-agent/internal/deploy"
+	"github.com/weeveiot/weeve-agent/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/util/jsonlines"
 )
 
 func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {

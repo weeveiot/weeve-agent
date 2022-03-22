@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	_ "gitlab.com/weeve/edge-server/edge-pipeline-service/testing"
+	_ "github.com/weeveiot/weeve-agent/testing"
 )
 
 var manifestBytesMVP []byte
