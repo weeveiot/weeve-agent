@@ -380,7 +380,9 @@ func LogStatus(manifestID string, manifestVersion string, statusVal string, stat
 	filter := map[string]string{"id": manifestID, "version": manifestVersion}
 	mani, err := jsonlines.Read(ManifestFile, "", "", filter, false)
 	if err != nil {
-		log.Error("Could not read manifest.jsonl, error: ", err)
+		log.Error(err)
+		jsonlines.CreateIfNotExist(ManifestFile)
+
 		return
 	}
 

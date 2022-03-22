@@ -115,6 +115,8 @@ func GetStatusMessage(nodeId string) model.StatusMessage {
 
 	if err != nil {
 		log.Error(err)
+		jsonlines.CreateIfNotExist(deploy.ManifestFile)
+
 		return model.StatusMessage{}
 	}
 

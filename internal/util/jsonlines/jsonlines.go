@@ -3,6 +3,7 @@ package jsonlines
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 
@@ -72,11 +73,28 @@ func Encode(w io.Writer, ptrToSlice interface{}) error {
 	return nil
 }
 
+func CreateIfNotExist(filePath string) error {
+	_, err := os.Stat(filePath)
+
+	if err != nil && errors.Is(err, os.ErrNotExist) {
+		log.Info("Creating new file ", filePath)
+		_, err = os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+
+		if err == nil {
+			log.Info("New file created ", filePath)
+			return nil
+		} else {
+			log.Error("Unable to create file ", filePath, err)
+		}
+	}
+
+	return err
+}
+
 func Read(jsonFile string, pkField string, pkVal string, filter map[string]string, excludeKey bool) ([]map[string]interface{}, error) {
 	var val []map[string]interface{}
-	file, err := os.OpenFile(jsonFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.Open(jsonFile)
 	if err != nil {
-		log.Error("Unable to open file! ", err)
 		return val, err
 	}
 
@@ -124,8 +142,7 @@ func Read(jsonFile string, pkField string, pkVal string, filter map[string]strin
 }
 
 func Insert(jsonFile string, jsonString string) bool {
-	f, err := os.OpenFile(jsonFile,
-		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(jsonFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Println(err)
 		return false
@@ -142,6 +159,9 @@ func Delete(jsonFile string, pkField string, pkVal string, filter map[string]str
 	log.Debug("jsonlines >> Delete()")
 	allExceptPk, err := Read(jsonFile, pkField, pkVal, filter, excludeKey)
 	if err != nil {
+		log.Error(err)
+		CreateIfNotExist(jsonFile)
+
 		return false
 	}
 
