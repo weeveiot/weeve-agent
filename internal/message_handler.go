@@ -114,9 +114,6 @@ func GetStatusMessage(nodeId string) model.StatusMessage {
 	manifests, err := jsonlines.Read(deploy.ManifestFile, "", "", nil, false)
 
 	if err != nil {
-		log.Error(err)
-		jsonlines.CreateIfNotExist(deploy.ManifestFile)
-
 		return model.StatusMessage{}
 	}
 
