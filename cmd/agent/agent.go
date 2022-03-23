@@ -26,8 +26,8 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/google/uuid"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
+	"github.com/weeveiot/weeve-agent/internal"
+	"github.com/weeveiot/weeve-agent/internal/util"
 )
 
 type Params struct {

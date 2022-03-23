@@ -12,9 +12,9 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/docker"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util/jsonlines"
+	"github.com/weeveiot/weeve-agent/internal/docker"
+	"github.com/weeveiot/weeve-agent/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/util/jsonlines"
 )
 
 const ManifestFile = "manifests.jsonl"

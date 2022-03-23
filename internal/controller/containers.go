@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/docker"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/docker"
+	"github.com/weeveiot/weeve-agent/internal/model"
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"

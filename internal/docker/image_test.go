@@ -8,8 +8,8 @@ import (
 	"path"
 	"testing"
 
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/util"
+	"github.com/weeveiot/weeve-agent/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/util"
 )
 
 var manifestBytesMVP []byte

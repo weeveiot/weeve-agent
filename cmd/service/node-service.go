@@ -6,7 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/jessevdk/go-flags"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal"
+	"github.com/weeveiot/weeve-agent/internal"
 )
 
 type Options struct {
