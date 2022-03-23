@@ -343,7 +343,7 @@ func UndeployDataService(manifestID string, version string) error {
 	filterLog := map[string]string{"id": manifestID, "version": version}
 	deleted := jsonlines.Delete(ManifestFile, "", "", filterLog, true)
 	if !deleted {
-		log.Error(deploymentID, "Could not remove old records from manifest.jsonl")
+		log.Error(deploymentID, "Could not remove old records from ", ManifestFile)
 	}
 	if errorlist != "" {
 		log.Error(deploymentID, err)
@@ -378,10 +378,12 @@ func DataServiceExist(manifestID string, version string) (bool, error) {
 
 func LogStatus(manifestID string, manifestVersion string, statusVal string, statusReason string) {
 	filter := map[string]string{"id": manifestID, "version": manifestVersion}
-	mani := jsonlines.Read(ManifestFile, "", "", filter, false)
-	deleted := jsonlines.Delete(ManifestFile, "", "", filter, true)
-	if !deleted {
-		log.Error("Could not remove old records from manifest.jsonl")
+	mani, err := jsonlines.Read(ManifestFile, "", "", filter, false)
+	if err == nil {
+		deleted := jsonlines.Delete(ManifestFile, "", "", filter, true)
+		if !deleted {
+			log.Error("Could not remove old records from ", ManifestFile)
+		}
 	}
 
 	if len(mani) != 0 {
