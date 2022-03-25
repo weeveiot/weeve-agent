@@ -16,7 +16,7 @@ import (
 )
 
 var ctx = context.Background()
-var dockerClient, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+var DockerClient, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 
 func init() {
 	if err != nil {
@@ -27,13 +27,13 @@ func init() {
 
 func StartContainer(containerId string) bool {
 
-	err = dockerClient.ContainerStart(ctx, containerId, types.ContainerStartOptions{})
+	err = DockerClient.ContainerStart(ctx, containerId, types.ContainerStartOptions{})
 	if err != nil {
 		log.Error(err)
 		return false
 	}
 
-	out, err := dockerClient.ContainerLogs(ctx, containerId, types.ContainerLogsOptions{ShowStdout: true})
+	out, err := DockerClient.ContainerLogs(ctx, containerId, types.ContainerLogsOptions{ShowStdout: true})
 	if err != nil {
 		log.Error(err)
 		return false
@@ -47,7 +47,7 @@ func StartContainer(containerId string) bool {
 func ReadAllContainers() ([]types.Container, error) {
 	log.Debug("Docker_container -> ReadAllContainers")
 	options := types.ContainerListOptions{All: true}
-	containers, err := dockerClient.ContainerList(context.Background(), options)
+	containers, err := DockerClient.ContainerList(context.Background(), options)
 	if err != nil {
 		log.Error(err)
 		return nil, nil
@@ -64,7 +64,7 @@ func ReadDataServiceContainers(manifestID string, version string) ([]types.Conta
 	filter.Add("label", "manifestID="+manifestID)
 	filter.Add("label", "version="+version)
 	options := types.ContainerListOptions{All: true, Filters: filter}
-	containers, err := dockerClient.ContainerList(context.Background(), options)
+	containers, err := DockerClient.ContainerList(context.Background(), options)
 	if err != nil {
 		log.Error(err)
 		return nil, nil
@@ -75,7 +75,7 @@ func ReadDataServiceContainers(manifestID string, version string) ([]types.Conta
 }
 
 func StopContainer(containerId string) error {
-	if err := dockerClient.ContainerStop(ctx, containerId, nil); err != nil {
+	if err := DockerClient.ContainerStop(ctx, containerId, nil); err != nil {
 		log.Error(err)
 		return err
 	}
@@ -127,7 +127,7 @@ func StartCreateContainer(imageName string, startCommand model.ContainerConfig) 
 		},
 	}
 
-	containerCreateResponse, err := dockerClient.ContainerCreate(ctx,
+	containerCreateResponse, err := DockerClient.ContainerCreate(ctx,
 		containerConfig,
 		hostConfig,
 		networkConfig,
@@ -140,7 +140,7 @@ func StartCreateContainer(imageName string, startCommand model.ContainerConfig) 
 	log.Debug("Created container " + containerName)
 
 	// Start container
-	err = dockerClient.ContainerStart(ctx, containerCreateResponse.ID, types.ContainerStartOptions{})
+	err = DockerClient.ContainerStart(ctx, containerCreateResponse.ID, types.ContainerStartOptions{})
 	if err != nil {
 		log.Error(err)
 		return containerCreateResponse, err
@@ -151,7 +151,7 @@ func StartCreateContainer(imageName string, startCommand model.ContainerConfig) 
 }
 
 func StopAndRemoveContainer(containerID string) error {
-	if err := dockerClient.ContainerStop(ctx, containerID, nil); err != nil {
+	if err := DockerClient.ContainerStop(ctx, containerID, nil); err != nil {
 		log.Printf("Unable to stop container %s: %s", containerID, err)
 	}
 
@@ -160,7 +160,7 @@ func StopAndRemoveContainer(containerID string) error {
 		Force:         true,
 	}
 
-	if err := dockerClient.ContainerRemove(ctx, containerID, removeOptions); err != nil {
+	if err := DockerClient.ContainerRemove(ctx, containerID, removeOptions); err != nil {
 		log.Printf("Unable to remove container: %s", err)
 		return err
 	}
@@ -169,7 +169,7 @@ func StopAndRemoveContainer(containerID string) error {
 }
 
 func CreateContainer(containerName string, imageName string) bool {
-	resp, err := dockerClient.ContainerCreate(ctx, &container.Config{
+	resp, err := DockerClient.ContainerCreate(ctx, &container.Config{
 		Image: imageName,
 		Cmd:   []string{"echo", "Container " + containerName + " created"},
 	}, &container.HostConfig{}, &network.NetworkingConfig{}, nil, containerName)

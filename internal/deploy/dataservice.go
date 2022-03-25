@@ -10,7 +10,6 @@ import (
 	"github.com/docker/docker/api/types/filters"
 
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/model"
@@ -47,11 +46,9 @@ func DeployManifest(man model.Manifest, command string) error {
 		LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", err.Error())
 		return err
 	}
-	// Check if data service already exist
+
 	if dataServiceExists {
 		if command == "deploy" {
-			// msg := "Data service already Exist!"
-			// log.Error(msg)
 			log.Info(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", manifestID, version))
 			return errors.New("data service already exist")
 
@@ -68,7 +65,7 @@ func DeployManifest(man model.Manifest, command string) error {
 	}
 
 	filter := map[string]string{"id": man.Manifest.Search("id").Data().(string), "version": man.Manifest.Search("version").Data().(string)}
-	jsonlines.Delete(ManifestFile, "", "", filter, true)
+	jsonlines.Delete(ManifestFile, filter, true)
 
 	// need to set some default manifest in manifest.jsonl so later could log without errors
 	man.Manifest.Set("DEPLOYING_IN_PROGRESS", "status")
@@ -108,14 +105,6 @@ func DeployManifest(man model.Manifest, command string) error {
 	}
 
 	//******** STEP 3 - Create the network *************//
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(deploymentID, err)
-		LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", err.Error())
-		return err
-	}
-
 	log.Info(deploymentID, "Creating network ...")
 	var networkCreateOptions types.NetworkCreate
 	networkCreateOptions.CheckDuplicate = true
@@ -130,7 +119,7 @@ func DeployManifest(man model.Manifest, command string) error {
 
 	}
 
-	resp, err := cli.NetworkCreate(ctx, networkName, networkCreateOptions)
+	resp, err := docker.DockerClient.NetworkCreate(context.Background(), networkName, networkCreateOptions)
 	if err != nil {
 		log.Error(deploymentID, err)
 		LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", err.Error())
@@ -264,15 +253,6 @@ func UndeployDataService(manifestID string, version string) error {
 		errorlist = fmt.Sprintf("%v,%v", errorlist, err)
 	}
 
-	// Set up Background Context and Client for Docker API calls
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(deploymentID, err)
-		LogStatus(manifestID, version, "UNDEPLOY_FAILED", err.Error())
-		errorlist = fmt.Sprintf("%v,%v", errorlist, err)
-	}
-
 	//******** STEP 1 - Stop and Remove Containers *************//
 
 	// map { imageID: number_of_allocated_containers }, needed for removing images as not supported by Go-Docker SDK
@@ -314,7 +294,7 @@ func UndeployDataService(manifestID string, version string) error {
 	for imageID, containersCount := range imageContainers {
 		if containersCount == 0 {
 			log.Info(deploymentID, "Remove Image - ", imageID)
-			_, err := cli.ImageRemove(ctx, imageID, types.ImageRemoveOptions{})
+			_, err := docker.DockerClient.ImageRemove(context.Background(), imageID, types.ImageRemoveOptions{})
 			if err != nil {
 				log.Error(deploymentID, err)
 				LogStatus(manifestID, version, "UNDEPLOY_FAILED", err.Error())
@@ -329,7 +309,7 @@ func UndeployDataService(manifestID string, version string) error {
 	filter.Add("label", "manifestID="+manifestID)
 	filter.Add("label", "version="+version)
 
-	pruneReport, err := cli.NetworksPrune(ctx, filter)
+	pruneReport, err := docker.DockerClient.NetworksPrune(context.Background(), filter)
 	if err != nil {
 		log.Error(deploymentID, err)
 		LogStatus(manifestID, version, "UNDEPLOY_FAILED", err.Error())
@@ -341,7 +321,7 @@ func UndeployDataService(manifestID string, version string) error {
 
 	// Remove records from manifest.jsonl
 	filterLog := map[string]string{"id": manifestID, "version": version}
-	deleted := jsonlines.Delete(ManifestFile, "", "", filterLog, true)
+	deleted := jsonlines.Delete(ManifestFile, filterLog, true)
 	if !deleted {
 		log.Error(deploymentID, "Could not remove old records from ", ManifestFile)
 	}
@@ -355,16 +335,11 @@ func UndeployDataService(manifestID string, version string) error {
 func DataServiceExist(manifestID string, version string) (bool, error) {
 	var networks []types.NetworkResource
 
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return false, err
-	}
-
 	filter := filters.NewArgs()
 	filter.Add("label", "manifestID="+manifestID)
 	filter.Add("label", "version="+version)
 	options := types.NetworkListOptions{Filters: filter}
-	networks, err = dockerClient.NetworkList(context.Background(), options)
+	networks, err := docker.DockerClient.NetworkList(context.Background(), options)
 	if err != nil {
 		return false, err
 	}
@@ -378,9 +353,9 @@ func DataServiceExist(manifestID string, version string) (bool, error) {
 
 func LogStatus(manifestID string, manifestVersion string, statusVal string, statusReason string) {
 	filter := map[string]string{"id": manifestID, "version": manifestVersion}
-	mani, err := jsonlines.Read(ManifestFile, "", "", filter, false)
+	mani, err := jsonlines.Read(ManifestFile, filter, false)
 	if err == nil {
-		deleted := jsonlines.Delete(ManifestFile, "", "", filter, true)
+		deleted := jsonlines.Delete(ManifestFile, filter, true)
 		if !deleted {
 			log.Error("Could not remove old records from ", ManifestFile)
 		}

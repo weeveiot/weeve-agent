@@ -72,7 +72,7 @@ func Encode(w io.Writer, ptrToSlice interface{}) error {
 	return nil
 }
 
-func Read(jsonFile string, pkField string, pkVal string, filter map[string]string, excludeKey bool) ([]map[string]interface{}, error) {
+func Read(jsonFile string, filter map[string]string, excludeKey bool) ([]map[string]interface{}, error) {
 	var val []map[string]interface{}
 	file, err := os.Open(jsonFile)
 	if err != nil {
@@ -95,27 +95,19 @@ func Read(jsonFile string, pkField string, pkVal string, filter map[string]strin
 		var lnVal map[string]interface{}
 		json.Unmarshal([]byte(each_ln), &lnVal)
 
-		if pkField != "" && pkVal != "" {
-			if lnVal[pkField] == pkVal && !excludeKey {
-				val = append(val, lnVal)
-			} else if lnVal[pkField] != pkVal && excludeKey {
+		if filter != nil {
+			add := true
+			for k, v := range filter {
+				log.Debug(k, " value is ", v)
+				if lnVal[k] != v {
+					add = false
+				}
+			}
+			if add != excludeKey {
 				val = append(val, lnVal)
 			}
 		} else {
-			if filter != nil {
-				add := true
-				for k, v := range filter {
-					log.Debug(k, " value is ", v)
-					if lnVal[k] != v {
-						add = false
-					}
-				}
-				if (add && !excludeKey) || (!add && excludeKey) {
-					val = append(val, lnVal)
-				}
-			} else {
-				val = append(val, lnVal)
-			}
+			val = append(val, lnVal)
 		}
 	}
 
@@ -136,9 +128,9 @@ func Insert(jsonFile string, jsonString string) bool {
 	return true
 }
 
-func Delete(jsonFile string, pkField string, pkVal string, filter map[string]string, excludeKey bool) bool {
+func Delete(jsonFile string, filter map[string]string, excludeKey bool) bool {
 	log.Debug("jsonlines >> Delete()")
-	allExceptPk, err := Read(jsonFile, pkField, pkVal, filter, excludeKey)
+	allExceptPk, err := Read(jsonFile, filter, excludeKey)
 	if err != nil {
 		return false
 	}
