@@ -1,8 +1,6 @@
 package docker
 
 import (
-	"os"
-
 	"context"
 
 	"github.com/docker/docker/api/types"
@@ -10,7 +8,6 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/stdcopy"
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
@@ -25,23 +22,103 @@ func init() {
 	}
 }
 
-func StartContainer(containerId string) bool {
+func CreateContainer(containerConfig model.ContainerConfig) (string, error) {
+	imageName := containerConfig.ImageName + ":" + containerConfig.ImageTag
 
+	log.Debug("Creating container", containerConfig.ContainerName, "from", imageName)
+
+	config := &container.Config{
+		Image:        imageName,
+		AttachStdin:  false,
+		AttachStdout: true,
+		AttachStderr: true,
+		Cmd:          containerConfig.EntryPointArgs,
+		Env:          containerConfig.EnvArgs,
+		Tty:          false,
+		ExposedPorts: containerConfig.ExposedPorts,
+		Labels:       containerConfig.Labels,
+	}
+
+	hostConfig := &container.HostConfig{
+		PortBindings: containerConfig.PortBinding,
+		NetworkMode:  container.NetworkMode(containerConfig.NetworkDriver),
+		RestartPolicy: container.RestartPolicy{
+			Name:              "on-failure",
+			MaximumRetryCount: 100,
+		},
+		Mounts: containerConfig.MountConfigs,
+	}
+
+	networkConfig := &network.NetworkingConfig{
+		EndpointsConfig: map[string]*network.EndpointSettings{
+			containerConfig.NetworkName: {},
+		},
+	}
+
+	containerCreateResponse, err := DockerClient.ContainerCreate(ctx,
+		config,
+		hostConfig,
+		networkConfig,
+		nil,
+		containerConfig.ContainerName)
+	if err != nil {
+		log.Error(err)
+		return containerCreateResponse.ID, err
+	}
+	log.Debug("Created container " + containerConfig.ContainerName)
+
+	return containerCreateResponse.ID, nil
+}
+
+func StartContainer(containerId string) error {
 	err = DockerClient.ContainerStart(ctx, containerId, types.ContainerStartOptions{})
 	if err != nil {
-		log.Error(err)
-		return false
+		return err
 	}
+	log.Debug("Started container ID ", containerId)
 
-	out, err := DockerClient.ContainerLogs(ctx, containerId, types.ContainerLogsOptions{ShowStdout: true})
+	return nil
+}
+
+func CreateAndStartContainer(containerConfig model.ContainerConfig) (string, error) {
+	id, err := CreateContainer(containerConfig)
 	if err != nil {
-		log.Error(err)
-		return false
+		return id, err
 	}
 
-	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
+	err = StartContainer(id)
+	if err != nil {
+		return id, err
+	}
 
-	return true
+	return id, nil
+}
+
+func StopContainer(containerID string) error {
+	if err := DockerClient.ContainerStop(ctx, containerID, nil); err != nil {
+		log.Error(err)
+		return err
+	}
+
+	return nil
+}
+
+func StopAndRemoveContainer(containerID string) error {
+	if err := StopContainer(containerID); err != nil {
+		log.Errorf("Unable to stop container %s: %s\nWill try to force remove...", containerID, err)
+	}
+
+	removeOptions := types.ContainerRemoveOptions{
+		RemoveVolumes: true,
+		Force:         true,
+	}
+
+	if err := DockerClient.ContainerRemove(ctx, containerID, removeOptions); err != nil {
+		log.Errorf("Unable to remove container: %s", err)
+		return err
+	}
+
+	return nil
 }
 
 func ReadAllContainers() ([]types.Container, error) {
@@ -50,7 +127,7 @@ func ReadAllContainers() ([]types.Container, error) {
 	containers, err := DockerClient.ContainerList(context.Background(), options)
 	if err != nil {
 		log.Error(err)
-		return nil, nil
+		return nil, err
 	}
 	log.Debug("Docker_container -> ReadAllContainers response", containers)
 
@@ -67,120 +144,9 @@ func ReadDataServiceContainers(manifestID string, version string) ([]types.Conta
 	containers, err := DockerClient.ContainerList(context.Background(), options)
 	if err != nil {
 		log.Error(err)
-		return nil, nil
+		return nil, err
 	}
 	log.Debug("Docker_container -> ReadAllContainers response", containers)
 
 	return containers, nil
-}
-
-func StopContainer(containerId string) error {
-	if err := DockerClient.ContainerStop(ctx, containerId, nil); err != nil {
-		log.Error(err)
-		return err
-	}
-
-	return nil
-}
-
-// StartCreateContainer is a utility function based on the Docker SDK
-// The flow of logic;
-// 1) Instantiate the docker client object
-// 2) Configure the container with imageName and entryArgs
-// 3) Configure the host with the network configuration and restart policy
-// 4) Configure the network with endpoints
-// 5) Create the container with the above 3 configurations, and the container name
-// 6) Start the container
-// 7) Return containerStart response
-func StartCreateContainer(imageName string, startCommand model.ContainerConfig) (container.ContainerCreateCreatedBody, error) {
-	var containerName = startCommand.ContainerName
-
-	log.Debug("Creating container "+containerName, "from "+imageName)
-
-	containerConfig := &container.Config{
-		Image:        imageName,
-		AttachStdin:  false,
-		AttachStdout: false,
-		AttachStderr: false,
-		Cmd:          startCommand.EntryPointArgs,
-		Env:          startCommand.EnvArgs,
-		Tty:          false,
-		ExposedPorts: startCommand.ExposedPorts,
-		Labels:       startCommand.Labels,
-		//Volumes:      startCommand.Volumes, // TODO: Remove this later and use only Mounts instead
-	}
-
-	hostConfig := &container.HostConfig{
-		// Binds:        vols_bind, // TODO: Remove once Volumes removed
-		PortBindings: startCommand.PortBinding,
-		NetworkMode:  container.NetworkMode(startCommand.NetworkDriver),
-		RestartPolicy: container.RestartPolicy{
-			Name:              "on-failure",
-			MaximumRetryCount: 100,
-		},
-		Mounts: startCommand.MountConfigs,
-	}
-
-	networkConfig := &network.NetworkingConfig{
-		EndpointsConfig: map[string]*network.EndpointSettings{
-			startCommand.NetworkName: {},
-		},
-	}
-
-	containerCreateResponse, err := DockerClient.ContainerCreate(ctx,
-		containerConfig,
-		hostConfig,
-		networkConfig,
-		nil,
-		containerName)
-	if err != nil {
-		log.Error(err)
-		return containerCreateResponse, err
-	}
-	log.Debug("Created container " + containerName)
-
-	// Start container
-	err = DockerClient.ContainerStart(ctx, containerCreateResponse.ID, types.ContainerStartOptions{})
-	if err != nil {
-		log.Error(err)
-		return containerCreateResponse, err
-	}
-	log.Debug("Started container!")
-
-	return containerCreateResponse, nil
-}
-
-func StopAndRemoveContainer(containerID string) error {
-	if err := DockerClient.ContainerStop(ctx, containerID, nil); err != nil {
-		log.Printf("Unable to stop container %s: %s", containerID, err)
-	}
-
-	removeOptions := types.ContainerRemoveOptions{
-		RemoveVolumes: true,
-		Force:         true,
-	}
-
-	if err := DockerClient.ContainerRemove(ctx, containerID, removeOptions); err != nil {
-		log.Printf("Unable to remove container: %s", err)
-		return err
-	}
-
-	return nil
-}
-
-func CreateContainer(containerName string, imageName string) bool {
-	resp, err := DockerClient.ContainerCreate(ctx, &container.Config{
-		Image: imageName,
-		Cmd:   []string{"echo", "Container " + containerName + " created"},
-	}, &container.HostConfig{}, &network.NetworkingConfig{}, nil, containerName)
-	if err != nil {
-		log.Error(err)
-		return false
-	}
-
-	if !StartContainer(resp.ID) {
-		return false
-	}
-
-	return true
 }

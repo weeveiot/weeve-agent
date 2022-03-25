@@ -28,7 +28,7 @@ func PullImage(imgDetails model.RegistryDetails) error {
 
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
 
-	events, err := dockerClient.ImagePull(ctx, imgDetails.ImageName, types.ImagePullOptions{RegistryAuth: authStr})
+	events, err := DockerClient.ImagePull(ctx, imgDetails.ImageName, types.ImagePullOptions{RegistryAuth: authStr})
 	if err != nil {
 		log.Error(err)
 		return err
@@ -95,7 +95,7 @@ func ImageExists(id string) (bool, error) {
 
 // ReadImage by ImageId
 func ReadImage(id string) (types.ImageInspect, error) {
-	images, bytes, err := dockerClient.ImageInspectWithRaw(ctx, id)
+	images, bytes, err := DockerClient.ImageInspectWithRaw(ctx, id)
 	if err != nil && bytes != nil {
 		log.Error(err)
 		return types.ImageInspect{}, err

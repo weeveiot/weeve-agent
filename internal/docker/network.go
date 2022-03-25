@@ -1,12 +1,15 @@
 package docker
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
 	linq "github.com/ahmetb/go-linq/v3"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/network"
 	log "github.com/sirupsen/logrus"
 )
@@ -14,7 +17,7 @@ import (
 func ReadAllNetworks() []types.NetworkResource {
 	log.Debug("Docker_container -> ReadAllNetworks")
 
-	networks, err := dockerClient.NetworkList(ctx, types.NetworkListOptions{})
+	networks, err := DockerClient.NetworkList(ctx, types.NetworkListOptions{})
 	if err != nil {
 		log.Error(err)
 		return nil
@@ -23,9 +26,24 @@ func ReadAllNetworks() []types.NetworkResource {
 	return networks
 }
 
-func GetNetworkName(name string) string {
-	networkName := ""
+func ReadDataServiceNetworks(manifestID string, version string) ([]types.NetworkResource, error) {
+	log.Debug("Docker_container -> ReadDataServiceNetworks")
 
+	filter := filters.NewArgs()
+	filter.Add("label", "manifestID="+manifestID)
+	filter.Add("label", "version="+version)
+	options := types.NetworkListOptions{Filters: filter}
+
+	networks, err := DockerClient.NetworkList(ctx, options)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	return networks, nil
+}
+
+func makeNetworkName(name string) string {
 	// Initial values
 	manifestNamelength := 11
 	indexLength := 3
@@ -56,14 +74,35 @@ func GetNetworkName(name string) string {
 		}
 	}
 
-	networkName = fmt.Sprint(name, "_", presidingDigits[len(presidingDigits)-indexLength:])
+	networkName := fmt.Sprint(name, "_", presidingDigits[len(presidingDigits)-indexLength:])
 
 	return strings.ReplaceAll(networkName, " ", "")
 }
 
+func CreateNetwork(name string, labels map[string]string) (string, error) {
+	var networkCreateOptions types.NetworkCreate
+	networkCreateOptions.CheckDuplicate = true
+	networkCreateOptions.Attachable = true
+	networkCreateOptions.Labels = labels
+
+	networkName := makeNetworkName(name)
+	if networkName == "" {
+		log.Error("Failed to generate Network Name")
+		return "", errors.New("failed to generate network name")
+	}
+
+	_, err := DockerClient.NetworkCreate(context.Background(), networkName, networkCreateOptions)
+	if err != nil {
+		log.Error(err)
+		return networkName, err
+	}
+
+	return networkName, nil
+}
+
 func AttachContainerNetwork(containerID string, networkName string) error {
 	var netConfig network.EndpointSettings
-	err = dockerClient.NetworkConnect(ctx, networkName, containerID, &netConfig)
+	err = DockerClient.NetworkConnect(ctx, networkName, containerID, &netConfig)
 	if err != nil {
 		return err
 	}
