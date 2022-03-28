@@ -1,15 +1,11 @@
 package deploy
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/docker/docker/api/types/filters"
-
-	"github.com/docker/docker/api/types"
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/model"
@@ -75,7 +71,7 @@ func DeployDataService(man model.Manifest, command string) error {
 		exists, err := docker.ImageExists(imgDetails.ImageName)
 		if err != nil {
 			log.Error(deploymentID, err)
-			return errors.New("images exists")
+			return err
 		}
 		if exists { // Image already exists, continue
 			log.Info(deploymentID, fmt.Sprintf("Image %v, already exists on host", imgDetails.ImageName))
@@ -248,7 +244,7 @@ func UndeployDataService(manifestID string, version string) error {
 		return err
 	}
 
-	for imageID, _ := range numContainersPerImage {
+	for imageID := range numContainersPerImage {
 		for _, container := range containers {
 			if container.ImageID == imageID {
 				numContainersPerImage[imageID]++
@@ -257,7 +253,7 @@ func UndeployDataService(manifestID string, version string) error {
 
 		if numContainersPerImage[imageID] == 0 {
 			log.Info(deploymentID, "Remove Image - ", imageID)
-			_, err := docker.DockerClient.ImageRemove(context.Background(), imageID, types.ImageRemoveOptions{})
+			err := docker.ImageRemove(imageID)
 			if err != nil {
 				log.Error(deploymentID, err)
 				logStatus(manifestID, version, "UNDEPLOY_FAILED", err.Error())
@@ -268,17 +264,13 @@ func UndeployDataService(manifestID string, version string) error {
 
 	//******** STEP 3 - Remove Network *************//
 	log.Info(deploymentID, "Pruning networks ...")
-	filter := filters.NewArgs()
-	filter.Add("label", "manifestID="+manifestID)
-	filter.Add("label", "version="+version)
 
-	pruneReport, err := docker.DockerClient.NetworksPrune(context.Background(), filter)
+	err = docker.NetworkPrune(manifestID, version)
 	if err != nil {
 		log.Error(deploymentID, err)
 		logStatus(manifestID, version, "UNDEPLOY_FAILED", err.Error())
 		errorlist = fmt.Sprintf("%v,%v", errorlist, err)
 	}
-	log.Info(deploymentID, "Pruned networks:", pruneReport, "!")
 
 	logStatus(manifestID, version, "UNDEPLOYED", "Undeployed successfully")
 

@@ -10,14 +10,18 @@ import (
 	linq "github.com/ahmetb/go-linq/v3"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/network"
 	log "github.com/sirupsen/logrus"
 )
 
-func ReadAllNetworks() []types.NetworkResource {
-	log.Debug("Docker_container -> ReadAllNetworks")
+// Network name constraints
+const manifestNamelength = 11
+const indexLength = 3
+const maxNetworkIndex = 999
 
-	networks, err := DockerClient.NetworkList(ctx, types.NetworkListOptions{})
+func readAllNetworks() []types.NetworkResource {
+	log.Debug("Docker_container -> readAllNetworks")
+
+	networks, err := dockerClient.NetworkList(ctx, types.NetworkListOptions{})
 	if err != nil {
 		log.Error(err)
 		return nil
@@ -34,7 +38,7 @@ func ReadDataServiceNetworks(manifestID string, version string) ([]types.Network
 	filter.Add("label", "version="+version)
 	options := types.NetworkListOptions{Filters: filter}
 
-	networks, err := DockerClient.NetworkList(ctx, options)
+	networks, err := dockerClient.NetworkList(ctx, options)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -44,37 +48,30 @@ func ReadDataServiceNetworks(manifestID string, version string) ([]types.Network
 }
 
 func makeNetworkName(name string) string {
-	// Initial values
-	manifestNamelength := 11
-	indexLength := 3
-	presidingDigits := "00"
-	maxNetworkIndex := 999
+	format := "%s_%0" + fmt.Sprint(indexLength) + "d"
 
+	// Prune the name if necessary
 	if len(name) <= 0 {
 		return ""
 	} else if len(name) > manifestNamelength {
 		name = name[:manifestNamelength]
 	}
 
-	// Get last network count
-	networks := ReadAllNetworks()
-	if len(networks) >= 0 {
-		// Generate next network name
-		maxCount := GetLastCreatedNetworkCount(networks, indexLength)
-		if maxCount < maxNetworkIndex {
-			presidingDigits = fmt.Sprint(presidingDigits, maxCount+1)
-		} else {
-			lowestAvailCount := GetLowestAvailableNetworkCount(networks, maxNetworkIndex, indexLength)
-			if lowestAvailCount == 0 {
-				log.Warning("Number of data services limit is exceeded")
-				return ""
-			}
-
-			presidingDigits = fmt.Sprint(presidingDigits, lowestAvailCount)
+	// Get new network count
+	var newCount int
+	maxCount := getLastCreatedNetworkCount()
+	if maxCount < maxNetworkIndex {
+		newCount = maxCount + 1
+	} else {
+		newCount = getLowestAvailableNetworkCount()
+		if newCount < 0 { // no available network count found
+			log.Warning("Number of data services limit is exceeded")
+			return ""
 		}
 	}
 
-	networkName := fmt.Sprint(name, "_", presidingDigits[len(presidingDigits)-indexLength:])
+	// Generate next network name
+	networkName := fmt.Sprintf(format, name, newCount)
 
 	return strings.ReplaceAll(networkName, " ", "")
 }
@@ -91,7 +88,7 @@ func CreateNetwork(name string, labels map[string]string) (string, error) {
 		return "", errors.New("failed to generate network name")
 	}
 
-	_, err := DockerClient.NetworkCreate(context.Background(), networkName, networkCreateOptions)
+	_, err := dockerClient.NetworkCreate(context.Background(), networkName, networkCreateOptions)
 	if err != nil {
 		log.Error(err)
 		return networkName, err
@@ -100,62 +97,63 @@ func CreateNetwork(name string, labels map[string]string) (string, error) {
 	return networkName, nil
 }
 
-func AttachContainerNetwork(containerID string, networkName string) error {
-	var netConfig network.EndpointSettings
-	err = DockerClient.NetworkConnect(ctx, networkName, containerID, &netConfig)
+func NetworkPrune(manifestID string, version string) error {
+	filter := filters.NewArgs()
+	filter.Add("label", "manifestID="+manifestID)
+	filter.Add("label", "version="+version)
+
+	pruneReport, err := dockerClient.NetworksPrune(ctx, filter)
 	if err != nil {
+		log.Error(err)
 		return err
 	}
-	log.Debug("Connected ", containerID, "to network", networkName)
+	log.Info("Pruned networks: ", pruneReport.NetworksDeleted)
 	return nil
 }
 
-func GetLastCreatedNetworkCount(networks []types.NetworkResource, indexLength int) int {
+func getLastCreatedNetworkCount() int {
 	maxCount := 0
 
-	var counts []int
-	linq.From(networks).Select(func(c interface{}) interface{} {
-		nm := c.(types.NetworkResource).Name
-		nm = nm[len(nm)-indexLength:]
-		count, _ := strconv.Atoi(nm)
-		return count
-	}).ToSlice(&counts)
+	counts := getExistingNetworkCounts()
 
-	if len(counts) > 0 {
-		for _, e := range counts {
-			if e > maxCount {
-				maxCount = e
-			}
+	for _, e := range counts {
+		if e > maxCount {
+			maxCount = e
 		}
 	}
 
 	return maxCount
 }
 
-func GetLowestAvailableNetworkCount(networks []types.NetworkResource, maxNetworkIndex int, indexLength int) int {
-	minAvailCount := 0
+func getLowestAvailableNetworkCount() int {
+	counts := getExistingNetworkCounts()
 
+	// find lowest available network count
+	for minAvailCount := 0; minAvailCount < maxNetworkIndex; minAvailCount++ {
+		available := true
+		for _, existingCount := range counts {
+			if minAvailCount == existingCount {
+				available = false
+				break
+			}
+		}
+		if available {
+			return minAvailCount
+		}
+	}
+
+	// no available count found
+	return -1
+}
+
+func getExistingNetworkCounts() []int {
 	var counts []int
+	networks := readAllNetworks()
 	linq.From(networks).Select(func(c interface{}) interface{} {
 		nm := c.(types.NetworkResource).Name
 		nm = nm[len(nm)-indexLength:]
 		count, _ := strconv.Atoi(nm)
 		return count
 	}).ToSlice(&counts)
-
-	var availCount []int
-	for i := 1; i < maxNetworkIndex; i++ {
-		linq.From(counts).Where(func(c interface{}) bool {
-			return c.(int) == i
-		}).Select(func(c interface{}) interface{} {
-			return c.(int)
-		}).ToSlice(&availCount)
-
-		if len(availCount) == 0 {
-			minAvailCount = i
-			break
-		}
-	}
-
-	return minAvailCount
+	return counts
 }

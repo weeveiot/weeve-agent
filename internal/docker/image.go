@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
 	"github.com/weeveiot/weeve-agent/internal/model"
 
 	log "github.com/sirupsen/logrus"
@@ -28,15 +29,11 @@ func PullImage(imgDetails model.RegistryDetails) error {
 
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
 
-	events, err := DockerClient.ImagePull(ctx, imgDetails.ImageName, types.ImagePullOptions{RegistryAuth: authStr})
+	events, err := dockerClient.ImagePull(ctx, imgDetails.ImageName, types.ImagePullOptions{RegistryAuth: authStr})
 	if err != nil {
 		log.Error(err)
 		return err
 	}
-	// defer out.Close()
-
-	// To write all
-	//io.Copy(os.Stdout, out)
 
 	d := json.NewDecoder(events)
 
@@ -78,28 +75,24 @@ func PullImage(imgDetails model.RegistryDetails) error {
 }
 
 // Check if the image exists in the local context
-// Return bool
+// Return an error only if something went wrong, if the image is not found the error is nil
 func ImageExists(id string) (bool, error) {
-	image, err := ReadImage(id)
-
+	_, _, err := dockerClient.ImageInspectWithRaw(ctx, id)
 	if err != nil {
-		return false, err
+		if client.IsErrNotFound(err) {
+			return false, nil
+		} else {
+			return false, err
+		}
 	}
-
-	if image.ID != "" {
-		return true, nil
-	} else {
-		return false, nil
-	}
+	return true, nil
 }
 
-// ReadImage by ImageId
-func ReadImage(id string) (types.ImageInspect, error) {
-	images, bytes, err := DockerClient.ImageInspectWithRaw(ctx, id)
-	if err != nil && bytes != nil {
+func ImageRemove(imageID string) error {
+	_, err := dockerClient.ImageRemove(ctx, imageID, types.ImageRemoveOptions{})
+	if err != nil {
 		log.Error(err)
-		return types.ImageInspect{}, err
+		return err
 	}
-
-	return images, nil
+	return nil
 }

@@ -13,7 +13,7 @@ import (
 )
 
 var ctx = context.Background()
-var DockerClient, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+var dockerClient, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 
 func init() {
 	if err != nil {
@@ -55,7 +55,7 @@ func CreateContainer(containerConfig model.ContainerConfig) (string, error) {
 		},
 	}
 
-	containerCreateResponse, err := DockerClient.ContainerCreate(ctx,
+	containerCreateResponse, err := dockerClient.ContainerCreate(ctx,
 		config,
 		hostConfig,
 		networkConfig,
@@ -71,7 +71,7 @@ func CreateContainer(containerConfig model.ContainerConfig) (string, error) {
 }
 
 func StartContainer(containerId string) error {
-	err = DockerClient.ContainerStart(ctx, containerId, types.ContainerStartOptions{})
+	err = dockerClient.ContainerStart(ctx, containerId, types.ContainerStartOptions{})
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func CreateAndStartContainer(containerConfig model.ContainerConfig) (string, err
 }
 
 func StopContainer(containerID string) error {
-	if err := DockerClient.ContainerStop(ctx, containerID, nil); err != nil {
+	if err := dockerClient.ContainerStop(ctx, containerID, nil); err != nil {
 		log.Error(err)
 		return err
 	}
@@ -113,7 +113,7 @@ func StopAndRemoveContainer(containerID string) error {
 		Force:         true,
 	}
 
-	if err := DockerClient.ContainerRemove(ctx, containerID, removeOptions); err != nil {
+	if err := dockerClient.ContainerRemove(ctx, containerID, removeOptions); err != nil {
 		log.Errorf("Unable to remove container: %s", err)
 		return err
 	}
@@ -124,7 +124,7 @@ func StopAndRemoveContainer(containerID string) error {
 func ReadAllContainers() ([]types.Container, error) {
 	log.Debug("Docker_container -> ReadAllContainers")
 	options := types.ContainerListOptions{All: true}
-	containers, err := DockerClient.ContainerList(context.Background(), options)
+	containers, err := dockerClient.ContainerList(context.Background(), options)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -141,7 +141,7 @@ func ReadDataServiceContainers(manifestID string, version string) ([]types.Conta
 	filter.Add("label", "manifestID="+manifestID)
 	filter.Add("label", "version="+version)
 	options := types.ContainerListOptions{All: true, Filters: filter}
-	containers, err := DockerClient.ContainerList(context.Background(), options)
+	containers, err := dockerClient.ContainerList(context.Background(), options)
 	if err != nil {
 		log.Error(err)
 		return nil, err
