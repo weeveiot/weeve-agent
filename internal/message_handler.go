@@ -11,18 +11,18 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/util/jsonlines"
 )
 
-func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
+func ProcessMessage(topic string, payload []byte, retry bool) {
 	// flag for exception handling
 	exception := true
 	defer func() {
 		if exception && retry {
 			// on exception sleep 5s and try again
 			time.Sleep(5 * time.Second)
-			ProcessMessage(topic_rcvd, payload, false)
+			ProcessMessage(topic, payload, false)
 		}
 	}()
 
-	log.Info("Processing the message >> ", topic_rcvd)
+	log.Info("Processing the message >> ", topic)
 
 	jsonParsed, err := gabs.ParseJSON(payload)
 	if err != nil {
@@ -30,13 +30,13 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 	} else {
 		log.Debug("Parsed JSON >> ", jsonParsed)
 
-		if topic_rcvd == "CheckVersion" {
+		if topic == "CheckVersion" {
 
-		} else if topic_rcvd == "deploy" {
+		} else if topic == "deploy" {
 
 			var thisManifest = model.Manifest{}
 			thisManifest.Manifest = *jsonParsed
-			err := deploy.DeployManifest(thisManifest, topic_rcvd)
+			err := deploy.DeployDataService(thisManifest, topic)
 			if err != nil {
 				log.Info("Deployment failed! CAUSE --> ", err, "!")
 			} else {
@@ -44,11 +44,11 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 
 			}
 
-		} else if topic_rcvd == "redeploy" {
+		} else if topic == "redeploy" {
 
 			var thisManifest = model.Manifest{}
 			thisManifest.Manifest = *jsonParsed
-			err := deploy.DeployManifest(thisManifest, topic_rcvd)
+			err := deploy.DeployDataService(thisManifest, topic)
 			if err != nil {
 				log.Info("Redeployment failed! CAUSE --> ", err, "!")
 			} else {
@@ -56,7 +56,7 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 
 			}
 
-		} else if topic_rcvd == "stopservice" {
+		} else if topic == "stopservice" {
 
 			err := model.ValidateStartStopJSON(jsonParsed)
 			if err == nil {
@@ -74,7 +74,7 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 
 			}
 
-		} else if topic_rcvd == "startservice" {
+		} else if topic == "startservice" {
 
 			err := model.ValidateStartStopJSON(jsonParsed)
 			if err == nil {
@@ -84,13 +84,12 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 				err := deploy.StartDataService(serviceId, serviceVersion)
 				if err != nil {
 					log.Error(err)
-
 				} else {
 					log.Info("Service started!")
 				}
 			}
 
-		} else if topic_rcvd == "undeploy" {
+		} else if topic == "undeploy" {
 
 			err := model.ValidateStartStopJSON(jsonParsed)
 			if err == nil {
@@ -111,7 +110,7 @@ func ProcessMessage(topic_rcvd string, payload []byte, retry bool) {
 }
 
 func GetStatusMessage(nodeId string) model.StatusMessage {
-	manifests, err := jsonlines.Read(deploy.ManifestFile, "", "", nil, false)
+	manifests, err := jsonlines.Read(deploy.ManifestFile, nil, false)
 
 	if err != nil {
 		return model.StatusMessage{}
