@@ -11,18 +11,18 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/util/jsonlines"
 )
 
-func ProcessMessage(topic string, payload []byte, retry bool) {
+func ProcessMessage(operation string, payload []byte, retry bool) {
 	// flag for exception handling
 	exception := true
 	defer func() {
 		if exception && retry {
 			// on exception sleep 5s and try again
 			time.Sleep(5 * time.Second)
-			ProcessMessage(topic, payload, false)
+			ProcessMessage(operation, payload, false)
 		}
 	}()
 
-	log.Info("Processing the message >> ", topic)
+	log.Info("Processing the message >> ", operation)
 
 	jsonParsed, err := gabs.ParseJSON(payload)
 	if err != nil {
@@ -30,13 +30,13 @@ func ProcessMessage(topic string, payload []byte, retry bool) {
 	} else {
 		log.Debug("Parsed JSON >> ", jsonParsed)
 
-		if topic == "CheckVersion" {
+		if operation == "CheckVersion" {
 
-		} else if topic == "deploy" {
+		} else if operation == "deploy" {
 
 			var thisManifest = model.Manifest{}
 			thisManifest.Manifest = *jsonParsed
-			err := deploy.DeployDataService(thisManifest, topic)
+			err := deploy.DeployDataService(thisManifest, operation)
 			if err != nil {
 				log.Info("Deployment failed! CAUSE --> ", err, "!")
 			} else {
@@ -44,11 +44,11 @@ func ProcessMessage(topic string, payload []byte, retry bool) {
 
 			}
 
-		} else if topic == "redeploy" {
+		} else if operation == "redeploy" {
 
 			var thisManifest = model.Manifest{}
 			thisManifest.Manifest = *jsonParsed
-			err := deploy.DeployDataService(thisManifest, topic)
+			err := deploy.DeployDataService(thisManifest, operation)
 			if err != nil {
 				log.Info("Redeployment failed! CAUSE --> ", err, "!")
 			} else {
@@ -56,7 +56,7 @@ func ProcessMessage(topic string, payload []byte, retry bool) {
 
 			}
 
-		} else if topic == "stopservice" {
+		} else if operation == "stopservice" {
 
 			err := model.ValidateStartStopJSON(jsonParsed)
 			if err == nil {
@@ -74,7 +74,7 @@ func ProcessMessage(topic string, payload []byte, retry bool) {
 
 			}
 
-		} else if topic == "startservice" {
+		} else if operation == "startservice" {
 
 			err := model.ValidateStartStopJSON(jsonParsed)
 			if err == nil {
@@ -89,7 +89,7 @@ func ProcessMessage(topic string, payload []byte, retry bool) {
 				}
 			}
 
-		} else if topic == "undeploy" {
+		} else if operation == "undeploy" {
 
 			err := model.ValidateStartStopJSON(jsonParsed)
 			if err == nil {

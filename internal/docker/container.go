@@ -1,3 +1,5 @@
+//go:build !secunet
+
 package docker
 
 import (
@@ -22,7 +24,7 @@ func init() {
 	}
 }
 
-func CreateContainer(containerConfig model.ContainerConfig) (string, error) {
+func createContainer(containerConfig model.ContainerConfig) (string, error) {
 	imageName := containerConfig.ImageName + ":" + containerConfig.ImageTag
 
 	log.Debug("Creating container", containerConfig.ContainerName, "from", imageName)
@@ -70,18 +72,18 @@ func CreateContainer(containerConfig model.ContainerConfig) (string, error) {
 	return containerCreateResponse.ID, nil
 }
 
-func StartContainer(containerId string) error {
-	err = dockerClient.ContainerStart(ctx, containerId, types.ContainerStartOptions{})
+func StartContainer(containerID string) error {
+	err = dockerClient.ContainerStart(ctx, containerID, types.ContainerStartOptions{})
 	if err != nil {
 		return err
 	}
-	log.Debug("Started container ID ", containerId)
+	log.Debug("Started container ID ", containerID)
 
 	return nil
 }
 
 func CreateAndStartContainer(containerConfig model.ContainerConfig) (string, error) {
-	id, err := CreateContainer(containerConfig)
+	id, err := createContainer(containerConfig)
 	if err != nil {
 		return id, err
 	}

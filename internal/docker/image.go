@@ -1,4 +1,5 @@
-// data_access
+//go:build !secunet
+
 package docker
 
 import (

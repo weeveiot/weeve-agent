@@ -1,3 +1,5 @@
+//go:build !secunet
+
 package docker
 
 import (
