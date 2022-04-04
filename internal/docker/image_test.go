@@ -18,18 +18,13 @@ func TestMain(m *testing.M) {
 
 	fullManifestPath := "/testdata/pipeline_integration_public/workingMVP.json"
 	manifestBytesMVP = LoadJsonBytes(fullManifestPath)
-	// manifestBytesMVP = LoadJsonBytes("./testdata/pipeline_integration_public/workingMVP.json")
 	code := m.Run()
 
 	os.Exit(code)
-
-	// manifest := ParseJSONManifest(manifestBytes)
-	// fmt.Println(manifest
 }
 
 func LoadJsonBytes(filePath string) []byte {
 	manifestPath := path.Join(util.GetExeDir(), filePath)
-	//fmt.Println("Loading manifest from ", manifestPath)
 
 	manifestBytes, err := ioutil.ReadFile(manifestPath)
 	if err != nil {

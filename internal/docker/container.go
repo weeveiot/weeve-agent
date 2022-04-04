@@ -2,7 +2,6 @@
 package docker
 
 import (
-	"fmt"
 	"os"
 
 	"context"
@@ -16,37 +15,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
-
-func StartContainers() bool {
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(err)
-		return false
-	}
-
-	options := types.ContainerListOptions{All: true}
-	containers, err := cli.ContainerList(ctx, options)
-	if err != nil {
-		log.Error(err)
-		return false
-	}
-
-	for _, container := range containers {
-		fmt.Print("Startings container ", container.ID[:10], "... ", container.State)
-		// if "State": "running"
-
-		if container.State != "running" {
-
-			if err := cli.ContainerStart(ctx, container.ID, types.ContainerStartOptions{}); err != nil {
-				log.Error(err)
-				return false
-			}
-		}
-		fmt.Println("Success")
-	}
-	return true
-}
 
 func StartContainer(containerId string) bool {
 	ctx := context.Background()
@@ -159,11 +127,9 @@ func StartCreateContainer(imageName string, startCommand model.ContainerConfig) 
 		Tty:          false,
 		ExposedPorts: startCommand.ExposedPorts,
 		Labels:       startCommand.Labels,
-		//Volumes:      startCommand.Volumes, // TODO: Remove this later and use only Mounts instead
 	}
 
 	hostConfig := &container.HostConfig{
-		// Binds:        vols_bind, // TODO: Remove once Volumes removed
 		PortBindings: startCommand.PortBinding,
 		NetworkMode:  container.NetworkMode(startCommand.NetworkDriver),
 		RestartPolicy: container.RestartPolicy{

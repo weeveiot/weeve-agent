@@ -42,10 +42,6 @@ func PullImage(imgDetails model.RegistryDetails) error {
 		log.Error(err)
 		return err
 	}
-	// defer out.Close()
-
-	// To write all
-	//io.Copy(os.Stdout, out)
 
 	d := json.NewDecoder(events)
 

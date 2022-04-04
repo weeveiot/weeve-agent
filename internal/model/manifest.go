@@ -237,56 +237,6 @@ func (m Manifest) GetContainerStart(networkName string) []ContainerConfig {
 		var cmdArgs = ParseArguments(mod.Search("commands").Children(), true)
 		thisStartCommand.EntryPointArgs = cmdArgs
 
-		/*
-			// Handle the options
-			var ExposedPorts string
-			for _, option := range thisStartCommand.Options {
-				// ExposedPorts is a simple option, just apply it to the struct
-				if option.key == "ExposedPorts" {
-					ExposedPorts = option.val
-					thisStartCommand.ExposedPorts = nat.PortSet{
-						nat.Port(option.val): struct{}{},
-					}
-				}
-				// HostIP is always found with HostPort
-				// TODO: Refactor!
-				if option.key == "HostIP" {
-					HostIP := option.val
-					HostPort := ""
-					for _, subOpt := range thisStartCommand.Options {
-						if subOpt.key == "HostPort" {
-							HostPort = subOpt.val
-						}
-					}
-					// Make sure HostPort was seen in the options!
-					if HostPort == "" {
-						// Set default HostPort as in Modules and Intercontainer Communication Spec 1.0.0
-						HostPort = "80"
-					}
-
-					// Finally, build the PortBindings struct
-					thisStartCommand.PortBinding = nat.PortMap{
-						nat.Port(ExposedPorts): []nat.PortBinding{
-							{
-								HostIP:   HostIP,
-								HostPort: HostPort,
-							},
-						},
-					}
-				}
-
-				if option.key == "network" {
-					thisStartCommand.NetworkMode = container.NetworkMode(option.val)
-				}
-
-				networkConfig := &network.NetworkingConfig{
-					EndpointsConfig: map[string]*network.EndpointSettings{},
-				}
-
-				thisStartCommand.NetworkConfig = *networkConfig
-			}
-		*/
-
 		startCommands = append(startCommands, thisStartCommand)
 	}
 
