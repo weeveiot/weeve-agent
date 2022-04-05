@@ -10,6 +10,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/docker/docker/api/types"
@@ -17,11 +19,17 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
+const registryUrl = "https://registry-1.docker.io"
+const authUrl = "https://auth.docker.io"
+const svcUrl = "registry.docker.io"
+
 const host = "edge.internal"
 const port = 4444
 
 var edgeUrl = fmt.Sprintf("https://%s:%d/rest_api/v1", host, port)
 var client http.Client
+var existingImagesIdToName = make(map[string]string)
+var existingImagesNameToId = make(map[string]string)
 
 func init() {
 	certFile := "/var/hostdir/clientcert/cert.pem"
@@ -41,29 +49,8 @@ func init() {
 // File: container.go
 
 func getImageID(name, tag string) string {
-	getCommandUrl := "/docker/images"
-	resp, err := client.Get(edgeUrl + getCommandUrl)
-	if err != nil {
-		log.Error(err)
-	}
-
-	type ImageInfo map[string]string
-	var resp_json map[string][]ImageInfo
-	body, err := ioutil.ReadAll(resp.Body)
-	defer resp.Body.Close()
-	if err != nil {
-		log.Error(err)
-	}
-	json.Unmarshal(body, &resp_json)
-
-	images := resp_json["images"]
-	for _, image := range images {
-		// TODO: include image name in the filter
-		if image["tag"] == tag {
-			return image["id"]
-		}
-	}
-	return ""
+	fullName := name + tag
+	return existingImagesNameToId[fullName]
 }
 
 func StartContainer(containerID string) error {
@@ -188,7 +175,7 @@ func ReadAllContainers() ([]types.Container, error) {
 		}
 		return containerStructs, nil
 	} else {
-		err = errors.New(fmt.Sprintf("HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
+		err = errors.New(fmt.Sprintf("ReadAllContainers: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
 		return nil, err
 	}
 }
@@ -212,15 +199,175 @@ func ReadDataServiceContainers(manifestID string, version string) ([]types.Conta
 
 // File: image.go
 
-func PullImage(imgDetails model.RegistryDetails) error {
-	return nil
+func getAuthToken(imageName string) (string, error) {
+	commandUrl := fmt.Sprintf("%s/token?service=%s&scope=repository:library/%s:pull", authUrl, svcUrl, imageName)
+	resp, err := http.Get(commandUrl)
+	if err != nil {
+		log.Error(err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		log.Error(err)
+	}
+
+	if resp.StatusCode == 200 {
+		var resp_json map[string]string
+		json.Unmarshal(body, &resp_json)
+
+		return resp_json["token"], nil
+	} else {
+		err = errors.New(fmt.Sprintf("PullImage: Could not get the authentication token. HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
+		return "", err
+	}
+}
+
+// WIP!!!
+func getManifest(token, imageName, digest string) ([]byte, error) {
+	if digest == "" {
+		digest = "latest"
+	}
+	commandUrl := fmt.Sprintf("%s/v2/library/%s/manifests/%s", registryUrl, imageName, digest)
+	req, err := http.NewRequest(http.MethodGet, commandUrl, nil)
+	if err != nil {
+		log.Error(err)
+	}
+	req.Header.Add("Authorization", "Bearer "+token)
+	req.Header.Add("Accept", "application/vnd.docker.distribution.manifest.list.v2+json")
+	req.Header.Add("Accept", "application/vnd.docker.distribution.manifest.v1+json")
+	req.Header.Add("Accept", "application/vnd.docker.distribution.manifest.v2+json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Error(err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		log.Error(err)
+	}
+
+	if resp.StatusCode == 200 {
+		return body, nil
+	} else {
+		err = errors.New(fmt.Sprintf("getManifest: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
+		return nil, err
+	}
+}
+
+// WIP!!!
+func PullImage(imgDetails model.RegistryDetails) (string, error) {
+	// TODO: transform to HTTPS
+
+	// token, err := getAuthToken(imgDetails.ImageName)
+	// if err != nil {
+	// 	log.Error(err)
+	// }
+
+	// getManifest(token, imgDetails.ImageName, "")
+
+	// INTERIM SOLUTION
+	downloadScriptName := "download-frozen-image-v2.sh"
+	archiveScriptName := "archive.sh"
+	nameWithoutTag := strings.Split(imgDetails.ImageName, ":")[0] // extract the image name w/o tag
+	cmd := exec.Command("./"+downloadScriptName, nameWithoutTag, imgDetails.ImageName)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Error(err)
+		return "", err
+	}
+
+	fmt.Println(string(out))
+
+	cmd = exec.Command("./"+archiveScriptName, nameWithoutTag)
+	err = cmd.Run()
+	if err != nil {
+		log.Error(err)
+		return "", err
+	}
+
+	fd, err := os.Open(nameWithoutTag + ".tar.gz")
+	if err != nil {
+		log.Error(err)
+		return "", err
+	}
+	defer fd.Close()
+
+	commandUrl := "/docker/images"
+	req, err := http.NewRequest(http.MethodPut, commandUrl, fd)
+	if err != nil {
+		log.Error(err)
+		return "", err
+	}
+	// req.Header.Set("Content-Type", "text/plain")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Error(err)
+		return "", err
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		log.Error(err)
+	}
+
+	if resp.StatusCode == 200 {
+		var resp_json map[string]string
+		json.Unmarshal(body, &resp_json)
+		imageID := resp_json["id"]
+
+		// add image to local database
+		existingImagesIdToName[imageID] = nameWithoutTag
+		existingImagesNameToId[nameWithoutTag] = imageID
+
+		return imageID, nil
+	} else {
+		err = errors.New(fmt.Sprintf("PullImage: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
+		return "", err
+	}
 }
 
 func ImageExists(id string) (bool, error) {
-	return false, nil
+	if existingImagesIdToName[id] == "" {
+		return false, nil
+	} else {
+		return true, nil
+	}
 }
 
 func ImageRemove(imageID string) error {
+	commandUrl := fmt.Sprintf("/docker/images/%s", imageID)
+	req, err := http.NewRequest(http.MethodDelete, edgeUrl+commandUrl, nil)
+	if err != nil {
+		log.Error(err)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Error(err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if err != nil {
+		log.Error(err)
+	}
+
+	if resp.StatusCode == 200 {
+		// remove image from local database
+		fullName := existingImagesIdToName[imageID]
+		delete(existingImagesNameToId, fullName)
+		delete(existingImagesIdToName, imageID)
+
+		log.Debug("Removed image ID ", imageID)
+	} else {
+		err = errors.New(fmt.Sprintf("ImageRemove: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
+	}
+
 	return nil
 }
 
