@@ -42,10 +42,7 @@ type ContainerConfig struct {
 	Labels         map[string]string
 }
 
-type OptionKeyVal struct {
-	key string
-	val string
-}
+type OptionKeyVal struct{}
 
 type RegistryDetails struct {
 	ImageName string
