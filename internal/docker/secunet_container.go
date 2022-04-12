@@ -1,15 +1,15 @@
-//go:build !secunet
+//go:build secunet
 
-package secunet
+package docker
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/docker/docker/api/types"
@@ -26,6 +26,8 @@ const port = 4444
 
 var edgeUrl = fmt.Sprintf("https://%s:%d/rest_api/v1", host, port)
 var client http.Client
+
+var existingContainers = make(map[string]string)
 
 func init() {
 	certFile := "/var/hostdir/clientcert/cert.pem"
@@ -63,32 +65,49 @@ func StartContainer(containerID string) error {
 		log.Error(err)
 	}
 
+	body, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+
 	if resp.StatusCode == 200 {
 		log.Debug("Started container ID ", containerID)
+		return nil
+	} else {
+		err = errors.New(fmt.Sprintf("StartContainer: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
+		return err
 	}
-
-	return nil
 }
 
 func CreateAndStartContainer(containerConfig model.ContainerConfig) (string, error) {
-	imageID := getImageID(containerConfig.ImageName, containerConfig.ImageTag)
-	containerName := containerConfig.ContainerName + containerConfig.Labels["manifestID"] + containerConfig.Labels["version"]
+	imageID := existingImagesNameToId[containerConfig.ImageName]
 
 	// transform port map into string
-	var portBindingPairs string
+	var portBindingPairs []string
 	for port, bindings := range containerConfig.PortBinding {
 		for _, binding := range bindings {
-			portBindingPairs += " " + port.Port() + ":" + binding.HostPort
+			portBindingPairs = append(portBindingPairs, binding.HostPort+":"+port.Port())
 		}
 	}
 
 	postCommandUrl := fmt.Sprintf("/docker/images/%s/createcontainer", imageID)
-	resp, err := client.PostForm(edgeUrl+postCommandUrl, url.Values{
-		"params_name":    []string{containerName},
-		"params_p":       []string{portBindingPairs},
-		"params_e":       containerConfig.EnvArgs,
-		"params_network": []string{containerConfig.NetworkName},
-	})
+
+	req_body := map[string]string{
+		"params_name":    containerConfig.ContainerName,
+		"params_p":       strings.Join(portBindingPairs, " "),
+		"params_e":       strings.Join(containerConfig.EnvArgs, " "),
+		"params_network": containerConfig.NetworkName,
+	}
+
+	log.Debug("Creating container with following params: ", req_body)
+
+	req_json, err := json.Marshal(req_body)
+	if err != nil {
+		log.Error(err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, edgeUrl+postCommandUrl, bytes.NewBuffer(req_json))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
 	if err != nil {
 		log.Error(err)
 	}
@@ -96,12 +115,20 @@ func CreateAndStartContainer(containerConfig model.ContainerConfig) (string, err
 	var resp_json map[string]string
 	body, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
-	json.Unmarshal(body, &resp_json)
-	containerID := resp_json["id"]
 
-	log.Debug("Created container " + containerConfig.ContainerName)
+	if resp.StatusCode == 200 {
+		json.Unmarshal(body, &resp_json)
+		containerID := resp_json["id"]
 
-	return containerID, nil
+		log.Debugln("Created container", containerConfig.ContainerName, "with ID", containerID)
+
+		existingContainers[containerID] = containerConfig.Labels["manifestID"] + containerConfig.Labels["version"]
+
+		return containerID, nil
+	} else {
+		err = errors.New(fmt.Sprintf("CreateAndStartContainer: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
+		return "", err
+	}
 }
 
 func StopContainer(containerID string) error {
@@ -116,11 +143,16 @@ func StopContainer(containerID string) error {
 		log.Error(err)
 	}
 
+	body, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+
 	if resp.StatusCode == 200 {
 		log.Debug("Stopped container ID ", containerID)
+		return nil
+	} else {
+		err = errors.New(fmt.Sprintf("StopContainer: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
+		return err
 	}
-
-	return nil
 }
 
 func StopAndRemoveContainer(containerID string) error {
@@ -135,11 +167,17 @@ func StopAndRemoveContainer(containerID string) error {
 		log.Error(err)
 	}
 
+	body, err := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+
 	if resp.StatusCode == 200 {
 		log.Debug("Killed container ID ", containerID)
+		delete(existingContainers, containerID)
+		return nil
+	} else {
+		err = errors.New(fmt.Sprintf("StopAndRemoveContainer: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
+		return err
 	}
-
-	return nil
 }
 
 func ReadAllContainers() ([]types.Container, error) {
@@ -187,7 +225,7 @@ func ReadDataServiceContainers(manifestID string, version string) ([]types.Conta
 	}
 
 	for _, container := range allContainers {
-		if strings.Contains(container.Names[0], manifestID) && strings.Contains(container.Names[0], version) {
+		if existingContainers[container.ID] == manifestID+version {
 			dataServiceContainers = append(dataServiceContainers, container)
 		}
 	}

@@ -1,6 +1,6 @@
-//go:build !secunet
+//go:build secunet
 
-package secunet
+package docker
 
 import (
 	"bytes"
@@ -19,13 +19,7 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
-var existingImagesIdToName = make(map[string]string)
 var existingImagesNameToId = make(map[string]string)
-
-func getImageID(name, tag string) string {
-	fullName := name + tag
-	return existingImagesNameToId[fullName]
-}
 
 func getAuthToken(imageName string) (string, error) {
 	commandUrl := fmt.Sprintf("%s/token?service=%s&scope=repository:library/%s:pull", authUrl, svcUrl, imageName)
@@ -85,8 +79,19 @@ func getManifest(token, imageName, digest string) ([]byte, error) {
 	}
 }
 
+func getNameAndTag(fullImageName string) (string, string) {
+	var nameWithoutTag, tag string
+	imageNameParts := strings.Split(fullImageName, ":")
+	nameWithoutTag = imageNameParts[0]
+	if len(imageNameParts) == 2 {
+		tag = imageNameParts[1]
+	}
+
+	return nameWithoutTag, tag
+}
+
 // WIP!!!
-func PullImage(imgDetails model.RegistryDetails) (string, error) {
+func PullImage(imgDetails model.RegistryDetails) error {
 	// TODO: transform to HTTPS
 
 	// token, err := getAuthToken(imgDetails.ImageName)
@@ -99,7 +104,7 @@ func PullImage(imgDetails model.RegistryDetails) (string, error) {
 	// INTERIM SOLUTION
 	downloadScriptName := "download-frozen-image-v2.sh"
 	archiveScriptName := "archive.sh"
-	nameWithoutTag := strings.Split(imgDetails.ImageName, ":")[0] // extract the image name w/o tag
+	nameWithoutTag, _ := getNameAndTag(imgDetails.ImageName)
 	fileName := nameWithoutTag + ".tar.gz"
 	cmd := exec.Command("./"+downloadScriptName, nameWithoutTag, imgDetails.ImageName)
 	out, err := cmd.CombinedOutput()
@@ -107,14 +112,14 @@ func PullImage(imgDetails model.RegistryDetails) (string, error) {
 	fmt.Println(string(out))
 	if err != nil {
 		log.Error(err)
-		return "", err
+		return err
 	}
 
 	cmd = exec.Command("./"+archiveScriptName, nameWithoutTag)
 	err = cmd.Run()
 	if err != nil {
 		log.Error(err)
-		return "", err
+		return err
 	}
 
 	// New multipart writer.
@@ -123,18 +128,18 @@ func PullImage(imgDetails model.RegistryDetails) (string, error) {
 	fw, err := writer.CreateFormFile("file", fileName)
 	if err != nil {
 		log.Error(err)
-		return "", err
+		return err
 	}
 	fd, err := os.Open(fileName)
 	if err != nil {
 		log.Error(err)
-		return "", err
+		return err
 	}
 	defer fd.Close()
 	_, err = io.Copy(fw, fd)
 	if err != nil {
 		log.Error(err)
-		return "", err
+		return err
 	}
 	writer.Close()
 
@@ -142,7 +147,7 @@ func PullImage(imgDetails model.RegistryDetails) (string, error) {
 	req, err := http.NewRequest(http.MethodPut, edgeUrl+commandUrl, bytes.NewReader(bufferedFile.Bytes()))
 	if err != nil {
 		log.Error(err)
-		return "", err
+		return err
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	// username := "Admin"
@@ -152,7 +157,7 @@ func PullImage(imgDetails model.RegistryDetails) (string, error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Error(err)
-		return "", err
+		return err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -167,21 +172,57 @@ func PullImage(imgDetails model.RegistryDetails) (string, error) {
 		imageID := resp_json["id"]
 
 		// add image to local database
-		existingImagesIdToName[imageID] = nameWithoutTag
 		existingImagesNameToId[nameWithoutTag] = imageID
 
-		return imageID, nil
+		return nil
 	} else {
 		err = errors.New(fmt.Sprintf("PullImage: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
-		return "", err
+		return err
 	}
 }
 
-func ImageExists(id string) (bool, error) {
-	if existingImagesIdToName[id] == "" {
-		return false, nil
-	} else {
+func ImageExists(imageName string) (bool, error) {
+	nameWithoutTag, tag := getNameAndTag(imageName)
+
+	// first make a lookup in the local database
+	if existingImagesNameToId[nameWithoutTag] != "" {
 		return true, nil
+	} else {
+		// if it fails look through all images on the device
+		commandUrl := fmt.Sprintf("/docker/images")
+		resp, err := client.Get(edgeUrl + commandUrl)
+		if err != nil {
+			log.Error(err)
+		}
+
+		body, err := ioutil.ReadAll(resp.Body)
+		defer resp.Body.Close()
+		if err != nil {
+			log.Error(err)
+		}
+
+		if resp.StatusCode == 200 {
+			type ImageInfo map[string]string
+			var resp_json map[string][]ImageInfo
+			json.Unmarshal(body, &resp_json)
+
+			images := resp_json["images"]
+			for _, image := range images {
+				if image["repository"] == nameWithoutTag {
+					if tag != "" {
+						if image["tag"] == tag {
+							return true, nil
+						}
+					} else {
+						return true, nil
+					}
+				}
+			}
+			return false, nil
+		} else {
+			err = errors.New(fmt.Sprintf("ReadAllContainers: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
+			return false, err
+		}
 	}
 }
 
@@ -205,14 +246,16 @@ func ImageRemove(imageID string) error {
 
 	if resp.StatusCode == 200 {
 		// remove image from local database
-		fullName := existingImagesIdToName[imageID]
-		delete(existingImagesNameToId, fullName)
-		delete(existingImagesIdToName, imageID)
+		for name, id := range existingImagesNameToId {
+			if id == imageID {
+				delete(existingImagesNameToId, name)
+			}
+		}
 
 		log.Debug("Removed image ID ", imageID)
+		return nil
 	} else {
 		err = errors.New(fmt.Sprintf("ImageRemove: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
+		return err
 	}
-
-	return nil
 }

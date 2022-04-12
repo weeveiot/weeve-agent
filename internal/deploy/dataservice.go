@@ -114,7 +114,7 @@ func DeployDataService(man model.Manifest, command string) error {
 
 	for _, containerConfig := range containerConfigs {
 		log.Info(deploymentID, "Creating ", containerConfig.ContainerName, " from ", containerConfig.ImageName, ":", containerConfig.ImageTag, " ", containerConfig)
-		containerCreateResponse, err := docker.CreateAndStartContainer(containerConfig)
+		containerID, err := docker.CreateAndStartContainer(containerConfig)
 		if err != nil {
 			log.Error(deploymentID, "Failed to create and start container", containerConfig.ContainerName)
 			logStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", err.Error())
@@ -122,7 +122,7 @@ func DeployDataService(man model.Manifest, command string) error {
 			UndeployDataService(manifestID, version)
 			return err
 		}
-		log.Info(deploymentID, "Successfully created with args: ", containerConfig.EntryPointArgs, containerCreateResponse)
+		log.Info(deploymentID, "Successfully created container ", containerID, " with args: ", containerConfig.EntryPointArgs)
 		log.Info(deploymentID, "Started!")
 	}
 
@@ -152,6 +152,8 @@ func StopDataService(manifestID string, version string) error {
 
 			}
 			log.Info(strings.Join(container.Names[:], ","), ": ", container.Status, " --> exited")
+		} else {
+			log.Debugln("Container", container.ID, "is", container.State)
 		}
 	}
 

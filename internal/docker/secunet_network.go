@@ -1,6 +1,6 @@
-//go:build !secunet
+//go:build secunet
 
-package secunet
+package docker
 
 import (
 	"errors"

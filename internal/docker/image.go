@@ -77,8 +77,8 @@ func PullImage(imgDetails model.RegistryDetails) error {
 
 // Check if the image exists in the local context
 // Return an error only if something went wrong, if the image is not found the error is nil
-func ImageExists(id string) (bool, error) {
-	_, _, err := dockerClient.ImageInspectWithRaw(ctx, id)
+func ImageExists(imageName string) (bool, error) {
+	_, _, err := dockerClient.ImageInspectWithRaw(ctx, imageName)
 	if err != nil {
 		if client.IsErrNotFound(err) {
 			return false, nil
