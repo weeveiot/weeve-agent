@@ -57,12 +57,12 @@ func StartContainer(containerID string) error {
 	commandUrl := fmt.Sprintf("/docker/container/%s/start", containerID)
 	req, err := http.NewRequest(http.MethodPut, edgeUrl+commandUrl, nil)
 	if err != nil {
-		log.Error(err)
+		return err
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Error(err)
+		return err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -101,7 +101,7 @@ func CreateAndStartContainer(containerConfig model.ContainerConfig) (string, err
 
 	req_json, err := json.Marshal(req_body)
 	if err != nil {
-		log.Error(err)
+		return "", err
 	}
 
 	req, err := http.NewRequest(http.MethodPost, edgeUrl+postCommandUrl, bytes.NewBuffer(req_json))
@@ -109,7 +109,7 @@ func CreateAndStartContainer(containerConfig model.ContainerConfig) (string, err
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Error(err)
+		return "", err
 	}
 
 	var resp_json map[string]string
@@ -135,12 +135,12 @@ func StopContainer(containerID string) error {
 	commandUrl := fmt.Sprintf("/docker/container/%s/stop", containerID)
 	req, err := http.NewRequest(http.MethodPut, edgeUrl+commandUrl, nil)
 	if err != nil {
-		log.Error(err)
+		return err
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Error(err)
+		return err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -159,12 +159,12 @@ func StopAndRemoveContainer(containerID string) error {
 	commandUrl := fmt.Sprintf("/docker/container/%s", containerID)
 	req, err := http.NewRequest(http.MethodDelete, edgeUrl+commandUrl, nil)
 	if err != nil {
-		log.Error(err)
+		return err
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Error(err)
+		return err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -184,13 +184,13 @@ func ReadAllContainers() ([]types.Container, error) {
 	commandUrl := fmt.Sprintf("/docker/container")
 	resp, err := client.Get(edgeUrl + commandUrl)
 	if err != nil {
-		log.Error(err)
+		return nil, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	if err != nil {
-		log.Error(err)
+		return nil, err
 	}
 
 	var containerStructs []types.Container

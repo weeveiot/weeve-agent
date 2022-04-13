@@ -66,12 +66,9 @@ func ProcessMessage(operation string, payload []byte, retry bool) {
 				err := deploy.StopDataService(serviceId, serviceVersion)
 				if err != nil {
 					log.Error(err)
-
 				} else {
 					log.Info("Service stopped!")
-
 				}
-
 			}
 
 		} else if operation == "startservice" {

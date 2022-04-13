@@ -19,8 +19,7 @@ var dockerClient, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIV
 
 func init() {
 	if err != nil {
-		log.Error(err)
-		panic(err)
+		log.Fatal(err)
 	}
 }
 
@@ -64,7 +63,6 @@ func createContainer(containerConfig model.ContainerConfig) (string, error) {
 		nil,
 		containerConfig.ContainerName)
 	if err != nil {
-		log.Error(err)
 		return containerCreateResponse.ID, err
 	}
 	log.Debug("Created container " + containerConfig.ContainerName)
@@ -98,7 +96,6 @@ func CreateAndStartContainer(containerConfig model.ContainerConfig) (string, err
 
 func StopContainer(containerID string) error {
 	if err := dockerClient.ContainerStop(ctx, containerID, nil); err != nil {
-		log.Error(err)
 		return err
 	}
 
@@ -128,7 +125,6 @@ func ReadAllContainers() ([]types.Container, error) {
 	options := types.ContainerListOptions{All: true}
 	containers, err := dockerClient.ContainerList(context.Background(), options)
 	if err != nil {
-		log.Error(err)
 		return nil, err
 	}
 	log.Debug("Docker_container -> ReadAllContainers response", containers)
@@ -145,7 +141,6 @@ func ReadDataServiceContainers(manifestID string, version string) ([]types.Conta
 	options := types.ContainerListOptions{All: true, Filters: filter}
 	containers, err := dockerClient.ContainerList(context.Background(), options)
 	if err != nil {
-		log.Error(err)
 		return nil, err
 	}
 	log.Debug("Docker_container -> ReadAllContainers response", containers)

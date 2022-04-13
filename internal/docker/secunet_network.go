@@ -82,7 +82,6 @@ func ReadDataServiceNetworks(manifestID string, version string) ([]types.Network
 func CreateNetwork(name string, labels map[string]string) (string, error) {
 	networkName := makeNetworkName(name)
 	if networkName == "" {
-		log.Error("Failed to generate Network Name")
 		return "", errors.New("failed to generate network name")
 	}
 

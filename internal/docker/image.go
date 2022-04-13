@@ -24,7 +24,6 @@ func PullImage(imgDetails model.RegistryDetails) error {
 
 	encodedJSON, err := json.Marshal(authConfig)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 
@@ -32,7 +31,6 @@ func PullImage(imgDetails model.RegistryDetails) error {
 
 	events, err := dockerClient.ImagePull(ctx, imgDetails.ImageName, types.ImagePullOptions{RegistryAuth: authStr})
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 
@@ -54,7 +52,6 @@ func PullImage(imgDetails model.RegistryDetails) error {
 			if err == io.EOF {
 				break
 			}
-			log.Error(err)
 			return err
 		}
 	}
@@ -92,7 +89,6 @@ func ImageExists(imageName string) (bool, error) {
 func ImageRemove(imageID string) error {
 	_, err := dockerClient.ImageRemove(ctx, imageID, types.ImageRemoveOptions{})
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 	return nil

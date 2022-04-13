@@ -25,13 +25,13 @@ func getAuthToken(imageName string) (string, error) {
 	commandUrl := fmt.Sprintf("%s/token?service=%s&scope=repository:library/%s:pull", authUrl, svcUrl, imageName)
 	resp, err := http.Get(commandUrl)
 	if err != nil {
-		log.Error(err)
+		return "", err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	if err != nil {
-		log.Error(err)
+		return "", err
 	}
 
 	if resp.StatusCode == 200 {
@@ -53,7 +53,7 @@ func getManifest(token, imageName, digest string) ([]byte, error) {
 	commandUrl := fmt.Sprintf("%s/v2/library/%s/manifests/%s", registryUrl, imageName, digest)
 	req, err := http.NewRequest(http.MethodGet, commandUrl, nil)
 	if err != nil {
-		log.Error(err)
+		return nil, err
 	}
 	req.Header.Add("Authorization", "Bearer "+token)
 	req.Header.Add("Accept", "application/vnd.docker.distribution.manifest.list.v2+json")
@@ -62,13 +62,13 @@ func getManifest(token, imageName, digest string) ([]byte, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Error(err)
+		return nil, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	if err != nil {
-		log.Error(err)
+		return nil, err
 	}
 
 	if resp.StatusCode == 200 {
@@ -96,7 +96,7 @@ func PullImage(imgDetails model.RegistryDetails) error {
 
 	// token, err := getAuthToken(imgDetails.ImageName)
 	// if err != nil {
-	// 	log.Error(err)
+	// 	return err
 	// }
 
 	// getManifest(token, imgDetails.ImageName, "")
@@ -111,14 +111,12 @@ func PullImage(imgDetails model.RegistryDetails) error {
 
 	fmt.Println(string(out))
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 
 	cmd = exec.Command("./"+archiveScriptName, nameWithoutTag)
 	err = cmd.Run()
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 
@@ -127,18 +125,15 @@ func PullImage(imgDetails model.RegistryDetails) error {
 	writer := multipart.NewWriter(bufferedFile)
 	fw, err := writer.CreateFormFile("file", fileName)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 	fd, err := os.Open(fileName)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 	defer fd.Close()
 	_, err = io.Copy(fw, fd)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 	writer.Close()
@@ -146,7 +141,6 @@ func PullImage(imgDetails model.RegistryDetails) error {
 	commandUrl := "/docker/images"
 	req, err := http.NewRequest(http.MethodPut, edgeUrl+commandUrl, bytes.NewReader(bufferedFile.Bytes()))
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
@@ -156,14 +150,13 @@ func PullImage(imgDetails model.RegistryDetails) error {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	if err != nil {
-		log.Error(err)
+		return err
 	}
 
 	if resp.StatusCode == 200 {
@@ -193,13 +186,13 @@ func ImageExists(imageName string) (bool, error) {
 		commandUrl := fmt.Sprintf("/docker/images")
 		resp, err := client.Get(edgeUrl + commandUrl)
 		if err != nil {
-			log.Error(err)
+			return false, err
 		}
 
 		body, err := ioutil.ReadAll(resp.Body)
 		defer resp.Body.Close()
 		if err != nil {
-			log.Error(err)
+			return false, err
 		}
 
 		if resp.StatusCode == 200 {
@@ -237,18 +230,18 @@ func ImageRemove(imageID string) error {
 	commandUrl := fmt.Sprintf("/docker/images/%s", imageID)
 	req, err := http.NewRequest(http.MethodDelete, edgeUrl+commandUrl, nil)
 	if err != nil {
-		log.Error(err)
+		return err
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Error(err)
+		return err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	if err != nil {
-		log.Error(err)
+		return err
 	}
 
 	if resp.StatusCode == 200 || resp.StatusCode == 204 {
