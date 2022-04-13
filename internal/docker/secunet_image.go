@@ -182,6 +182,7 @@ func PullImage(imgDetails model.RegistryDetails) error {
 }
 
 func ImageExists(imageName string) (bool, error) {
+	log.Debug("Checking if the image ", imageName, " exists")
 	nameWithoutTag, tag := getNameAndTag(imageName)
 
 	// first make a lookup in the local database
@@ -202,18 +203,24 @@ func ImageExists(imageName string) (bool, error) {
 		}
 
 		if resp.StatusCode == 200 {
-			type ImageInfo map[string]string
+			type ImageInfo map[string]interface{}
 			var resp_json map[string][]ImageInfo
 			json.Unmarshal(body, &resp_json)
 
 			images := resp_json["images"]
 			for _, image := range images {
-				if image["repository"] == nameWithoutTag {
+				currentImageName, currentImageTag := getNameAndTag(image["tags"].([]interface{})[0].(string))
+				log.Debug("Looking at image ", currentImageName+":"+currentImageTag)
+				if currentImageName == nameWithoutTag {
 					if tag != "" {
-						if image["tag"] == tag {
+						if currentImageTag == tag {
+							// make sure the image is in the local database
+							existingImagesNameToId[currentImageName] = image["id"].(string)
 							return true, nil
 						}
 					} else {
+						// make sure the image is in the local database
+						existingImagesNameToId[currentImageName] = image["id"].(string)
 						return true, nil
 					}
 				}
@@ -244,7 +251,7 @@ func ImageRemove(imageID string) error {
 		log.Error(err)
 	}
 
-	if resp.StatusCode == 200 {
+	if resp.StatusCode == 200 || resp.StatusCode == 204 {
 		// remove image from local database
 		for name, id := range existingImagesNameToId {
 			if id == imageID {

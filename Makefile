@@ -9,6 +9,7 @@ CLIENT_PRIVATE_KEY=./${NODE_ID}-private.pem.key
 
 build-arm:
 	rm -rf /build/arm.tar ./build/arm/*
+	mkdir -p ./build/arm
 	cp ${SERVER_CERTIFICATE} ${CLIENT_CERTIFICATE} ${CLIENT_PRIVATE_KEY} start.sh ./build/arm
 	GOOS=linux GOARCH=arm GOARM=7 go build -o build/arm/agent ./cmd/agent/agent.go
 	tar -cvf ./build/arm.tar -C ./build arm
@@ -17,6 +18,7 @@ build-arm:
 
 build-x86:
 	rm -rf ./build/x86.tar ./build/x86/*
+	mkdir -p ./build/x86
 	cp ${SERVER_CERTIFICATE} ${CLIENT_CERTIFICATE} ${CLIENT_PRIVATE_KEY} start.sh ./build/x86
 	GOOS=linux GOARCH=amd64 go build -o build/x86/agent ./cmd/agent/agent.go
 	tar -cvf ./build/x86.tar -C ./build x86
@@ -24,9 +26,14 @@ build-x86:
 
 build-darwin:
 	rm -rf ./build/darwin.tar ./build/darwin/*
+	mkdir -p ./build/darwin
 	cp ${SERVER_CERTIFICATE} ${CLIENT_CERTIFICATE} ${CLIENT_PRIVATE_KEY} start.sh ./build/darwin
 	GOOS=darwin GOARCH=amd64 go build -o build/darwin/agent ./cmd/agent/agent.go
 	tar -cvf ./build/darwin.tar -C ./build darwin
 .PHONY: build-darwin
+
+secunet:
+	GOOS=linux GOARCH=amd64 go build -o bin/agent_secunet -tags secunet cmd/agent/agent.go
+	docker build -f Dockerfile.secunet -t secunet-test .
 
 build-all: build-arm build-x86 build-darwin

@@ -204,9 +204,9 @@ func ReadAllContainers() ([]types.Container, error) {
 			containerStructs = append(containerStructs, types.Container{
 				ID:      container["id"],
 				Names:   []string{container["name"]},
-				ImageID: container["image_id"],
+				ImageID: container["image_id"][:12],
+				State:   container["status"],
 				// Created: container["created"],	// TODO convert to int64 if needed
-				Status: container["status"],
 			})
 		}
 		return containerStructs, nil
