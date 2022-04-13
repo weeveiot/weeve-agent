@@ -144,9 +144,6 @@ func PullImage(imgDetails model.RegistryDetails) error {
 		return err
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	// username := "Admin"
-	// password := "Secure Visibility"
-	// req.SetBasicAuth(username, password)
 
 	resp, err := client.Do(req)
 	if err != nil {
