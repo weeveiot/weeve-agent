@@ -73,13 +73,7 @@
                 "--loglevel",
                 "debug",
                 "--config",
-                "${workspaceRoot}/nodeconfig.json",
-                "-r",
-                "${workspaceRoot}/AmazonRootCA1.pem",
-                "-f",
-                "${workspaceRoot}/4be43aa6f1-certificate.pem.crt",
-                "-k",
-                "${workspaceRoot}/4be43aa6f1-private.pem.key"
+                "${workspaceRoot}/nodeconfig.json"
             ]
         },
         {

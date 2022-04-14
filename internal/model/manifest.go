@@ -30,7 +30,6 @@ type ContainerConfig struct {
 	ImageTag       string
 	EntryPointArgs []string
 	EnvArgs        []string
-	Options        []OptionKeyVal
 	NetworkName    string
 	NetworkDriver  string
 	ExposedPorts   nat.PortSet // This must be set for the container create
@@ -41,8 +40,6 @@ type ContainerConfig struct {
 	MountConfigs   []mount.Mount
 	Labels         map[string]string
 }
-
-type OptionKeyVal struct{}
 
 type RegistryDetails struct {
 	ImageName string
