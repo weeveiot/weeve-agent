@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/Jeffail/gabs/v2"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/docker/go-connections/nat"
 
 	"github.com/docker/docker/api/types/mount"
@@ -45,14 +44,6 @@ type RegistryDetails struct {
 	Password  string
 }
 
-func PrintStartCommand(sc ContainerConfig) {
-	empJSON, err := json.MarshalIndent(sc, "", "  ")
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
-	fmt.Printf("StartCommand:\n %s\n", string(empJSON))
-}
-
 // Create a Manifest type
 /* The manifest type holds the parsed JSON of a manifest file, as well as
 several convenience attributes.
@@ -77,19 +68,6 @@ func ParseJSONManifest(data []byte) (Manifest, error) {
 	return thisManifest, nil
 }
 
-func (m Manifest) ImageNamesList() []string {
-	var imageNamesList []string
-	for _, mod := range m.Manifest.Search("services").Children() {
-		imageName := mod.Search("image").Search("name").Data().(string)
-		if mod.Search("image").Search("tag").Data() != nil {
-			imageName = imageName + ":" + mod.Search("image").Search("tag").Data().(string)
-		}
-
-		imageNamesList = append(imageNamesList, imageName)
-	}
-	return imageNamesList
-}
-
 func (m Manifest) ImageNamesWithRegList() []RegistryDetails {
 	var imageNamesList []RegistryDetails
 	for _, mod := range m.Manifest.Search("services").Children() {
@@ -109,26 +87,6 @@ func (m Manifest) ImageNamesWithRegList() []RegistryDetails {
 	}
 
 	return imageNamesList
-}
-
-func (m Manifest) PrintManifest() {
-	for _, mod := range m.Manifest.Search("Modules").Children() {
-		log.Debug(fmt.Sprintf("\t***** index: %v, name: %v", mod.Search("Index").Data(), mod.Search("Name").Data()))
-		log.Debug(fmt.Sprintf("\timage %v:%v", mod.Search("ImageName").Data(), mod.Search("Tag").Data()))
-		log.Debug("\toptions:")
-		for _, opt := range mod.Search("options").Children() {
-			log.Debug(fmt.Sprintf("\t\t %-15v = %v", opt.Search("opt").Data(), opt.Search("val").Data()))
-		}
-		log.Debug("\targuments:")
-		for _, arg := range mod.Search("arguments").Children() {
-			log.Debug(fmt.Sprintf("\t\t %-15v= %v", arg.Search("arg").Data(), arg.Search("val").Data()))
-		}
-	}
-}
-
-func (m Manifest) SpewManifest() {
-	spew.Dump(m)
-	// spew.Printf("%v", m)
 }
 
 func (m Manifest) ContainerNamesList(networkName string) []string {
@@ -268,56 +226,6 @@ func (m Manifest) GetContainerConfig(networkName string) []ContainerConfig {
 		log.Debug("Processing cmd arguments")
 		var cmdArgs = ParseArguments(mod.Search("commands").Children(), true)
 		containerConfig.EntryPointArgs = cmdArgs
-
-		/*
-			// Handle the options
-			var ExposedPorts string
-			for _, option := range thisStartCommand.Options {
-				// ExposedPorts is a simple option, just apply it to the struct
-				if option.key == "ExposedPorts" {
-					ExposedPorts = option.val
-					thisStartCommand.ExposedPorts = nat.PortSet{
-						nat.Port(option.val): struct{}{},
-					}
-				}
-				// HostIP is always found with HostPort
-				// TODO: Refactor!
-				if option.key == "HostIP" {
-					HostIP := option.val
-					HostPort := ""
-					for _, subOpt := range thisStartCommand.Options {
-						if subOpt.key == "HostPort" {
-							HostPort = subOpt.val
-						}
-					}
-					// Make sure HostPort was seen in the options!
-					if HostPort == "" {
-						// Set default HostPort as in Modules and Intercontainer Communication Spec 1.0.0
-						HostPort = "80"
-					}
-
-					// Finally, build the PortBindings struct
-					thisStartCommand.PortBinding = nat.PortMap{
-						nat.Port(ExposedPorts): []nat.PortBinding{
-							{
-								HostIP:   HostIP,
-								HostPort: HostPort,
-							},
-						},
-					}
-				}
-
-				if option.key == "network" {
-					thisStartCommand.NetworkMode = container.NetworkMode(option.val)
-				}
-
-				networkConfig := &network.NetworkingConfig{
-					EndpointsConfig: map[string]*network.EndpointSettings{},
-				}
-
-				thisStartCommand.NetworkConfig = *networkConfig
-			}
-		*/
 
 		containerConfigs = append(containerConfigs, containerConfig)
 	}

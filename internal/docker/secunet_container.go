@@ -48,6 +48,7 @@ func init() {
 			Certificates: []tls.Certificate{cert},
 			// KeyLogWriter:       w,
 			InsecureSkipVerify: true,
+			MinVersion:         tls.VersionTLS13,
 		},
 	}
 	client = http.Client{Transport: t}

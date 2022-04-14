@@ -80,9 +80,11 @@ func DeployDataService(man model.Manifest, command string) error {
 			log.Info(deploymentID, "Pulling ", imgDetails.ImageName, imgDetails)
 			err = docker.PullImage(imgDetails)
 			if err != nil {
-				log.Error("Unable to pull image")
-				logStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", "Unable to pull image")
-				return err
+				msg := "Unable to pull image/s, " + err.Error()
+				log.Error(deploymentID, msg)
+				logStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", msg)
+				return errors.New("unable to pull image/s")
+
 			}
 		}
 	}

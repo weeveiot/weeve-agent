@@ -76,12 +76,6 @@ func DownloadCertificates(payload []byte) map[string]string {
 	return certificates
 }
 
-func CheckIfNodeAlreadyRegistered() bool {
-
-	config := ReadNodeConfig()
-	return len(config[KeyNodeId]) > 0
-}
-
 func MarkNodeRegistered(nodeId string, certificates map[string]string) {
 
 	nodeConfig := map[string]string{
