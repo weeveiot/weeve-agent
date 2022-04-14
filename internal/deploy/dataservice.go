@@ -50,8 +50,6 @@ func DeployManifest(man model.Manifest, command string) error {
 	// Check if data service already exist
 	if dataServiceExists {
 		if command == "deploy" {
-			// msg := "Data service already Exist!"
-			// log.Error(msg)
 			log.Info(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", manifestID, version))
 			return errors.New("data service already exist")
 
