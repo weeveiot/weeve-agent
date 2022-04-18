@@ -77,31 +77,6 @@
       ]
     },
     {
-      "name": "WeeveAgentcicdtesting",
-      "type": "go",
-      "request": "launch",
-      "mode": "debug",
-      "program": "${workspaceRoot}/cmd/agent/agent.go",
-      "showLog": true,
-      "args": [
-        "-v",
-        "-b",
-        "tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883",
-        "-s",
-        "nodes/awscicdtesting",
-        "-c",
-        "manager/awscicdtesting",
-        "-t",
-        "status",
-        "--heartbeat",
-        "30",
-        "--loglevel",
-        "debug",
-        "--config",
-        "${workspaceRoot}/nodeconfig.json"
-      ]
-    },
-    {
       "name": "Test Current File",
       "type": "go",
       "request": "launch",

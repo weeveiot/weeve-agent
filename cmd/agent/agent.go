@@ -200,20 +200,17 @@ func main() {
 
 	// MAIN LOOP
 	go func() {
-		for {
+		for registered {
 			log.Debug("Node registered >> ", registered, " | connected >> ", connected)
-			if registered {
-				if !connected {
-					internal.DisconnectBroker(publisher, subscriber)
-					nodeConfig = handler.ReadNodeConfig()
-					publisher = internal.InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId, false)
-					subscriber = internal.InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId, true)
-					connected = true
-				}
-				internal.ReconnectIfNecessary(publisher, subscriber)
-				internal.PublishMessages(publisher, nodeId, "", "All")
+			if !connected {
+				internal.DisconnectBroker(publisher, subscriber)
+				nodeConfig = handler.ReadNodeConfig()
+				publisher = internal.InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId, false)
+				subscriber = internal.InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId, true)
+				connected = true
 			}
-
+			internal.ReconnectIfNecessary(publisher, subscriber)
+			internal.PublishMessages(publisher, nodeId, "", "All")
 			time.Sleep(time.Second * time.Duration(opt.Heartbeat))
 		}
 	}()
