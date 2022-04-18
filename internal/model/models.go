@@ -1,41 +1,5 @@
 package model
 
-import (
-	jwt "github.com/dgrijalva/jwt-go"
-)
-
-type ErrorResponse struct {
-	Err string
-}
-
-type Exception struct {
-	Message string `json:"message"`
-}
-
-type User struct {
-	ID       uint
-	Name     string
-	Email    string `json:"Email:varchar(100):unique_index"`
-	Password string `json:"Password"`
-}
-
-type Token struct {
-	UserID uint
-	Name   string
-	Email  string
-	*jwt.StandardClaims
-}
-
-type Argument []struct {
-	Arg string `json:"opt"`
-	Val bool   `json:"val"`
-}
-
-type Option []struct {
-	Arg string `json:"arg"`
-	Val bool   `json:"val"`
-}
-
 type StatusMessage struct {
 	Id                 string           `json:"ID"`
 	Timestamp          int64            `json:"timestamp"`
@@ -59,18 +23,6 @@ type RegistrationMessage struct {
 	Status    string `json:"status"`
 	Name      string `json:"name"`
 }
-
-type CertificateMessage struct {
-	Id         string `json:"id"`
-	Timestamp  int64  `json:"timestamp"`
-	Operation  string `json:"operation"`
-	Status     string `json:"status"`
-	Name       string `json:"name"`
-	Cert_Path  string `json:"certPath"`
-	Key_Path   string `json:"keyPath"`
-	Expires_At int64  `json:"expiresAt"`
-}
-
 type DeviceParams struct {
 	Sensors string `json:"sensors"`
 	Uptime  string `json:"uptime"`

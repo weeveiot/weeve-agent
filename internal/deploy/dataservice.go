@@ -50,8 +50,6 @@ func DeployManifest(man model.Manifest, command string) error {
 	// Check if data service already exist
 	if dataServiceExists {
 		if command == "deploy" {
-			// msg := "Data service already Exist!"
-			// log.Error(msg)
 			log.Info(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", manifestID, version))
 			return errors.New("data service already exist")
 
@@ -93,18 +91,13 @@ func DeployManifest(man model.Manifest, command string) error {
 			log.Info(deploymentID, "Pulling ", imgDetails.ImageName, imgDetails)
 			err = docker.PullImage(imgDetails)
 			if err != nil {
-				msg := "404 - Unable to pull image/s, one or more image/s not found"
+				msg := "Unable to pull image/s, " + err.Error()
 				log.Error(deploymentID, msg)
 				LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", msg)
-				return errors.New("unable to pull image/s, one or more image/s not found")
+				return errors.New("unable to pull image/s")
 
 			}
 		}
-	}
-
-	if failed {
-		LogStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", "Process failed")
-		return errors.New("failed to pull images")
 	}
 
 	//******** STEP 3 - Create the network *************//
