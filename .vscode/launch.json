@@ -94,7 +94,7 @@
         "-t",
         "status",
         "--heartbeat",
-        "120",
+        "30",
         "--loglevel",
         "debug",
         "--config",
