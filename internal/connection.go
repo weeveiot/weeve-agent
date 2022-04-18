@@ -85,7 +85,6 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 		if certificates != nil {
 			time.Sleep(time.Second * 10)
 			handler.MarkNodeRegistered(NodeId, certificates)
-			Registered = true
 			log.Info("Node registration done | Certificates downloaded!")
 		}
 	} else {

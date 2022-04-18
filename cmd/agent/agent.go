@@ -176,7 +176,6 @@ func main() {
 	if !isRegistered {
 		log.Info("Registering node and downloading certificate and key ...")
 		registered = false
-		internal.Registered = registered
 		publisher = internal.InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId+"/Registration", false)
 		subscriber = internal.InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId+"/Certificate", true)
 		for {
@@ -186,6 +185,10 @@ func main() {
 			}
 			time.Sleep(time.Second * 5)
 		}
+		time.Sleep(time.Second * 25)
+		nodeConfig = handler.ReadNodeConfig()
+		registered = len(nodeConfig[handler.KeyNodeId]) > 0
+		internal.Registered = registered
 	} else {
 		log.Info("Node already registered!")
 		registered = true
