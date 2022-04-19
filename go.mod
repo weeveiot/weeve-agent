@@ -7,8 +7,6 @@ require (
 	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/ahmetb/go-linq/v3 v3.2.0
 	github.com/containerd/containerd v1.4.1 // indirect
-	github.com/davecgh/go-spew v1.1.1
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200915235308-f99814d749d7+incompatible
 	github.com/docker/go-connections v0.4.0
@@ -16,7 +14,7 @@ require (
 	github.com/eclipse/paho.mqtt.golang v1.3.2
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/google/uuid v1.3.0
-	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/kr/text v0.2.0 // indirect
 	github.com/moby/term v0.0.0-20201101124115-0c0b3e1a3e1f // indirect

@@ -104,7 +104,7 @@ func StopContainer(containerID string) error {
 
 func StopAndRemoveContainer(containerID string) error {
 	if err := StopContainer(containerID); err != nil {
-		log.Errorf("Unable to stop container %s: %s\nWill try to force remove...", containerID, err)
+		log.Errorf("Unable to stop container %s: %s. Will try to force remove...", containerID, err)
 	}
 
 	removeOptions := types.ContainerRemoveOptions{

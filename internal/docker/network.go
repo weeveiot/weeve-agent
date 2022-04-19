@@ -50,10 +50,10 @@ func ReadDataServiceNetworks(manifestID string, version string) ([]types.Network
 }
 
 func makeNetworkName(name string) string {
-	format := "%s_%0" + fmt.Sprint(indexLength) + "d"
+	format := "%s_%0" + strconv.Itoa(indexLength) + "d"
 
 	// Prune the name if necessary
-	if len(name) <= 0 {
+	if name == "" {
 		return ""
 	} else if len(name) > manifestNamelength {
 		name = name[:manifestNamelength]
