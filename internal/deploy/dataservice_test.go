@@ -52,9 +52,9 @@ func TestDeployManifest(t *testing.T) {
 	version = thisManifest.Manifest.Search("version").Data().(string)
 	log.Info(version)
 
-	err = deploy.DeployManifest(thisManifest, "deploy")
+	err = deploy.DeployDataService(thisManifest, "deploy")
 	if err != nil {
-		t.Errorf("DeployManifest returned %v status", err)
+		t.Errorf("DeployDataService returned %v status", err)
 	}
 
 	// Check if network exists
@@ -262,9 +262,9 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	version = thisManifest.Manifest.Search("version").Data().(string)
 	log.Info(version)
 
-	err = deploy.DeployManifest(thisManifest, "deploy")
+	err = deploy.DeployDataService(thisManifest, "deploy")
 	if err != nil {
-		t.Errorf("DeployManifest returned %v status", err)
+		t.Errorf("DeployDataService returned %v status", err)
 	}
 
 	// ***** DEPLOY SECOND IDENTICAL DATA SERVICE ********* //
@@ -288,9 +288,9 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	version2 = thisManifest2.Manifest.Search("version").Data().(string)
 	log.Info(version2)
 
-	err = deploy.DeployManifest(thisManifest2, "deploy")
+	err = deploy.DeployDataService(thisManifest2, "deploy")
 	if err != nil {
-		t.Errorf("DeployManifest returned %v status", err)
+		t.Errorf("DeployDataService returned %v status", err)
 	}
 
 	// ***** TEST UNDEPLOY FOR ORIGINAL DATA SERVICE ********* //
@@ -356,9 +356,9 @@ func TestRedeployDataService(t *testing.T) {
 	version = thisManifest.Manifest.Search("version").Data().(string)
 	log.Info(version)
 
-	err = deploy.DeployManifest(thisManifest, "deploy")
+	err = deploy.DeployDataService(thisManifest, "deploy")
 	if err != nil {
-		t.Errorf("DeployManifest returned %v status", err)
+		t.Errorf("DeployDataService returned %v status", err)
 	}
 
 	// ***************** SAVE ORIGINAL DATA SERVICE TIMESTAMP AND ID ******************** //
@@ -393,9 +393,9 @@ func TestRedeployDataService(t *testing.T) {
 	var thisManifestRedeploy = model.Manifest{}
 	thisManifestRedeploy.Manifest = *jsonParsed
 
-	err = deploy.DeployManifest(thisManifestRedeploy, "redeploy")
+	err = deploy.DeployDataService(thisManifestRedeploy, "redeploy")
 	if err != nil {
-		t.Errorf("DeployManifest returned %v status", err)
+		t.Errorf("DeployDataService returned %v status", err)
 	}
 
 	// ***************** CHECK REDEPLOYMENT's SUCCESS ******************** //

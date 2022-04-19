@@ -1,53 +1,24 @@
-//go:build !secunet
+//go:build secunet
 
 package docker
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
-	linq "github.com/ahmetb/go-linq/v3"
+	"github.com/ahmetb/go-linq/v3"
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/filters"
 	log "github.com/sirupsen/logrus"
 )
+
+var existingNetworks = make(map[string]string)
 
 // Network name constraints
 const manifestNamelength = 11
 const indexLength = 3
 const maxNetworkIndex = 999
-
-func readAllNetworks() []types.NetworkResource {
-	log.Debug("Docker_container -> readAllNetworks")
-
-	networks, err := dockerClient.NetworkList(ctx, types.NetworkListOptions{})
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-
-	return networks
-}
-
-func ReadDataServiceNetworks(manifestID string, version string) ([]types.NetworkResource, error) {
-	log.Debug("Docker_container -> ReadDataServiceNetworks")
-
-	filter := filters.NewArgs()
-	filter.Add("label", "manifestID="+manifestID)
-	filter.Add("label", "version="+version)
-	options := types.NetworkListOptions{Filters: filter}
-
-	networks, err := dockerClient.NetworkList(ctx, options)
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-
-	return networks, nil
-}
 
 func makeNetworkName(name string) string {
 	format := "%s_%0" + fmt.Sprint(indexLength) + "d"
@@ -78,38 +49,50 @@ func makeNetworkName(name string) string {
 	return strings.ReplaceAll(networkName, " ", "")
 }
 
-func CreateNetwork(name string, labels map[string]string) (string, error) {
-	var networkCreateOptions types.NetworkCreate
-	networkCreateOptions.CheckDuplicate = true
-	networkCreateOptions.Attachable = true
-	networkCreateOptions.Labels = labels
+func readAllNetworks() []types.NetworkResource {
+	log.Debug("Docker_container -> readAllNetworks")
 
+	var networks []types.NetworkResource
+
+	for _, networkName := range existingNetworks {
+		networks = append(networks, types.NetworkResource{
+			Name: networkName,
+		})
+	}
+
+	return networks
+}
+
+func ReadDataServiceNetworks(manifestID string, version string) ([]types.NetworkResource, error) {
+	key := manifestID + version
+	networkName := existingNetworks[key]
+
+	if networkName == "" {
+		return nil, nil
+	} else {
+		networks := []types.NetworkResource{
+			{
+				Name: networkName,
+			},
+		}
+		return networks, nil
+	}
+}
+
+func CreateNetwork(name string, labels map[string]string) (string, error) {
 	networkName := makeNetworkName(name)
 	if networkName == "" {
-		log.Error("Failed to generate Network Name")
 		return "", errors.New("failed to generate network name")
 	}
 
-	_, err := dockerClient.NetworkCreate(context.Background(), networkName, networkCreateOptions)
-	if err != nil {
-		log.Error(err)
-		return networkName, err
-	}
-
+	key := labels["manifestID"] + labels["version"]
+	existingNetworks[key] = networkName
 	return networkName, nil
 }
 
 func NetworkPrune(manifestID string, version string) error {
-	filter := filters.NewArgs()
-	filter.Add("label", "manifestID="+manifestID)
-	filter.Add("label", "version="+version)
-
-	pruneReport, err := dockerClient.NetworksPrune(ctx, filter)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	log.Info("Pruned networks: ", pruneReport.NetworksDeleted)
+	key := manifestID + version
+	delete(existingNetworks, key)
 	return nil
 }
 

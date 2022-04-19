@@ -1,9 +1,8 @@
-// data_access
+//go:build !secunet
+
 package docker
 
 import (
-	"os"
-
 	"context"
 
 	"github.com/docker/docker/api/types"
@@ -11,48 +10,122 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/stdcopy"
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
-func StartContainer(containerId string) bool {
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+var ctx = context.Background()
+var dockerClient, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+
+func init() {
 	if err != nil {
-		log.Error(err)
-		return false
+		log.Fatal(err)
+	}
+}
+
+func createContainer(containerConfig model.ContainerConfig) (string, error) {
+	imageName := containerConfig.ImageName + ":" + containerConfig.ImageTag
+
+	log.Debug("Creating container", containerConfig.ContainerName, "from", imageName)
+
+	config := &container.Config{
+		Image:        imageName,
+		AttachStdin:  false,
+		AttachStdout: true,
+		AttachStderr: true,
+		Cmd:          containerConfig.EntryPointArgs,
+		Env:          containerConfig.EnvArgs,
+		Tty:          false,
+		ExposedPorts: containerConfig.ExposedPorts,
+		Labels:       containerConfig.Labels,
 	}
 
-	err = cli.ContainerStart(ctx, containerId, types.ContainerStartOptions{})
-	if err != nil {
-		log.Error(err)
-		return false
+	hostConfig := &container.HostConfig{
+		PortBindings: containerConfig.PortBinding,
+		NetworkMode:  container.NetworkMode(containerConfig.NetworkDriver),
+		RestartPolicy: container.RestartPolicy{
+			Name:              "on-failure",
+			MaximumRetryCount: 100,
+		},
+		Mounts: containerConfig.MountConfigs,
 	}
 
-	out, err := cli.ContainerLogs(ctx, containerId, types.ContainerLogsOptions{ShowStdout: true})
-	if err != nil {
-		log.Error(err)
-		return false
+	networkConfig := &network.NetworkingConfig{
+		EndpointsConfig: map[string]*network.EndpointSettings{
+			containerConfig.NetworkName: {},
+		},
 	}
 
-	stdcopy.StdCopy(os.Stdout, os.Stderr, out)
+	containerCreateResponse, err := dockerClient.ContainerCreate(ctx,
+		config,
+		hostConfig,
+		networkConfig,
+		nil,
+		containerConfig.ContainerName)
+	if err != nil {
+		return containerCreateResponse.ID, err
+	}
+	log.Debug("Created container " + containerConfig.ContainerName)
 
-	return true
+	return containerCreateResponse.ID, nil
+}
+
+func StartContainer(containerID string) error {
+	err = dockerClient.ContainerStart(ctx, containerID, types.ContainerStartOptions{})
+	if err != nil {
+		return err
+	}
+	log.Debug("Started container ID ", containerID)
+
+	return nil
+}
+
+func CreateAndStartContainer(containerConfig model.ContainerConfig) (string, error) {
+	id, err := createContainer(containerConfig)
+	if err != nil {
+		return id, err
+	}
+
+	err = StartContainer(id)
+	if err != nil {
+		return id, err
+	}
+
+	return id, nil
+}
+
+func StopContainer(containerID string) error {
+	if err := dockerClient.ContainerStop(ctx, containerID, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func StopAndRemoveContainer(containerID string) error {
+	if err := StopContainer(containerID); err != nil {
+		log.Errorf("Unable to stop container %s: %s\nWill try to force remove...", containerID, err)
+	}
+
+	removeOptions := types.ContainerRemoveOptions{
+		RemoveVolumes: true,
+		Force:         true,
+	}
+
+	if err := dockerClient.ContainerRemove(ctx, containerID, removeOptions); err != nil {
+		log.Errorf("Unable to remove container: %s", err)
+		return err
+	}
+
+	return nil
 }
 
 func ReadAllContainers() ([]types.Container, error) {
 	log.Debug("Docker_container -> ReadAllContainers")
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
 	options := types.ContainerListOptions{All: true}
-	containers, err := cli.ContainerList(context.Background(), options)
+	containers, err := dockerClient.ContainerList(context.Background(), options)
 	if err != nil {
-		log.Error(err)
-		return nil, nil
+		return nil, err
 	}
 	log.Debug("Docker_container -> ReadAllContainers response", containers)
 
@@ -61,135 +134,16 @@ func ReadAllContainers() ([]types.Container, error) {
 
 func ReadDataServiceContainers(manifestID string, version string) ([]types.Container, error) {
 	log.Debug("Docker_container -> ReadDataServiceContainers")
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
 
 	filter := filters.NewArgs()
 	filter.Add("label", "manifestID="+manifestID)
 	filter.Add("label", "version="+version)
 	options := types.ContainerListOptions{All: true, Filters: filter}
-	containers, err := cli.ContainerList(context.Background(), options)
+	containers, err := dockerClient.ContainerList(context.Background(), options)
 	if err != nil {
-		log.Error(err)
-		return nil, nil
+		return nil, err
 	}
 	log.Debug("Docker_container -> ReadAllContainers response", containers)
 
 	return containers, nil
-}
-
-func StopContainer(containerId string) error {
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-
-	if err := cli.ContainerStop(ctx, containerId, nil); err != nil {
-		log.Error(err)
-		return err
-	}
-
-	return nil
-}
-
-// StartCreateContainer is a utility function based on the Docker SDK
-// The flow of logic;
-// 1) Instantiate the docker client object
-// 2) Configure the container with imageName and entryArgs
-// 3) Configure the host with the network configuration and restart policy
-// 4) Configure the network with endpoints
-// 5) Create the container with the above 3 configurations, and the container name
-// 6) Start the container
-// 7) Return containerStart response
-func StartCreateContainer(imageName string, startCommand model.ContainerConfig) (container.ContainerCreateCreatedBody, error) {
-	var containerName = startCommand.ContainerName
-
-	log.Debug("Creating container "+containerName, "from "+imageName)
-	ctx := context.Background()
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(err)
-		return container.ContainerCreateCreatedBody{}, err
-	}
-
-	containerConfig := &container.Config{
-		Image:        imageName,
-		AttachStdin:  false,
-		AttachStdout: false,
-		AttachStderr: false,
-		Cmd:          startCommand.EntryPointArgs,
-		Env:          startCommand.EnvArgs,
-		Tty:          false,
-		ExposedPorts: startCommand.ExposedPorts,
-		Labels:       startCommand.Labels,
-	}
-
-	hostConfig := &container.HostConfig{
-		PortBindings: startCommand.PortBinding,
-		NetworkMode:  container.NetworkMode(startCommand.NetworkDriver),
-		RestartPolicy: container.RestartPolicy{
-			Name:              "on-failure",
-			MaximumRetryCount: 100,
-		},
-		Mounts: startCommand.MountConfigs,
-	}
-
-	networkConfig := &network.NetworkingConfig{
-		EndpointsConfig: map[string]*network.EndpointSettings{
-			startCommand.NetworkName: {},
-		},
-	}
-
-	containerCreateResponse, err := dockerClient.ContainerCreate(ctx,
-		containerConfig,
-		hostConfig,
-		networkConfig,
-		nil,
-		containerName)
-	if err != nil {
-		log.Error(err)
-		return containerCreateResponse, err
-	}
-	log.Debug("Created container " + containerName)
-
-	// Start container
-	err = dockerClient.ContainerStart(ctx, containerCreateResponse.ID, types.ContainerStartOptions{})
-	if err != nil {
-		log.Error(err)
-		return containerCreateResponse, err
-	}
-	log.Debug("Started container!")
-
-	return containerCreateResponse, nil
-}
-
-// StopAndRemoveContainer Stop and remove a container
-func StopAndRemoveContainer(containerID string) error {
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-
-	if err := cli.ContainerStop(ctx, containerID, nil); err != nil {
-		log.Printf("Unable to stop container %s: %s", containerID, err)
-	}
-
-	removeOptions := types.ContainerRemoveOptions{
-		RemoveVolumes: true,
-		Force:         true,
-	}
-
-	if err := cli.ContainerRemove(ctx, containerID, removeOptions); err != nil {
-		log.Printf("Unable to remove container: %s", err)
-		return err
-	}
-
-	return nil
 }
