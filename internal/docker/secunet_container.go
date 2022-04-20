@@ -28,7 +28,7 @@ var client http.Client
 
 var existingContainers = make(map[string]string)
 
-func init() {
+func SetupDockerClient() {
 	const certDir = "/var/hostdir/clientcert"
 	const certFile = certDir + "/" + "cert.pem"
 	const keyFile = certDir + "/" + "key.pem"
