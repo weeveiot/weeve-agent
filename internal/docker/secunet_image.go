@@ -5,7 +5,6 @@ package docker
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -27,22 +26,22 @@ func getAuthToken(imageName string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
-	defer resp.Body.Close()
 	if err != nil {
 		return "", err
 	}
 
-	if resp.StatusCode == 200 {
-		var resp_json map[string]string
-		json.Unmarshal(body, &resp_json)
-
-		return resp_json["token"], nil
-	} else {
-		err = errors.New(fmt.Sprintf("PullImage: Could not get the authentication token. HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
+	if resp.StatusCode != http.StatusOK {
+		err = fmt.Errorf("PullImage: Could not get the authentication token. HTTP request failed. Code: %d Message: %s", resp.StatusCode, body)
 		return "", err
 	}
+
+	var resp_json map[string]string
+	json.Unmarshal(body, &resp_json)
+
+	return resp_json["token"], nil
 }
 
 // WIP!!!
@@ -64,19 +63,19 @@ func getManifest(token, imageName, digest string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
-	defer resp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode == 200 {
-		return body, nil
-	} else {
-		err = errors.New(fmt.Sprintf("getManifest: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
+	if resp.StatusCode != http.StatusOK {
+		err = fmt.Errorf("getManifest: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body)
 		return nil, err
 	}
+
+	return body, nil
 }
 
 func getNameAndTag(fullImageName string) (string, string) {
@@ -149,26 +148,26 @@ func PullImage(imgDetails model.RegistryDetails) error {
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
-	defer resp.Body.Close()
 	if err != nil {
 		return err
 	}
 
-	if resp.StatusCode == 200 {
-		var resp_json map[string]string
-		json.Unmarshal(body, &resp_json)
-		imageID := resp_json["id"]
-
-		// add image to local database
-		existingImagesNameToId[nameWithoutTag] = imageID
-
-		return nil
-	} else {
-		err = errors.New(fmt.Sprintf("PullImage: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
+	if resp.StatusCode != http.StatusOK {
+		err = fmt.Errorf("PullImage: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body)
 		return err
 	}
+
+	var resp_json map[string]string
+	json.Unmarshal(body, &resp_json)
+	imageID := resp_json["id"]
+
+	// add image to local database
+	existingImagesNameToId[nameWithoutTag] = imageID
+
+	return nil
 }
 
 func ImageExists(imageName string) (bool, error) {
@@ -185,41 +184,41 @@ func ImageExists(imageName string) (bool, error) {
 		if err != nil {
 			return false, err
 		}
+		defer resp.Body.Close()
 
 		body, err := ioutil.ReadAll(resp.Body)
-		defer resp.Body.Close()
 		if err != nil {
 			return false, err
 		}
 
-		if resp.StatusCode == 200 {
-			type ImageInfo map[string]interface{}
-			var resp_json map[string][]ImageInfo
-			json.Unmarshal(body, &resp_json)
+		if resp.StatusCode != http.StatusOK {
+			err = fmt.Errorf("ReadAllContainers: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body)
+			return false, err
+		}
 
-			images := resp_json["images"]
-			for _, image := range images {
-				currentImageName, currentImageTag := getNameAndTag(image["tags"].([]interface{})[0].(string))
-				log.Debug("Looking at image ", currentImageName+":"+currentImageTag)
-				if currentImageName == nameWithoutTag {
-					if tag != "" {
-						if currentImageTag == tag {
-							// make sure the image is in the local database
-							existingImagesNameToId[currentImageName] = image["id"].(string)
-							return true, nil
-						}
-					} else {
+		type ImageInfo map[string]interface{}
+		var resp_json map[string][]ImageInfo
+		json.Unmarshal(body, &resp_json)
+
+		images := resp_json["images"]
+		for _, image := range images {
+			currentImageName, currentImageTag := getNameAndTag(image["tags"].([]interface{})[0].(string))
+			log.Debug("Looking at image ", currentImageName+":"+currentImageTag)
+			if currentImageName == nameWithoutTag {
+				if tag != "" {
+					if currentImageTag == tag {
 						// make sure the image is in the local database
 						existingImagesNameToId[currentImageName] = image["id"].(string)
 						return true, nil
 					}
+				} else {
+					// make sure the image is in the local database
+					existingImagesNameToId[currentImageName] = image["id"].(string)
+					return true, nil
 				}
 			}
-			return false, nil
-		} else {
-			err = errors.New(fmt.Sprintf("ReadAllContainers: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
-			return false, err
 		}
+		return false, nil
 	}
 }
 
@@ -234,25 +233,26 @@ func ImageRemove(imageID string) error {
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
-	defer resp.Body.Close()
 	if err != nil {
 		return err
 	}
 
-	if resp.StatusCode == 200 || resp.StatusCode == 204 {
-		// remove image from local database
-		for name, id := range existingImagesNameToId {
-			if id == imageID {
-				delete(existingImagesNameToId, name)
-			}
-		}
-
-		log.Debug("Removed image ID ", imageID)
-		return nil
-	} else {
-		err = errors.New(fmt.Sprintf("ImageRemove: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
+		err = fmt.Errorf("ImageRemove: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body)
 		return err
 	}
+
+	// remove image from local database
+	for name, id := range existingImagesNameToId {
+		if id == imageID {
+			delete(existingImagesNameToId, name)
+			break
+		}
+	}
+
+	log.Debug("Removed image ID ", imageID)
+	return nil
 }

@@ -15,9 +15,11 @@ import (
 )
 
 var ctx = context.Background()
-var dockerClient, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+var dockerClient *client.Client
 
-func init() {
+func SetupDockerClient() {
+	var err error
+	dockerClient, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -71,7 +73,7 @@ func createContainer(containerConfig model.ContainerConfig) (string, error) {
 }
 
 func StartContainer(containerID string) error {
-	err = dockerClient.ContainerStart(ctx, containerID, types.ContainerStartOptions{})
+	err := dockerClient.ContainerStart(ctx, containerID, types.ContainerStartOptions{})
 	if err != nil {
 		return err
 	}
@@ -104,7 +106,7 @@ func StopContainer(containerID string) error {
 
 func StopAndRemoveContainer(containerID string) error {
 	if err := StopContainer(containerID); err != nil {
-		log.Errorf("Unable to stop container %s: %s\nWill try to force remove...", containerID, err)
+		log.Errorf("Unable to stop container %s: %s. Will try to force remove...", containerID, err)
 	}
 
 	removeOptions := types.ContainerRemoveOptions{

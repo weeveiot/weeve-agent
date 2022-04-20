@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -29,9 +28,10 @@ var client http.Client
 
 var existingContainers = make(map[string]string)
 
-func init() {
-	certFile := "/var/hostdir/clientcert/cert.pem"
-	keyFile := "/var/hostdir/clientcert/key.pem"
+func SetupDockerClient() {
+	const certDir = "/var/hostdir/clientcert"
+	const certFile = certDir + "/" + "cert.pem"
+	const keyFile = certDir + "/" + "key.pem"
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
 		log.Fatal(err)
@@ -65,17 +65,20 @@ func StartContainer(containerID string) error {
 	if err != nil {
 		return err
 	}
-
-	body, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
 
-	if resp.StatusCode == 200 {
-		log.Debug("Started container ID ", containerID)
-		return nil
-	} else {
-		err = errors.New(fmt.Sprintf("StartContainer: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
 		return err
 	}
+
+	if resp.StatusCode != http.StatusOK {
+		err = fmt.Errorf("StartContainer: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body)
+		return err
+	}
+
+	log.Debug("Started container ID ", containerID)
+	return nil
 }
 
 func CreateAndStartContainer(containerConfig model.ContainerConfig) (string, error) {
@@ -112,24 +115,27 @@ func CreateAndStartContainer(containerConfig model.ContainerConfig) (string, err
 	if err != nil {
 		return "", err
 	}
+	defer resp.Body.Close()
 
 	var resp_json map[string]string
 	body, err := ioutil.ReadAll(resp.Body)
-	defer resp.Body.Close()
-
-	if resp.StatusCode == 200 {
-		json.Unmarshal(body, &resp_json)
-		containerID := resp_json["id"]
-
-		log.Debugln("Created container", containerConfig.ContainerName, "with ID", containerID)
-
-		existingContainers[containerID] = containerConfig.Labels["manifestID"] + containerConfig.Labels["version"]
-
-		return containerID, nil
-	} else {
-		err = errors.New(fmt.Sprintf("CreateAndStartContainer: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
+	if err != nil {
 		return "", err
 	}
+
+	if resp.StatusCode != http.StatusOK {
+		err = fmt.Errorf("CreateAndStartContainer: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body)
+		return "", err
+	}
+
+	json.Unmarshal(body, &resp_json)
+	containerID := resp_json["id"]
+
+	log.Debugln("Created container", containerConfig.ContainerName, "with ID", containerID)
+
+	existingContainers[containerID] = containerConfig.Labels["manifestID"] + containerConfig.Labels["version"]
+
+	return containerID, nil
 }
 
 func StopContainer(containerID string) error {
@@ -143,17 +149,20 @@ func StopContainer(containerID string) error {
 	if err != nil {
 		return err
 	}
-
-	body, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
 
-	if resp.StatusCode == 200 {
-		log.Debug("Stopped container ID ", containerID)
-		return nil
-	} else {
-		err = errors.New(fmt.Sprintf("StopContainer: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
 		return err
 	}
+
+	if resp.StatusCode != http.StatusOK {
+		err = fmt.Errorf("StopContainer: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body)
+		return err
+	}
+
+	log.Debug("Stopped container ID ", containerID)
+	return nil
 }
 
 func StopAndRemoveContainer(containerID string) error {
@@ -167,18 +176,21 @@ func StopAndRemoveContainer(containerID string) error {
 	if err != nil {
 		return err
 	}
-
-	body, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
 
-	if resp.StatusCode == 200 {
-		log.Debug("Killed container ID ", containerID)
-		delete(existingContainers, containerID)
-		return nil
-	} else {
-		err = errors.New(fmt.Sprintf("StopAndRemoveContainer: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
 		return err
 	}
+
+	if resp.StatusCode != http.StatusOK {
+		err = fmt.Errorf("StopAndRemoveContainer: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body)
+		return err
+	}
+
+	log.Debug("Killed container ID ", containerID)
+	delete(existingContainers, containerID)
+	return nil
 }
 
 func ReadAllContainers() ([]types.Container, error) {
@@ -187,34 +199,34 @@ func ReadAllContainers() ([]types.Container, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
-	defer resp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
 
-	var containerStructs []types.Container
-	if resp.StatusCode == 200 {
-		type ContainerInfo map[string]string
-		var resp_json map[string][]ContainerInfo
-		json.Unmarshal(body, &resp_json)
-
-		containers := resp_json["containers"]
-		for _, container := range containers {
-			containerStructs = append(containerStructs, types.Container{
-				ID:      container["id"],
-				Names:   []string{container["name"]},
-				ImageID: container["image_id"][:12],
-				State:   container["status"],
-				// Created: container["created"],	// TODO convert to int64 if needed
-			})
-		}
-		return containerStructs, nil
-	} else {
-		err = errors.New(fmt.Sprintf("ReadAllContainers: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body))
+	if resp.StatusCode != http.StatusOK {
+		err = fmt.Errorf("ReadAllContainers: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body)
 		return nil, err
 	}
+
+	var containerStructs []types.Container
+	type ContainerInfo map[string]string
+	var resp_json map[string][]ContainerInfo
+	json.Unmarshal(body, &resp_json)
+
+	containers := resp_json["containers"]
+	for _, container := range containers {
+		containerStructs = append(containerStructs, types.Container{
+			ID:      container["id"],
+			Names:   []string{container["name"]},
+			ImageID: container["image_id"][:12],
+			State:   container["status"],
+			// Created: container["created"],	// TODO convert to int64 if needed
+		})
+	}
+	return containerStructs, nil
 }
 
 func ReadDataServiceContainers(manifestID string, version string) ([]types.Container, error) {
