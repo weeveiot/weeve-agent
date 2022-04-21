@@ -21,6 +21,7 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/google/uuid"
+	"github.com/weeveiot/weeve-agent/internal"
 	"github.com/weeveiot/weeve-agent/internal/handler"
 	"github.com/weeveiot/weeve-agent/internal/util"
 )
@@ -60,7 +61,6 @@ func (f *PlainFormatter) Format(entry *log.Entry) ([]byte, error) {
 var opt Params
 var nodeId string
 var parser = flags.NewParser(&opt, flags.Default)
-var registered = false
 var connected = false
 
 // logging into the terminal and files
@@ -79,6 +79,13 @@ func main() {
 		log.Error("Error on command line parser ", err)
 		os.Exit(1)
 	}
+
+	// mqtt config
+	internal.Broker = opt.Broker
+	internal.NoTLS = opt.NoTLS
+	internal.PubClientId = opt.PubClientId
+	internal.SubClientId = opt.SubClientId
+	internal.TopicName = opt.TopicName
 
 	if len(opt.ConfigPath) > 0 {
 		handler.ConfigPath = opt.ConfigPath
@@ -163,14 +170,15 @@ func main() {
 	} else {
 		nodeId = nodeConfig[handler.KeyNodeId]
 	}
+	internal.NodeId = nodeId
 
 	if !isRegistered {
 		log.Info("Registering node and downloading certificate and key ...")
-		registered = false
-		publisher = InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId+"/Registration", false)
-		subscriber = InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId+"/Certificate", true)
+		internal.Registered = false
+		publisher = internal.InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId+"/Registration", false)
+		subscriber = internal.InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId+"/Certificate", true)
 		for {
-			published := PublishMessages(publisher, nodeId, nodeConfig[handler.KeyNodeName], "Registration")
+			published := internal.PublishMessages(publisher, nodeId, nodeConfig[handler.KeyNodeName], "Registration")
 			if published {
 				break
 			}
@@ -178,7 +186,7 @@ func main() {
 		}
 	} else {
 		log.Info("Node already registered!")
-		registered = true
+		internal.Registered = true
 	}
 
 	done := make(chan os.Signal, 1)
@@ -187,17 +195,17 @@ func main() {
 	// MAIN LOOP
 	go func() {
 		for {
-			log.Debug("Node registered >> ", registered, " | connected >> ", connected)
-			if registered {
+			log.Debug("Node registered >> ", internal.Registered, " | connected >> ", connected)
+			if internal.Registered {
 				if !connected {
-					DisconnectBroker(publisher, subscriber)
+					internal.DisconnectBroker(publisher, subscriber)
 					nodeConfig = handler.ReadNodeConfig()
-					publisher = InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId, false)
-					subscriber = InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId, true)
+					publisher = internal.InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId, false)
+					subscriber = internal.InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId, true)
 					connected = true
 				}
-				ReconnectIfNecessary(publisher, subscriber)
-				PublishMessages(publisher, nodeId, "", "All")
+				internal.ReconnectIfNecessary(publisher, subscriber)
+				internal.PublishMessages(publisher, nodeId, "", "All")
 				time.Sleep(time.Second * time.Duration(opt.Heartbeat))
 			} else {
 				time.Sleep(time.Second * 5)
@@ -207,7 +215,7 @@ func main() {
 
 	// Cleanup on ending the process
 	<-done
-	DisconnectBroker(publisher, subscriber)
+	internal.DisconnectBroker(publisher, subscriber)
 }
 
 func validateUpdateConfig(nodeConfigs map[string]string) {

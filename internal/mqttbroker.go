@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"crypto/tls"
@@ -14,6 +14,15 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/handler"
 )
 
+var Registered bool
+
+var Broker string
+var PubClientId string
+var SubClientId string
+var TopicName string
+var NoTLS bool
+var NodeId string
+
 func InitBrokerChannel(nodeConfig map[string]string, pubsubClientId string, isSubscribe bool) mqtt.Client {
 
 	// var pubsubClient mqtt.Client
@@ -22,7 +31,7 @@ func InitBrokerChannel(nodeConfig map[string]string, pubsubClientId string, isSu
 
 	// Build the options for the mqtt client
 	channelOptions := mqtt.NewClientOptions()
-	channelOptions.AddBroker(opt.Broker)
+	channelOptions.AddBroker(Broker)
 	channelOptions.SetClientID(pubsubClientId)
 	channelOptions.SetDefaultPublishHandler(messagePubHandler)
 	channelOptions.OnConnectionLost = connectLostHandler
@@ -31,7 +40,7 @@ func InitBrokerChannel(nodeConfig map[string]string, pubsubClientId string, isSu
 	}
 
 	// Optionally add the TLS configuration to the 2 client options
-	if !opt.NoTLS {
+	if !NoTLS {
 		tlsconfig, err := NewTLSConfig(nodeConfig)
 		if err != nil {
 			log.Fatalf("failed to create TLS configuration: %v", err)
@@ -71,17 +80,17 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 
 	topic_rcvd := ""
 
-	if msg.Topic() == opt.SubClientId+"/"+nodeId+"/Certificate" {
+	if msg.Topic() == SubClientId+"/"+NodeId+"/Certificate" {
 		certificates := handler.DownloadCertificates(msg.Payload())
 		if certificates != nil {
 			time.Sleep(time.Second * 10)
-			handler.MarkNodeRegistered(nodeId, certificates)
-			registered = true
+			handler.MarkNodeRegistered(NodeId, certificates)
+			Registered = true
 			log.Info("Node registration done | Certificates downloaded!")
 		}
 	} else {
-		if strings.HasPrefix(msg.Topic(), opt.SubClientId+"/"+nodeId+"/") {
-			topic_rcvd = strings.Replace(msg.Topic(), opt.SubClientId+"/"+nodeId+"/", "", 1)
+		if strings.HasPrefix(msg.Topic(), SubClientId+"/"+NodeId+"/") {
+			topic_rcvd = strings.Replace(msg.Topic(), SubClientId+"/"+NodeId+"/", "", 1)
 		}
 
 		handler.ProcessMessage(topic_rcvd, msg.Payload(), false)
@@ -89,11 +98,11 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 }
 
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
-	log.Info("ON connect >> connected >> registered : ", registered)
+	log.Info("ON connect >> connected >> registered : ", Registered)
 	var topicName string
-	topicName = opt.SubClientId + "/" + nodeId + "/Certificate"
-	if registered {
-		topicName = opt.SubClientId + "/" + nodeId + "/+"
+	topicName = SubClientId + "/" + NodeId + "/Certificate"
+	if Registered {
+		topicName = SubClientId + "/" + NodeId + "/+"
 	}
 
 	log.Debug("ON connect >> subscribes >> topicName : ", topicName)
@@ -148,7 +157,7 @@ func PublishMessages(publisher mqtt.Client, pubNodeId string, nodeName string, m
 	var b_msg []byte
 	var err error
 	if msgType == "Registration" {
-		topicNm = opt.PubClientId + "/" + pubNodeId + "/" + "Registration"
+		topicNm = PubClientId + "/" + pubNodeId + "/" + "Registration"
 
 		msg := handler.GetRegistrationMessage(pubNodeId, nodeName)
 		log.Infoln("Sending registration request.", "Registration", msg)
@@ -158,9 +167,9 @@ func PublishMessages(publisher mqtt.Client, pubNodeId string, nodeName string, m
 		}
 
 	} else {
-		topicNm = opt.PubClientId + "/" + pubNodeId + "/" + opt.TopicName
+		topicNm = PubClientId + "/" + pubNodeId + "/" + TopicName
 		msg := handler.GetStatusMessage(pubNodeId)
-		log.Info("Sending update >> ", "Topic: ", opt.TopicName, " >> Body: ", msg)
+		log.Info("Sending update >> ", "Topic: ", TopicName, " >> Body: ", msg)
 		b_msg, err = json.Marshal(msg)
 		if err != nil {
 			log.Fatalf("Marshall error: %v", err)
