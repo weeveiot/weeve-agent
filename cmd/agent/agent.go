@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	golog "log"
-	mathrand "math/rand"
 	"net"
 	"net/url"
 	"os"
@@ -23,31 +22,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/weeveiot/weeve-agent/internal"
 	"github.com/weeveiot/weeve-agent/internal/handler"
+	"github.com/weeveiot/weeve-agent/internal/model"
 	"github.com/weeveiot/weeve-agent/internal/util"
 )
-
-type Params struct {
-	Verbose      []bool `long:"verbose" short:"v" description:"Show verbose debug information"`
-	Broker       string `long:"broker" short:"b" description:"Broker to connect" required:"true"`
-	PubClientId  string `long:"pubClientId" short:"c" description:"Publisher ClientId" required:"true"`
-	SubClientId  string `long:"subClientId" short:"s" description:"Subscriber ClientId" required:"true"`
-	TopicName    string `long:"publish" short:"t" description:"Topic Name" required:"true"`
-	Heartbeat    int    `long:"heartbeat" short:"h" description:"Heartbeat time in seconds" required:"false" default:"30"`
-	MqttLogs     bool   `long:"mqttlogs" short:"m" description:"For developer - Display detailed MQTT logging messages" required:"false"`
-	NoTLS        bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
-	LogLevel     string `long:"loglevel" short:"l" default:"info" description:"Set the logging level" required:"false"`
-	LogFileName  string `long:"logfilename" default:"Weeve_Agent.log" description:"Set the name of the log file" required:"false"`
-	LogSize      int    `long:"logsize" default:"1" description:"Set the size of each log files (MB)" required:"false"`
-	LogAge       int    `long:"logage" default:"1" description:"Set the time period to retain the log files (days)" required:"false"`
-	LogBackup    int    `long:"logbackup" default:"5" description:"Set the max number of log files to retain" required:"false"`
-	LogCompress  bool   `long:"logcompress" description:"To compress the log files" required:"false"`
-	NodeId       string `long:"nodeId" short:"i" description:"ID of this node" required:"false" default:"register"`
-	NodeName     string `long:"name" short:"n" description:"Name of this node to be registered" required:"false"`
-	RootCertPath string `long:"rootcert" short:"r" description:"Path to MQTT broker (server) certificate" required:"false"`
-	CertPath     string `long:"cert" short:"f" description:"Path to certificate to authenticate to Broker" required:"false"`
-	KeyPath      string `long:"key" short:"k" description:"Path to private key to authenticate to Broker" required:"false"`
-	ConfigPath   string `long:"config" description:"Path to the .json config file" required:"false"`
-}
 
 type PlainFormatter struct {
 	TimestampFormat string
@@ -58,7 +35,7 @@ func (f *PlainFormatter) Format(entry *log.Entry) ([]byte, error) {
 	return []byte(fmt.Sprintf("%s %s : %s\n", timestamp, entry.Level, entry.Message)), nil
 }
 
-var opt Params
+var opt model.Params
 var nodeId string
 var parser = flags.NewParser(&opt, flags.Default)
 var connected = false
@@ -79,13 +56,6 @@ func main() {
 		log.Error("Error on command line parser ", err)
 		os.Exit(1)
 	}
-
-	// mqtt config
-	internal.Broker = opt.Broker
-	internal.NoTLS = opt.NoTLS
-	internal.PubClientId = opt.PubClientId
-	internal.SubClientId = opt.SubClientId
-	internal.TopicName = opt.TopicName
 
 	if len(opt.ConfigPath) > 0 {
 		handler.ConfigPath = opt.ConfigPath
@@ -114,6 +84,9 @@ func main() {
 	} else {
 		log.SetOutput(logger)
 	}
+
+	// mqtt config
+	internal.SubClientId = opt.SubClientId
 
 	// FLAG: Show the logs from the Paho package at STDOUT
 	if opt.MqttLogs {
@@ -158,7 +131,7 @@ func main() {
 	var nodeConfig map[string]string
 
 	nodeConfig = handler.ReadNodeConfig()
-	validateUpdateConfig(nodeConfig)
+	handler.ValidateUpdateConfig(nodeConfig, opt.NodeId, opt.RootCertPath, opt.CertPath, opt.KeyPath, opt.NodeName)
 
 	// Read node configurations
 	nodeConfig = handler.ReadNodeConfig()
@@ -175,10 +148,10 @@ func main() {
 	if !isRegistered {
 		log.Info("Registering node and downloading certificate and key ...")
 		internal.Registered = false
-		publisher = internal.InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId+"/Registration", false)
-		subscriber = internal.InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId+"/Certificate", true)
+		publisher = internal.InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId+"/Registration", false, opt.Broker, opt.MqttLogs)
+		subscriber = internal.InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId+"/Certificate", true, opt.Broker, opt.MqttLogs)
 		for {
-			published := internal.PublishMessages(publisher, nodeId, nodeConfig[handler.KeyNodeName], "Registration")
+			published := internal.PublishMessages(publisher, nodeId, nodeConfig[handler.KeyNodeName], "Registration", opt.PubClientId, opt.TopicName)
 			if published {
 				break
 			}
@@ -200,12 +173,12 @@ func main() {
 				if !connected {
 					internal.DisconnectBroker(publisher, subscriber)
 					nodeConfig = handler.ReadNodeConfig()
-					publisher = internal.InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId, false)
-					subscriber = internal.InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId, true)
+					publisher = internal.InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId, false, opt.Broker, opt.MqttLogs)
+					subscriber = internal.InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId, true, opt.Broker, opt.MqttLogs)
 					connected = true
 				}
 				internal.ReconnectIfNecessary(publisher, subscriber)
-				internal.PublishMessages(publisher, nodeId, "", "All")
+				internal.PublishMessages(publisher, nodeId, "", "All", opt.PubClientId, opt.TopicName)
 				time.Sleep(time.Second * time.Duration(opt.Heartbeat))
 			} else {
 				time.Sleep(time.Second * 5)
@@ -216,47 +189,4 @@ func main() {
 	// Cleanup on ending the process
 	<-done
 	internal.DisconnectBroker(publisher, subscriber)
-}
-
-func validateUpdateConfig(nodeConfigs map[string]string) {
-	var configChanged bool
-	nodeConfig := map[string]string{}
-	if opt.NodeId != "register" {
-		nodeConfig[handler.KeyNodeId] = opt.NodeId
-		configChanged = true
-	}
-
-	if len(opt.RootCertPath) > 0 {
-		nodeConfig[handler.KeyAWSRootCert] = opt.RootCertPath
-		configChanged = true
-	}
-
-	if len(opt.CertPath) > 0 {
-		nodeConfig[handler.KeyCertificate] = opt.CertPath
-		configChanged = true
-	}
-
-	if len(opt.KeyPath) > 0 {
-		nodeConfig[handler.KeyPrivateKey] = opt.KeyPath
-		configChanged = true
-	}
-
-	if len(opt.NodeName) > 0 {
-		nodeConfig[handler.KeyNodeName] = opt.NodeName
-		configChanged = true
-	} else {
-		nodeNm := nodeConfigs[handler.KeyNodeName]
-		if nodeNm == "" {
-			nodeNm = "New Node"
-		}
-		if nodeNm == "New Node" {
-			nodeNm = fmt.Sprintf("%s%d", nodeNm, mathrand.Intn(10000))
-			nodeConfig[handler.KeyNodeName] = nodeNm
-			configChanged = true
-		}
-	}
-
-	if configChanged {
-		handler.UpdateNodeConfig(nodeConfig)
-	}
 }

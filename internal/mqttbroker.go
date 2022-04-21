@@ -15,15 +15,10 @@ import (
 )
 
 var Registered bool
-
-var Broker string
-var PubClientId string
 var SubClientId string
-var TopicName string
-var NoTLS bool
 var NodeId string
 
-func InitBrokerChannel(nodeConfig map[string]string, pubsubClientId string, isSubscribe bool) mqtt.Client {
+func InitBrokerChannel(nodeConfig map[string]string, pubsubClientId string, isSubscribe bool, Broker string, NoTLS bool) mqtt.Client {
 
 	// var pubsubClient mqtt.Client
 
@@ -142,7 +137,7 @@ func NewTLSConfig(nodeConfig map[string]string) (config *tls.Config, err error) 
 	return config, nil
 }
 
-func PublishMessages(publisher mqtt.Client, pubNodeId string, nodeName string, msgType string) bool {
+func PublishMessages(publisher mqtt.Client, pubNodeId string, nodeName string, msgType string, PubClientId string, TopicName string) bool {
 
 	if !publisher.IsConnected() {
 		log.Infoln("Connecting.....", time.Now().String(), time.Now().UnixNano())

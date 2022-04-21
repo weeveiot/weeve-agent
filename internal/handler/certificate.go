@@ -2,8 +2,10 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
+	mathrand "math/rand"
 	"net/http"
 	"os"
 	"path"
@@ -117,4 +119,47 @@ func ReadNodeConfig() map[string]string {
 	json.Unmarshal(byteValue, &config)
 
 	return config
+}
+
+func ValidateUpdateConfig(nodeConfigs map[string]string, NodeId string, RootCertPath string, CertPath string, KeyPath string, NodeName string) {
+	var configChanged bool
+	nodeConfig := map[string]string{}
+	if NodeId != "register" {
+		nodeConfig[KeyNodeId] = NodeId
+		configChanged = true
+	}
+
+	if len(RootCertPath) > 0 {
+		nodeConfig[KeyAWSRootCert] = RootCertPath
+		configChanged = true
+	}
+
+	if len(CertPath) > 0 {
+		nodeConfig[KeyCertificate] = CertPath
+		configChanged = true
+	}
+
+	if len(KeyPath) > 0 {
+		nodeConfig[KeyPrivateKey] = KeyPath
+		configChanged = true
+	}
+
+	if len(NodeName) > 0 {
+		nodeConfig[KeyNodeName] = NodeName
+		configChanged = true
+	} else {
+		nodeNm := nodeConfigs[KeyNodeName]
+		if nodeNm == "" {
+			nodeNm = "New Node"
+		}
+		if nodeNm == "New Node" {
+			nodeNm = fmt.Sprintf("%s%d", nodeNm, mathrand.Intn(10000))
+			nodeConfig[KeyNodeName] = nodeNm
+			configChanged = true
+		}
+	}
+
+	if configChanged {
+		UpdateNodeConfig(nodeConfig)
+	}
 }
