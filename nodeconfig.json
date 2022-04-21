@@ -1,7 +1,7 @@
 {
  "AWSRootCert": "AmazonRootCA1.pem",
- "Certificate": "187e3b41-05ca-4a2b-9008-8a81ffa15018-certificate.pem.crt",
- "NodeId": "187e3b41-05ca-4a2b-9008-8a81ffa15018",
+ "Certificate": "4be43aa6f1-certificate.pem.crt",
+ "NodeId": "",
  "NodeName": "WD-53-test",
- "PrivateKey": "187e3b41-05ca-4a2b-9008-8a81ffa15018-private.pem.key"
+ "PrivateKey": "4be43aa6f1-private.pem.key"
 }
