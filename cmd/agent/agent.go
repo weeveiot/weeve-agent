@@ -51,6 +51,7 @@ type Params struct {
 	CertPath     string `long:"cert" short:"f" description:"Path to certificate to authenticate to Broker" required:"false"`
 	KeyPath      string `long:"key" short:"k" description:"Path to private key to authenticate to Broker" required:"false"`
 	ConfigPath   string `long:"config" description:"Path to the .json config file" required:"false"`
+	ManifestPath string `long:"manifest" description:"Path to the  .json manifest file" required:"false"`
 }
 
 type PlainFormatter struct {
@@ -91,7 +92,14 @@ func main() {
 		// use the default path and filename
 		internal.ConfigPath = path.Join(util.GetExeDir(), internal.NodeConfigFile)
 	}
-
+	var manifestFile map[string]interface{}
+	// file path for the manifest.json
+	if len(opt.ManifestPath) > 0 {
+		internal.ManifestPath = opt.ManifestPath
+		//read Manifest file
+		manifestFile = internal.ReadManifest()
+		fmt.Println(manifestFile)
+	}
 	// FLAG: LogLevel
 	l, _ := log.ParseLevel(opt.LogLevel)
 	log.SetLevel(l)
@@ -384,7 +392,8 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 		if strings.HasPrefix(msg.Topic(), opt.SubClientId+"/"+nodeId+"/") {
 			topic_rcvd = strings.Replace(msg.Topic(), opt.SubClientId+"/"+nodeId+"/", "", 1)
 		}
-
+		log.Info(topic_rcvd)
+		log.Info(msg.Payload())
 		internal.ProcessMessage(topic_rcvd, msg.Payload(), false)
 	}
 }
