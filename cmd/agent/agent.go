@@ -93,8 +93,9 @@ func main() {
 		mqtt.WARN = golog.New(logger, "[WARN]  ", 0)
 		mqtt.DEBUG = golog.New(logger, "[DEBUG] ", 0)
 	}
-	// Passing the arguments for the mqtt functions
+	// Passing the arguments to the functions
 	internal.Opt = opt
+	handler.Opt = opt
 
 	log.Info("Started logging!")
 
@@ -133,7 +134,7 @@ func main() {
 	var nodeConfig map[string]string
 
 	nodeConfig = handler.ReadNodeConfig()
-	handler.ValidateUpdateConfig(nodeConfig, opt.NodeId, opt.RootCertPath, opt.CertPath, opt.KeyPath, opt.NodeName)
+	handler.UpdateNodeConfig(nodeConfig)
 
 	// Read node configurations
 	nodeConfig = handler.ReadNodeConfig()

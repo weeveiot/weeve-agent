@@ -13,6 +13,7 @@ import (
 
 	"github.com/Jeffail/gabs/v2"
 	log "github.com/sirupsen/logrus"
+	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 const NodeConfigFile = "nodeconfig.json"
@@ -24,6 +25,7 @@ const KeyAWSRootCert = "AWSRootCert"
 const CertDirName = "certs"
 
 var ConfigPath string
+var Opt model.Params
 
 func DownloadCertificates(payload []byte) map[string]string {
 
@@ -86,10 +88,10 @@ func MarkNodeRegistered(nodeId string, certificates map[string]string) {
 		KeyPrivateKey:  certificates[KeyPrivateKey],
 	}
 
-	UpdateNodeConfig(nodeConfig)
+	WriteToNodeConfig(nodeConfig)
 }
 
-func UpdateNodeConfig(attrs map[string]string) {
+func WriteToNodeConfig(attrs map[string]string) {
 	configs := ReadNodeConfig()
 
 	for k, v := range attrs {
@@ -121,31 +123,31 @@ func ReadNodeConfig() map[string]string {
 	return config
 }
 
-func ValidateUpdateConfig(nodeConfigs map[string]string, NodeId string, RootCertPath string, CertPath string, KeyPath string, NodeName string) {
+func UpdateNodeConfig(nodeConfigs map[string]string) {
 	var configChanged bool
 	nodeConfig := map[string]string{}
-	if NodeId != "register" {
-		nodeConfig[KeyNodeId] = NodeId
+	if Opt.NodeId != "register" {
+		nodeConfig[KeyNodeId] = Opt.NodeId
 		configChanged = true
 	}
 
-	if len(RootCertPath) > 0 {
-		nodeConfig[KeyAWSRootCert] = RootCertPath
+	if len(Opt.RootCertPath) > 0 {
+		nodeConfig[KeyAWSRootCert] = Opt.RootCertPath
 		configChanged = true
 	}
 
-	if len(CertPath) > 0 {
-		nodeConfig[KeyCertificate] = CertPath
+	if len(Opt.CertPath) > 0 {
+		nodeConfig[KeyCertificate] = Opt.CertPath
 		configChanged = true
 	}
 
-	if len(KeyPath) > 0 {
-		nodeConfig[KeyPrivateKey] = KeyPath
+	if len(Opt.KeyPath) > 0 {
+		nodeConfig[KeyPrivateKey] = Opt.KeyPath
 		configChanged = true
 	}
 
-	if len(NodeName) > 0 {
-		nodeConfig[KeyNodeName] = NodeName
+	if len(Opt.NodeName) > 0 {
+		nodeConfig[KeyNodeName] = Opt.NodeName
 		configChanged = true
 	} else {
 		nodeNm := nodeConfigs[KeyNodeName]
@@ -160,6 +162,6 @@ func ValidateUpdateConfig(nodeConfigs map[string]string, NodeId string, RootCert
 	}
 
 	if configChanged {
-		UpdateNodeConfig(nodeConfig)
+		WriteToNodeConfig(nodeConfig)
 	}
 }
