@@ -21,6 +21,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/weeveiot/weeve-agent/internal"
+	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/handler"
 	"github.com/weeveiot/weeve-agent/internal/model"
 	"github.com/weeveiot/weeve-agent/internal/util"
@@ -98,6 +99,8 @@ func main() {
 	log.Info("Started logging!")
 
 	log.Info("Logging level set to ", log.GetLevel(), "!")
+
+	docker.SetupDockerClient()
 
 	// OPTION: Parse and validate the Broker url
 	u, err := url.Parse(opt.Broker)

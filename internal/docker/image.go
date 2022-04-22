@@ -1,8 +1,8 @@
-// data_access
+//go:build !secunet
+
 package docker
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -17,13 +17,6 @@ import (
 )
 
 func PullImage(imgDetails model.RegistryDetails) error {
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-
 	authConfig := types.AuthConfig{
 		Username: imgDetails.UserName,
 		Password: imgDetails.Password,
@@ -31,15 +24,13 @@ func PullImage(imgDetails model.RegistryDetails) error {
 
 	encodedJSON, err := json.Marshal(authConfig)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
 
-	events, err := cli.ImagePull(ctx, imgDetails.ImageName, types.ImagePullOptions{RegistryAuth: authStr})
+	events, err := dockerClient.ImagePull(ctx, imgDetails.ImageName, types.ImagePullOptions{RegistryAuth: authStr})
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 
@@ -61,7 +52,6 @@ func PullImage(imgDetails model.RegistryDetails) error {
 			if err == io.EOF {
 				break
 			}
-			log.Error(err)
 			return err
 		}
 	}
@@ -83,35 +73,23 @@ func PullImage(imgDetails model.RegistryDetails) error {
 }
 
 // Check if the image exists in the local context
-// Return bool
-func ImageExists(id string) (bool, error) {
-	image, err := ReadImage(id)
-
+// Return an error only if something went wrong, if the image is not found the error is nil
+func ImageExists(imageName string) (bool, error) {
+	_, _, err := dockerClient.ImageInspectWithRaw(ctx, imageName)
 	if err != nil {
-		return false, err
+		if client.IsErrNotFound(err) {
+			return false, nil
+		} else {
+			return false, err
+		}
 	}
-
-	if image.ID != "" {
-		return true, nil
-	} else {
-		return false, nil
-	}
+	return true, nil
 }
 
-// ReadImage by ImageId
-func ReadImage(id string) (types.ImageInspect, error) {
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+func ImageRemove(imageID string) error {
+	_, err := dockerClient.ImageRemove(ctx, imageID, types.ImageRemoveOptions{})
 	if err != nil {
-		log.Error(err)
-		return types.ImageInspect{}, err
+		return err
 	}
-
-	images, bytes, err := cli.ImageInspectWithRaw(ctx, id)
-	if err != nil && bytes != nil {
-		log.Error(err)
-		return types.ImageInspect{}, err
-	}
-
-	return images, nil
+	return nil
 }
