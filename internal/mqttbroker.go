@@ -12,13 +12,14 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/handler"
+	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 var Registered bool
-var SubClientId string
+var Opt model.Params
 var NodeId string
 
-func InitBrokerChannel(nodeConfig map[string]string, pubsubClientId string, isSubscribe bool, Broker string, NoTLS bool) mqtt.Client {
+func InitBrokerChannel(nodeConfig map[string]string, pubsubClientId string, isSubscribe bool) mqtt.Client {
 
 	// var pubsubClient mqtt.Client
 
@@ -26,7 +27,7 @@ func InitBrokerChannel(nodeConfig map[string]string, pubsubClientId string, isSu
 
 	// Build the options for the mqtt client
 	channelOptions := mqtt.NewClientOptions()
-	channelOptions.AddBroker(Broker)
+	channelOptions.AddBroker(Opt.Broker)
 	channelOptions.SetClientID(pubsubClientId)
 	channelOptions.SetDefaultPublishHandler(messagePubHandler)
 	channelOptions.OnConnectionLost = connectLostHandler
@@ -35,7 +36,7 @@ func InitBrokerChannel(nodeConfig map[string]string, pubsubClientId string, isSu
 	}
 
 	// Optionally add the TLS configuration to the 2 client options
-	if !NoTLS {
+	if !Opt.NoTLS {
 		tlsconfig, err := NewTLSConfig(nodeConfig)
 		if err != nil {
 			log.Fatalf("failed to create TLS configuration: %v", err)
@@ -75,7 +76,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 
 	topic_rcvd := ""
 
-	if msg.Topic() == SubClientId+"/"+NodeId+"/Certificate" {
+	if msg.Topic() == Opt.SubClientId+"/"+NodeId+"/Certificate" {
 		certificates := handler.DownloadCertificates(msg.Payload())
 		if certificates != nil {
 			time.Sleep(time.Second * 10)
@@ -84,8 +85,8 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 			log.Info("Node registration done | Certificates downloaded!")
 		}
 	} else {
-		if strings.HasPrefix(msg.Topic(), SubClientId+"/"+NodeId+"/") {
-			topic_rcvd = strings.Replace(msg.Topic(), SubClientId+"/"+NodeId+"/", "", 1)
+		if strings.HasPrefix(msg.Topic(), Opt.SubClientId+"/"+NodeId+"/") {
+			topic_rcvd = strings.Replace(msg.Topic(), Opt.SubClientId+"/"+NodeId+"/", "", 1)
 		}
 
 		handler.ProcessMessage(topic_rcvd, msg.Payload(), false)
@@ -95,9 +96,9 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
 	log.Info("ON connect >> connected >> registered : ", Registered)
 	var topicName string
-	topicName = SubClientId + "/" + NodeId + "/Certificate"
+	topicName = Opt.SubClientId + "/" + NodeId + "/Certificate"
 	if Registered {
-		topicName = SubClientId + "/" + NodeId + "/+"
+		topicName = Opt.SubClientId + "/" + NodeId + "/+"
 	}
 
 	log.Debug("ON connect >> subscribes >> topicName : ", topicName)
@@ -138,7 +139,7 @@ func NewTLSConfig(nodeConfig map[string]string) (config *tls.Config, err error) 
 	return config, nil
 }
 
-func PublishMessages(publisher mqtt.Client, pubNodeId string, nodeName string, msgType string, PubClientId string, TopicName string) bool {
+func PublishMessages(publisher mqtt.Client, pubNodeId string, nodeName string, msgType string) bool {
 
 	if !publisher.IsConnected() {
 		log.Infoln("Connecting.....", time.Now().String(), time.Now().UnixNano())
@@ -153,7 +154,7 @@ func PublishMessages(publisher mqtt.Client, pubNodeId string, nodeName string, m
 	var b_msg []byte
 	var err error
 	if msgType == "Registration" {
-		topicNm = PubClientId + "/" + pubNodeId + "/" + "Registration"
+		topicNm = Opt.PubClientId + "/" + pubNodeId + "/" + "Registration"
 
 		msg := handler.GetRegistrationMessage(pubNodeId, nodeName)
 		log.Infoln("Sending registration request.", "Registration", msg)
@@ -163,9 +164,9 @@ func PublishMessages(publisher mqtt.Client, pubNodeId string, nodeName string, m
 		}
 
 	} else {
-		topicNm = PubClientId + "/" + pubNodeId + "/" + TopicName
+		topicNm = Opt.PubClientId + "/" + pubNodeId + "/" + Opt.TopicName
 		msg := handler.GetStatusMessage(pubNodeId)
-		log.Info("Sending update >> ", "Topic: ", TopicName, " >> Body: ", msg)
+		log.Info("Sending update >> ", "Topic: ", Opt.TopicName, " >> Body: ", msg)
 		b_msg, err = json.Marshal(msg)
 		if err != nil {
 			log.Fatalf("Marshall error: %v", err)

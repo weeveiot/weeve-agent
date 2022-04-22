@@ -85,9 +85,6 @@ func main() {
 		log.SetOutput(logger)
 	}
 
-	// mqtt config
-	internal.SubClientId = opt.SubClientId
-
 	// FLAG: Show the logs from the Paho package at STDOUT
 	if opt.MqttLogs {
 		mqtt.ERROR = golog.New(logger, "[ERROR] ", 0)
@@ -95,6 +92,8 @@ func main() {
 		mqtt.WARN = golog.New(logger, "[WARN]  ", 0)
 		mqtt.DEBUG = golog.New(logger, "[DEBUG] ", 0)
 	}
+	// Passing the arguments for the mqtt functions
+	internal.Opt = opt
 
 	log.Info("Started logging!")
 
@@ -148,10 +147,10 @@ func main() {
 	if !isRegistered {
 		log.Info("Registering node and downloading certificate and key ...")
 		internal.Registered = false
-		publisher = internal.InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId+"/Registration", false, opt.Broker, opt.MqttLogs)
-		subscriber = internal.InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId+"/Certificate", true, opt.Broker, opt.MqttLogs)
+		publisher = internal.InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId+"/Registration", false)
+		subscriber = internal.InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId+"/Certificate", true)
 		for {
-			published := internal.PublishMessages(publisher, nodeId, nodeConfig[handler.KeyNodeName], "Registration", opt.PubClientId, opt.TopicName)
+			published := internal.PublishMessages(publisher, nodeId, nodeConfig[handler.KeyNodeName], "Registration")
 			if published {
 				break
 			}
@@ -173,12 +172,12 @@ func main() {
 				if !connected {
 					internal.DisconnectBroker(publisher, subscriber)
 					nodeConfig = handler.ReadNodeConfig()
-					publisher = internal.InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId, false, opt.Broker, opt.MqttLogs)
-					subscriber = internal.InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId, true, opt.Broker, opt.MqttLogs)
+					publisher = internal.InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId, false)
+					subscriber = internal.InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId, true)
 					connected = true
 				}
 				internal.ReconnectIfNecessary(publisher, subscriber)
-				internal.PublishMessages(publisher, nodeId, "", "All", opt.PubClientId, opt.TopicName)
+				internal.PublishMessages(publisher, nodeId, "", "All")
 				time.Sleep(time.Second * time.Duration(opt.Heartbeat))
 			} else {
 				time.Sleep(time.Second * 5)

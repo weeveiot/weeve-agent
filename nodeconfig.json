@@ -2,6 +2,6 @@
  "AWSRootCert": "AmazonRootCA1.pem",
  "Certificate": "4be43aa6f1-certificate.pem.crt",
  "NodeId": "",
- "NodeName": "WD-53-test",
+ "NodeName": "New Node8081",
  "PrivateKey": "4be43aa6f1-private.pem.key"
 }
