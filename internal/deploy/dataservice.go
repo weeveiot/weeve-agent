@@ -15,7 +15,7 @@ import (
 const ManifestFile = "manifests.jsonl"
 const ManifestLogFile = "manifests_log.jsonl"
 
-func DeployDataService(man model.Manifest, command string) error {
+func DeployDataService(man model.Manifest, command string, local bool) error {
 
 	var err = model.ValidateManifest(man)
 	if err != nil {
@@ -41,11 +41,19 @@ func DeployDataService(man model.Manifest, command string) error {
 	}
 
 	if dataServiceExists {
-		if command == "deploy" {
+		if command == "deploy" && !local {
 			log.Info(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", manifestID, version))
 			return errors.New("data service already exists")
 
 		} else if command == "redeploy" {
+			// Clean old data service resources
+			err := UndeployDataService(manifestID, version)
+			if err != nil {
+				log.Error(deploymentID, "Error while cleaning old data service -> ", err)
+				logStatus(manifestID, version, "REDEPLOY_FAILED", "Undeployment failed")
+				return errors.New("redeployment failed")
+			}
+		} else if command == "deploy" && local {
 			// Clean old data service resources
 			err := UndeployDataService(manifestID, version)
 			if err != nil {

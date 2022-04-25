@@ -52,6 +52,7 @@ type Params struct {
 	CertPath     string `long:"cert" short:"f" description:"Path to certificate to authenticate to Broker" required:"false"`
 	KeyPath      string `long:"key" short:"k" description:"Path to private key to authenticate to Broker" required:"false"`
 	ConfigPath   string `long:"config" description:"Path to the .json config file" required:"false"`
+	ManifestPath string `long:"manifest" description:"Path to the  .json manifest file" required:"false"`
 }
 
 type PlainFormatter struct {
@@ -128,6 +129,17 @@ func main() {
 
 	docker.SetupDockerClient()
 
+	var manifestFile []byte
+	var DeploymentStatus = false
+	// file path for the manifest.json
+	if len(opt.ManifestPath) > 0 {
+		internal.ManifestPath = opt.ManifestPath
+		//read Manifest file
+		manifestFile = internal.ReadManifest()
+		fmt.Println(manifestFile)
+		DeploymentStatus = internal.DeploManifestLocal("deploy", manifestFile, true)
+	}
+
 	// OPTION: Parse and validate the Broker url
 	u, err := url.Parse(opt.Broker)
 	if err != nil {
@@ -172,7 +184,7 @@ func main() {
 		nodeId = nodeConfig[internal.KeyNodeId]
 	}
 
-	if !isRegistered {
+	if !isRegistered && (opt.ManifestPath == "" || (len(opt.ManifestPath) > 0 && DeploymentStatus)) {
 		log.Info("Registering node and downloading certificate and key ...")
 		registered = false
 		publisher = InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId+"/Registration", false)
@@ -215,6 +227,10 @@ func main() {
 	// Cleanup on ending the process
 	<-done
 	DisconnectBroker(publisher, subscriber)
+}
+
+func DeploManifestLocal(s string, manifestFile map[string]interface{}, true bool) {
+	panic("unimplemented")
 }
 
 func InitBrokerChannel(nodeConfig map[string]string, pubsubClientId string, isSubscribe bool) mqtt.Client {

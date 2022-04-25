@@ -52,7 +52,7 @@ func TestDeployManifest(t *testing.T) {
 	version = thisManifest.Manifest.Search("version").Data().(string)
 	log.Info(version)
 
-	err = deploy.DeployDataService(thisManifest, "deploy")
+	err = deploy.DeployDataService(thisManifest, "deploy", false)
 	if err != nil {
 		t.Errorf("DeployDataService returned %v status", err)
 	}
@@ -262,7 +262,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	version = thisManifest.Manifest.Search("version").Data().(string)
 	log.Info(version)
 
-	err = deploy.DeployDataService(thisManifest, "deploy")
+	err = deploy.DeployDataService(thisManifest, "deploy", false)
 	if err != nil {
 		t.Errorf("DeployDataService returned %v status", err)
 	}
@@ -288,7 +288,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	version2 = thisManifest2.Manifest.Search("version").Data().(string)
 	log.Info(version2)
 
-	err = deploy.DeployDataService(thisManifest2, "deploy")
+	err = deploy.DeployDataService(thisManifest2, "deploy", false)
 	if err != nil {
 		t.Errorf("DeployDataService returned %v status", err)
 	}
@@ -356,7 +356,7 @@ func TestRedeployDataService(t *testing.T) {
 	version = thisManifest.Manifest.Search("version").Data().(string)
 	log.Info(version)
 
-	err = deploy.DeployDataService(thisManifest, "deploy")
+	err = deploy.DeployDataService(thisManifest, "deploy", false)
 	if err != nil {
 		t.Errorf("DeployDataService returned %v status", err)
 	}
@@ -393,7 +393,7 @@ func TestRedeployDataService(t *testing.T) {
 	var thisManifestRedeploy = model.Manifest{}
 	thisManifestRedeploy.Manifest = *jsonParsed
 
-	err = deploy.DeployDataService(thisManifestRedeploy, "redeploy")
+	err = deploy.DeployDataService(thisManifestRedeploy, "redeploy", false)
 	if err != nil {
 		t.Errorf("DeployDataService returned %v status", err)
 	}
