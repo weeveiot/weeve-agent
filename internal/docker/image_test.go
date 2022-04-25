@@ -9,7 +9,8 @@ import (
 	"testing"
 
 	"github.com/weeveiot/weeve-agent/internal/model"
-	"github.com/weeveiot/weeve-agent/internal/util"
+	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
+	jsonutility "github.com/weeveiot/weeve-agent/internal/utility/json"
 )
 
 var manifestBytesMVP []byte
@@ -17,14 +18,14 @@ var manifestBytesMVP []byte
 func TestMain(m *testing.M) {
 
 	fullManifestPath := "/testdata/pipeline_integration_public/workingMVP.json"
-	manifestBytesMVP = LoadJsonBytes(fullManifestPath)
+	manifestBytesMVP = jsonutility.LoadJsonBytes(fullManifestPath)
 	code := m.Run()
 
 	os.Exit(code)
 }
 
 func LoadJsonBytes(filePath string) []byte {
-	manifestPath := path.Join(util.GetExeDir(), filePath)
+	manifestPath := path.Join(ioutility.GetExeDir(), filePath)
 
 	manifestBytes, err := ioutil.ReadFile(manifestPath)
 	if err != nil {

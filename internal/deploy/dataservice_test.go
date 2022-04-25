@@ -19,7 +19,7 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/deploy"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/model"
-	"github.com/weeveiot/weeve-agent/internal/util"
+	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
 )
 
 var manifestID = "PLACEHOLDER"
@@ -421,7 +421,7 @@ func TestRedeployDataService(t *testing.T) {
 
 // LoadJsonBytes reads file containts into byte[]
 func LoadJSONBytes(manName string) []byte {
-	manifestPath := path.Join(util.GetExeDir(), manName)
+	manifestPath := path.Join(ioutility.GetExeDir(), manName)
 
 	manifestBytes, err := ioutil.ReadFile(manifestPath)
 	if err != nil {

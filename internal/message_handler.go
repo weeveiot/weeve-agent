@@ -8,7 +8,7 @@ import (
 
 	"github.com/weeveiot/weeve-agent/internal/deploy"
 	"github.com/weeveiot/weeve-agent/internal/model"
-	"github.com/weeveiot/weeve-agent/internal/util/jsonlines"
+	jsonutility "github.com/weeveiot/weeve-agent/internal/utility/json"
 )
 
 func ProcessMessage(operation string, payload []byte, retry bool) {
@@ -107,7 +107,7 @@ func ProcessMessage(operation string, payload []byte, retry bool) {
 }
 
 func GetStatusMessage(nodeId string) model.StatusMessage {
-	manifests, err := jsonlines.Read(deploy.ManifestFile, nil, false)
+	manifests, err := jsonutility.Read(deploy.ManifestFile, nil, false)
 
 	if err != nil {
 		return model.StatusMessage{}

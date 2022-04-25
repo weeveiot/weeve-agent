@@ -9,7 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/model"
-	"github.com/weeveiot/weeve-agent/internal/util/jsonlines"
+	jsonutility "github.com/weeveiot/weeve-agent/internal/utility/json"
 )
 
 const ManifestFile = "manifests.jsonl"
@@ -23,7 +23,7 @@ func DeployDataService(man model.Manifest, command string) error {
 		return err
 	}
 
-	jsonlines.Insert(ManifestLogFile, man.Manifest.String())
+	jsonutility.Insert(ManifestLogFile, man.Manifest.String())
 
 	//******** STEP 1 - Check if Data Service is already deployed *************//
 	manifestID := man.Manifest.Search("id").Data().(string)
@@ -57,11 +57,11 @@ func DeployDataService(man model.Manifest, command string) error {
 	}
 
 	filter := map[string]string{"id": manifestID, "version": version}
-	jsonlines.Delete(ManifestFile, filter, true)
+	jsonutility.Delete(ManifestFile, filter, true)
 
 	// need to set some default manifest in manifest.jsonl so later could log without errors
 	man.Manifest.Set("DEPLOYING_IN_PROGRESS", "status")
-	jsonlines.Insert(ManifestFile, man.Manifest.String())
+	jsonutility.Insert(ManifestFile, man.Manifest.String())
 
 	//******** STEP 2 - Pull all images *************//
 	log.Info(deploymentID, "Iterating modules, pulling image into host if missing ...")
@@ -279,7 +279,7 @@ func UndeployDataService(manifestID string, version string) error {
 
 	// Remove records from manifest.jsonl
 	filterLog := map[string]string{"id": manifestID, "version": version}
-	deleted := jsonlines.Delete(ManifestFile, filterLog, true)
+	deleted := jsonutility.Delete(ManifestFile, filterLog, true)
 	if !deleted {
 		log.Error(deploymentID, "Could not remove old records from ", ManifestFile)
 	}
@@ -308,9 +308,9 @@ func DataServiceExist(manifestID string, version string) (bool, error) {
 
 func logStatus(manifestID string, manifestVersion string, statusVal string, statusReason string) {
 	filter := map[string]string{"id": manifestID, "version": manifestVersion}
-	mani, err := jsonlines.Read(ManifestFile, filter, false)
+	mani, err := jsonutility.Read(ManifestFile, filter, false)
 	if err == nil {
-		deleted := jsonlines.Delete(ManifestFile, filter, true)
+		deleted := jsonutility.Delete(ManifestFile, filter, true)
 		if !deleted {
 			log.Error("Could not remove old records from ", ManifestFile)
 		}
@@ -323,7 +323,7 @@ func logStatus(manifestID string, manifestVersion string, statusVal string, stat
 		if err != nil {
 			log.Error("Could not convert map to json when logging status of the manifest")
 		}
-		inserted := jsonlines.Insert(ManifestFile, string(maniJSON))
+		inserted := jsonutility.Insert(ManifestFile, string(maniJSON))
 		if !inserted {
 			log.Error("Could not log manifest status")
 		}

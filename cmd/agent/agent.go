@@ -19,6 +19,8 @@ import (
 	"syscall"
 	"time"
 
+	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
+
 	"github.com/Jeffail/gabs/v2"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/jessevdk/go-flags"
@@ -28,7 +30,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/weeveiot/weeve-agent/internal"
 	"github.com/weeveiot/weeve-agent/internal/docker"
-	"github.com/weeveiot/weeve-agent/internal/util"
 )
 
 type Params struct {
@@ -90,7 +91,7 @@ func main() {
 		internal.ConfigPath = opt.ConfigPath
 	} else {
 		// use the default path and filename
-		internal.ConfigPath = path.Join(util.GetExeDir(), internal.NodeConfigFile)
+		internal.ConfigPath = path.Join(ioutility.GetExeDir(), internal.NodeConfigFile)
 	}
 
 	// FLAG: LogLevel

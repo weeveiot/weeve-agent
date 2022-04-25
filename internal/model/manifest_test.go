@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	jsonutility "github.com/weeveiot/weeve-agent/internal/utility/json"
 	_ "github.com/weeveiot/weeve-agent/testing"
 )
 
@@ -14,7 +15,7 @@ var errMsg string
 
 func TestMain(m *testing.M) {
 
-	manifestBytesMVP = LoadJsonBytes("pipeline_unit/workingMVP.json")
+	manifestBytesMVP = jsonutility.LoadJsonBytes("pipeline_unit/workingMVP.json")
 	code := m.Run()
 
 	os.Exit(code)
@@ -22,7 +23,7 @@ func TestMain(m *testing.M) {
 
 // Unit function to validate negative tests
 func ExecuteFailTest(t *testing.T) {
-	json := LoadJsonBytes(filePath)
+	json := jsonutility.LoadJsonBytes(filePath)
 	m, err := ParseJSONManifest(json)
 	if err != nil {
 		t.Error("Json parsing failed")
@@ -36,7 +37,7 @@ func ExecuteFailTest(t *testing.T) {
 
 // Unit function to validate positive tests
 func ExecutePassTest(t *testing.T) {
-	json := LoadJsonBytes(filePath)
+	json := jsonutility.LoadJsonBytes(filePath)
 	m, err := ParseJSONManifest(json)
 	if err != nil {
 		t.Error("Json parsing failed")
@@ -50,7 +51,7 @@ func ExecutePassTest(t *testing.T) {
 }
 
 func TestInvalidJson(t *testing.T) {
-	json := LoadJsonBytes("pipeline_unit/failInvalidJSON.json")
+	json := jsonutility.LoadJsonBytes("pipeline_unit/failInvalidJSON.json")
 	_, err := ParseJSONManifest(json)
 	if err == nil {
 		t.Error("Json parsing should fail")
@@ -113,7 +114,7 @@ func TestWorkingManifest(t *testing.T) {
 
 func TestLoad(t *testing.T) {
 	fmt.Println("Load the sample manifest")
-	var sampleManifestBytesMVP []byte = LoadJsonBytes("manifest/mvp-manifest.json")
+	var sampleManifestBytesMVP []byte = jsonutility.LoadJsonBytes("manifest/mvp-manifest.json")
 	// fmt.Println(sampleManifestBytesMVP)
 	manifest, _ := ParseJSONManifest(sampleManifestBytesMVP)
 	// fmt.Print(res.ContainerNamesList())
