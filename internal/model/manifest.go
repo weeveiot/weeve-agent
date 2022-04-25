@@ -7,10 +7,8 @@ import (
 	"strings"
 
 	"github.com/Jeffail/gabs/v2"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/docker/go-connections/nat"
 
-	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	log "github.com/sirupsen/logrus"
@@ -31,35 +29,19 @@ type ContainerConfig struct {
 	ImageTag       string
 	EntryPointArgs []string
 	EnvArgs        []string
-	Options        []OptionKeyVal
 	NetworkName    string
 	NetworkDriver  string
 	ExposedPorts   nat.PortSet // This must be set for the container create
 	PortBinding    nat.PortMap // This must be set for the containerStart
-	NetworkMode    container.NetworkMode
 	NetworkConfig  network.NetworkingConfig
-	Volumes        map[string]struct{}
 	MountConfigs   []mount.Mount
 	Labels         map[string]string
-}
-
-type OptionKeyVal struct {
-	key string
-	val string
 }
 
 type RegistryDetails struct {
 	ImageName string
 	UserName  string
 	Password  string
-}
-
-func PrintStartCommand(sc ContainerConfig) {
-	empJSON, err := json.MarshalIndent(sc, "", "  ")
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
-	fmt.Printf("StartCommand:\n %s\n", string(empJSON))
 }
 
 // Create a Manifest type
@@ -86,19 +68,6 @@ func ParseJSONManifest(data []byte) (Manifest, error) {
 	return thisManifest, nil
 }
 
-func (m Manifest) ImageNamesList() []string {
-	var imageNamesList []string
-	for _, mod := range m.Manifest.Search("services").Children() {
-		imageName := mod.Search("image").Search("name").Data().(string)
-		if mod.Search("image").Search("tag").Data() != nil {
-			imageName = imageName + ":" + mod.Search("image").Search("tag").Data().(string)
-		}
-
-		imageNamesList = append(imageNamesList, imageName)
-	}
-	return imageNamesList
-}
-
 func (m Manifest) ImageNamesWithRegList() []RegistryDetails {
 	var imageNamesList []RegistryDetails
 	for _, mod := range m.Manifest.Search("services").Children() {
@@ -118,26 +87,6 @@ func (m Manifest) ImageNamesWithRegList() []RegistryDetails {
 	}
 
 	return imageNamesList
-}
-
-func (m Manifest) PrintManifest() {
-	for _, mod := range m.Manifest.Search("Modules").Children() {
-		log.Debug(fmt.Sprintf("\t***** index: %v, name: %v", mod.Search("Index").Data(), mod.Search("Name").Data()))
-		log.Debug(fmt.Sprintf("\timage %v:%v", mod.Search("ImageName").Data(), mod.Search("Tag").Data()))
-		log.Debug("\toptions:")
-		for _, opt := range mod.Search("options").Children() {
-			log.Debug(fmt.Sprintf("\t\t %-15v = %v", opt.Search("opt").Data(), opt.Search("val").Data()))
-		}
-		log.Debug("\targuments:")
-		for _, arg := range mod.Search("arguments").Children() {
-			log.Debug(fmt.Sprintf("\t\t %-15v= %v", arg.Search("arg").Data(), arg.Search("val").Data()))
-		}
-	}
-}
-
-func (m Manifest) SpewManifest() {
-	spew.Dump(m)
-	// spew.Printf("%v", m)
 }
 
 func (m Manifest) ContainerNamesList(networkName string) []string {
@@ -171,24 +120,23 @@ func GetContainerName(networkName string, imageName string, tag string, index in
 // The new object has all information required to execute 'docker run':
 // 		- Bridge Network information
 // 		- Arguments to pass into entrypoint
-func (m Manifest) GetContainerStart(networkName string) []ContainerConfig {
-	var startCommands []ContainerConfig
+func (m Manifest) GetContainerConfig(networkName string) []ContainerConfig {
+	var containerConfigs []ContainerConfig
 	var prev_container_name = ""
 
 	for index, mod := range m.Manifest.Search("services").Children() {
-		var thisStartCommand ContainerConfig
+		var containerConfig ContainerConfig
 
-		thisStartCommand.NetworkName = networkName
-		thisStartCommand.NetworkMode = "" // This is the default setting
-		thisStartCommand.ImageName = mod.Search("image").Search("name").Data().(string)
-		thisStartCommand.ImageTag = mod.Search("image").Search("tag").Data().(string)
-		thisStartCommand.ContainerName = GetContainerName(networkName, thisStartCommand.ImageName, thisStartCommand.ImageTag, index)
-		thisStartCommand.Labels = m.GetLabels()
-		thisStartCommand.NetworkDriver = m.Manifest.Search("networks").Search("driver").Data().(string)
+		containerConfig.NetworkName = networkName
+		containerConfig.ImageName = mod.Search("image").Search("name").Data().(string)
+		containerConfig.ImageTag = mod.Search("image").Search("tag").Data().(string)
+		containerConfig.ContainerName = GetContainerName(networkName, containerConfig.ImageName, containerConfig.ImageTag, index)
+		containerConfig.Labels = m.GetLabels()
+		containerConfig.NetworkDriver = m.Manifest.Search("networks").Search("driver").Data().(string)
 
 		var doc_data = mod.Search("document").Data()
 		if doc_data != nil {
-			ParseDocumentTag(mod.Search("document").Data(), &thisStartCommand)
+			ParseDocumentTag(mod.Search("document").Data(), &containerConfig)
 
 			/* BELOW IS A TEMPORARY SOLUTION TO PORT BINDINGS - NEEDS TO BE REFACTORED */
 			// Read which environmental variables are for ports binding
@@ -218,11 +166,11 @@ func (m Manifest) GetContainerStart(networkName string) []ContainerConfig {
 				// Handle Ports Binding
 				if hostIP != "" && hostPort != "" {
 					// expose 80/tcp as weeve default port in containers
-					thisStartCommand.ExposedPorts = nat.PortSet{
+					containerConfig.ExposedPorts = nat.PortSet{
 						nat.Port("80/tcp"): struct{}{},
 					}
 
-					thisStartCommand.PortBinding = nat.PortMap{
+					containerConfig.PortBinding = nat.PortMap{
 						nat.Port("80/tcp"): []nat.PortBinding{
 							{
 								HostIP:   hostIP,
@@ -248,7 +196,7 @@ func (m Manifest) GetContainerStart(networkName string) []ContainerConfig {
 			// need to pass anything as EGRESS_URL for module's validation script
 			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "EGRESS_URL", "None"))
 		}
-		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_HOST", thisStartCommand.ContainerName))
+		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_HOST", containerConfig.ContainerName))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PORT", 80))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PATH", "/"))
 
@@ -260,79 +208,29 @@ func (m Manifest) GetContainerStart(networkName string) []ContainerConfig {
 		if index > 0 {
 			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "PREV_CONTAINER_NAME", prev_container_name))
 
-			var next_arg = fmt.Sprintf("%v=%v", "NEXT_CONTAINER_NAME", thisStartCommand.ContainerName)
-			startCommands[index-1].EnvArgs = append(startCommands[index-1].EnvArgs, next_arg)
+			var next_arg = fmt.Sprintf("%v=%v", "NEXT_CONTAINER_NAME", containerConfig.ContainerName)
+			containerConfigs[index-1].EnvArgs = append(containerConfigs[index-1].EnvArgs, next_arg)
 
 			// following egressing convention 2: http://host:80/
-			var temp_arg = fmt.Sprintf("%v=http://%v:80/", "EGRESS_URL", thisStartCommand.ContainerName)
-			startCommands[index-1].EnvArgs = append(startCommands[index-1].EnvArgs, temp_arg)
+			var temp_arg = fmt.Sprintf("%v=http://%v:80/", "EGRESS_URL", containerConfig.ContainerName)
+			containerConfigs[index-1].EnvArgs = append(containerConfigs[index-1].EnvArgs, temp_arg)
 		}
-		prev_container_name = thisStartCommand.ContainerName
+		prev_container_name = containerConfig.ContainerName
 
 		for _, thisArg := range envArgs {
 			log.Debug(fmt.Sprintf("%v %T", thisArg, thisArg))
 		}
 
-		thisStartCommand.EnvArgs = envArgs
+		containerConfig.EnvArgs = envArgs
 
 		log.Debug("Processing cmd arguments")
 		var cmdArgs = ParseArguments(mod.Search("commands").Children(), true)
-		thisStartCommand.EntryPointArgs = cmdArgs
+		containerConfig.EntryPointArgs = cmdArgs
 
-		/*
-			// Handle the options
-			var ExposedPorts string
-			for _, option := range thisStartCommand.Options {
-				// ExposedPorts is a simple option, just apply it to the struct
-				if option.key == "ExposedPorts" {
-					ExposedPorts = option.val
-					thisStartCommand.ExposedPorts = nat.PortSet{
-						nat.Port(option.val): struct{}{},
-					}
-				}
-				// HostIP is always found with HostPort
-				// TODO: Refactor!
-				if option.key == "HostIP" {
-					HostIP := option.val
-					HostPort := ""
-					for _, subOpt := range thisStartCommand.Options {
-						if subOpt.key == "HostPort" {
-							HostPort = subOpt.val
-						}
-					}
-					// Make sure HostPort was seen in the options!
-					if HostPort == "" {
-						// Set default HostPort as in Modules and Intercontainer Communication Spec 1.0.0
-						HostPort = "80"
-					}
-
-					// Finally, build the PortBindings struct
-					thisStartCommand.PortBinding = nat.PortMap{
-						nat.Port(ExposedPorts): []nat.PortBinding{
-							{
-								HostIP:   HostIP,
-								HostPort: HostPort,
-							},
-						},
-					}
-				}
-
-				if option.key == "network" {
-					thisStartCommand.NetworkMode = container.NetworkMode(option.val)
-				}
-
-				networkConfig := &network.NetworkingConfig{
-					EndpointsConfig: map[string]*network.EndpointSettings{},
-				}
-
-				thisStartCommand.NetworkConfig = *networkConfig
-			}
-		*/
-
-		startCommands = append(startCommands, thisStartCommand)
+		containerConfigs = append(containerConfigs, containerConfig)
 	}
 
-	return startCommands
+	return containerConfigs
 }
 
 func ParseArguments(options []*gabs.Container, cmdArgs bool) []string {
@@ -361,10 +259,7 @@ func ParseArguments(options []*gabs.Container, cmdArgs bool) []string {
 	return args
 }
 
-func ParseDocumentTag(doc_data interface{}, thisStartCommand *ContainerConfig) {
-	var vol_maps []map[string]struct{}
-	vol_map := make(map[string]struct{})
-
+func ParseDocumentTag(doc_data interface{}, containerConfig *ContainerConfig) {
 	var document = doc_data.(string)
 	document = strings.ReplaceAll(document, "'", "\"")
 
@@ -385,27 +280,12 @@ func ParseDocumentTag(doc_data interface{}, thisStartCommand *ContainerConfig) {
 			return
 		}
 		json.Unmarshal([]byte(strMounts), &mounts)
-		// log.Info("Mounts: %v", mounts)
 		log.Info("Mounts:", mounts)
 	} else {
 		mounts = nil
 	}
 
-	for _, vols := range man_doc.Search("volumes").Children() {
-		vol_maps = append(vol_maps, map[string]struct{}{
-			vols.Search("container").Data().(string): {},
-		})
-	}
-
-	if len(vol_maps) >= 0 {
-		for _, vol := range vol_maps {
-			for k, v := range vol {
-				vol_map[k] = v
-			}
-		}
-		thisStartCommand.Volumes = vol_map
-		thisStartCommand.MountConfigs = mounts
-	}
+	containerConfig.MountConfigs = mounts
 }
 
 func (man Manifest) GetLabels() map[string]string {

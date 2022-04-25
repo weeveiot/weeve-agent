@@ -2,6 +2,6 @@
  "AWSRootCert": "certs/AmazonRootCA1.pem",
  "Certificate": "certs/4be43aa6f1-certificate.pem.crt",
  "NodeId": "",
- "NodeName": "New Node8081",
+ "NodeName": "secunet extended",
  "PrivateKey": "certs/4be43aa6f1-private.pem.key"
 }
