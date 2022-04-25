@@ -27,6 +27,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/weeveiot/weeve-agent/internal"
+
 	"github.com/weeveiot/weeve-agent/internal/util"
 )
 
@@ -52,6 +53,7 @@ type Params struct {
 	KeyPath      string `long:"key" short:"k" description:"Path to private key to authenticate to Broker" required:"false"`
 	ConfigPath   string `long:"config" description:"Path to the .json config file" required:"false"`
 	ManifestPath string `long:"manifest" description:"Path to the  .json manifest file" required:"false"`
+	TopicRcvd    string `long:"topic" description:"topic for manifest deployment" required:"false"`
 }
 
 type PlainFormatter struct {
@@ -68,6 +70,7 @@ var nodeId string
 var parser = flags.NewParser(&opt, flags.Default)
 var registered = false
 var connected = false
+var DeploymentStatus = false
 
 // logging into the terminal and files
 func init() {
@@ -92,13 +95,13 @@ func main() {
 		// use the default path and filename
 		internal.ConfigPath = path.Join(util.GetExeDir(), internal.NodeConfigFile)
 	}
-	var manifestFile map[string]interface{}
+	var manifestFile []byte
 	// file path for the manifest.json
 	if len(opt.ManifestPath) > 0 {
 		internal.ManifestPath = opt.ManifestPath
 		//read Manifest file
 		manifestFile = internal.ReadManifest()
-		fmt.Println(manifestFile)
+		DeploymentStatus = internal.DeploManifestLocal(opt.TopicRcvd, manifestFile, false)
 	}
 	// FLAG: LogLevel
 	l, _ := log.ParseLevel(opt.LogLevel)
@@ -176,22 +179,23 @@ func main() {
 	} else {
 		nodeId = nodeConfig[internal.KeyNodeId]
 	}
-
-	if !isRegistered {
-		log.Info("Registering node and downloading certificate and key ...")
-		registered = false
-		publisher = InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId+"/Registration", false)
-		subscriber = InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId+"/Certificate", true)
-		for {
-			published := PublishMessages(publisher, nodeId, nodeConfig[internal.KeyNodeName], "Registration")
-			if published {
-				break
+	if opt.ManifestPath == "" || (len(opt.ManifestPath) > 0 && DeploymentStatus) {
+		if !isRegistered {
+			log.Info("Registering node and downloading certificate and key ...")
+			registered = false
+			publisher = InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId+"/Registration", false)
+			subscriber = InitBrokerChannel(nodeConfig, opt.SubClientId+"/"+nodeId+"/Certificate", true)
+			for {
+				published := PublishMessages(publisher, nodeId, nodeConfig[internal.KeyNodeName], "Registration")
+				if published {
+					break
+				}
+				time.Sleep(time.Second * 5)
 			}
-			time.Sleep(time.Second * 5)
+		} else {
+			log.Info("Node already registered!")
+			registered = true
 		}
-	} else {
-		log.Info("Node already registered!")
-		registered = true
 	}
 
 	done := make(chan os.Signal, 1)

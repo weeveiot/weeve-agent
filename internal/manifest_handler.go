@@ -1,18 +1,20 @@
 package internal
 
 import (
-	"encoding/json"
 	"io/ioutil"
 	"os"
 
+	"github.com/Jeffail/gabs/v2"
 	log "github.com/sirupsen/logrus"
+	"github.com/weeveiot/weeve-agent/internal/deploy"
+	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 const ManifestFile = "Manifest.json"
 
 var ManifestPath string
 
-func ReadManifest() map[string]interface{} {
+func ReadManifest() []byte {
 	jsonFile, err := os.Open(ManifestPath)
 	if err != nil {
 		log.Fatalf("Unable to open Manifest file: %v", err)
@@ -24,9 +26,28 @@ func ReadManifest() map[string]interface{} {
 		log.Fatalf("Unable to read node manifest file: %v", err)
 	}
 
-	var manifest map[string]interface{}
+	//var manifest map[string]string
 
-	json.Unmarshal(byteValue, &manifest)
-0.....
-	return manifest
+	//json.Unmarshal(byteValue, &manifest)
+	return byteValue
+}
+
+func DeploManifestLocal(topic_rcvd string, payload []byte, retry bool) bool {
+	var DeploymentStatus = false
+	log.Info("Processing the message >> ", topic_rcvd)
+	jsonParsed, err := gabs.ParseJSON(payload)
+	if err != nil {
+		log.Error("Error on parsing message : ", err)
+	} else {
+		log.Debug("Parsed JSON >> ", jsonParsed)
+		if topic_rcvd != "" {
+			var thisManifest = model.Manifest{}
+			thisManifest.Manifest = *jsonParsed
+			err := deploy.DeployManifest(thisManifest, topic_rcvd)
+			if err == nil {
+				DeploymentStatus = true
+			}
+		}
+	}
+	return DeploymentStatus
 }
