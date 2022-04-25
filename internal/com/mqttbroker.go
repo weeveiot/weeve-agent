@@ -1,13 +1,10 @@
-package node
+package com
 
 import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
-	"net"
-	"net/url"
 	"strings"
 	"time"
 
@@ -15,57 +12,35 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
+	"github.com/weeveiot/weeve-agent/internal/config"
 	"github.com/weeveiot/weeve-agent/internal/handler"
-	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
-var Opt model.Params
+var Params struct {
+	Broker      string
+	TopicName   string
+	PubClientId string
+	SubClientId string
+	NoTLS       bool
+	Heartbeat   int
+}
 
-var Registered bool
-var Connected = false
-
-var nodeId string
-var nodeConfig map[string]string
+var registered bool
+var connected = false
 
 var publisher mqtt.Client
 var subscriber mqtt.Client
 
-func ValidateBroker(u *url.URL) {
-	// OPTION: Parse and validate the Broker url
-
-	host, port, _ := net.SplitHostPort(u.Host)
-
-	// Strictly require protocol and host in Broker specification
-	if (len(strings.TrimSpace(host)) == 0) || (len(strings.TrimSpace(u.Scheme)) == 0) {
-		log.Fatal("Error in --broker option: Specify both protocol:\\\\host in the Broker URL")
-	}
-
-	log.Info(fmt.Sprintf("Broker host->%v at port->%v over %v", host, port, u.Scheme))
-
-	log.Debug("Broker >> ", Opt.Broker)
-}
-
 func RegisterNode() {
+	nodeId := config.GetNodeId()
 
-	nodeConfig = handler.ReadNodeConfig()
-	handler.UpdateNodeConfig(nodeConfig)
-
-	// Read node configurations
-	nodeConfig = handler.ReadNodeConfig()
-
-	isRegistered := len(nodeConfig[handler.KeyNodeId]) > 0
-
-	if Opt.NodeId == "register" && !isRegistered {
-		nodeId = uuid.New().String()
-	} else {
-		nodeId = nodeConfig[handler.KeyNodeId]
-	}
-
-	if !isRegistered {
+	if nodeId == "" {
 		log.Info("Registering node and downloading certificate and key ...")
-		Registered = false
-		publisher = InitBrokerChannel(Opt.PubClientId+"/"+nodeId+"/Registration", false)
-		subscriber = InitBrokerChannel(Opt.SubClientId+"/"+nodeId+"/Certificate", true)
+		registered = false
+		nodeId = uuid.New().String()
+		config.SetNodeId(nodeId)
+		publisher = InitBrokerChannel(Params.PubClientId+"/"+nodeId+"/Registration", false)
+		subscriber = InitBrokerChannel(Params.SubClientId+"/"+nodeId+"/Certificate", true)
 		for {
 			published := PublishMessages("Registration")
 			if published {
@@ -75,40 +50,37 @@ func RegisterNode() {
 		}
 	} else {
 		log.Info("Node already registered!")
-		Registered = true
+		registered = true
 	}
 }
 
 func NodeHeartbeat() {
-	if Registered {
+	log.Debug("Node registered >> ", registered, " | connected >> ", connected)
+	if registered {
 		ConnectNode()
 		ReconnectIfNecessary()
 		PublishMessages("All")
-		time.Sleep(time.Second * time.Duration(Opt.Heartbeat))
+		time.Sleep(time.Second * time.Duration(Params.Heartbeat))
 	} else {
 		time.Sleep(time.Second * 5)
 	}
 }
 
 func ConnectNode() {
-	if !Connected {
+	if !connected {
 		DisconnectNode()
-		nodeConfig = handler.ReadNodeConfig()
-		publisher = InitBrokerChannel(Opt.PubClientId+"/"+nodeId, false)
-		subscriber = InitBrokerChannel(Opt.SubClientId+"/"+nodeId, true)
-		Connected = true
+		publisher = InitBrokerChannel(Params.PubClientId+"/"+config.GetNodeId(), false)
+		subscriber = InitBrokerChannel(Params.SubClientId+"/"+config.GetNodeId(), true)
+		connected = true
 	}
 }
 
 func InitBrokerChannel(pubsubClientId string, isSubscribe bool) mqtt.Client {
-
-	// var pubsubClient mqtt.Client
-
 	log.Debug("Client id >> ", pubsubClientId, " | subscription >> ", isSubscribe)
 
 	// Build the options for the mqtt client
 	channelOptions := mqtt.NewClientOptions()
-	channelOptions.AddBroker(Opt.Broker)
+	channelOptions.AddBroker(Params.Broker)
 	channelOptions.SetClientID(pubsubClientId)
 	channelOptions.SetDefaultPublishHandler(messagePubHandler)
 	channelOptions.OnConnectionLost = connectLostHandler
@@ -117,12 +89,11 @@ func InitBrokerChannel(pubsubClientId string, isSubscribe bool) mqtt.Client {
 	}
 
 	// Optionally add the TLS configuration to the 2 client options
-	if !Opt.NoTLS {
-		tlsconfig, err := NewTLSConfig(nodeConfig)
+	if !Params.NoTLS {
+		tlsconfig, err := NewTLSConfig()
 		if err != nil {
 			log.Fatalf("failed to create TLS configuration: %v", err)
 		}
-		// log.Debug("Tls Config >> ", tlsconfig)
 		channelOptions.SetTLSConfig(tlsconfig)
 		log.Debug("TLS set on options.")
 	}
@@ -152,34 +123,31 @@ func InitBrokerChannel(pubsubClientId string, isSubscribe bool) mqtt.Client {
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	jsonParsed, err := gabs.ParseJSON(msg.Payload())
 	if err != nil {
-		log.Infoln("Received message on topic: ", msg.Topic(), *jsonParsed)
+		log.Error("Error on parsing message: ", err)
 	}
+	log.Infoln("Received message on topic:", msg.Topic(), "JSON:", *jsonParsed)
 
-	topic_rcvd := ""
+	if msg.Topic() == Params.SubClientId+"/"+config.GetNodeId()+"/Certificate" {
+		certificateUrl := jsonParsed.Search("Certificate").Data().(string)
+		keyUrl := jsonParsed.Search("PrivateKey").Data().(string)
+		certificatePath, keyPath := handler.DownloadCertificates(certificateUrl, keyUrl)
+		config.SetCertPath(certificatePath, keyPath)
+		registered = true
+		log.Info("Node registration done | Certificates downloaded!")
 
-	if msg.Topic() == Opt.SubClientId+"/"+nodeId+"/Certificate" {
-		certificates := handler.DownloadCertificates(msg.Payload())
-		if certificates != nil {
-			time.Sleep(time.Second * 10)
-			handler.MarkNodeRegistered(nodeId, certificates)
-			Registered = true
-			log.Info("Node registration done | Certificates downloaded!")
-		}
 	} else {
-		if strings.HasPrefix(msg.Topic(), Opt.SubClientId+"/"+nodeId+"/") {
-			topic_rcvd = strings.Replace(msg.Topic(), Opt.SubClientId+"/"+nodeId+"/", "", 1)
-		}
+		operation := strings.Replace(msg.Topic(), Params.SubClientId+"/"+config.GetNodeId()+"/", "", 1)
 
-		handler.ProcessMessage(topic_rcvd, msg.Payload(), false)
+		handler.ProcessMessage(operation, msg.Payload(), false)
 	}
 }
 
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
-	log.Info("ON connect >> connected >> registered : ", Registered)
+	log.Info("ON connect >> connected >> registered : ", registered)
 	var topicName string
-	topicName = Opt.SubClientId + "/" + nodeId + "/Certificate"
-	if Registered {
-		topicName = Opt.SubClientId + "/" + nodeId + "/+"
+	topicName = Params.SubClientId + "/" + config.GetNodeId() + "/Certificate"
+	if registered {
+		topicName = Params.SubClientId + "/" + config.GetNodeId() + "/+"
 	}
 
 	log.Debug("ON connect >> subscribes >> topicName : ", topicName)
@@ -192,32 +160,32 @@ var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err
 	log.Info("Connection lost ", err)
 }
 
-func NewTLSConfig(nodeConfig map[string]string) (config *tls.Config, err error) {
-	log.Debug("MQTT root cert path >> ", nodeConfig[handler.KeyAWSRootCert])
+func NewTLSConfig() (*tls.Config, error) {
+	log.Debug("MQTT root cert path >> ", config.GetRootCertPath())
 
 	certpool := x509.NewCertPool()
-	pemCerts, err := ioutil.ReadFile(nodeConfig[handler.KeyAWSRootCert])
+	pemCerts, err := ioutil.ReadFile(config.GetRootCertPath())
 	if err != nil {
 		return nil, err
 	}
 	certpool.AppendCertsFromPEM(pemCerts)
 
-	log.Debug("MQTT cert path >> ", nodeConfig[handler.KeyCertificate])
-	log.Debug("MQTT key path >> ", nodeConfig[handler.KeyPrivateKey])
+	log.Debug("MQTT cert path >> ", config.GetCertPath())
+	log.Debug("MQTT key path >> ", config.GetKeyPath())
 
-	cert, err := tls.LoadX509KeyPair(nodeConfig[handler.KeyCertificate], nodeConfig[handler.KeyPrivateKey])
+	cert, err := tls.LoadX509KeyPair(config.GetCertPath(), config.GetKeyPath())
 	if err != nil {
 		return nil, err
 	}
 
-	config = &tls.Config{
+	configTLS := &tls.Config{
 		MinVersion:   tls.VersionTLS12,
 		RootCAs:      certpool,
 		ClientAuth:   tls.NoClientCert,
 		ClientCAs:    nil,
 		Certificates: []tls.Certificate{cert},
 	}
-	return config, nil
+	return configTLS, nil
 }
 
 func PublishMessages(msgType string) bool {
@@ -235,9 +203,9 @@ func PublishMessages(msgType string) bool {
 	var b_msg []byte
 	var err error
 	if msgType == "Registration" {
-		topicNm = Opt.PubClientId + "/" + nodeId + "/" + "Registration"
+		topicNm = Params.PubClientId + "/" + config.GetNodeId() + "/" + "Registration"
 
-		msg := handler.GetRegistrationMessage(nodeId, nodeConfig[handler.KeyNodeName])
+		msg := handler.GetRegistrationMessage(config.GetNodeId(), config.GetNodeName())
 		log.Infoln("Sending registration request.", "Registration", msg)
 		b_msg, err = json.Marshal(msg)
 		if err != nil {
@@ -245,9 +213,9 @@ func PublishMessages(msgType string) bool {
 		}
 
 	} else {
-		topicNm = Opt.PubClientId + "/" + nodeId + "/" + Opt.TopicName
-		msg := handler.GetStatusMessage(nodeId)
-		log.Info("Sending update >> ", "Topic: ", Opt.TopicName, " >> Body: ", msg)
+		topicNm = Params.PubClientId + "/" + config.GetNodeId() + "/" + Params.TopicName
+		msg := handler.GetStatusMessage(config.GetNodeId())
+		log.Info("Sending update >> ", "Topic: ", Params.TopicName, " >> Body: ", msg)
 		b_msg, err = json.Marshal(msg)
 		if err != nil {
 			log.Fatalf("Marshall error: %v", err)
