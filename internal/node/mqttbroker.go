@@ -1,4 +1,4 @@
-package internal
+package node
 
 import (
 	"crypto/tls"
@@ -74,7 +74,7 @@ func NodeHeartbeat() {
 
 func ConnectNode() {
 	if !Connected {
-		DisconnectBroker()
+		DisconnectNode()
 		nodeConfig = handler.ReadNodeConfig()
 		publisher = InitBrokerChannel(nodeConfig, Opt.PubClientId+"/"+nodeId, false)
 		subscriber = InitBrokerChannel(nodeConfig, Opt.SubClientId+"/"+nodeId, true)
@@ -264,7 +264,7 @@ func ReconnectIfNecessary(publisher mqtt.Client, subscriber mqtt.Client) {
 	}
 }
 
-func DisconnectBroker() {
+func DisconnectNode() {
 	if publisher != nil && publisher.IsConnected() {
 		log.Info("Disconnecting.....")
 		publisher.Disconnect(250)

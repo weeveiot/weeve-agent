@@ -16,10 +16,10 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
 
-	"github.com/weeveiot/weeve-agent/internal"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/handler"
 	"github.com/weeveiot/weeve-agent/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/node"
 	"github.com/weeveiot/weeve-agent/internal/util"
 )
 
@@ -53,7 +53,7 @@ func main() {
 	}
 
 	// Passing the arguments to the packages
-	internal.Opt = opt
+	node.Opt = opt
 	handler.Opt = opt
 
 	// FLAG: LogLevel
@@ -115,19 +115,20 @@ func main() {
 
 	docker.SetupDockerClient()
 
-	internal.RegisterNode()
+	node.RegisterNode()
+
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
 
 	// MAIN LOOP
 	go func() {
 		for {
-			log.Debug("Node registered >> ", internal.Registered, " | connected >> ", internal.Connected)
-			internal.NodeHeartbeat()
+			log.Debug("Node registered >> ", node.Registered, " | connected >> ", node.Connected)
+			node.NodeHeartbeat()
 		}
 	}()
 
 	// Cleanup on ending the process
 	<-done
-	internal.DisconnectBroker()
+	node.DisconnectNode()
 }
