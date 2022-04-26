@@ -6,10 +6,13 @@ import (
 	"io"
 	"io/ioutil"
 	mathrand "math/rand"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/Jeffail/gabs/v2"
 	log "github.com/sirupsen/logrus"
@@ -164,4 +167,19 @@ func UpdateNodeConfig(nodeConfigs map[string]string) {
 	if configChanged {
 		WriteToNodeConfig(nodeConfig)
 	}
+}
+
+func ValidateBroker(u *url.URL) {
+	// OPTION: Parse and validate the Broker url
+
+	host, port, _ := net.SplitHostPort(u.Host)
+
+	// Strictly require protocol and host in Broker specification
+	if (len(strings.TrimSpace(host)) == 0) || (len(strings.TrimSpace(u.Scheme)) == 0) {
+		log.Fatal("Error in --broker option: Specify both protocol:\\\\host in the Broker URL")
+	}
+
+	log.Info(fmt.Sprintf("Broker host->%v at port->%v over %v", host, port, u.Scheme))
+
+	log.Debug("Broker >> ", Opt.Broker)
 }

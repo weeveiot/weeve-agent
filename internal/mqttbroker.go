@@ -10,14 +10,77 @@ import (
 
 	"github.com/Jeffail/gabs/v2"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/handler"
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
-var Registered bool
 var Opt model.Params
-var NodeId string
+
+var Registered bool
+var Connected = false
+
+var nodeId string
+var nodeConfig map[string]string
+
+var publisher mqtt.Client
+var subscriber mqtt.Client
+
+func RegisterNode() {
+
+	nodeConfig = handler.ReadNodeConfig()
+	handler.UpdateNodeConfig(nodeConfig)
+
+	// Read node configurations
+	nodeConfig = handler.ReadNodeConfig()
+
+	isRegistered := len(nodeConfig[handler.KeyNodeId]) > 0
+
+	if Opt.NodeId == "register" && !isRegistered {
+		nodeId = uuid.New().String()
+	} else {
+		nodeId = nodeConfig[handler.KeyNodeId]
+	}
+
+	if !isRegistered {
+		log.Info("Registering node and downloading certificate and key ...")
+		Registered = false
+		publisher = InitBrokerChannel(nodeConfig, Opt.PubClientId+"/"+nodeId+"/Registration", false)
+		subscriber = InitBrokerChannel(nodeConfig, Opt.SubClientId+"/"+nodeId+"/Certificate", true)
+		for {
+			published := PublishMessages(publisher, nodeId, nodeConfig[handler.KeyNodeName], "Registration")
+			if published {
+				break
+			}
+			time.Sleep(time.Second * 5)
+		}
+	} else {
+		log.Info("Node already registered!")
+		Registered = true
+	}
+}
+
+func NodeHeartbeat() {
+	if Registered {
+		ConnectNode()
+		ReconnectIfNecessary(publisher, subscriber)
+		PublishMessages(publisher, nodeId, "", "All")
+		time.Sleep(time.Second * time.Duration(Opt.Heartbeat))
+	} else {
+		time.Sleep(time.Second * 5)
+	}
+}
+
+func ConnectNode() {
+	if !Connected {
+		DisconnectBroker()
+		nodeConfig = handler.ReadNodeConfig()
+		publisher = InitBrokerChannel(nodeConfig, Opt.PubClientId+"/"+nodeId, false)
+		subscriber = InitBrokerChannel(nodeConfig, Opt.SubClientId+"/"+nodeId, true)
+		Connected = true
+	}
+}
 
 func InitBrokerChannel(nodeConfig map[string]string, pubsubClientId string, isSubscribe bool) mqtt.Client {
 
@@ -76,17 +139,17 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 
 	topic_rcvd := ""
 
-	if msg.Topic() == Opt.SubClientId+"/"+NodeId+"/Certificate" {
+	if msg.Topic() == Opt.SubClientId+"/"+nodeId+"/Certificate" {
 		certificates := handler.DownloadCertificates(msg.Payload())
 		if certificates != nil {
 			time.Sleep(time.Second * 10)
-			handler.MarkNodeRegistered(NodeId, certificates)
+			handler.MarkNodeRegistered(nodeId, certificates)
 			Registered = true
 			log.Info("Node registration done | Certificates downloaded!")
 		}
 	} else {
-		if strings.HasPrefix(msg.Topic(), Opt.SubClientId+"/"+NodeId+"/") {
-			topic_rcvd = strings.Replace(msg.Topic(), Opt.SubClientId+"/"+NodeId+"/", "", 1)
+		if strings.HasPrefix(msg.Topic(), Opt.SubClientId+"/"+nodeId+"/") {
+			topic_rcvd = strings.Replace(msg.Topic(), Opt.SubClientId+"/"+nodeId+"/", "", 1)
 		}
 
 		handler.ProcessMessage(topic_rcvd, msg.Payload(), false)
@@ -96,9 +159,9 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
 	log.Info("ON connect >> connected >> registered : ", Registered)
 	var topicName string
-	topicName = Opt.SubClientId + "/" + NodeId + "/Certificate"
+	topicName = Opt.SubClientId + "/" + nodeId + "/Certificate"
 	if Registered {
-		topicName = Opt.SubClientId + "/" + NodeId + "/+"
+		topicName = Opt.SubClientId + "/" + nodeId + "/+"
 	}
 
 	log.Debug("ON connect >> subscribes >> topicName : ", topicName)
@@ -108,7 +171,7 @@ var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
 }
 
 var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
-	log.Info("Connection lost", err)
+	log.Info("Connection lost ", err)
 }
 
 func NewTLSConfig(nodeConfig map[string]string) (config *tls.Config, err error) {
@@ -201,7 +264,7 @@ func ReconnectIfNecessary(publisher mqtt.Client, subscriber mqtt.Client) {
 	}
 }
 
-func DisconnectBroker(publisher mqtt.Client, subscriber mqtt.Client) {
+func DisconnectBroker() {
 	if publisher != nil && publisher.IsConnected() {
 		log.Info("Disconnecting.....")
 		publisher.Disconnect(250)
