@@ -1,9 +1,11 @@
-package internal
+package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
+	mathrand "math/rand"
 	"net/http"
 	"os"
 	"path"
@@ -11,6 +13,7 @@ import (
 
 	"github.com/Jeffail/gabs/v2"
 	log "github.com/sirupsen/logrus"
+	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 const NodeConfigFile = "nodeconfig.json"
@@ -22,6 +25,7 @@ const KeyAWSRootCert = "AWSRootCert"
 const CertDirName = "certs"
 
 var ConfigPath string
+var Opt model.Params
 
 func DownloadCertificates(payload []byte) map[string]string {
 
@@ -84,10 +88,10 @@ func MarkNodeRegistered(nodeId string, certificates map[string]string) {
 		KeyPrivateKey:  certificates[KeyPrivateKey],
 	}
 
-	UpdateNodeConfig(nodeConfig)
+	WriteToNodeConfig(nodeConfig)
 }
 
-func UpdateNodeConfig(attrs map[string]string) {
+func WriteToNodeConfig(attrs map[string]string) {
 	configs := ReadNodeConfig()
 
 	for k, v := range attrs {
@@ -117,4 +121,47 @@ func ReadNodeConfig() map[string]string {
 	json.Unmarshal(byteValue, &config)
 
 	return config
+}
+
+func UpdateNodeConfig(nodeConfigs map[string]string) {
+	var configChanged bool
+	nodeConfig := map[string]string{}
+	if Opt.NodeId != "register" {
+		nodeConfig[KeyNodeId] = Opt.NodeId
+		configChanged = true
+	}
+
+	if len(Opt.RootCertPath) > 0 {
+		nodeConfig[KeyAWSRootCert] = Opt.RootCertPath
+		configChanged = true
+	}
+
+	if len(Opt.CertPath) > 0 {
+		nodeConfig[KeyCertificate] = Opt.CertPath
+		configChanged = true
+	}
+
+	if len(Opt.KeyPath) > 0 {
+		nodeConfig[KeyPrivateKey] = Opt.KeyPath
+		configChanged = true
+	}
+
+	if len(Opt.NodeName) > 0 {
+		nodeConfig[KeyNodeName] = Opt.NodeName
+		configChanged = true
+	} else {
+		nodeNm := nodeConfigs[KeyNodeName]
+		if nodeNm == "" {
+			nodeNm = "New Node"
+		}
+		if nodeNm == "New Node" {
+			nodeNm = fmt.Sprintf("%s%d", nodeNm, mathrand.Intn(10000))
+			nodeConfig[KeyNodeName] = nodeNm
+			configChanged = true
+		}
+	}
+
+	if configChanged {
+		WriteToNodeConfig(nodeConfig)
+	}
 }
