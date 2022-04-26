@@ -102,7 +102,7 @@ func main() {
 		log.Error("Error on parsing broker ", err)
 		os.Exit(1)
 	}
-	handler.ValidateBroker(u)
+	node.ValidateBroker(u)
 
 	// FLAG: Optionally disable TLS
 	if opt.NoTLS {

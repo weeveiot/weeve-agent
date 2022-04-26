@@ -4,7 +4,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"net"
+	"net/url"
 	"strings"
 	"time"
 
@@ -26,6 +29,21 @@ var nodeConfig map[string]string
 
 var publisher mqtt.Client
 var subscriber mqtt.Client
+
+func ValidateBroker(u *url.URL) {
+	// OPTION: Parse and validate the Broker url
+
+	host, port, _ := net.SplitHostPort(u.Host)
+
+	// Strictly require protocol and host in Broker specification
+	if (len(strings.TrimSpace(host)) == 0) || (len(strings.TrimSpace(u.Scheme)) == 0) {
+		log.Fatal("Error in --broker option: Specify both protocol:\\\\host in the Broker URL")
+	}
+
+	log.Info(fmt.Sprintf("Broker host->%v at port->%v over %v", host, port, u.Scheme))
+
+	log.Debug("Broker >> ", Opt.Broker)
+}
 
 func RegisterNode() {
 
