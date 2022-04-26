@@ -193,7 +193,7 @@ func NewTLSConfig(nodeConfig map[string]string) (config *tls.Config, err error) 
 	}
 
 	config = &tls.Config{
-		MinVersion:   tls.VersionTLS10,
+		MinVersion:   tls.VersionTLS12,
 		RootCAs:      certpool,
 		ClientAuth:   tls.NoClientCert,
 		ClientCAs:    nil,
