@@ -46,10 +46,10 @@ func RegisterNode() {
 	if !isRegistered {
 		log.Info("Registering node and downloading certificate and key ...")
 		Registered = false
-		publisher = InitBrokerChannel(nodeConfig, Opt.PubClientId+"/"+nodeId+"/Registration", false)
-		subscriber = InitBrokerChannel(nodeConfig, Opt.SubClientId+"/"+nodeId+"/Certificate", true)
+		publisher = InitBrokerChannel(Opt.PubClientId+"/"+nodeId+"/Registration", false)
+		subscriber = InitBrokerChannel(Opt.SubClientId+"/"+nodeId+"/Certificate", true)
 		for {
-			published := PublishMessages(publisher, nodeId, nodeConfig[handler.KeyNodeName], "Registration")
+			published := PublishMessages("Registration")
 			if published {
 				break
 			}
@@ -64,8 +64,8 @@ func RegisterNode() {
 func NodeHeartbeat() {
 	if Registered {
 		ConnectNode()
-		ReconnectIfNecessary(publisher, subscriber)
-		PublishMessages(publisher, nodeId, "", "All")
+		ReconnectIfNecessary()
+		PublishMessages("All")
 		time.Sleep(time.Second * time.Duration(Opt.Heartbeat))
 	} else {
 		time.Sleep(time.Second * 5)
@@ -76,13 +76,13 @@ func ConnectNode() {
 	if !Connected {
 		DisconnectNode()
 		nodeConfig = handler.ReadNodeConfig()
-		publisher = InitBrokerChannel(nodeConfig, Opt.PubClientId+"/"+nodeId, false)
-		subscriber = InitBrokerChannel(nodeConfig, Opt.SubClientId+"/"+nodeId, true)
+		publisher = InitBrokerChannel(Opt.PubClientId+"/"+nodeId, false)
+		subscriber = InitBrokerChannel(Opt.SubClientId+"/"+nodeId, true)
 		Connected = true
 	}
 }
 
-func InitBrokerChannel(nodeConfig map[string]string, pubsubClientId string, isSubscribe bool) mqtt.Client {
+func InitBrokerChannel(pubsubClientId string, isSubscribe bool) mqtt.Client {
 
 	// var pubsubClient mqtt.Client
 
@@ -202,7 +202,7 @@ func NewTLSConfig(nodeConfig map[string]string) (config *tls.Config, err error) 
 	return config, nil
 }
 
-func PublishMessages(publisher mqtt.Client, pubNodeId string, nodeName string, msgType string) bool {
+func PublishMessages(msgType string) bool {
 
 	if !publisher.IsConnected() {
 		log.Infoln("Connecting.....", time.Now().String(), time.Now().UnixNano())
@@ -217,9 +217,9 @@ func PublishMessages(publisher mqtt.Client, pubNodeId string, nodeName string, m
 	var b_msg []byte
 	var err error
 	if msgType == "Registration" {
-		topicNm = Opt.PubClientId + "/" + pubNodeId + "/" + "Registration"
+		topicNm = Opt.PubClientId + "/" + nodeId + "/" + "Registration"
 
-		msg := handler.GetRegistrationMessage(pubNodeId, nodeName)
+		msg := handler.GetRegistrationMessage(nodeId, nodeConfig[handler.KeyNodeName])
 		log.Infoln("Sending registration request.", "Registration", msg)
 		b_msg, err = json.Marshal(msg)
 		if err != nil {
@@ -227,8 +227,8 @@ func PublishMessages(publisher mqtt.Client, pubNodeId string, nodeName string, m
 		}
 
 	} else {
-		topicNm = Opt.PubClientId + "/" + pubNodeId + "/" + Opt.TopicName
-		msg := handler.GetStatusMessage(pubNodeId)
+		topicNm = Opt.PubClientId + "/" + nodeId + "/" + Opt.TopicName
+		msg := handler.GetStatusMessage(nodeId)
 		log.Info("Sending update >> ", "Topic: ", Opt.TopicName, " >> Body: ", msg)
 		b_msg, err = json.Marshal(msg)
 		if err != nil {
@@ -245,7 +245,7 @@ func PublishMessages(publisher mqtt.Client, pubNodeId string, nodeName string, m
 
 }
 
-func ReconnectIfNecessary(publisher mqtt.Client, subscriber mqtt.Client) {
+func ReconnectIfNecessary() {
 	// Attempt reconnect
 	if !publisher.IsConnected() {
 		log.Infoln("Connecting.....", time.Now().String(), time.Now().UnixNano())
