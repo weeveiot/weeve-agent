@@ -6,7 +6,7 @@ import (
 	"github.com/Jeffail/gabs/v2"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/weeveiot/weeve-agent/internal/deploy"
+	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/model"
 	"github.com/weeveiot/weeve-agent/internal/util/jsonlines"
 )
@@ -36,7 +36,7 @@ func ProcessMessage(operation string, payload []byte, retry bool) {
 
 			var thisManifest = model.Manifest{}
 			thisManifest.Manifest = *jsonParsed
-			err := deploy.DeployDataService(thisManifest, operation)
+			err := dataservice.DeployDataService(thisManifest, operation)
 			if err != nil {
 				log.Info("Deployment failed! CAUSE --> ", err, "!")
 			} else {
@@ -48,7 +48,7 @@ func ProcessMessage(operation string, payload []byte, retry bool) {
 
 			var thisManifest = model.Manifest{}
 			thisManifest.Manifest = *jsonParsed
-			err := deploy.DeployDataService(thisManifest, operation)
+			err := dataservice.DeployDataService(thisManifest, operation)
 			if err != nil {
 				log.Info("Redeployment failed! CAUSE --> ", err, "!")
 			} else {
@@ -63,7 +63,7 @@ func ProcessMessage(operation string, payload []byte, retry bool) {
 				serviceId := jsonParsed.Search("id").Data().(string)
 				serviceVersion := jsonParsed.Search("version").Data().(string)
 
-				err := deploy.StopDataService(serviceId, serviceVersion)
+				err := dataservice.StopDataService(serviceId, serviceVersion)
 				if err != nil {
 					log.Error(err)
 				} else {
@@ -78,7 +78,7 @@ func ProcessMessage(operation string, payload []byte, retry bool) {
 				serviceId := jsonParsed.Search("id").Data().(string)
 				serviceVersion := jsonParsed.Search("version").Data().(string)
 
-				err := deploy.StartDataService(serviceId, serviceVersion)
+				err := dataservice.StartDataService(serviceId, serviceVersion)
 				if err != nil {
 					log.Error(err)
 				} else {
@@ -93,7 +93,7 @@ func ProcessMessage(operation string, payload []byte, retry bool) {
 				serviceId := jsonParsed.Search("id").Data().(string)
 				serviceVersion := jsonParsed.Search("version").Data().(string)
 
-				err := deploy.UndeployDataService(serviceId, serviceVersion)
+				err := dataservice.UndeployDataService(serviceId, serviceVersion)
 				if err != nil {
 					log.Error(err)
 				} else {
@@ -107,7 +107,7 @@ func ProcessMessage(operation string, payload []byte, retry bool) {
 }
 
 func GetStatusMessage(nodeId string) model.StatusMessage {
-	manifests, err := jsonlines.Read(deploy.ManifestFile, nil, false)
+	manifests, err := jsonlines.Read(dataservice.ManifestFile, nil, false)
 
 	if err != nil {
 		return model.StatusMessage{}

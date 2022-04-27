@@ -3,12 +3,10 @@
 	can be started and stopped using the tested functions.
 */
 
-package deploy_test
+package dataservice_test
 
 import (
 	"context"
-	"io/ioutil"
-	"path"
 	"testing"
 
 	"github.com/Jeffail/gabs/v2"
@@ -16,7 +14,7 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
-	"github.com/weeveiot/weeve-agent/internal/deploy"
+	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/model"
 	"github.com/weeveiot/weeve-agent/internal/util"
@@ -35,7 +33,7 @@ func TestDeployManifest(t *testing.T) {
 	log.Info("TESTING DEPLOYMENT...")
 
 	// Load Manifest JSON from file.
-	json := LoadJSONBytes(manifestPath)
+	json := util.LoadJsonBytes(manifestPath)
 
 	// Parse to gabs Container type
 	jsonParsed, err := gabs.ParseJSON(json)
@@ -52,7 +50,7 @@ func TestDeployManifest(t *testing.T) {
 	version = thisManifest.Manifest.Search("version").Data().(string)
 	log.Info(version)
 
-	err = deploy.DeployDataService(thisManifest, "deploy")
+	err = dataservice.DeployDataService(thisManifest, "deploy")
 	if err != nil {
 		t.Errorf("DeployDataService returned %v status", err)
 	}
@@ -113,7 +111,7 @@ func TestStopDataServiceWrongDetails(t *testing.T) {
 	}
 
 	// run tested method
-	err := deploy.StopDataService(wrongManifesetID, wrongVersion)
+	err := dataservice.StopDataService(wrongManifesetID, wrongVersion)
 	if err != nil {
 		t.Errorf("StopDataService returned True status, but should return False as manifestID is wrong")
 	}
@@ -138,7 +136,7 @@ func TestStopDataService(t *testing.T) {
 	var wrongStatusContainerList []string
 
 	// run tested method
-	err := deploy.StopDataService(manifestID, version)
+	err := dataservice.StopDataService(manifestID, version)
 	if err != nil {
 		t.Errorf("StopDataService returned %v status", err)
 	}
@@ -173,7 +171,7 @@ func TestStartDataServiceWrongDetails(t *testing.T) {
 	}
 
 	// run tested method
-	err := deploy.StartDataService(wrongServiceID, wrongServiceName)
+	err := dataservice.StartDataService(wrongServiceID, wrongServiceName)
 	if err != nil {
 		t.Errorf("StartDataService returned %v status", err)
 	}
@@ -198,7 +196,7 @@ func TestStartDataService(t *testing.T) {
 	var wrongStatusContainerList []string
 
 	// run tested method
-	err := deploy.StartDataService(manifestID, version)
+	err := dataservice.StartDataService(manifestID, version)
 	if err != nil {
 		t.Errorf("StartDataService returned %v status", err)
 	}
@@ -219,7 +217,7 @@ func TestUndeployDataService(t *testing.T) {
 	log.Info("TESTING UNDEPLOYMENT...")
 
 	// run tested method
-	err := deploy.UndeployDataService(manifestID, version)
+	err := dataservice.UndeployDataService(manifestID, version)
 	if err != nil {
 		t.Errorf("UndeployDataService returned %v status", err)
 	}
@@ -231,7 +229,7 @@ func TestUndeployDataService(t *testing.T) {
 	}
 
 	// Check if the network is removed
-	result, _ := deploy.DataServiceExist(manifestID, version)
+	result, _ := dataservice.DataServiceExist(manifestID, version)
 	if result {
 		t.Errorf("Network %v was not pruned (Data Service not removed)", version)
 	}
@@ -245,7 +243,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	// Load Manifest JSON from file.
 	log.Info("Loading original manifest...")
 
-	json := LoadJSONBytes(manifestPath)
+	json := util.LoadJsonBytes(manifestPath)
 
 	// Parse to gabs Container type
 	jsonParsed, err := gabs.ParseJSON(json)
@@ -262,7 +260,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	version = thisManifest.Manifest.Search("version").Data().(string)
 	log.Info(version)
 
-	err = deploy.DeployDataService(thisManifest, "deploy")
+	err = dataservice.DeployDataService(thisManifest, "deploy")
 	if err != nil {
 		t.Errorf("DeployDataService returned %v status", err)
 	}
@@ -271,7 +269,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	// Load Manifest JSON from file.
 	log.Info("Loading second manifest...")
 
-	json = LoadJSONBytes(manifestPath2)
+	json = util.LoadJsonBytes(manifestPath2)
 
 	// Parse to gabs Container type
 	jsonParsed, err = gabs.ParseJSON(json)
@@ -288,7 +286,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	version2 = thisManifest2.Manifest.Search("version").Data().(string)
 	log.Info(version2)
 
-	err = deploy.DeployDataService(thisManifest2, "deploy")
+	err = dataservice.DeployDataService(thisManifest2, "deploy")
 	if err != nil {
 		t.Errorf("DeployDataService returned %v status", err)
 	}
@@ -296,7 +294,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	// ***** TEST UNDEPLOY FOR ORIGINAL DATA SERVICE ********* //
 
 	// run tested method
-	err = deploy.UndeployDataService(manifestID, version)
+	err = dataservice.UndeployDataService(manifestID, version)
 	if err != nil {
 		t.Errorf("UndeployDataService returned %v status", err)
 	}
@@ -308,7 +306,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	}
 
 	// Check if the network is removed
-	result, _ := deploy.DataServiceExist(manifestID, version)
+	result, _ := dataservice.DataServiceExist(manifestID, version)
 	if result {
 		t.Errorf("Network was not pruned (Data Service not removed)")
 	}
@@ -321,13 +319,13 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 		t.Errorf("Some containers from the second identical network were removed.")
 	}
 
-	result2, _ := deploy.DataServiceExist(manifestID2, version2)
+	result2, _ := dataservice.DataServiceExist(manifestID2, version2)
 	if !result2 {
 		t.Errorf("Second identical network is removed.")
 	}
 
 	// clean up and remove second data service
-	err = deploy.UndeployDataService(manifestID2, version2)
+	err = dataservice.UndeployDataService(manifestID2, version2)
 	if err != nil {
 		t.Errorf("UndeployDataService returned %v status", err)
 	}
@@ -339,7 +337,7 @@ func TestRedeployDataService(t *testing.T) {
 
 	// ***************** LOAD ORIGINAL MANIFEST AND DEPLOY DATA SERVICE ******************** //
 	log.Info("Loading original manifest...")
-	json := LoadJSONBytes(manifestPath)
+	json := util.LoadJsonBytes(manifestPath)
 
 	// Parse to gabs Container type
 	jsonParsed, err := gabs.ParseJSON(json)
@@ -356,7 +354,7 @@ func TestRedeployDataService(t *testing.T) {
 	version = thisManifest.Manifest.Search("version").Data().(string)
 	log.Info(version)
 
-	err = deploy.DeployDataService(thisManifest, "deploy")
+	err = dataservice.DeployDataService(thisManifest, "deploy")
 	if err != nil {
 		t.Errorf("DeployDataService returned %v status", err)
 	}
@@ -382,7 +380,7 @@ func TestRedeployDataService(t *testing.T) {
 
 	// ***************** LOAD ORIGINAL MANIFEST AND DEPLOY DATA SERVICE ******************** //
 	log.Info("Loading redeployment manifest...")
-	json = LoadJSONBytes(manifestPathRedeploy)
+	json = util.LoadJsonBytes(manifestPathRedeploy)
 
 	// Parse to gabs Container type
 	jsonParsed, err = gabs.ParseJSON(json)
@@ -393,7 +391,7 @@ func TestRedeployDataService(t *testing.T) {
 	var thisManifestRedeploy = model.Manifest{}
 	thisManifestRedeploy.Manifest = *jsonParsed
 
-	err = deploy.DeployDataService(thisManifestRedeploy, "redeploy")
+	err = dataservice.DeployDataService(thisManifestRedeploy, "redeploy")
 	if err != nil {
 		t.Errorf("DeployDataService returned %v status", err)
 	}
@@ -413,19 +411,8 @@ func TestRedeployDataService(t *testing.T) {
 	log.Info("Cleaning after testing...")
 	redeployedManifestID := thisManifestRedeploy.Manifest.Search("id").Data().(string)
 	redeployedVersion := thisManifestRedeploy.Manifest.Search("version").Data().(string)
-	err = deploy.UndeployDataService(redeployedManifestID, redeployedVersion)
+	err = dataservice.UndeployDataService(redeployedManifestID, redeployedVersion)
 	if err != nil {
 		t.Errorf("UndeployDataService returned %v status", err)
 	}
-}
-
-// LoadJsonBytes reads file containts into byte[]
-func LoadJSONBytes(manName string) []byte {
-	manifestPath := path.Join(util.GetExeDir(), manName)
-
-	manifestBytes, err := ioutil.ReadFile(manifestPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return manifestBytes
 }
