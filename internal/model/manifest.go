@@ -218,7 +218,7 @@ func (m Manifest) GetContainerConfig(networkName string) []ContainerConfig {
 		prev_container_name = containerConfig.ContainerName
 
 		for _, thisArg := range envArgs {
-			log.Debug(fmt.Sprintf("%v %T", thisArg, thisArg))
+			log.Debugf("%v %T", thisArg, thisArg)
 		}
 
 		containerConfig.EnvArgs = envArgs

@@ -11,106 +11,89 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/util/jsonlines"
 )
 
-func ProcessMessage(operation string, payload []byte, retry bool) {
-	// flag for exception handling
-	exception := true
-	defer func() {
-		if exception && retry {
-			// on exception sleep 5s and try again
-			time.Sleep(5 * time.Second)
-			ProcessMessage(operation, payload, false)
-		}
-	}()
-
+func ProcessMessage(operation string, payload []byte) error {
 	log.Info("Processing the message >> ", operation)
 
 	jsonParsed, err := gabs.ParseJSON(payload)
 	if err != nil {
-		log.Error("Error on parsing message : ", err)
-	} else {
-		log.Debug("Parsed JSON >> ", jsonParsed)
+		return err
+	}
+	log.Debug("Parsed JSON >> ", jsonParsed)
 
-		if operation == "CheckVersion" {
+	if operation == "deploy" {
 
-		} else if operation == "deploy" {
-
-			var thisManifest = model.Manifest{}
-			thisManifest.Manifest = *jsonParsed
-			err := dataservice.DeployDataService(thisManifest, operation)
-			if err != nil {
-				log.Info("Deployment failed! CAUSE --> ", err, "!")
-			} else {
-				log.Info("Deployment done!")
-
-			}
-
-		} else if operation == "redeploy" {
-
-			var thisManifest = model.Manifest{}
-			thisManifest.Manifest = *jsonParsed
-			err := dataservice.DeployDataService(thisManifest, operation)
-			if err != nil {
-				log.Info("Redeployment failed! CAUSE --> ", err, "!")
-			} else {
-				log.Info("Redeployment done!")
-
-			}
-
-		} else if operation == "stopservice" {
-
-			err := model.ValidateStartStopJSON(jsonParsed)
-			if err == nil {
-				serviceId := jsonParsed.Search("id").Data().(string)
-				serviceVersion := jsonParsed.Search("version").Data().(string)
-
-				err := dataservice.StopDataService(serviceId, serviceVersion)
-				if err != nil {
-					log.Error(err)
-				} else {
-					log.Info("Service stopped!")
-				}
-			}
-
-		} else if operation == "startservice" {
-
-			err := model.ValidateStartStopJSON(jsonParsed)
-			if err == nil {
-				serviceId := jsonParsed.Search("id").Data().(string)
-				serviceVersion := jsonParsed.Search("version").Data().(string)
-
-				err := dataservice.StartDataService(serviceId, serviceVersion)
-				if err != nil {
-					log.Error(err)
-				} else {
-					log.Info("Service started!")
-				}
-			}
-
-		} else if operation == "undeploy" {
-
-			err := model.ValidateStartStopJSON(jsonParsed)
-			if err == nil {
-				serviceId := jsonParsed.Search("id").Data().(string)
-				serviceVersion := jsonParsed.Search("version").Data().(string)
-
-				err := dataservice.UndeployDataService(serviceId, serviceVersion)
-				if err != nil {
-					log.Error(err)
-				} else {
-					log.Info("Undeployment done!")
-				}
-			}
+		var manifest = model.Manifest{}
+		manifest.Manifest = *jsonParsed
+		err := dataservice.DeployDataService(manifest, operation)
+		if err != nil {
+			return err
 		}
+		log.Info("Deployment done!")
+
+	} else if operation == "redeploy" {
+
+		var manifest = model.Manifest{}
+		manifest.Manifest = *jsonParsed
+		err := dataservice.DeployDataService(manifest, operation)
+		if err != nil {
+			return err
+		}
+		log.Info("Redeployment done!")
+
+	} else if operation == "stopservice" {
+
+		err := model.ValidateStartStopJSON(jsonParsed)
+		if err != nil {
+			return err
+		}
+		serviceId := jsonParsed.Search("id").Data().(string)
+		serviceVersion := jsonParsed.Search("version").Data().(string)
+
+		err = dataservice.StopDataService(serviceId, serviceVersion)
+		if err != nil {
+			return err
+		}
+		log.Info("Service stopped!")
+
+	} else if operation == "startservice" {
+
+		err := model.ValidateStartStopJSON(jsonParsed)
+		if err != nil {
+			return err
+		}
+		serviceId := jsonParsed.Search("id").Data().(string)
+		serviceVersion := jsonParsed.Search("version").Data().(string)
+
+		err = dataservice.StartDataService(serviceId, serviceVersion)
+		if err != nil {
+			return err
+		}
+		log.Info("Service started!")
+
+	} else if operation == "undeploy" {
+
+		err := model.ValidateStartStopJSON(jsonParsed)
+		if err != nil {
+			return err
+		}
+
+		serviceId := jsonParsed.Search("id").Data().(string)
+		serviceVersion := jsonParsed.Search("version").Data().(string)
+
+		err = dataservice.UndeployDataService(serviceId, serviceVersion)
+		if err != nil {
+			return err
+		}
+		log.Info("Undeployment done!")
 	}
 
-	exception = false
+	return nil
 }
 
-func GetStatusMessage(nodeId string) model.StatusMessage {
+func GetStatusMessage(nodeId string) (model.StatusMessage, error) {
 	manifests, err := jsonlines.Read(dataservice.ManifestFile, nil, false)
-
 	if err != nil {
-		return model.StatusMessage{}
+		return model.StatusMessage{}, err
 	}
 
 	var mani []model.ManifestStatus
@@ -126,16 +109,25 @@ func GetStatusMessage(nodeId string) model.StatusMessage {
 		}
 	}
 
-	now := time.Now()
-	nanos := now.UnixNano()
-	millis := nanos / 1000000
-	return model.StatusMessage{Id: nodeId, Timestamp: millis, Status: "Available", ActiveServiceCount: actv_cnt, ServiceCount: serv_cnt, ServicesStatus: mani, DeviceParams: deviceParams}
+	msg := model.StatusMessage{
+		Id:                 nodeId,
+		Timestamp:          time.Now().UnixMilli(),
+		Status:             "Available",
+		ActiveServiceCount: actv_cnt,
+		ServiceCount:       serv_cnt,
+		ServicesStatus:     mani,
+		DeviceParams:       deviceParams,
+	}
+	return msg, nil
 }
 
 func GetRegistrationMessage(nodeId string, nodeName string) model.RegistrationMessage {
-	now := time.Now()
-	nanos := now.UnixNano()
-	millis := nanos / 1000000
-
-	return model.RegistrationMessage{Id: nodeId, Timestamp: millis, Status: "Registering", Operation: "Registration", Name: nodeName}
+	msg := model.RegistrationMessage{
+		Id:        nodeId,
+		Timestamp: time.Now().UnixMilli(),
+		Status:    "Registering",
+		Operation: "Registration",
+		Name:      nodeName,
+	}
+	return msg
 }
