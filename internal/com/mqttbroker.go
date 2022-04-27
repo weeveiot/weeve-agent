@@ -135,6 +135,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 	jsonParsed, err := gabs.ParseJSON(msg.Payload())
 	if err != nil {
 		log.Error("Error on parsing message: ", err)
+		return
 	}
 	log.Infoln("Received message on topic:", msg.Topic(), "JSON:", *jsonParsed)
 
@@ -155,7 +156,10 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 	} else {
 		operation := strings.Replace(msg.Topic(), params.SubClientId+"/"+config.GetNodeId()+"/", "", 1)
 
-		handler.ProcessMessage(operation, msg.Payload(), false)
+		err = handler.ProcessMessage(operation, msg.Payload())
+		if err != nil {
+			log.Error(err)
+		}
 	}
 }
 
@@ -231,7 +235,10 @@ func PublishMessages(msgType string) bool {
 
 	} else {
 		topicNm = params.PubClientId + "/" + config.GetNodeId() + "/" + params.TopicName
-		msg := handler.GetStatusMessage(config.GetNodeId())
+		msg, err := handler.GetStatusMessage(config.GetNodeId())
+		if err != nil {
+			log.Fatal(err)
+		}
 		log.Info("Sending update >> ", "Topic: ", params.TopicName, " >> Body: ", msg)
 		b_msg, err = json.Marshal(msg)
 		if err != nil {

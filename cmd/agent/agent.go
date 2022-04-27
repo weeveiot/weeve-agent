@@ -69,8 +69,7 @@ func parseCLIoptions() {
 	parser := flags.NewParser(&opt, flags.Default)
 
 	if _, err := parser.Parse(); err != nil {
-		log.Error("Error on command line parser ", err)
-		os.Exit(1)
+		log.Fatal("Error on command line parser ", err)
 	}
 
 	// FLAG: LogLevel
@@ -118,8 +117,7 @@ func parseCLIoptions() {
 	// FLAG: Broker
 	brokerUrl, err := url.Parse(opt.Broker)
 	if err != nil {
-		log.Error("Error on parsing broker ", err)
-		os.Exit(1)
+		log.Fatal("Error on parsing broker ", err)
 	}
 	validateBrokerUrl(brokerUrl)
 
@@ -144,5 +142,5 @@ func validateBrokerUrl(u *url.URL) {
 		log.Fatal("Error in --broker option: Specify both protocol:\\\\host in the Broker URL")
 	}
 
-	log.Info(fmt.Sprintf("Broker host->%v at port->%v over %v", host, port, u.Scheme))
+	log.Infof("Broker host->%v at port->%v over %v", host, port, u.Scheme)
 }
