@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"io"
 	golog "log"
+	"net"
 	"net/url"
 	"os"
 	"os/signal"
 	"path"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -16,10 +18,10 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
 
+	"github.com/weeveiot/weeve-agent/internal/com"
+	"github.com/weeveiot/weeve-agent/internal/config"
 	"github.com/weeveiot/weeve-agent/internal/docker"
-	"github.com/weeveiot/weeve-agent/internal/handler"
 	"github.com/weeveiot/weeve-agent/internal/model"
-	"github.com/weeveiot/weeve-agent/internal/node"
 	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
 )
 
@@ -32,29 +34,44 @@ func (f *PlainFormatter) Format(entry *log.Entry) ([]byte, error) {
 	return []byte(fmt.Sprintf("%s %s : %s\n", timestamp, entry.Level, entry.Message)), nil
 }
 
-var opt model.Params
-var parser = flags.NewParser(&opt, flags.Default)
-
 // logging into the terminal and files
 func init() {
-
 	plainFormatter := new(PlainFormatter)
 	plainFormatter.TimestampFormat = "2006-01-02 15:04:05"
 	log.SetFormatter(plainFormatter)
-
 }
 
 func main() {
+	parseCLIoptions()
 
-	// Parse the CLI options
+	docker.SetupDockerClient()
+
+	com.RegisterNode()
+
+	// Kill the agent on a keyboard interrupt
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
+
+	// MAIN LOOP
+	go func() {
+		for {
+			com.NodeHeartbeat()
+		}
+	}()
+
+	// Cleanup on ending the process
+	<-done
+	com.DisconnectNode()
+}
+
+func parseCLIoptions() {
+	var opt model.Params
+	parser := flags.NewParser(&opt, flags.Default)
+
 	if _, err := parser.Parse(); err != nil {
 		log.Error("Error on command line parser ", err)
 		os.Exit(1)
 	}
-
-	// Passing the arguments to the packages
-	node.Opt = opt
-	handler.Opt = opt
 
 	// FLAG: LogLevel
 	l, _ := log.ParseLevel(opt.LogLevel)
@@ -70,7 +87,7 @@ func main() {
 	}
 
 	// FLAG: Verbose
-	if len(opt.Verbose) >= 1 {
+	if opt.Verbose {
 		multiWriter := io.MultiWriter(os.Stderr, logger)
 		log.SetOutput(multiWriter)
 	} else {
@@ -85,50 +102,47 @@ func main() {
 		mqtt.DEBUG = golog.New(logger, "[DEBUG] ", 0)
 	}
 
-	// FLAG: ConfigPath
-	if len(opt.ConfigPath) > 0 {
-		handler.ConfigPath = opt.ConfigPath
-	} else {
-		// use the default path and filename
-		handler.ConfigPath = path.Join(ioutility.GetExeDir(), handler.NodeConfigFile)
-	}
-
 	log.Info("Started logging!")
-
 	log.Info("Logging level set to ", log.GetLevel(), "!")
 
-	u, err := url.Parse(opt.Broker)
+	// FLAG: ConfigPath
+	if len(opt.ConfigPath) > 0 {
+		config.ConfigPath = opt.ConfigPath
+	} else {
+		// use the default path and filename
+		const configFileName = "nodeconfig.json"
+		config.ConfigPath = path.Join(ioutility.GetExeDir(), configFileName)
+	}
+	config.UpdateNodeConfig(opt)
+
+	// FLAG: Broker
+	brokerUrl, err := url.Parse(opt.Broker)
 	if err != nil {
 		log.Error("Error on parsing broker ", err)
 		os.Exit(1)
 	}
-	node.ValidateBroker(u)
+	validateBrokerUrl(brokerUrl)
 
-	// FLAG: Optionally disable TLS
+	// FLAG: NoTLS
 	if opt.NoTLS {
 		log.Info("TLS disabled!")
 	} else {
-		if u.Scheme != "tls" {
-			log.Fatalf("Incorrect protocol, TLS is required unless --notls is set. You specified protocol in broker to: %v", u.Scheme)
+		if brokerUrl.Scheme != "tls" {
+			log.Fatalf("Incorrect protocol, TLS is required unless --notls is set. You specified protocol in broker to: %v", brokerUrl.Scheme)
 		}
 	}
 
-	docker.SetupDockerClient()
+	// FLAG: Broker, NoTLS, Heartbeat, PubClientId, SubClientId, TopicName
+	com.SetParams(opt)
+}
 
-	node.RegisterNode()
+func validateBrokerUrl(u *url.URL) {
+	host, port, _ := net.SplitHostPort(u.Host)
 
-	done := make(chan os.Signal, 1)
-	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
+	// Strictly require protocol and host in Broker specification
+	if (len(strings.TrimSpace(host)) == 0) || (len(strings.TrimSpace(u.Scheme)) == 0) {
+		log.Fatal("Error in --broker option: Specify both protocol:\\\\host in the Broker URL")
+	}
 
-	// MAIN LOOP
-	go func() {
-		for {
-			log.Debug("Node registered >> ", node.Registered, " | connected >> ", node.Connected)
-			node.NodeHeartbeat()
-		}
-	}()
-
-	// Cleanup on ending the process
-	<-done
-	node.DisconnectNode()
+	log.Info(fmt.Sprintf("Broker host->%v at port->%v over %v", host, port, u.Scheme))
 }

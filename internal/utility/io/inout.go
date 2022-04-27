@@ -1,7 +1,9 @@
 package ioutility
 
 import (
+	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
@@ -14,4 +16,14 @@ func GetExeDir() string {
 	}
 	dir := filepath.Dir(exePath)
 	return dir
+}
+
+func LoadJsonBytes(manifestFileName string) []byte {
+	manifestPath := path.Join(GetExeDir(), manifestFileName)
+
+	manifestBytes, err := ioutil.ReadFile(manifestPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return manifestBytes
 }

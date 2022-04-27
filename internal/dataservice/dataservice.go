@@ -1,4 +1,4 @@
-package deploy
+package dataservice
 
 import (
 	"encoding/json"
