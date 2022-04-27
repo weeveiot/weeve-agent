@@ -22,6 +22,7 @@ type Params struct {
 	KeyPath      string `long:"key" short:"k" description:"Path to private key to authenticate to Broker" required:"false"`
 	ConfigPath   string `long:"config" description:"Path to the .json config file" required:"false"`
 }
+
 type StatusMessage struct {
 	Id                 string           `json:"ID"`
 	Timestamp          int64            `json:"timestamp"`

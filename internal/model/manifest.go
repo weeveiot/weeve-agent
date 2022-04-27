@@ -354,7 +354,6 @@ func ValidateManifest(m Manifest) error {
 	} else {
 		return nil
 	}
-
 }
 
 func ValidateStartStopJSON(jsonParsed *gabs.Container) error {
