@@ -1,7 +1,6 @@
 package util
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -19,12 +18,9 @@ func GetExeDir() string {
 	return dir
 }
 
-func LoadJsonBytes(manName string) []byte {
-	wd, _ := os.Getwd()
-	fmt.Println()
-	manifestPath := path.Join(wd, "testdata", manName)
+func LoadJsonBytes(manifestFileName string) []byte {
+	manifestPath := path.Join(GetExeDir(), manifestFileName)
 
-	var err error = nil
 	manifestBytes, err := ioutil.ReadFile(manifestPath)
 	if err != nil {
 		log.Fatal(err)

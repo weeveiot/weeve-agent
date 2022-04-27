@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"os"
@@ -11,25 +12,30 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/config"
 )
 
-func DownloadCertificates(certificateUrl, keyUrl string) (string, string) {
+func DownloadCertificates(certificateUrl, keyUrl string) (string, string, error) {
 
 	log.Info("Downloading certificates and keys ...")
 
 	certDir := filepath.Dir(config.GetCertPath())
-	certificatePath := downloadFile(certificateUrl, certDir)
+	certificatePath, err := downloadFile(certificateUrl, certDir)
+	if err != nil {
+		return "", "", err
+	}
 
 	keyDir := filepath.Dir(config.GetKeyPath())
-	keyPath := downloadFile(keyUrl, keyDir)
+	keyPath, err := downloadFile(keyUrl, keyDir)
+	if err != nil {
+		return "", "", err
+	}
 
-	return certificatePath, keyPath
+	return certificatePath, keyPath, nil
 }
 
-func downloadFile(url, dir string) string {
+func downloadFile(url, dir string) (string, error) {
 	// Get the data
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Error("Error to download certificate: ", err)
-		return ""
+		return "", errors.New("Download failed. " + err.Error())
 	}
 
 	defer resp.Body.Close()
@@ -39,8 +45,7 @@ func downloadFile(url, dir string) string {
 	fullPath := path.Join(dir, fileName)
 	out, err := os.Create(fullPath)
 	if err != nil {
-		log.Error("Error to create file: ", fileName, err)
-		return ""
+		return "", err
 	}
 	defer out.Close()
 
@@ -49,9 +54,8 @@ func downloadFile(url, dir string) string {
 	// Write the body to file
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
-		log.Error("Error to copy file: ", fileName, err)
-		return ""
+		return "", err
 	}
 
-	return fullPath
+	return fullPath, nil
 }

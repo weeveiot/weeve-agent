@@ -21,7 +21,7 @@ var params struct {
 	KeyPath      string
 }
 
-const MAX_NUX_NODES = 10000
+const MAX_NUM_NODES = 10000
 
 func GetRootCertPath() string {
 	return params.RootCertPath
@@ -100,7 +100,7 @@ func UpdateNodeConfig(opt model.Params) {
 	} else {
 		// randomize the default node name from the config file
 		if params.NodeName == "" || params.NodeName == "New Node" {
-			params.NodeName = fmt.Sprintf("New Node%d", rand.Intn(MAX_NUX_NODES))
+			params.NodeName = fmt.Sprintf("New Node%d", rand.Intn(MAX_NUM_NODES))
 			configChanged = true
 		}
 	}

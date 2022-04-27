@@ -34,10 +34,6 @@ func (f *PlainFormatter) Format(entry *log.Entry) ([]byte, error) {
 	return []byte(fmt.Sprintf("%s %s : %s\n", timestamp, entry.Level, entry.Message)), nil
 }
 
-var opt model.Params
-
-const configFileName = "nodeconfig.json"
-
 // logging into the terminal and files
 func init() {
 	plainFormatter := new(PlainFormatter)
@@ -69,6 +65,7 @@ func main() {
 }
 
 func parseCLIoptions() {
+	var opt model.Params
 	parser := flags.NewParser(&opt, flags.Default)
 
 	if _, err := parser.Parse(); err != nil {
@@ -113,6 +110,7 @@ func parseCLIoptions() {
 		config.ConfigPath = opt.ConfigPath
 	} else {
 		// use the default path and filename
+		const configFileName = "nodeconfig.json"
 		config.ConfigPath = path.Join(util.GetExeDir(), configFileName)
 	}
 	config.UpdateNodeConfig(opt)
@@ -124,7 +122,6 @@ func parseCLIoptions() {
 		os.Exit(1)
 	}
 	validateBrokerUrl(brokerUrl)
-	com.Params.Broker = opt.Broker
 
 	// FLAG: NoTLS
 	if opt.NoTLS {
@@ -134,13 +131,9 @@ func parseCLIoptions() {
 			log.Fatalf("Incorrect protocol, TLS is required unless --notls is set. You specified protocol in broker to: %v", brokerUrl.Scheme)
 		}
 	}
-	com.Params.NoTLS = opt.NoTLS
 
-	// FLAG: Heartbeat, PubClientId, SubClientId, TopicName
-	com.Params.Heartbeat = opt.Heartbeat
-	com.Params.PubClientId = opt.PubClientId
-	com.Params.SubClientId = opt.SubClientId
-	com.Params.TopicName = opt.TopicName
+	// FLAG: Broker, NoTLS, Heartbeat, PubClientId, SubClientId, TopicName
+	com.SetParams(opt)
 }
 
 func validateBrokerUrl(u *url.URL) {

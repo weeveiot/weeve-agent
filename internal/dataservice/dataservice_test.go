@@ -7,8 +7,6 @@ package dataservice_test
 
 import (
 	"context"
-	"io/ioutil"
-	"path"
 	"testing"
 
 	"github.com/Jeffail/gabs/v2"
@@ -35,7 +33,7 @@ func TestDeployManifest(t *testing.T) {
 	log.Info("TESTING DEPLOYMENT...")
 
 	// Load Manifest JSON from file.
-	json := LoadJSONBytes(manifestPath)
+	json := util.LoadJsonBytes(manifestPath)
 
 	// Parse to gabs Container type
 	jsonParsed, err := gabs.ParseJSON(json)
@@ -245,7 +243,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	// Load Manifest JSON from file.
 	log.Info("Loading original manifest...")
 
-	json := LoadJSONBytes(manifestPath)
+	json := util.LoadJsonBytes(manifestPath)
 
 	// Parse to gabs Container type
 	jsonParsed, err := gabs.ParseJSON(json)
@@ -271,7 +269,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	// Load Manifest JSON from file.
 	log.Info("Loading second manifest...")
 
-	json = LoadJSONBytes(manifestPath2)
+	json = util.LoadJsonBytes(manifestPath2)
 
 	// Parse to gabs Container type
 	jsonParsed, err = gabs.ParseJSON(json)
@@ -339,7 +337,7 @@ func TestRedeployDataService(t *testing.T) {
 
 	// ***************** LOAD ORIGINAL MANIFEST AND DEPLOY DATA SERVICE ******************** //
 	log.Info("Loading original manifest...")
-	json := LoadJSONBytes(manifestPath)
+	json := util.LoadJsonBytes(manifestPath)
 
 	// Parse to gabs Container type
 	jsonParsed, err := gabs.ParseJSON(json)
@@ -382,7 +380,7 @@ func TestRedeployDataService(t *testing.T) {
 
 	// ***************** LOAD ORIGINAL MANIFEST AND DEPLOY DATA SERVICE ******************** //
 	log.Info("Loading redeployment manifest...")
-	json = LoadJSONBytes(manifestPathRedeploy)
+	json = util.LoadJsonBytes(manifestPathRedeploy)
 
 	// Parse to gabs Container type
 	jsonParsed, err = gabs.ParseJSON(json)
@@ -417,15 +415,4 @@ func TestRedeployDataService(t *testing.T) {
 	if err != nil {
 		t.Errorf("UndeployDataService returned %v status", err)
 	}
-}
-
-// LoadJsonBytes reads file containts into byte[]
-func LoadJSONBytes(manName string) []byte {
-	manifestPath := path.Join(util.GetExeDir(), manName)
-
-	manifestBytes, err := ioutil.ReadFile(manifestPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return manifestBytes
 }
