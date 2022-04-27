@@ -1,11 +1,11 @@
-package docker
+package docker_test
 
 import (
 	"fmt"
 	"os"
 	"testing"
 
-	"github.com/weeveiot/weeve-agent/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/manifest"
 	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
 )
 
@@ -24,7 +24,7 @@ func TestMain(m *testing.M) {
 func TestImageExists(t *testing.T) {
 	thisFilePath := "/testdata/pipeline_integration_public/failEmptyServices.json"
 	json := ioutility.LoadJsonBytes(thisFilePath)
-	m, err := model.ParseJSONManifest(json)
+	m, err := manifest.ParseJSONManifest(json)
 	if err != nil {
 		t.Error("Json parsing failed")
 	}

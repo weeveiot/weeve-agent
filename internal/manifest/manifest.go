@@ -1,4 +1,4 @@
-package model
+package manifest
 
 import (
 	"encoding/json"

@@ -7,9 +7,39 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
-	"github.com/weeveiot/weeve-agent/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/manifest"
 	jsonutility "github.com/weeveiot/weeve-agent/internal/utility/json"
 )
+
+type statusMessage struct {
+	Id                 string           `json:"ID"`
+	Timestamp          int64            `json:"timestamp"`
+	Status             string           `json:"status"`
+	ActiveServiceCount int              `json:"activeServiceCount"`
+	ServiceCount       int              `json:"serviceCount"`
+	ServicesStatus     []manifestStatus `json:"servicesStatus"`
+	DeviceParams       deviceParams     `json:"deviceParams"`
+}
+
+type manifestStatus struct {
+	ManifestId      string `json:"manifestId"`
+	ManifestVersion string `json:"manifestVersion"`
+	Status          string `json:"status"`
+}
+
+type deviceParams struct {
+	Sensors string `json:"sensors"`
+	Uptime  string `json:"uptime"`
+	CpuTemp string `json:"cputemp"`
+}
+
+type registrationMessage struct {
+	Id        string `json:"id"`
+	Timestamp int64  `json:"timestamp"`
+	Operation string `json:"operation"`
+	Status    string `json:"status"`
+	Name      string `json:"name"`
+}
 
 func ProcessMessage(operation string, payload []byte, retry bool) {
 	// flag for exception handling
@@ -34,7 +64,7 @@ func ProcessMessage(operation string, payload []byte, retry bool) {
 
 		} else if operation == "deploy" {
 
-			var thisManifest = model.Manifest{}
+			var thisManifest = manifest.Manifest{}
 			thisManifest.Manifest = *jsonParsed
 			err := dataservice.DeployDataService(thisManifest, operation)
 			if err != nil {
@@ -46,7 +76,7 @@ func ProcessMessage(operation string, payload []byte, retry bool) {
 
 		} else if operation == "redeploy" {
 
-			var thisManifest = model.Manifest{}
+			var thisManifest = manifest.Manifest{}
 			thisManifest.Manifest = *jsonParsed
 			err := dataservice.DeployDataService(thisManifest, operation)
 			if err != nil {
@@ -58,7 +88,7 @@ func ProcessMessage(operation string, payload []byte, retry bool) {
 
 		} else if operation == "stopservice" {
 
-			err := model.ValidateStartStopJSON(jsonParsed)
+			err := manifest.ValidateStartStopJSON(jsonParsed)
 			if err == nil {
 				serviceId := jsonParsed.Search("id").Data().(string)
 				serviceVersion := jsonParsed.Search("version").Data().(string)
@@ -73,7 +103,7 @@ func ProcessMessage(operation string, payload []byte, retry bool) {
 
 		} else if operation == "startservice" {
 
-			err := model.ValidateStartStopJSON(jsonParsed)
+			err := manifest.ValidateStartStopJSON(jsonParsed)
 			if err == nil {
 				serviceId := jsonParsed.Search("id").Data().(string)
 				serviceVersion := jsonParsed.Search("version").Data().(string)
@@ -88,7 +118,7 @@ func ProcessMessage(operation string, payload []byte, retry bool) {
 
 		} else if operation == "undeploy" {
 
-			err := model.ValidateStartStopJSON(jsonParsed)
+			err := manifest.ValidateStartStopJSON(jsonParsed)
 			if err == nil {
 				serviceId := jsonParsed.Search("id").Data().(string)
 				serviceVersion := jsonParsed.Search("version").Data().(string)
@@ -106,20 +136,20 @@ func ProcessMessage(operation string, payload []byte, retry bool) {
 	exception = false
 }
 
-func GetStatusMessage(nodeId string) model.StatusMessage {
+func GetStatusMessage(nodeId string) statusMessage {
 	manifests, err := jsonutility.Read(dataservice.ManifestFile, nil, false)
 
 	if err != nil {
-		return model.StatusMessage{}
+		return statusMessage{}
 	}
 
-	var mani []model.ManifestStatus
-	var deviceParams = model.DeviceParams{Sensors: "10", Uptime: "10", CpuTemp: "20"}
+	var mani []manifestStatus
+	var deviceParams = deviceParams{Sensors: "10", Uptime: "10", CpuTemp: "20"}
 
 	actv_cnt := 0
 	serv_cnt := 0
 	for _, rec := range manifests {
-		mani = append(mani, model.ManifestStatus{ManifestId: rec["id"].(string), ManifestVersion: rec["version"].(string), Status: rec["status"].(string)})
+		mani = append(mani, manifestStatus{ManifestId: rec["id"].(string), ManifestVersion: rec["version"].(string), Status: rec["status"].(string)})
 		serv_cnt = serv_cnt + 1
 		if rec["status"].(string) == "SUCCESS" {
 			actv_cnt = actv_cnt + 1
@@ -129,13 +159,13 @@ func GetStatusMessage(nodeId string) model.StatusMessage {
 	now := time.Now()
 	nanos := now.UnixNano()
 	millis := nanos / 1000000
-	return model.StatusMessage{Id: nodeId, Timestamp: millis, Status: "Available", ActiveServiceCount: actv_cnt, ServiceCount: serv_cnt, ServicesStatus: mani, DeviceParams: deviceParams}
+	return statusMessage{Id: nodeId, Timestamp: millis, Status: "Available", ActiveServiceCount: actv_cnt, ServiceCount: serv_cnt, ServicesStatus: mani, DeviceParams: deviceParams}
 }
 
-func GetRegistrationMessage(nodeId string, nodeName string) model.RegistrationMessage {
+func GetRegistrationMessage(nodeId string, nodeName string) registrationMessage {
 	now := time.Now()
 	nanos := now.UnixNano()
 	millis := nanos / 1000000
 
-	return model.RegistrationMessage{Id: nodeId, Timestamp: millis, Status: "Registering", Operation: "Registration", Name: nodeName}
+	return registrationMessage{Id: nodeId, Timestamp: millis, Status: "Registering", Operation: "Registration", Name: nodeName}
 }

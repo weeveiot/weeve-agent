@@ -1,11 +1,12 @@
-package model
+package manifest_test
 
 import (
 	"fmt"
 	"os"
 	"testing"
 
-	jsonutility "github.com/weeveiot/weeve-agent/internal/utility/json"
+	"github.com/weeveiot/weeve-agent/internal/manifest"
+	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
 	_ "github.com/weeveiot/weeve-agent/testing"
 )
 
@@ -15,7 +16,7 @@ var errMsg string
 
 func TestMain(m *testing.M) {
 
-	manifestBytesMVP = jsonutility.LoadJsonBytes("pipeline_unit/workingMVP.json")
+	manifestBytesMVP = ioutility.LoadJsonBytes("pipeline_unit/workingMVP.json")
 	code := m.Run()
 
 	os.Exit(code)
@@ -23,13 +24,13 @@ func TestMain(m *testing.M) {
 
 // Unit function to validate negative tests
 func ExecuteFailTest(t *testing.T) {
-	json := jsonutility.LoadJsonBytes(filePath)
-	m, err := ParseJSONManifest(json)
+	json := ioutility.LoadJsonBytes(filePath)
+	m, err := manifest.ParseJSONManifest(json)
 	if err != nil {
 		t.Error("Json parsing failed")
 	}
 
-	err = ValidateManifest(m)
+	err = manifest.ValidateManifest(m)
 	if err == nil {
 		t.Error(errMsg)
 	}
@@ -37,13 +38,13 @@ func ExecuteFailTest(t *testing.T) {
 
 // Unit function to validate positive tests
 func ExecutePassTest(t *testing.T) {
-	json := jsonutility.LoadJsonBytes(filePath)
-	m, err := ParseJSONManifest(json)
+	json := ioutility.LoadJsonBytes(filePath)
+	m, err := manifest.ParseJSONManifest(json)
 	if err != nil {
 		t.Error("Json parsing failed")
 	}
 
-	err = ValidateManifest(m)
+	err = manifest.ValidateManifest(m)
 	if err != nil {
 		t.Error(err.Error())
 		t.Error(errMsg)
@@ -51,8 +52,8 @@ func ExecutePassTest(t *testing.T) {
 }
 
 func TestInvalidJson(t *testing.T) {
-	json := jsonutility.LoadJsonBytes("pipeline_unit/failInvalidJSON.json")
-	_, err := ParseJSONManifest(json)
+	json := ioutility.LoadJsonBytes("pipeline_unit/failInvalidJSON.json")
+	_, err := manifest.ParseJSONManifest(json)
 	if err == nil {
 		t.Error("Json parsing should fail")
 	}
@@ -114,9 +115,9 @@ func TestWorkingManifest(t *testing.T) {
 
 func TestLoad(t *testing.T) {
 	fmt.Println("Load the sample manifest")
-	var sampleManifestBytesMVP []byte = jsonutility.LoadJsonBytes("manifest/mvp-manifest.json")
+	var sampleManifestBytesMVP []byte = ioutility.LoadJsonBytes("manifest/mvp-manifest.json")
 	// fmt.Println(sampleManifestBytesMVP)
-	manifest, _ := ParseJSONManifest(sampleManifestBytesMVP)
+	manifest, _ := manifest.ParseJSONManifest(sampleManifestBytesMVP)
 	// fmt.Print(res.ContainerNamesList())
 	ContainerConfigs := manifest.GetContainerConfig("MVPDataServ_001")
 	// fmt.Print(ContainerConfig.MountConfigs)

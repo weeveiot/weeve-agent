@@ -8,16 +8,16 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/docker"
-	"github.com/weeveiot/weeve-agent/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/manifest"
 	jsonutility "github.com/weeveiot/weeve-agent/internal/utility/json"
 )
 
 const ManifestFile = "manifests.jsonl"
 const ManifestLogFile = "manifests_log.jsonl"
 
-func DeployDataService(man model.Manifest, command string) error {
+func DeployDataService(man manifest.Manifest, command string) error {
 
-	var err = model.ValidateManifest(man)
+	var err = manifest.ValidateManifest(man)
 	if err != nil {
 		log.Error(err)
 		return err

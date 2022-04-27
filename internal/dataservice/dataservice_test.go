@@ -16,7 +16,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/docker"
-	"github.com/weeveiot/weeve-agent/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/manifest"
 	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
 )
 
@@ -41,7 +41,7 @@ func TestDeployManifest(t *testing.T) {
 		log.Info("Error on parsing message: ", err)
 	}
 
-	var thisManifest = model.Manifest{}
+	var thisManifest = manifest.Manifest{}
 	thisManifest.Manifest = *jsonParsed
 
 	// Fill the placeholders for Start and Stop tests
@@ -251,7 +251,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 		log.Info("Error on parsing message: ", err)
 	}
 
-	var thisManifest = model.Manifest{}
+	var thisManifest = manifest.Manifest{}
 	thisManifest.Manifest = *jsonParsed
 
 	// Fill the placeholders for Start and Stop tests
@@ -277,7 +277,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 		log.Info("Error on parsing message: ", err)
 	}
 
-	var thisManifest2 = model.Manifest{}
+	var thisManifest2 = manifest.Manifest{}
 	thisManifest2.Manifest = *jsonParsed
 
 	// Fill the placeholders for Start and Stop tests
@@ -345,7 +345,7 @@ func TestRedeployDataService(t *testing.T) {
 		log.Info("Error on parsing message: ", err)
 	}
 
-	var thisManifest = model.Manifest{}
+	var thisManifest = manifest.Manifest{}
 	thisManifest.Manifest = *jsonParsed
 
 	// Fill the placeholders for data service
@@ -388,7 +388,7 @@ func TestRedeployDataService(t *testing.T) {
 		log.Info("Error on parsing message: ", err)
 	}
 
-	var thisManifestRedeploy = model.Manifest{}
+	var thisManifestRedeploy = manifest.Manifest{}
 	thisManifestRedeploy.Manifest = *jsonParsed
 
 	err = dataservice.DeployDataService(thisManifestRedeploy, "redeploy")
