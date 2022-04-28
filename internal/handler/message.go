@@ -22,9 +22,11 @@ func ProcessMessage(operation string, payload []byte) error {
 
 	if operation == "deploy" {
 
-		var manifest = model.Manifest{}
-		manifest.Manifest = *jsonParsed
-		err := dataservice.DeployDataService(manifest, operation)
+		manifest, err := model.GetManifest(jsonParsed)
+		if err != nil {
+			return err
+		}
+		err = dataservice.DeployDataService(manifest, operation)
 		if err != nil {
 			return err
 		}
@@ -32,9 +34,11 @@ func ProcessMessage(operation string, payload []byte) error {
 
 	} else if operation == "redeploy" {
 
-		var manifest = model.Manifest{}
-		manifest.Manifest = *jsonParsed
-		err := dataservice.DeployDataService(manifest, operation)
+		manifest, err := model.GetManifest(jsonParsed)
+		if err != nil {
+			return err
+		}
+		err = dataservice.DeployDataService(manifest, operation)
 		if err != nil {
 			return err
 		}

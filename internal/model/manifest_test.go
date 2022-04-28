@@ -24,7 +24,7 @@ func TestMain(m *testing.M) {
 // Unit function to validate negative tests
 func ExecuteFailTest(t *testing.T) {
 	json := util.LoadJsonBytes(filePath)
-	m, err := ParseJSONManifest(json)
+	m, err := GetManifest(json)
 	if err != nil {
 		t.Error("Json parsing failed")
 	}
@@ -38,7 +38,7 @@ func ExecuteFailTest(t *testing.T) {
 // Unit function to validate positive tests
 func ExecutePassTest(t *testing.T) {
 	json := util.LoadJsonBytes(filePath)
-	m, err := ParseJSONManifest(json)
+	m, err := GetManifest(json)
 	if err != nil {
 		t.Error("Json parsing failed")
 	}
@@ -52,7 +52,7 @@ func ExecutePassTest(t *testing.T) {
 
 func TestInvalidJson(t *testing.T) {
 	json := util.LoadJsonBytes("pipeline_unit/failInvalidJSON.json")
-	_, err := ParseJSONManifest(json)
+	_, err := GetManifest(json)
 	if err == nil {
 		t.Error("Json parsing should fail")
 	}
@@ -116,7 +116,7 @@ func TestLoad(t *testing.T) {
 	fmt.Println("Load the sample manifest")
 	var sampleManifestBytesMVP []byte = util.LoadJsonBytes("manifest/mvp-manifest.json")
 	// fmt.Println(sampleManifestBytesMVP)
-	manifest, _ := ParseJSONManifest(sampleManifestBytesMVP)
+	manifest, _ := GetManifest(sampleManifestBytesMVP)
 	// fmt.Print(res.ContainerNamesList())
 	ContainerConfigs := manifest.GetContainerConfig("MVPDataServ_001")
 	// fmt.Print(ContainerConfig.MountConfigs)

@@ -15,58 +15,54 @@ import (
 const ManifestFile = "manifests.jsonl"
 const ManifestLogFile = "manifests_log.jsonl"
 
-func DeployDataService(man model.Manifest, command string) error {
+func DeployDataService(manifest model.Manifest, command string) error {
 
-	var err = model.ValidateManifest(man)
+	var err = model.ValidateManifest(manifest)
 	if err != nil {
 		log.Error(err)
 		return err
 	}
 
-	jsonlines.Insert(ManifestLogFile, man.Manifest.String())
-
 	//******** STEP 1 - Check if Data Service is already deployed *************//
-	manifestID := man.Manifest.Search("id").Data().(string)
-	version := man.Manifest.Search("version").Data().(string)
-	manifestName := man.Manifest.Search("name").Data().(string)
-	deploymentID := manifestID + "-" + version + " | "
+	deploymentID := manifest.ID + "-" + manifest.Version + " | "
 
 	log.Info(deploymentID, fmt.Sprintf("%ving data service ...", command))
 
-	dataServiceExists, err := DataServiceExist(manifestID, version)
+	dataServiceExists, err := DataServiceExist(manifest.ID, manifest.Version)
 	if err != nil {
 		log.Error(deploymentID, err)
-		logStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", err.Error())
+		logStatus(manifest.ID, manifest.Version, strings.ToUpper(command)+"_FAILED", err.Error())
 		return err
 	}
 
 	if dataServiceExists {
 		if command == "deploy" {
-			log.Info(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", manifestID, version))
+			log.Info(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", manifest.ID, manifest.Version))
 			return errors.New("data service already exists")
 
 		} else if command == "redeploy" {
 			// Clean old data service resources
-			err := UndeployDataService(manifestID, version)
+			err := UndeployDataService(manifest.ID, manifest.Version)
 			if err != nil {
 				log.Error(deploymentID, "Error while cleaning old data service -> ", err)
-				logStatus(manifestID, version, "REDEPLOY_FAILED", "Undeployment failed")
+				logStatus(manifest.ID, manifest.Version, "REDEPLOY_FAILED", "Undeployment failed")
 				return errors.New("redeployment failed")
 			}
 		}
 	}
 
-	filter := map[string]string{"id": manifestID, "version": version}
+	filter := map[string]string{"id": manifest.ID, "version": manifest.Version}
 	jsonlines.Delete(ManifestFile, filter, true)
 
 	// need to set some default manifest in manifest.jsonl so later could log without errors
-	man.Manifest.Set("DEPLOYING_IN_PROGRESS", "status")
-	jsonlines.Insert(ManifestFile, man.Manifest.String())
+	manifest.Manifest.Set("DEPLOYING_IN_PROGRESS", "status")
+	jsonlines.Insert(ManifestFile, manifest.Manifest.String())
 
 	//******** STEP 2 - Pull all images *************//
 	log.Info(deploymentID, "Iterating modules, pulling image into host if missing ...")
 
-	for _, imgDetails := range man.ImageNamesWithRegList() {
+	for _, module := range manifest.Modules {
+		imgDetails := module.Registry
 		// Check if image exist in local
 		exists, err := docker.ImageExists(imgDetails.ImageName)
 		if err != nil {
@@ -82,7 +78,7 @@ func DeployDataService(man model.Manifest, command string) error {
 			if err != nil {
 				msg := "Unable to pull image/s, " + err.Error()
 				log.Error(deploymentID, msg)
-				logStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", msg)
+				logStatus(manifest.ID, manifest.Version, strings.ToUpper(command)+"_FAILED", msg)
 				return errors.New("unable to pull image/s")
 
 			}
@@ -92,24 +88,26 @@ func DeployDataService(man model.Manifest, command string) error {
 	//******** STEP 3 - Create the network *************//
 	log.Info(deploymentID, "Creating network ...")
 
-	networkName, err := docker.CreateNetwork(manifestName, man.GetLabels())
+	networkName, err := docker.CreateNetwork(manifest.Name, manifest.Labels)
 	if err != nil {
 		log.Error(err)
-		logStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", err.Error())
+		logStatus(manifest.ID, manifest.Version, strings.ToUpper(command)+"_FAILED", err.Error())
 		return err
 	}
+
+	manifest.UpdateManifest(networkName)
 
 	log.Info("deploymentID, Created network >> ", networkName)
 
 	//******** STEP 4 - Create, Start, attach all containers *************//
 	log.Info(deploymentID, "Starting all containers ...")
-	containerConfigs := man.GetContainerConfig(networkName)
+	containerConfigs := manifest.Modules
 
 	if len(containerConfigs) == 0 {
 		log.Error(deploymentID, "No valid contianers in Manifest")
-		logStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", err.Error())
+		logStatus(manifest.ID, manifest.Version, strings.ToUpper(command)+"_FAILED", err.Error())
 		log.Info(deploymentID, "Initiating rollback ...")
-		UndeployDataService(manifestID, version)
+		UndeployDataService(manifest.ID, manifest.Version)
 		return errors.New("no valid contianers in manifest")
 	}
 
@@ -118,16 +116,16 @@ func DeployDataService(man model.Manifest, command string) error {
 		containerID, err := docker.CreateAndStartContainer(containerConfig)
 		if err != nil {
 			log.Error(deploymentID, "Failed to create and start container", containerConfig.ContainerName)
-			logStatus(manifestID, version, strings.ToUpper(command)+"_FAILED", err.Error())
+			logStatus(manifest.ID, manifest.Version, strings.ToUpper(command)+"_FAILED", err.Error())
 			log.Info(deploymentID, "Initiating rollback ...")
-			UndeployDataService(manifestID, version)
+			UndeployDataService(manifest.ID, manifest.Version)
 			return err
 		}
 		log.Info(deploymentID, "Successfully created container ", containerID, " with args: ", containerConfig.EntryPointArgs)
 		log.Info(deploymentID, "Started!")
 	}
 
-	logStatus(manifestID, version, strings.ToUpper(command)+"ED", strings.Title(command)+"ed successfully")
+	logStatus(manifest.ID, manifest.Version, strings.ToUpper(command)+"ED", strings.Title(command)+"ed successfully")
 
 	return nil
 }

@@ -24,7 +24,7 @@ func TestMain(m *testing.M) {
 func TestImageExists(t *testing.T) {
 	thisFilePath := "/testdata/pipeline_integration_public/failEmptyServices.json"
 	json := util.LoadJsonBytes(thisFilePath)
-	m, err := model.ParseJSONManifest(json)
+	m, err := model.GetManifest(json)
 	if err != nil {
 		t.Error("Json parsing failed")
 	}

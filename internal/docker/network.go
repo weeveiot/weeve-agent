@@ -20,16 +20,15 @@ const manifestNamelength = 11
 const indexLength = 3
 const maxNetworkIndex = 999
 
-func readAllNetworks() []types.NetworkResource {
+func readAllNetworks() ([]types.NetworkResource, error) {
 	log.Debug("Docker_container -> readAllNetworks")
 
 	networks, err := dockerClient.NetworkList(ctx, types.NetworkListOptions{})
 	if err != nil {
-		log.Error(err)
-		return nil
+		return nil, err
 	}
 
-	return networks
+	return networks, nil
 }
 
 func ReadDataServiceNetworks(manifestID string, version string) ([]types.NetworkResource, error) {
@@ -49,33 +48,39 @@ func ReadDataServiceNetworks(manifestID string, version string) ([]types.Network
 	return networks, nil
 }
 
-func makeNetworkName(name string) string {
+func makeNetworkName(name string) (string, error) {
 	format := "%s_%0" + strconv.Itoa(indexLength) + "d"
 
 	// Prune the name if necessary
 	if name == "" {
-		return ""
+		return "", nil
 	} else if len(name) > manifestNamelength {
 		name = name[:manifestNamelength]
 	}
 
 	// Get new network count
 	var newCount int
-	maxCount := getLastCreatedNetworkCount()
+	maxCount, err := getLastCreatedNetworkCount()
+	if err != nil {
+		return "", err
+	}
 	if maxCount < maxNetworkIndex {
 		newCount = maxCount + 1
 	} else {
-		newCount = getLowestAvailableNetworkCount()
+		newCount, err = getLowestAvailableNetworkCount()
+		if err != nil {
+			return "", err
+		}
 		if newCount < 0 { // no available network count found
 			log.Warning("Number of data services limit is exceeded")
-			return ""
+			return "", nil
 		}
 	}
 
 	// Generate next network name
 	networkName := fmt.Sprintf(format, name, newCount)
 
-	return strings.ReplaceAll(networkName, " ", "")
+	return strings.ReplaceAll(networkName, " ", ""), nil
 }
 
 func CreateNetwork(name string, labels map[string]string) (string, error) {
@@ -84,15 +89,16 @@ func CreateNetwork(name string, labels map[string]string) (string, error) {
 	networkCreateOptions.Attachable = true
 	networkCreateOptions.Labels = labels
 
-	networkName := makeNetworkName(name)
+	networkName, err := makeNetworkName(name)
+	if err != nil {
+		return "", err
+	}
 	if networkName == "" {
-		log.Error("Failed to generate Network Name")
 		return "", errors.New("failed to generate network name")
 	}
 
-	_, err := dockerClient.NetworkCreate(context.Background(), networkName, networkCreateOptions)
+	_, err = dockerClient.NetworkCreate(context.Background(), networkName, networkCreateOptions)
 	if err != nil {
-		log.Error(err)
 		return networkName, err
 	}
 
@@ -106,17 +112,19 @@ func NetworkPrune(manifestID string, version string) error {
 
 	pruneReport, err := dockerClient.NetworksPrune(ctx, filter)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 	log.Info("Pruned networks: ", pruneReport.NetworksDeleted)
 	return nil
 }
 
-func getLastCreatedNetworkCount() int {
+func getLastCreatedNetworkCount() (int, error) {
 	maxCount := 0
 
-	counts := getExistingNetworkCounts()
+	counts, err := getExistingNetworkCounts()
+	if err != nil {
+		return 0, err
+	}
 
 	for _, e := range counts {
 		if e > maxCount {
@@ -124,11 +132,14 @@ func getLastCreatedNetworkCount() int {
 		}
 	}
 
-	return maxCount
+	return maxCount, nil
 }
 
-func getLowestAvailableNetworkCount() int {
-	counts := getExistingNetworkCounts()
+func getLowestAvailableNetworkCount() (int, error) {
+	counts, err := getExistingNetworkCounts()
+	if err != nil {
+		return 0, err
+	}
 
 	// find lowest available network count
 	for minAvailCount := 0; minAvailCount < maxNetworkIndex; minAvailCount++ {
@@ -140,22 +151,25 @@ func getLowestAvailableNetworkCount() int {
 			}
 		}
 		if available {
-			return minAvailCount
+			return minAvailCount, nil
 		}
 	}
 
 	// no available count found
-	return -1
+	return -1, nil
 }
 
-func getExistingNetworkCounts() []int {
+func getExistingNetworkCounts() ([]int, error) {
 	var counts []int
-	networks := readAllNetworks()
+	networks, err := readAllNetworks()
+	if err != nil {
+		return nil, err
+	}
 	linq.From(networks).Select(func(c interface{}) interface{} {
 		nm := c.(types.NetworkResource).Name
 		nm = nm[len(nm)-indexLength:]
 		count, _ := strconv.Atoi(nm)
 		return count
 	}).ToSlice(&counts)
-	return counts
+	return counts, nil
 }

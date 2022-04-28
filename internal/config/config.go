@@ -43,35 +43,38 @@ func GetKeyPath() string {
 	return params.KeyPath
 }
 
-func WriteNodeConfigToFile() {
+func writeNodeConfigToFile() {
 	file, err := json.MarshalIndent(params, "", " ")
 	if err != nil {
-		log.Error(err)
+		log.Fatal(err)
 	}
 
 	err = ioutil.WriteFile(ConfigPath, file, 0644)
 	if err != nil {
-		log.Error(err)
+		log.Fatal(err)
 	}
 }
 
-func ReadNodeConfigFromFile() {
+func readNodeConfigFromFile() {
 	jsonFile, err := os.Open(ConfigPath)
 	if err != nil {
-		log.Fatalf("Unable to open node configuration file: %v", err)
+		log.Fatal(err)
 	}
 	defer jsonFile.Close()
 
 	byteValue, err := ioutil.ReadAll(jsonFile)
 	if err != nil {
-		log.Fatalf("Unable to read node configuration file: %v", err)
+		log.Fatal(err)
 	}
 
-	json.Unmarshal(byteValue, &params)
+	err = json.Unmarshal(byteValue, &params)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func UpdateNodeConfig(opt model.Params) {
-	ReadNodeConfigFromFile()
+	readNodeConfigFromFile()
 
 	var configChanged bool
 	if len(opt.NodeId) > 0 {
@@ -106,19 +109,19 @@ func UpdateNodeConfig(opt model.Params) {
 	}
 
 	if configChanged {
-		WriteNodeConfigToFile()
+		writeNodeConfigToFile()
 	}
 }
 
 func SetNodeId(nodeId string) {
 	params.NodeId = nodeId
 
-	WriteNodeConfigToFile()
+	writeNodeConfigToFile()
 }
 
 func SetCertPath(certificatePath, keyPath string) {
 	params.CertPath = certificatePath
 	params.KeyPath = keyPath
 
-	WriteNodeConfigToFile()
+	writeNodeConfigToFile()
 }
