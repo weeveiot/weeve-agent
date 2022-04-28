@@ -16,8 +16,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/docker"
-	"github.com/weeveiot/weeve-agent/internal/model"
-	"github.com/weeveiot/weeve-agent/internal/util"
+	"github.com/weeveiot/weeve-agent/internal/manifest"
+	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
 )
 
 var manifestID = "PLACEHOLDER"
@@ -33,7 +33,7 @@ func TestDeployManifest(t *testing.T) {
 	log.Info("TESTING DEPLOYMENT...")
 
 	// Load Manifest JSON from file.
-	json := util.LoadJsonBytes(manifestPath)
+	json := ioutility.LoadJsonBytes(manifestPath)
 
 	// Parse to gabs Container type
 	jsonParsed, err := gabs.ParseJSON(json)
@@ -41,7 +41,7 @@ func TestDeployManifest(t *testing.T) {
 		log.Info("Error on parsing message: ", err)
 	}
 
-	var thisManifest = model.Manifest{}
+	var thisManifest = manifest.Manifest{}
 	thisManifest.Manifest = *jsonParsed
 
 	// Fill the placeholders for Start and Stop tests
@@ -243,7 +243,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	// Load Manifest JSON from file.
 	log.Info("Loading original manifest...")
 
-	json := util.LoadJsonBytes(manifestPath)
+	json := ioutility.LoadJsonBytes(manifestPath)
 
 	// Parse to gabs Container type
 	jsonParsed, err := gabs.ParseJSON(json)
@@ -251,7 +251,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 		log.Info("Error on parsing message: ", err)
 	}
 
-	var thisManifest = model.Manifest{}
+	var thisManifest = manifest.Manifest{}
 	thisManifest.Manifest = *jsonParsed
 
 	// Fill the placeholders for Start and Stop tests
@@ -269,7 +269,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	// Load Manifest JSON from file.
 	log.Info("Loading second manifest...")
 
-	json = util.LoadJsonBytes(manifestPath2)
+	json = ioutility.LoadJsonBytes(manifestPath2)
 
 	// Parse to gabs Container type
 	jsonParsed, err = gabs.ParseJSON(json)
@@ -277,7 +277,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 		log.Info("Error on parsing message: ", err)
 	}
 
-	var thisManifest2 = model.Manifest{}
+	var thisManifest2 = manifest.Manifest{}
 	thisManifest2.Manifest = *jsonParsed
 
 	// Fill the placeholders for Start and Stop tests
@@ -337,7 +337,7 @@ func TestRedeployDataService(t *testing.T) {
 
 	// ***************** LOAD ORIGINAL MANIFEST AND DEPLOY DATA SERVICE ******************** //
 	log.Info("Loading original manifest...")
-	json := util.LoadJsonBytes(manifestPath)
+	json := ioutility.LoadJsonBytes(manifestPath)
 
 	// Parse to gabs Container type
 	jsonParsed, err := gabs.ParseJSON(json)
@@ -345,7 +345,7 @@ func TestRedeployDataService(t *testing.T) {
 		log.Info("Error on parsing message: ", err)
 	}
 
-	var thisManifest = model.Manifest{}
+	var thisManifest = manifest.Manifest{}
 	thisManifest.Manifest = *jsonParsed
 
 	// Fill the placeholders for data service
@@ -380,7 +380,7 @@ func TestRedeployDataService(t *testing.T) {
 
 	// ***************** LOAD ORIGINAL MANIFEST AND DEPLOY DATA SERVICE ******************** //
 	log.Info("Loading redeployment manifest...")
-	json = util.LoadJsonBytes(manifestPathRedeploy)
+	json = ioutility.LoadJsonBytes(manifestPathRedeploy)
 
 	// Parse to gabs Container type
 	jsonParsed, err = gabs.ParseJSON(json)
@@ -388,7 +388,7 @@ func TestRedeployDataService(t *testing.T) {
 		log.Info("Error on parsing message: ", err)
 	}
 
-	var thisManifestRedeploy = model.Manifest{}
+	var thisManifestRedeploy = manifest.Manifest{}
 	thisManifestRedeploy.Manifest = *jsonParsed
 
 	err = dataservice.DeployDataService(thisManifestRedeploy, "redeploy")

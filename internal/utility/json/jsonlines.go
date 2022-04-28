@@ -1,4 +1,4 @@
-package jsonlines
+package jsonutility
 
 import (
 	"bufio"

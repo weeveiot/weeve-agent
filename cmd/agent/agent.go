@@ -22,7 +22,7 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/config"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/model"
-	"github.com/weeveiot/weeve-agent/internal/util"
+	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
 )
 
 type PlainFormatter struct {
@@ -111,7 +111,7 @@ func parseCLIoptions() {
 	} else {
 		// use the default path and filename
 		const configFileName = "nodeconfig.json"
-		config.ConfigPath = path.Join(util.GetExeDir(), configFileName)
+		config.ConfigPath = path.Join(ioutility.GetExeDir(), configFileName)
 	}
 	config.UpdateNodeConfig(opt)
 
