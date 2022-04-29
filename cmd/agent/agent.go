@@ -44,6 +44,8 @@ func init() {
 func main() {
 	parseCLIoptions()
 
+	model.InitKnownManifests()
+
 	docker.SetupDockerClient()
 
 	com.RegisterNode()

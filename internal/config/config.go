@@ -44,12 +44,12 @@ func GetKeyPath() string {
 }
 
 func writeNodeConfigToFile() {
-	file, err := json.MarshalIndent(params, "", " ")
+	encodedJson, err := json.MarshalIndent(params, "", " ")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = ioutil.WriteFile(ConfigPath, file, 0644)
+	err = ioutil.WriteFile(ConfigPath, encodedJson, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}

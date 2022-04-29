@@ -8,7 +8,6 @@ import (
 
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/model"
-	"github.com/weeveiot/weeve-agent/internal/util/jsonlines"
 )
 
 func ProcessMessage(operation string, payload []byte) error {
@@ -103,21 +102,14 @@ func ProcessMessage(operation string, payload []byte) error {
 }
 
 func GetStatusMessage(nodeId string) (model.StatusMessage, error) {
-	manifests, err := jsonlines.Read(dataservice.ManifestFile, nil, false)
-	if err != nil {
-		return model.StatusMessage{}, err
-	}
-
-	var mani []model.ManifestStatus
-	var deviceParams = model.DeviceParams{Sensors: "10", Uptime: "10", CpuTemp: "20"}
+	knownManifests := model.GetKnownManifests()
+	deviceParams := model.DeviceParams{Sensors: "10", Uptime: "10", CpuTemp: "20"}
 
 	actv_cnt := 0
-	serv_cnt := 0
-	for _, rec := range manifests {
-		mani = append(mani, model.ManifestStatus{ManifestId: rec["id"].(string), ManifestVersion: rec["version"].(string), Status: rec["status"].(string)})
-		serv_cnt = serv_cnt + 1
-		if rec["status"].(string) == "SUCCESS" {
-			actv_cnt = actv_cnt + 1
+	serv_cnt := len(knownManifests)
+	for _, manifest := range knownManifests {
+		if manifest.Status == "SUCCESS" {
+			actv_cnt++
 		}
 	}
 
@@ -127,7 +119,7 @@ func GetStatusMessage(nodeId string) (model.StatusMessage, error) {
 		Status:             "Available",
 		ActiveServiceCount: actv_cnt,
 		ServiceCount:       serv_cnt,
-		ServicesStatus:     mani,
+		ServicesStatus:     knownManifests,
 		DeviceParams:       deviceParams,
 	}
 	return msg, nil
