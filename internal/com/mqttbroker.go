@@ -154,11 +154,7 @@ func initBrokerChannel(pubsubClientId string, isSubscribe bool) (mqtt.Client, er
 
 	pubsubClient := mqtt.NewClient(channelOptions)
 	if token := pubsubClient.Connect(); token.Wait() && token.Error() != nil {
-		if isSubscribe {
-			return nil, token.Error()
-		} else {
-			return nil, token.Error()
-		}
+		return nil, token.Error()
 	} else {
 		if isSubscribe {
 			log.Debug("MQTT subscriber connected!")
