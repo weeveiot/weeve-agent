@@ -177,16 +177,6 @@ func makeContainerName(networkName string, imageName string, tag string, index i
 	return containerName
 }
 
-// Based on an existing Manifest object, build a new object
-// The new object is used to start a container
-// The new object has all information required to execute 'docker run':
-// 		- Bridge Network information
-// 		- Arguments to pass into entrypoint
-func (m Manifest) GetContainerConfig(networkName string) []ContainerConfig {
-
-	return m.Modules
-}
-
 func parseArguments(options []*gabs.Container, cmdArgs bool) []string {
 	if cmdArgs {
 		log.Debug("Processing CLI arguments")

@@ -118,7 +118,7 @@ func TestLoad(t *testing.T) {
 	// fmt.Println(sampleManifestBytesMVP)
 	manifest, _ := GetManifest(sampleManifestBytesMVP)
 	// fmt.Print(res.ContainerNamesList())
-	ContainerConfigs := manifest.GetContainerConfig("MVPDataServ_001")
+	ContainerConfigs := manifest.Modules
 	// fmt.Print(ContainerConfig.MountConfigs)
 	fmt.Println("Container details:")
 	for i, ContainerConf := range ContainerConfigs {
@@ -160,7 +160,7 @@ func TestLoad(t *testing.T) {
 // 	if err != nil {
 // 		panic(err)
 // 	}
-// 	startCommands := manifest.GetContainerConfig()
+// 	startCommands := manifest.Modules
 // 	for i, command := range startCommands {
 // 		fmt.Println("Start", i, command)
 // 	}
@@ -173,7 +173,7 @@ func TestLoad(t *testing.T) {
 // 	if err != nil {
 // 		panic(err)
 // 	}
-// 	startCommands := manifest.GetContainerConfig()
+// 	startCommands := manifest.Modules
 // 	flgMosquitto := false
 // 	for _, command := range startCommands {
 // 		// fmt.Println("Start", i, command)

@@ -20,7 +20,12 @@ func ProcessMessage(operation string, payload []byte) error {
 	}
 	log.Debug("Parsed JSON >> ", jsonParsed)
 
-	if operation == "deploy" {
+	switch operation {
+	case "deploy":
+		var err = model.ValidateManifest(jsonParsed)
+		if err != nil {
+			return err
+		}
 
 		manifest, err := model.GetManifest(jsonParsed)
 		if err != nil {
@@ -32,7 +37,11 @@ func ProcessMessage(operation string, payload []byte) error {
 		}
 		log.Info("Deployment done!")
 
-	} else if operation == "redeploy" {
+	case "redeploy":
+		var err = model.ValidateManifest(jsonParsed)
+		if err != nil {
+			return err
+		}
 
 		manifest, err := model.GetManifest(jsonParsed)
 		if err != nil {
@@ -44,7 +53,7 @@ func ProcessMessage(operation string, payload []byte) error {
 		}
 		log.Info("Redeployment done!")
 
-	} else if operation == "stopservice" {
+	case "stopservice":
 
 		err := model.ValidateStartStopJSON(jsonParsed)
 		if err != nil {
@@ -59,7 +68,7 @@ func ProcessMessage(operation string, payload []byte) error {
 		}
 		log.Info("Service stopped!")
 
-	} else if operation == "startservice" {
+	case "startservice":
 
 		err := model.ValidateStartStopJSON(jsonParsed)
 		if err != nil {
@@ -74,13 +83,12 @@ func ProcessMessage(operation string, payload []byte) error {
 		}
 		log.Info("Service started!")
 
-	} else if operation == "undeploy" {
+	case "undeploy":
 
 		err := model.ValidateStartStopJSON(jsonParsed)
 		if err != nil {
 			return err
 		}
-
 		serviceId := jsonParsed.Search("id").Data().(string)
 		serviceVersion := jsonParsed.Search("version").Data().(string)
 

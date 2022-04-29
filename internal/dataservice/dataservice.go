@@ -16,13 +16,6 @@ const ManifestFile = "manifests.jsonl"
 const ManifestLogFile = "manifests_log.jsonl"
 
 func DeployDataService(manifest model.Manifest, command string) error {
-
-	var err = model.ValidateManifest(manifest)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-
 	//******** STEP 1 - Check if Data Service is already deployed *************//
 	deploymentID := manifest.ID + "-" + manifest.Version + " | "
 

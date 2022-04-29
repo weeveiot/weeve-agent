@@ -7,23 +7,22 @@ import (
 	"github.com/Jeffail/gabs/v2"
 )
 
-// ValidateManifest function to validate manifest JSON
-func ValidateManifest(m Manifest) error {
+func ValidateManifest(jsonParsed *gabs.Container) error {
 	var errorList []string
 
-	id := m.Manifest.Search("id").Data()
+	id := jsonParsed.Search("id").Data()
 	if id == nil {
 		errorList = append(errorList, "Please provide data service id")
 	}
-	version := m.Manifest.Search("version").Data()
+	version := jsonParsed.Search("version").Data()
 	if version == nil {
 		errorList = append(errorList, "Please provide data service version")
 	}
-	name := m.Manifest.Search("name").Data()
+	name := jsonParsed.Search("name").Data()
 	if name == nil {
 		errorList = append(errorList, "Please provide data service name")
 	}
-	services := m.Manifest.Search("services").Children()
+	services := jsonParsed.Search("services").Children()
 	// Check if manifest contains services
 	if services == nil || len(services) < 1 {
 		errorList = append(errorList, "Please provide at least one service")
@@ -48,11 +47,11 @@ func ValidateManifest(m Manifest) error {
 			}
 		}
 	}
-	network := m.Manifest.Search("networks").Data()
+	network := jsonParsed.Search("networks").Data()
 	if network == nil {
 		errorList = append(errorList, "Please provide data service network")
 	} else {
-		networkName := m.Manifest.Search("networks").Search("driver").Data()
+		networkName := jsonParsed.Search("networks").Search("driver").Data()
 		if networkName == nil {
 			errorList = append(errorList, "Please provide data service network driver")
 		}
