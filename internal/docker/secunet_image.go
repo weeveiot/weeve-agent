@@ -18,8 +18,6 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
-const dockerImageURL = "/docker/images"
-
 var existingImagesNameToId = make(map[string]string)
 
 func getAuthToken(imageName string) (string, error) {
@@ -139,7 +137,7 @@ func PullImage(imgDetails model.RegistryDetails) error {
 	}
 	writer.Close()
 
-	commandUrl := dockerImageURL
+	commandUrl := "/docker/images"
 	req, err := http.NewRequest(http.MethodPut, edgeUrl+commandUrl, bytes.NewReader(bufferedFile.Bytes()))
 	if err != nil {
 		return err
@@ -181,7 +179,7 @@ func ImageExists(imageName string) (bool, error) {
 		return true, nil
 	} else {
 		// if it fails look through all images on the device
-		commandUrl := dockerImageURL
+		commandUrl := "/docker/images"
 		resp, err := client.Get(edgeUrl + commandUrl)
 		if err != nil {
 			return false, err
