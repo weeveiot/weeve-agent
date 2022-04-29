@@ -13,9 +13,16 @@ import (
 )
 
 const ManifestFile = "manifests.jsonl"
-const ManifestLogFile = "manifests_log.jsonl"
+
+const CMDDeploy = "deploy"
+const CMDReDeploy = "redeploy"
+const CMDCheckVersion = "CheckVersion"
+const CMDStopService = "stopservice"
+const CMDStartService = "startservice"
+const CMDUndeploy = "undeploy"
 
 func DeployDataService(man manifest.Manifest, command string) error {
+	const manifestLogFile = "manifests_log.jsonl"
 
 	var err = manifest.ValidateManifest(man)
 	if err != nil {
@@ -23,7 +30,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 		return err
 	}
 
-	jsonutility.Insert(ManifestLogFile, man.Manifest.String())
+	jsonutility.Insert(manifestLogFile, man.Manifest.String())
 
 	//******** STEP 1 - Check if Data Service is already deployed *************//
 	manifestID := man.Manifest.Search("id").Data().(string)
@@ -41,11 +48,11 @@ func DeployDataService(man manifest.Manifest, command string) error {
 	}
 
 	if dataServiceExists {
-		if command == "deploy" {
+		if command == CMDDeploy {
 			log.Info(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", manifestID, version))
 			return errors.New("data service already exists")
 
-		} else if command == "redeploy" {
+		} else if command == CMDReDeploy {
 			// Clean old data service resources
 			err := UndeployDataService(manifestID, version)
 			if err != nil {
@@ -133,6 +140,8 @@ func DeployDataService(man manifest.Manifest, command string) error {
 }
 
 func StopDataService(manifestID string, version string) error {
+	const stateRunning = "running"
+
 	log.Info("Stopping data service:", manifestID, version)
 
 	containers, err := docker.ReadDataServiceContainers(manifestID, version)
@@ -143,7 +152,7 @@ func StopDataService(manifestID string, version string) error {
 	}
 
 	for _, container := range containers {
-		if container.State == "running" {
+		if container.State == stateRunning {
 			log.Info("Stopping container:", strings.Join(container.Names[:], ","))
 			err := docker.StopContainer(container.ID)
 			if err != nil {
@@ -166,6 +175,10 @@ func StopDataService(manifestID string, version string) error {
 func StartDataService(manifestID string, version string) error {
 	log.Info("Starting data service:", manifestID, version)
 
+	const stateExited = "exited"
+	const stateCreated = "created"
+	const statePaused = "paused"
+
 	containers, err := docker.ReadDataServiceContainers(manifestID, version)
 	if err != nil {
 		log.Error("Failed to read data service containers.")
@@ -179,7 +192,7 @@ func StartDataService(manifestID string, version string) error {
 	}
 
 	for _, container := range containers {
-		if container.State == "exited" || container.State == "created" || container.State == "paused" {
+		if container.State == stateExited || container.State == stateCreated || container.State == statePaused {
 			log.Info("Starting container:", strings.Join(container.Names[:], ","))
 			err := docker.StartContainer(container.ID)
 			if err != nil {

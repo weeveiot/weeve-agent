@@ -36,8 +36,10 @@ func (f *PlainFormatter) Format(entry *log.Entry) ([]byte, error) {
 
 // logging into the terminal and files
 func init() {
+	const dateTimeFormat = "2006-01-02 15:04:05"
+
 	plainFormatter := new(PlainFormatter)
-	plainFormatter.TimestampFormat = "2006-01-02 15:04:05"
+	plainFormatter.TimestampFormat = dateTimeFormat
 	log.SetFormatter(plainFormatter)
 }
 
@@ -65,7 +67,9 @@ func main() {
 }
 
 func parseCLIoptions() {
+	const configFileName = "nodeconfig.json"
 	var opt model.Params
+
 	parser := flags.NewParser(&opt, flags.Default)
 
 	if _, err := parser.Parse(); err != nil {
@@ -110,7 +114,6 @@ func parseCLIoptions() {
 		config.ConfigPath = opt.ConfigPath
 	} else {
 		// use the default path and filename
-		const configFileName = "nodeconfig.json"
 		config.ConfigPath = path.Join(ioutility.GetExeDir(), configFileName)
 	}
 	config.UpdateNodeConfig(opt)

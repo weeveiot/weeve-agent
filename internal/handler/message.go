@@ -60,9 +60,9 @@ func ProcessMessage(operation string, payload []byte, retry bool) {
 	} else {
 		log.Debug("Parsed JSON >> ", jsonParsed)
 
-		if operation == "CheckVersion" {
+		if operation == dataservice.CMDCheckVersion {
 
-		} else if operation == "deploy" {
+		} else if operation == dataservice.CMDDeploy {
 
 			var thisManifest = manifest.Manifest{}
 			thisManifest.Manifest = *jsonParsed
@@ -74,7 +74,7 @@ func ProcessMessage(operation string, payload []byte, retry bool) {
 
 			}
 
-		} else if operation == "redeploy" {
+		} else if operation == dataservice.CMDReDeploy {
 
 			var thisManifest = manifest.Manifest{}
 			thisManifest.Manifest = *jsonParsed
@@ -86,7 +86,7 @@ func ProcessMessage(operation string, payload []byte, retry bool) {
 
 			}
 
-		} else if operation == "stopservice" {
+		} else if operation == dataservice.CMDStopService {
 
 			err := manifest.ValidateStartStopJSON(jsonParsed)
 			if err == nil {
@@ -101,7 +101,7 @@ func ProcessMessage(operation string, payload []byte, retry bool) {
 				}
 			}
 
-		} else if operation == "startservice" {
+		} else if operation == dataservice.CMDStartService {
 
 			err := manifest.ValidateStartStopJSON(jsonParsed)
 			if err == nil {
@@ -116,7 +116,7 @@ func ProcessMessage(operation string, payload []byte, retry bool) {
 				}
 			}
 
-		} else if operation == "undeploy" {
+		} else if operation == dataservice.CMDUndeploy {
 
 			err := manifest.ValidateStartStopJSON(jsonParsed)
 			if err == nil {

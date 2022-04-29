@@ -101,8 +101,8 @@ func PullImage(imgDetails model.RegistryDetails) error {
 	// getManifest(token, imgDetails.ImageName, "")
 
 	// INTERIM SOLUTION
-	downloadScriptName := "download-frozen-image-v2.sh"
-	archiveScriptName := "archive.sh"
+	const downloadScriptName = "download-frozen-image-v2.sh"
+	const archiveScriptName = "archive.sh"
 	nameWithoutTag, _ := getNameAndTag(imgDetails.ImageName)
 	fileName := nameWithoutTag + ".tar.gz"
 	cmd := exec.Command("./"+downloadScriptName, nameWithoutTag, imgDetails.ImageName)
@@ -179,7 +179,7 @@ func ImageExists(imageName string) (bool, error) {
 		return true, nil
 	} else {
 		// if it fails look through all images on the device
-		commandUrl := fmt.Sprintf("/docker/images")
+		commandUrl := "/docker/images"
 		resp, err := client.Get(edgeUrl + commandUrl)
 		if err != nil {
 			return false, err

@@ -122,6 +122,7 @@ func GetContainerName(networkName string, imageName string, tag string, index in
 // 		- Bridge Network information
 // 		- Arguments to pass into entrypoint
 func (m Manifest) GetContainerConfig(networkName string) []ContainerConfig {
+	const defaultTcpPort = "80/tcp"
 	var containerConfigs []ContainerConfig
 	var prev_container_name = ""
 
@@ -168,11 +169,11 @@ func (m Manifest) GetContainerConfig(networkName string) []ContainerConfig {
 				if hostIP != "" && hostPort != "" {
 					// expose 80/tcp as weeve default port in containers
 					containerConfig.ExposedPorts = nat.PortSet{
-						nat.Port("80/tcp"): struct{}{},
+						nat.Port(defaultTcpPort): struct{}{},
 					}
 
 					containerConfig.PortBinding = nat.PortMap{
-						nat.Port("80/tcp"): []nat.PortBinding{
+						nat.Port(defaultTcpPort): []nat.PortBinding{
 							{
 								HostIP:   hostIP,
 								HostPort: hostPort,
