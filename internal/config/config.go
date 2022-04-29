@@ -70,7 +70,7 @@ func ReadNodeConfigFromFile() {
 
 func UpdateNodeConfig(opt model.Params) {
 	const defaultNodeName = "New Node"
-	const max_NUM_NODES = 10000
+	const maxNumNodes = 10000
 
 	ReadNodeConfigFromFile()
 
