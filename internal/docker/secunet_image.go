@@ -18,6 +18,8 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
+const dockerImageURL = "/docker/images"
+
 var existingImagesNameToId = make(map[string]string)
 
 func getAuthToken(imageName string) (string, error) {
@@ -101,8 +103,8 @@ func PullImage(imgDetails model.RegistryDetails) error {
 	// getManifest(token, imgDetails.ImageName, "")
 
 	// INTERIM SOLUTION
-	downloadScriptName := "download-frozen-image-v2.sh"
-	archiveScriptName := "archive.sh"
+	const downloadScriptName = "download-frozen-image-v2.sh"
+	const archiveScriptName = "archive.sh"
 	nameWithoutTag, _ := getNameAndTag(imgDetails.ImageName)
 	fileName := nameWithoutTag + ".tar.gz"
 	cmd := exec.Command("./"+downloadScriptName, nameWithoutTag, imgDetails.ImageName)
@@ -137,7 +139,7 @@ func PullImage(imgDetails model.RegistryDetails) error {
 	}
 	writer.Close()
 
-	commandUrl := "/docker/images"
+	commandUrl := dockerImageURL
 	req, err := http.NewRequest(http.MethodPut, edgeUrl+commandUrl, bytes.NewReader(bufferedFile.Bytes()))
 	if err != nil {
 		return err
@@ -179,7 +181,7 @@ func ImageExists(imageName string) (bool, error) {
 		return true, nil
 	} else {
 		// if it fails look through all images on the device
-		commandUrl := fmt.Sprintf("/docker/images")
+		commandUrl := fmt.Sprintf(dockerImageURL)
 		resp, err := client.Get(edgeUrl + commandUrl)
 		if err != nil {
 			return false, err

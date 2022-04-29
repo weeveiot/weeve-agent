@@ -21,8 +21,6 @@ var params struct {
 	KeyPath      string
 }
 
-const MAX_NUM_NODES = 10000
-
 func GetRootCertPath() string {
 	return params.RootCertPath
 }
@@ -71,6 +69,9 @@ func ReadNodeConfigFromFile() {
 }
 
 func UpdateNodeConfig(opt model.Params) {
+	const defaultNodeName = "New Node"
+	const max_NUM_NODES = 10000
+
 	ReadNodeConfigFromFile()
 
 	var configChanged bool
@@ -99,8 +100,8 @@ func UpdateNodeConfig(opt model.Params) {
 		configChanged = true
 	} else {
 		// randomize the default node name from the config file
-		if params.NodeName == "" || params.NodeName == "New Node" {
-			params.NodeName = fmt.Sprintf("New Node%d", rand.Intn(MAX_NUM_NODES))
+		if params.NodeName == "" || params.NodeName == defaultNodeName {
+			params.NodeName = fmt.Sprintf(defaultNodeName+"%d", rand.Intn(max_NUM_NODES))
 			configChanged = true
 		}
 	}

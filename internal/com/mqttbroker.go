@@ -17,6 +17,9 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
+const topicRegistration = "Registration"
+const topicCertificate = "Certificate"
+
 var params struct {
 	Broker      string
 	TopicName   string
@@ -50,10 +53,10 @@ func RegisterNode() {
 		registered = false
 		nodeId = uuid.New().String()
 		config.SetNodeId(nodeId)
-		publisher = InitBrokerChannel(params.PubClientId+"/"+nodeId+"/Registration", false)
-		subscriber = InitBrokerChannel(params.SubClientId+"/"+nodeId+"/Certificate", true)
+		publisher = InitBrokerChannel(params.PubClientId+"/"+nodeId+"/"+topicRegistration, false)
+		subscriber = InitBrokerChannel(params.SubClientId+"/"+nodeId+"/"+topicCertificate, true)
 		for {
-			published := PublishMessages("Registration")
+			published := PublishMessages(topicRegistration)
 			if published {
 				break
 			}
@@ -138,8 +141,8 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 	}
 	log.Infoln("Received message on topic:", msg.Topic(), "JSON:", *jsonParsed)
 
-	if msg.Topic() == params.SubClientId+"/"+config.GetNodeId()+"/Certificate" {
-		certificateUrl := jsonParsed.Search("Certificate").Data().(string)
+	if msg.Topic() == params.SubClientId+"/"+config.GetNodeId()+"/"+topicCertificate {
+		certificateUrl := jsonParsed.Search(topicCertificate).Data().(string)
 		keyUrl := jsonParsed.Search("PrivateKey").Data().(string)
 
 		certificatePath, keyPath, err := handler.DownloadCertificates(certificateUrl, keyUrl)
@@ -162,7 +165,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
 	log.Info("ON connect >> connected >> registered : ", registered)
 	var topicName string
-	topicName = params.SubClientId + "/" + config.GetNodeId() + "/Certificate"
+	topicName = params.SubClientId + "/" + config.GetNodeId() + "/" + topicCertificate
 	if registered {
 		topicName = params.SubClientId + "/" + config.GetNodeId() + "/+"
 	}
@@ -219,11 +222,11 @@ func PublishMessages(msgType string) bool {
 	var topicNm string
 	var b_msg []byte
 	var err error
-	if msgType == "Registration" {
-		topicNm = params.PubClientId + "/" + config.GetNodeId() + "/" + "Registration"
+	if msgType == topicRegistration {
+		topicNm = params.PubClientId + "/" + config.GetNodeId() + "/" + topicRegistration
 
 		msg := handler.GetRegistrationMessage(config.GetNodeId(), config.GetNodeName())
-		log.Infoln("Sending registration request.", "Registration", msg)
+		log.Infoln("Sending registration request.", topicRegistration, msg)
 		b_msg, err = json.Marshal(msg)
 		if err != nil {
 			log.Fatalf("Marshall error: %v", err)

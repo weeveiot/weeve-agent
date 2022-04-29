@@ -36,8 +36,10 @@ func (f *PlainFormatter) Format(entry *log.Entry) ([]byte, error) {
 
 // logging into the terminal and files
 func init() {
+	const defaultDateTime = "2006-01-02 15:04:05"
+
 	plainFormatter := new(PlainFormatter)
-	plainFormatter.TimestampFormat = "2006-01-02 15:04:05"
+	plainFormatter.TimestampFormat = defaultDateTime
 	log.SetFormatter(plainFormatter)
 }
 
@@ -65,7 +67,10 @@ func main() {
 }
 
 func parseCLIoptions() {
+	const brokerUrlSchemeTLS = "tls"
+	const configFileName = "nodeconfig.json"
 	var opt model.Params
+
 	parser := flags.NewParser(&opt, flags.Default)
 
 	if _, err := parser.Parse(); err != nil {
@@ -110,7 +115,6 @@ func parseCLIoptions() {
 		config.ConfigPath = opt.ConfigPath
 	} else {
 		// use the default path and filename
-		const configFileName = "nodeconfig.json"
 		config.ConfigPath = path.Join(ioutility.GetExeDir(), configFileName)
 	}
 	config.UpdateNodeConfig(opt)
@@ -127,7 +131,7 @@ func parseCLIoptions() {
 	if opt.NoTLS {
 		log.Info("TLS disabled!")
 	} else {
-		if brokerUrl.Scheme != "tls" {
+		if brokerUrl.Scheme != brokerUrlSchemeTLS {
 			log.Fatalf("Incorrect protocol, TLS is required unless --notls is set. You specified protocol in broker to: %v", brokerUrl.Scheme)
 		}
 	}
