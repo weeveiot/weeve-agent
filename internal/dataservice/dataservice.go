@@ -175,6 +175,10 @@ func StopDataService(manifestID string, version string) error {
 func StartDataService(manifestID string, version string) error {
 	log.Info("Starting data service:", manifestID, version)
 
+	const stateExited = "exited"
+	const stateCreated = "created"
+	const statePaused = "paused"
+
 	containers, err := docker.ReadDataServiceContainers(manifestID, version)
 	if err != nil {
 		log.Error("Failed to read data service containers.")
@@ -188,10 +192,6 @@ func StartDataService(manifestID string, version string) error {
 	}
 
 	for _, container := range containers {
-		const stateExited = "exited"
-		const stateCreated = "created"
-		const statePaused = "paused"
-
 		if container.State == stateExited || container.State == stateCreated || container.State == statePaused {
 			log.Info("Starting container:", strings.Join(container.Names[:], ","))
 			err := docker.StartContainer(container.ID)
