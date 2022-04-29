@@ -101,7 +101,7 @@ func ProcessMessage(operation string, payload []byte) error {
 	return nil
 }
 
-func GetStatusMessage(nodeId string) (model.StatusMessage, error) {
+func GetStatusMessage(nodeId string) model.StatusMessage {
 	knownManifests := model.GetKnownManifests()
 	deviceParams := model.DeviceParams{Sensors: "10", Uptime: "10", CpuTemp: "20"}
 
@@ -122,7 +122,7 @@ func GetStatusMessage(nodeId string) (model.StatusMessage, error) {
 		ServicesStatus:     knownManifests,
 		DeviceParams:       deviceParams,
 	}
-	return msg, nil
+	return msg
 }
 
 func GetRegistrationMessage(nodeId string, nodeName string) model.RegistrationMessage {

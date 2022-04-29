@@ -48,7 +48,15 @@ func main() {
 
 	docker.SetupDockerClient()
 
-	com.RegisterNode()
+	err := com.RegisterNode()
+	if err != nil {
+		log.Fatal(err)
+	}
+	com.DisconnectNode()
+	err = com.ConnectNode()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Kill the agent on a keyboard interrupt
 	done := make(chan os.Signal, 1)
@@ -57,7 +65,10 @@ func main() {
 	// MAIN LOOP
 	go func() {
 		for {
-			com.NodeHeartbeat()
+			err = com.SendHeartbeat()
+			if err != nil {
+				log.Error(err)
+			}
 		}
 	}()
 

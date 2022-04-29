@@ -57,7 +57,7 @@ func DeployDataService(manifest model.Manifest, command string) error {
 			log.Info(deploymentID, fmt.Sprintf("Image %v, already exists on host", imgDetails.ImageName))
 		} else { // Pull this image
 			log.Info(deploymentID, fmt.Sprintf("Image %v, does not exist on host", imgDetails.ImageName))
-			log.Info(deploymentID, "Pulling ", imgDetails.ImageName, imgDetails)
+			log.Info(deploymentID, "Pulling ", imgDetails.ImageName)
 			err = docker.PullImage(imgDetails)
 			if err != nil {
 				msg := "Unable to pull image/s, " + err.Error()
@@ -96,7 +96,7 @@ func DeployDataService(manifest model.Manifest, command string) error {
 	}
 
 	for _, containerConfig := range containerConfigs {
-		log.Info(deploymentID, "Creating ", containerConfig.ContainerName, " from ", containerConfig.ImageName, ":", containerConfig.ImageTag, " ", containerConfig)
+		log.Info(deploymentID, "Creating ", containerConfig.ContainerName, " from ", containerConfig.ImageName, ":", containerConfig.ImageTag)
 		containerID, err := docker.CreateAndStartContainer(containerConfig)
 		if err != nil {
 			log.Error(deploymentID, "Failed to create and start container", containerConfig.ContainerName)
