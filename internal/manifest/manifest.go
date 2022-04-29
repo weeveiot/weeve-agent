@@ -155,9 +155,9 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 }
 
 func (m Manifest) UpdateManifest(networkName string) {
-	for index, module := range m.Modules {
-		module.NetworkName = networkName
-		module.ContainerName = makeContainerName(networkName, module.ImageName, module.ImageTag, index)
+	for i, module := range m.Modules {
+		m.Modules[i].NetworkName = networkName
+		m.Modules[i].ContainerName = makeContainerName(networkName, module.ImageName, module.ImageTag, i)
 	}
 }
 

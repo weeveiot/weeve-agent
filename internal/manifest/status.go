@@ -11,7 +11,7 @@ import (
 
 var knownManifests []model.ManifestStatus
 
-const ManifestFile = "known_manifests.json"
+const ManifestFile = "known_manifests.jsonl"
 
 func GetKnownManifests() []model.ManifestStatus {
 	return knownManifests
@@ -19,9 +19,9 @@ func GetKnownManifests() []model.ManifestStatus {
 
 func SetStatus(id, version, status string) {
 	manifestKnown := false
-	for _, manifest := range knownManifests {
+	for i, manifest := range knownManifests {
 		if manifest.ManifestId == id && manifest.ManifestVersion == version {
-			manifest.Status = status
+			knownManifests[i].Status = status
 			manifestKnown = true
 			break
 		}

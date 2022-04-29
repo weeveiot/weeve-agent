@@ -85,7 +85,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 
 	man.UpdateManifest(networkName)
 
-	log.Info("deploymentID, Created network >> ", networkName)
+	log.Infoln(deploymentID, "Created network >>", networkName)
 
 	//******** STEP 4 - Create, Start, attach all containers *************//
 	log.Info(deploymentID, "Starting all containers ...")
@@ -142,7 +142,7 @@ func StopDataService(manifestID string, version string) error {
 			}
 			log.Info(strings.Join(container.Names[:], ","), ": ", container.Status, " --> exited")
 		} else {
-			log.Debugln("Container", container.ID, "is", container.State)
+			log.Debugln("Container", container.ID, "is", container.State, "and", container.Status)
 		}
 	}
 
@@ -152,7 +152,7 @@ func StopDataService(manifestID string, version string) error {
 }
 
 func StartDataService(manifestID string, version string) error {
-	log.Info("Starting data service:", manifestID, version)
+	log.Infoln("Starting data service:", manifestID, version)
 
 	const stateExited = "exited"
 	const stateCreated = "created"
@@ -175,7 +175,7 @@ func StartDataService(manifestID string, version string) error {
 			log.Info("Starting container:", strings.Join(container.Names[:], ","))
 			err := docker.StartContainer(container.ID)
 			if err != nil {
-				log.Error("Could not start a container", err)
+				log.Errorln("Could not start a container", err)
 				manifest.SetStatus(manifestID, version, "START_FAILED")
 				return err
 			}
