@@ -181,7 +181,7 @@ func ImageExists(imageName string) (bool, error) {
 		return true, nil
 	} else {
 		// if it fails look through all images on the device
-		commandUrl := fmt.Sprintf(dockerImageURL)
+		commandUrl := dockerImageURL
 		resp, err := client.Get(edgeUrl + commandUrl)
 		if err != nil {
 			return false, err

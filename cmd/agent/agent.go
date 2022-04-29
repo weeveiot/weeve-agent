@@ -39,7 +39,7 @@ func init() {
 	const dateTimeFormat = "2006-01-02 15:04:05"
 
 	plainFormatter := new(PlainFormatter)
-	plainFormatter.TimestampFormat = defaultDateTime
+	plainFormatter.TimestampFormat = dateTimeFormat
 	log.SetFormatter(plainFormatter)
 }
 
@@ -67,7 +67,6 @@ func main() {
 }
 
 func parseCLIoptions() {
-	const brokerUrlSchemeTLS = "tls"
 	const configFileName = "nodeconfig.json"
 	var opt model.Params
 
@@ -131,7 +130,7 @@ func parseCLIoptions() {
 	if opt.NoTLS {
 		log.Info("TLS disabled!")
 	} else {
-		if brokerUrl.Scheme != brokerUrlSchemeTLS {
+		if brokerUrl.Scheme != "tls" {
 			log.Fatalf("Incorrect protocol, TLS is required unless --notls is set. You specified protocol in broker to: %v", brokerUrl.Scheme)
 		}
 	}

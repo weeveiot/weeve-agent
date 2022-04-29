@@ -101,7 +101,7 @@ func UpdateNodeConfig(opt model.Params) {
 	} else {
 		// randomize the default node name from the config file
 		if params.NodeName == "" || params.NodeName == defaultNodeName {
-			params.NodeName = fmt.Sprintf(defaultNodeName+"%d", rand.Intn(max_NUM_NODES))
+			params.NodeName = fmt.Sprintf(defaultNodeName+"%d", rand.Intn(maxNumNodes))
 			configChanged = true
 		}
 	}
