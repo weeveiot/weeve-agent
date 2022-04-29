@@ -16,8 +16,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/docker"
-	"github.com/weeveiot/weeve-agent/internal/model"
-	"github.com/weeveiot/weeve-agent/internal/util"
+	"github.com/weeveiot/weeve-agent/internal/manifest"
+	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
 )
 
 var manifestID = "PLACEHOLDER"
@@ -33,7 +33,7 @@ func TestDeployManifest(t *testing.T) {
 	log.Info("TESTING DEPLOYMENT...")
 
 	// Load Manifest JSON from file.
-	json := util.LoadJsonBytes(manifestPath)
+	json := ioutility.LoadJsonBytes(manifestPath)
 
 	// Parse to gabs Container type
 	jsonParsed, err := gabs.ParseJSON(json)
@@ -41,13 +41,15 @@ func TestDeployManifest(t *testing.T) {
 		log.Info("Error on parsing message: ", err)
 	}
 
-	var thisManifest = model.Manifest{}
-	thisManifest.Manifest = *jsonParsed
+	thisManifest, err := manifest.GetManifest(jsonParsed)
+	if err != nil {
+		t.Error(err)
+	}
 
 	// Fill the placeholders for Start and Stop tests
-	manifestID = thisManifest.Manifest.Search("id").Data().(string)
+	manifestID = thisManifest.ID
 	log.Info(manifestID)
-	version = thisManifest.Manifest.Search("version").Data().(string)
+	version = thisManifest.Version
 	log.Info(version)
 
 	err = dataservice.DeployDataService(thisManifest, "deploy")
@@ -73,12 +75,12 @@ func TestDeployManifest(t *testing.T) {
 	if len(networks) > 0 {
 		// Check if containers exist
 		dsContainers, _ := docker.ReadDataServiceContainers(manifestID, version)
-		containerName := thisManifest.ContainerNamesList(networks[0].Name)
+		containers := thisManifest.Modules
 		for _, dsContainer := range dsContainers {
 			containersExist := false
 			for _, dsContainerName := range dsContainer.Names {
-				for _, containerName := range containerName {
-					if dsContainerName == containerName {
+				for _, container := range containers {
+					if dsContainerName == container.ContainerName {
 						containersExist = true
 					}
 				}
@@ -243,7 +245,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	// Load Manifest JSON from file.
 	log.Info("Loading original manifest...")
 
-	json := util.LoadJsonBytes(manifestPath)
+	json := ioutility.LoadJsonBytes(manifestPath)
 
 	// Parse to gabs Container type
 	jsonParsed, err := gabs.ParseJSON(json)
@@ -251,13 +253,15 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 		log.Info("Error on parsing message: ", err)
 	}
 
-	var thisManifest = model.Manifest{}
-	thisManifest.Manifest = *jsonParsed
+	thisManifest, err := manifest.GetManifest(jsonParsed)
+	if err != nil {
+		t.Error(err)
+	}
 
 	// Fill the placeholders for Start and Stop tests
-	manifestID = thisManifest.Manifest.Search("id").Data().(string)
+	manifestID = thisManifest.ID
 	log.Info(manifestID)
-	version = thisManifest.Manifest.Search("version").Data().(string)
+	version = thisManifest.Version
 	log.Info(version)
 
 	err = dataservice.DeployDataService(thisManifest, "deploy")
@@ -269,7 +273,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	// Load Manifest JSON from file.
 	log.Info("Loading second manifest...")
 
-	json = util.LoadJsonBytes(manifestPath2)
+	json = ioutility.LoadJsonBytes(manifestPath2)
 
 	// Parse to gabs Container type
 	jsonParsed, err = gabs.ParseJSON(json)
@@ -277,13 +281,15 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 		log.Info("Error on parsing message: ", err)
 	}
 
-	var thisManifest2 = model.Manifest{}
-	thisManifest2.Manifest = *jsonParsed
+	thisManifest2, err := manifest.GetManifest(jsonParsed)
+	if err != nil {
+		t.Error(err)
+	}
 
 	// Fill the placeholders for Start and Stop tests
-	manifestID2 = thisManifest2.Manifest.Search("id").Data().(string)
+	manifestID2 = thisManifest2.ID
 	log.Info(manifestID2)
-	version2 = thisManifest2.Manifest.Search("version").Data().(string)
+	version2 = thisManifest2.Version
 	log.Info(version2)
 
 	err = dataservice.DeployDataService(thisManifest2, "deploy")
@@ -312,7 +318,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	}
 
 	// ***** CHECK IF SECOND IDENTICAL DATA SERVICE STILL EXISTS ********* //
-	expectedNumberContainers := len(thisManifest2.Manifest.S("services").Children())
+	expectedNumberContainers := len(thisManifest2.Modules)
 	dsContainers, _ := docker.ReadDataServiceContainers(manifestID2, version2)
 
 	if len(dsContainers) != expectedNumberContainers {
@@ -337,7 +343,7 @@ func TestRedeployDataService(t *testing.T) {
 
 	// ***************** LOAD ORIGINAL MANIFEST AND DEPLOY DATA SERVICE ******************** //
 	log.Info("Loading original manifest...")
-	json := util.LoadJsonBytes(manifestPath)
+	json := ioutility.LoadJsonBytes(manifestPath)
 
 	// Parse to gabs Container type
 	jsonParsed, err := gabs.ParseJSON(json)
@@ -345,13 +351,15 @@ func TestRedeployDataService(t *testing.T) {
 		log.Info("Error on parsing message: ", err)
 	}
 
-	var thisManifest = model.Manifest{}
-	thisManifest.Manifest = *jsonParsed
+	thisManifest, err := manifest.GetManifest(jsonParsed)
+	if err != nil {
+		t.Error(err)
+	}
 
-	// Fill the placeholders for data service
-	manifestID = thisManifest.Manifest.Search("id").Data().(string)
+	// Fill the placeholders for Start and Stop tests
+	manifestID = thisManifest.ID
 	log.Info(manifestID)
-	version = thisManifest.Manifest.Search("version").Data().(string)
+	version = thisManifest.Version
 	log.Info(version)
 
 	err = dataservice.DeployDataService(thisManifest, "deploy")
@@ -380,7 +388,7 @@ func TestRedeployDataService(t *testing.T) {
 
 	// ***************** LOAD ORIGINAL MANIFEST AND DEPLOY DATA SERVICE ******************** //
 	log.Info("Loading redeployment manifest...")
-	json = util.LoadJsonBytes(manifestPathRedeploy)
+	json = ioutility.LoadJsonBytes(manifestPathRedeploy)
 
 	// Parse to gabs Container type
 	jsonParsed, err = gabs.ParseJSON(json)
@@ -388,8 +396,16 @@ func TestRedeployDataService(t *testing.T) {
 		log.Info("Error on parsing message: ", err)
 	}
 
-	var thisManifestRedeploy = model.Manifest{}
-	thisManifestRedeploy.Manifest = *jsonParsed
+	thisManifestRedeploy, err := manifest.GetManifest(jsonParsed)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Fill the placeholders for Start and Stop tests
+	manifestID = thisManifest.ID
+	log.Info(manifestID)
+	version = thisManifest.Version
+	log.Info(version)
 
 	err = dataservice.DeployDataService(thisManifestRedeploy, "redeploy")
 	if err != nil {
@@ -409,8 +425,8 @@ func TestRedeployDataService(t *testing.T) {
 
 	// ***************** CLEANING AFTER TESTING ******************** //
 	log.Info("Cleaning after testing...")
-	redeployedManifestID := thisManifestRedeploy.Manifest.Search("id").Data().(string)
-	redeployedVersion := thisManifestRedeploy.Manifest.Search("version").Data().(string)
+	redeployedManifestID := thisManifestRedeploy.ID
+	redeployedVersion := thisManifestRedeploy.Version
 	err = dataservice.UndeployDataService(redeployedManifestID, redeployedVersion)
 	if err != nil {
 		t.Errorf("UndeployDataService returned %v status", err)

@@ -7,8 +7,33 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
+	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
+
+type statusMessage struct {
+	Id                 string                 `json:"ID"`
+	Timestamp          int64                  `json:"timestamp"`
+	Status             string                 `json:"status"`
+	ActiveServiceCount int                    `json:"activeServiceCount"`
+	ServiceCount       int                    `json:"serviceCount"`
+	ServicesStatus     []model.ManifestStatus `json:"servicesStatus"`
+	DeviceParams       deviceParams           `json:"deviceParams"`
+}
+
+type deviceParams struct {
+	Sensors string `json:"sensors"`
+	Uptime  string `json:"uptime"`
+	CpuTemp string `json:"cputemp"`
+}
+
+type registrationMessage struct {
+	Id        string `json:"id"`
+	Timestamp int64  `json:"timestamp"`
+	Operation string `json:"operation"`
+	Status    string `json:"status"`
+	Name      string `json:"name"`
+}
 
 func ProcessMessage(operation string, payload []byte) error {
 	log.Info("Processing the message >> ", operation)
@@ -20,13 +45,13 @@ func ProcessMessage(operation string, payload []byte) error {
 	log.Debug("Parsed JSON >> ", jsonParsed)
 
 	switch operation {
-	case "deploy":
-		var err = model.ValidateManifest(jsonParsed)
+	case dataservice.CMDDeploy:
+		var err = manifest.ValidateManifest(jsonParsed)
 		if err != nil {
 			return err
 		}
 
-		manifest, err := model.GetManifest(jsonParsed)
+		manifest, err := manifest.GetManifest(jsonParsed)
 		if err != nil {
 			return err
 		}
@@ -36,13 +61,13 @@ func ProcessMessage(operation string, payload []byte) error {
 		}
 		log.Info("Deployment done!")
 
-	case "redeploy":
-		var err = model.ValidateManifest(jsonParsed)
+	case dataservice.CMDReDeploy:
+		var err = manifest.ValidateManifest(jsonParsed)
 		if err != nil {
 			return err
 		}
 
-		manifest, err := model.GetManifest(jsonParsed)
+		manifest, err := manifest.GetManifest(jsonParsed)
 		if err != nil {
 			return err
 		}
@@ -52,9 +77,9 @@ func ProcessMessage(operation string, payload []byte) error {
 		}
 		log.Info("Redeployment done!")
 
-	case "stopservice":
+	case dataservice.CMDStopService:
 
-		err := model.ValidateStartStopJSON(jsonParsed)
+		err := manifest.ValidateStartStopJSON(jsonParsed)
 		if err != nil {
 			return err
 		}
@@ -67,9 +92,9 @@ func ProcessMessage(operation string, payload []byte) error {
 		}
 		log.Info("Service stopped!")
 
-	case "startservice":
+	case dataservice.CMDStartService:
 
-		err := model.ValidateStartStopJSON(jsonParsed)
+		err := manifest.ValidateStartStopJSON(jsonParsed)
 		if err != nil {
 			return err
 		}
@@ -82,9 +107,9 @@ func ProcessMessage(operation string, payload []byte) error {
 		}
 		log.Info("Service started!")
 
-	case "undeploy":
+	case dataservice.CMDUndeploy:
 
-		err := model.ValidateStartStopJSON(jsonParsed)
+		err := manifest.ValidateStartStopJSON(jsonParsed)
 		if err != nil {
 			return err
 		}
@@ -101,9 +126,9 @@ func ProcessMessage(operation string, payload []byte) error {
 	return nil
 }
 
-func GetStatusMessage(nodeId string) model.StatusMessage {
-	knownManifests := model.GetKnownManifests()
-	deviceParams := model.DeviceParams{Sensors: "10", Uptime: "10", CpuTemp: "20"}
+func GetStatusMessage(nodeId string) statusMessage {
+	knownManifests := manifest.GetKnownManifests()
+	deviceParams := deviceParams{Sensors: "10", Uptime: "10", CpuTemp: "20"}
 
 	actv_cnt := 0
 	serv_cnt := len(knownManifests)
@@ -113,7 +138,7 @@ func GetStatusMessage(nodeId string) model.StatusMessage {
 		}
 	}
 
-	msg := model.StatusMessage{
+	msg := statusMessage{
 		Id:                 nodeId,
 		Timestamp:          time.Now().UnixMilli(),
 		Status:             "Available",
@@ -125,8 +150,8 @@ func GetStatusMessage(nodeId string) model.StatusMessage {
 	return msg
 }
 
-func GetRegistrationMessage(nodeId string, nodeName string) model.RegistrationMessage {
-	msg := model.RegistrationMessage{
+func GetRegistrationMessage(nodeId string, nodeName string) registrationMessage {
+	msg := registrationMessage{
 		Id:        nodeId,
 		Timestamp: time.Now().UnixMilli(),
 		Status:    "Registering",

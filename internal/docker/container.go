@@ -11,7 +11,7 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
-	"github.com/weeveiot/weeve-agent/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/manifest"
 )
 
 var ctx = context.Background()
@@ -25,7 +25,7 @@ func SetupDockerClient() {
 	}
 }
 
-func createContainer(containerConfig model.ContainerConfig) (string, error) {
+func createContainer(containerConfig manifest.ContainerConfig) (string, error) {
 	imageName := containerConfig.ImageName + ":" + containerConfig.ImageTag
 
 	log.Debug("Creating container", containerConfig.ContainerName, "from", imageName)
@@ -82,7 +82,7 @@ func StartContainer(containerID string) error {
 	return nil
 }
 
-func CreateAndStartContainer(containerConfig model.ContainerConfig) (string, error) {
+func CreateAndStartContainer(containerConfig manifest.ContainerConfig) (string, error) {
 	id, err := createContainer(containerConfig)
 	if err != nil {
 		return id, err

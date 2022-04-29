@@ -18,6 +18,9 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
+const topicRegistration = "Registration"
+const topicCertificate = "Certificate"
+
 var params struct {
 	Broker          string
 	StatusTopicName string
@@ -54,16 +57,16 @@ func RegisterNode() error {
 		nodeId = uuid.New().String()
 		config.SetNodeId(nodeId)
 		var err error
-		publisher, err = initBrokerChannel(params.PubClientId+"/"+nodeId+"/Registration", false)
+		publisher, err = initBrokerChannel(params.PubClientId+"/"+nodeId+"/"+topicRegistration, false)
 		if err != nil {
 			return err
 		}
-		subscriber, err = initBrokerChannel(params.SubClientId+"/"+nodeId+"/Certificate", true)
+		subscriber, err = initBrokerChannel(params.SubClientId+"/"+nodeId+"/"+topicCertificate, true)
 		if err != nil {
 			return err
 		}
 		for {
-			err := publishMessage("Registration")
+			err := publishMessage(topicRegistration)
 			if err != nil {
 				log.Errorln("Registration failed, gonna try again in", registrationTimeout, "seconds.", err.Error())
 				time.Sleep(time.Second * registrationTimeout)
@@ -175,8 +178,8 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 	}
 	log.Debugln("Received message on topic:", msg.Topic(), "JSON:", *jsonParsed)
 
-	if msg.Topic() == params.SubClientId+"/"+config.GetNodeId()+"/Certificate" {
-		certificateUrl := jsonParsed.Search("Certificate").Data().(string)
+	if msg.Topic() == params.SubClientId+"/"+config.GetNodeId()+"/"+topicCertificate {
+		certificateUrl := jsonParsed.Search(topicCertificate).Data().(string)
 		keyUrl := jsonParsed.Search("PrivateKey").Data().(string)
 
 		certificatePath, keyPath, err := handler.DownloadCertificates(certificateUrl, keyUrl)
@@ -201,7 +204,8 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
 	log.Info("ON connect >> connected >> registered : ", registered)
-	topicName := params.SubClientId + "/" + config.GetNodeId() + "/Certificate"
+	var topicName string
+	topicName = params.SubClientId + "/" + config.GetNodeId() + "/" + topicCertificate
 	if registered {
 		topicName = params.SubClientId + "/" + config.GetNodeId() + "/+"
 	}
@@ -258,8 +262,8 @@ func publishMessage(msgType string) error {
 	var payload []byte
 	var err error
 	switch msgType {
-	case "Registration":
-		fullTopic = params.PubClientId + "/" + config.GetNodeId() + "/" + "Registration"
+	case topicRegistration:
+		fullTopic = params.PubClientId + "/" + config.GetNodeId() + "/" + topicRegistration
 
 		msg := handler.GetRegistrationMessage(config.GetNodeId(), config.GetNodeName())
 		log.Debugln("Sending registration request.", ">> Body:", msg)

@@ -1,11 +1,13 @@
-package model
+package manifest_test
 
 import (
 	"fmt"
 	"os"
 	"testing"
 
-	"github.com/weeveiot/weeve-agent/internal/util"
+	"github.com/Jeffail/gabs/v2"
+	"github.com/weeveiot/weeve-agent/internal/manifest"
+	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
 	_ "github.com/weeveiot/weeve-agent/testing"
 )
 
@@ -15,7 +17,7 @@ var errMsg string
 
 func TestMain(m *testing.M) {
 
-	manifestBytesMVP = util.LoadJsonBytes("pipeline_unit/workingMVP.json")
+	manifestBytesMVP = ioutility.LoadJsonBytes("pipeline_unit/workingMVP.json")
 	code := m.Run()
 
 	os.Exit(code)
@@ -23,36 +25,48 @@ func TestMain(m *testing.M) {
 
 // Unit function to validate negative tests
 func ExecuteFailTest(t *testing.T) {
-	json := util.LoadJsonBytes(filePath)
-	m, err := GetManifest(json)
+	json := ioutility.LoadJsonBytes(filePath)
+	jsonParsed, err := gabs.ParseJSON(json)
 	if err != nil {
-		t.Error("Json parsing failed")
+		t.Error(err.Error())
 	}
 
-	err = ValidateManifest(m)
+	err = manifest.ValidateManifest(jsonParsed)
 	if err == nil {
 		t.Error(errMsg)
+	}
+
+	_, err = manifest.GetManifest(jsonParsed)
+	if err != nil {
+		t.Error("Json parsing failed")
 	}
 }
 
 // Unit function to validate positive tests
 func ExecutePassTest(t *testing.T) {
-	json := util.LoadJsonBytes(filePath)
-	m, err := GetManifest(json)
-	if err != nil {
-		t.Error("Json parsing failed")
-	}
-
-	err = ValidateManifest(m)
+	json := ioutility.LoadJsonBytes(filePath)
+	jsonParsed, err := gabs.ParseJSON(json)
 	if err != nil {
 		t.Error(err.Error())
-		t.Error(errMsg)
+	}
+
+	err = manifest.ValidateManifest(jsonParsed)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	_, err = manifest.GetManifest(jsonParsed)
+	if err != nil {
+		t.Error("Json parsing failed")
 	}
 }
 
 func TestInvalidJson(t *testing.T) {
-	json := util.LoadJsonBytes("pipeline_unit/failInvalidJSON.json")
-	_, err := GetManifest(json)
+	json := ioutility.LoadJsonBytes("pipeline_unit/failInvalidJSON.json")
+	jsonParsed, err := gabs.ParseJSON(json)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	_, err = manifest.GetManifest(jsonParsed)
 	if err == nil {
 		t.Error("Json parsing should fail")
 	}
@@ -114,9 +128,13 @@ func TestWorkingManifest(t *testing.T) {
 
 func TestLoad(t *testing.T) {
 	fmt.Println("Load the sample manifest")
-	var sampleManifestBytesMVP []byte = util.LoadJsonBytes("manifest/mvp-manifest.json")
+	var sampleManifestBytesMVP []byte = ioutility.LoadJsonBytes("manifest/mvp-manifest.json")
 	// fmt.Println(sampleManifestBytesMVP)
-	manifest, _ := GetManifest(sampleManifestBytesMVP)
+	jsonParsed, err := gabs.ParseJSON(sampleManifestBytesMVP)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	manifest, _ := manifest.GetManifest(jsonParsed)
 	// fmt.Print(res.ContainerNamesList())
 	ContainerConfigs := manifest.Modules
 	// fmt.Print(ContainerConfig.MountConfigs)

@@ -1,4 +1,4 @@
-package model
+package manifest
 
 import (
 	"encoding/json"
@@ -6,13 +6,14 @@ import (
 	"os"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
-var knownManifests []ManifestStatus
+var knownManifests []model.ManifestStatus
 
 const ManifestFile = "known_manifests.json"
 
-func GetKnownManifests() []ManifestStatus {
+func GetKnownManifests() []model.ManifestStatus {
 	return knownManifests
 }
 
@@ -26,7 +27,7 @@ func SetStatus(id, version, status string) {
 		}
 	}
 	if !manifestKnown {
-		knownManifests = append(knownManifests, ManifestStatus{
+		knownManifests = append(knownManifests, model.ManifestStatus{
 			ManifestId:      id,
 			ManifestVersion: version,
 			Status:          status,
