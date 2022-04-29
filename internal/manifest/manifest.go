@@ -57,6 +57,11 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 	manifestID := jsonParsed.Search("id").Data().(string)
 	version := jsonParsed.Search("version").Data().(string)
 	manifestName := jsonParsed.Search("name").Data().(string)
+	labels := map[string]string{
+		"manifestID": manifestID,
+		"version":    version,
+		"name":       manifestName,
+	}
 
 	var containerConfigs []ContainerConfig
 
@@ -65,7 +70,7 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 
 		containerConfig.ImageName = module.Search("image").Search("name").Data().(string)
 		containerConfig.ImageTag = module.Search("image").Search("tag").Data().(string)
-		containerConfig.Labels = getLabels(jsonParsed)
+		containerConfig.Labels = labels
 		containerConfig.NetworkDriver = jsonParsed.Search("networks").Search("driver").Data().(string)
 
 		imageName := containerConfig.ImageName
@@ -149,6 +154,7 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 		Version: version,
 		Name:    manifestName,
 		Modules: containerConfigs,
+		Labels:  labels,
 	}
 
 	return manifest, nil
@@ -258,15 +264,6 @@ func getPorts(document *gabs.Container, envs []*gabs.Container) (nat.PortSet, na
 		},
 	}
 	return exposedPorts, portBinding
-}
-
-func getLabels(parsedJson *gabs.Container) map[string]string {
-	labels := make(map[string]string)
-	labels["manifestID"] = parsedJson.Search("id").Data().(string)
-	labels["version"] = parsedJson.Search("version").Data().(string)
-	labels["name"] = parsedJson.Search("name").Data().(string)
-
-	return labels
 }
 
 func ValidateManifest(jsonParsed *gabs.Container) error {

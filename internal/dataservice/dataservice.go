@@ -202,7 +202,7 @@ func UndeployDataService(manifestID string, version string) error {
 	}
 
 	if !dataServiceExists {
-		log.Errorf(deploymentID, "Data service %v, %v does not exist", manifestID, version)
+		log.Errorln(deploymentID, "Data service", manifestID, version, "does not exist")
 		manifest.SetStatus(manifestID, version, "UNDEPLOY_FAILED")
 		return nil
 	}

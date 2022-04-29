@@ -41,7 +41,6 @@ func ReadDataServiceNetworks(manifestID string, version string) ([]types.Network
 
 	networks, err := dockerClient.NetworkList(ctx, options)
 	if err != nil {
-		log.Error(err)
 		return nil, err
 	}
 
