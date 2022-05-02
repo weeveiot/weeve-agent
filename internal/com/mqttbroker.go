@@ -74,6 +74,11 @@ func RegisterNode() error {
 				break
 			}
 		}
+
+		log.Info("Waiting for the registration process to finish...")
+		for !registered {
+			time.Sleep(time.Second * registrationTimeout)
+		}
 	} else {
 		log.Info("Node already registered!")
 		registered = true
@@ -85,10 +90,6 @@ func RegisterNode() error {
 func SendHeartbeat() error {
 	log.Debug("Node registered >> ", registered, " | connected >> ", connected)
 	defer time.Sleep(time.Second * time.Duration(params.Heartbeat))
-	for !registered {
-		log.Infoln("Node not registered. Gonna wait", registrationTimeout, "seconds...")
-		time.Sleep(time.Second * registrationTimeout)
-	}
 	err := reconnectIfNecessary()
 	if err != nil {
 		return err
