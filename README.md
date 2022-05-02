@@ -130,6 +130,9 @@ All the below params can be updated into json instead of arguments as above
 }
 ```
 
+# Secunet
+Weeve agent can also work in the secunet container environment. To create a container run `make secunet` in the top project directory. This will create a container `secunet-test` ready to be deployed on a secunet gateway. It can then be deployed using the repository [secunet deployment](https://github.com/weeveiot/secunet-deployment).
+
 # [BELOW IS WIP]
 
 The latest binary can be downloaded from S3 bucket :
