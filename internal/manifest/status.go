@@ -18,6 +18,7 @@ func GetKnownManifests() []model.ManifestStatus {
 }
 
 func SetStatus(id, version, status string) {
+	log.Debugln("Setting status", status, "to data service", id, version)
 	manifestKnown := false
 	for i, manifest := range knownManifests {
 		if manifest.ManifestId == id && manifest.ManifestVersion == version {
