@@ -65,7 +65,7 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 
 	var containerConfigs []ContainerConfig
 
-	for index, module := range jsonParsed.Search("services").Children() {
+	for _, module := range jsonParsed.Search("services").Children() {
 		var containerConfig ContainerConfig
 
 		containerConfig.ImageName = module.Search("image").Search("name").Data().(string)
@@ -99,7 +99,6 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 		}
 		moduleType := typesMap[module.Search("type").Data().(string)]
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_TYPE", moduleType))
-		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_HOST", containerConfig.ContainerName))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PORT", 80))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PATH", "/"))
 
@@ -107,23 +106,6 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 		for _, cmd := range module.Search("commands").Children() {
 			envArgs = append(envArgs, fmt.Sprintf("%v=%v", cmd.Search("key").Data().(string), cmd.Search("value").Data().(string)))
 		}
-
-		var prevContainerName = ""
-		if index > 0 {
-			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "PREV_CONTAINER_NAME", prevContainerName))
-
-			nextContainerNameArg := fmt.Sprintf("%v=%v", "NEXT_CONTAINER_NAME", containerConfig.ContainerName)
-			containerConfigs[index-1].EnvArgs = append(containerConfigs[index-1].EnvArgs, nextContainerNameArg)
-
-			// following egressing convention 2: http://host:80/
-			egressUrlArg := fmt.Sprintf("%v=http://%v:80/", "EGRESS_URL", containerConfig.ContainerName)
-			containerConfigs[index-1].EnvArgs = append(containerConfigs[index-1].EnvArgs, egressUrlArg)
-			if moduleType == "EGRESS" {
-				// need to pass anything as EGRESS_URL for module's validation script
-				envArgs = append(envArgs, fmt.Sprintf("%v=%v", "EGRESS_URL", "None"))
-			}
-		}
-		prevContainerName = containerConfig.ContainerName
 
 		containerConfig.EnvArgs = envArgs
 
@@ -164,6 +146,26 @@ func (m Manifest) UpdateManifest(networkName string) {
 	for i, module := range m.Modules {
 		m.Modules[i].NetworkName = networkName
 		m.Modules[i].ContainerName = makeContainerName(networkName, module.ImageName, module.ImageTag, i)
+
+		m.Modules[i].EnvArgs = append(m.Modules[i].EnvArgs, fmt.Sprintf("%v=%v", "INGRESS_HOST", m.Modules[i].ContainerName))
+
+		var prevContainerName = ""
+		if i > 0 {
+			m.Modules[i].EnvArgs = append(m.Modules[i].EnvArgs, fmt.Sprintf("%v=%v", "PREV_CONTAINER_NAME", prevContainerName))
+
+			nextContainerNameArg := fmt.Sprintf("%v=%v", "NEXT_CONTAINER_NAME", m.Modules[i].ContainerName)
+			m.Modules[i-1].EnvArgs = append(m.Modules[i-1].EnvArgs, nextContainerNameArg)
+
+			// following egressing convention 2: http://host:80/
+			egressUrlArg := fmt.Sprintf("%v=http://%v:80/", "EGRESS_URL", m.Modules[i].ContainerName)
+			m.Modules[i-1].EnvArgs = append(m.Modules[i-1].EnvArgs, egressUrlArg)
+			if i == len(m.Modules)-1 { // last module is alsways an EGRESS module
+				// need to pass anything as EGRESS_URL for module's validation script
+				m.Modules[i].EnvArgs = append(m.Modules[i].EnvArgs, fmt.Sprintf("%v=%v", "EGRESS_URL", "None"))
+			}
+		}
+		prevContainerName = m.Modules[i].ContainerName
+
 	}
 }
 

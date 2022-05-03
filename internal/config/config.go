@@ -6,12 +6,15 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 var ConfigPath string
+
+const defaultId = "4be43aa6f1"
 
 var params struct {
 	RootCertPath string
@@ -60,12 +63,9 @@ func readNodeConfigFromFile() {
 	}
 	defer jsonFile.Close()
 
-	byteValue, err := ioutil.ReadAll(jsonFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = json.Unmarshal(byteValue, &params)
+	decoder := json.NewDecoder(jsonFile)
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&params)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -109,6 +109,7 @@ func UpdateNodeConfig(opt model.Params) {
 		}
 	}
 
+	log.Debugf("Set node config to following params: %+v", params)
 	if configChanged {
 		writeNodeConfigToFile()
 	}
@@ -125,4 +126,9 @@ func SetCertPath(certificatePath, keyPath string) {
 	params.KeyPath = keyPath
 
 	writeNodeConfigToFile()
+}
+
+func IsNodeRegistered() bool {
+	// TODO: change this workaround to check if the node is registered
+	return !(strings.Contains(params.CertPath, defaultId) || strings.Contains(params.KeyPath, defaultId))
 }

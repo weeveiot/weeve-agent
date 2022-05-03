@@ -15,7 +15,7 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/weeveiot/weeve-agent/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/manifest"
 )
 
 var existingImagesNameToId = make(map[string]string)
@@ -90,7 +90,7 @@ func getNameAndTag(fullImageName string) (string, string) {
 }
 
 // WIP!!!
-func PullImage(imgDetails model.RegistryDetails) error {
+func PullImage(imgDetails manifest.RegistryDetails) error {
 	// TODO: transform to HTTPS
 
 	// token, err := getAuthToken(imgDetails.ImageName)

@@ -13,7 +13,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	log "github.com/sirupsen/logrus"
-	"github.com/weeveiot/weeve-agent/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/manifest"
 )
 
 const registryUrl = "https://registry-1.docker.io"
@@ -81,7 +81,7 @@ func StartContainer(containerID string) error {
 	return nil
 }
 
-func CreateAndStartContainer(containerConfig model.ContainerConfig) (string, error) {
+func CreateAndStartContainer(containerConfig manifest.ContainerConfig) (string, error) {
 	imageID := existingImagesNameToId[containerConfig.ImageName]
 
 	// transform port map into string

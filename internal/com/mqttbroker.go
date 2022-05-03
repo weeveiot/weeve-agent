@@ -30,13 +30,14 @@ var params struct {
 }
 
 func SetParams(opt model.Params) {
-
 	params.Broker = opt.Broker
 	params.StatusTopicName = opt.StatusTopicName
 	params.PubClientId = opt.PubClientId
 	params.SubClientId = opt.SubClientId
 	params.NoTLS = opt.NoTLS
 	params.Heartbeat = opt.Heartbeat
+
+	log.Debugf("Set the following MQTT params: %+v", params)
 }
 
 var registered bool
@@ -48,19 +49,16 @@ var subscriber mqtt.Client
 const registrationTimeout = 5
 
 func RegisterNode() error {
-	nodeId := config.GetNodeId()
-
-	if nodeId == "" {
+	if !config.IsNodeRegistered() {
 		log.Info("Registering node and downloading certificate and key ...")
 		registered = false
-		nodeId = uuid.New().String()
-		config.SetNodeId(nodeId)
+		config.SetNodeId(uuid.New().String())
 		var err error
-		publisher, err = initBrokerChannel(params.PubClientId+"/"+nodeId+"/"+topicRegistration, false)
+		publisher, err = initBrokerChannel(params.PubClientId+"/"+config.GetNodeId()+"/"+topicRegistration, false)
 		if err != nil {
 			return err
 		}
-		subscriber, err = initBrokerChannel(params.SubClientId+"/"+nodeId+"/"+topicCertificate, true)
+		subscriber, err = initBrokerChannel(params.SubClientId+"/"+config.GetNodeId()+"/"+topicCertificate, true)
 		if err != nil {
 			return err
 		}
@@ -182,7 +180,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 	log.Debugln("Received message on topic:", msg.Topic(), "JSON:", *jsonParsed)
 
 	if msg.Topic() == params.SubClientId+"/"+config.GetNodeId()+"/"+topicCertificate {
-		certificateUrl := jsonParsed.Search(topicCertificate).Data().(string)
+		certificateUrl := jsonParsed.Search("Certificate").Data().(string)
 		keyUrl := jsonParsed.Search("PrivateKey").Data().(string)
 
 		certificatePath, keyPath, err := handler.DownloadCertificates(certificateUrl, keyUrl)
