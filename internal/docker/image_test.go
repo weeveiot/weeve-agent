@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/Jeffail/gabs/v2"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
 )
@@ -24,17 +25,16 @@ func TestMain(m *testing.M) {
 func TestImageExists(t *testing.T) {
 	thisFilePath := "/testdata/pipeline_integration_public/failEmptyServices.json"
 	json := ioutility.LoadJsonBytes(thisFilePath)
-	m, err := manifest.ParseJSONManifest(json)
+	jsonParsed, err := gabs.ParseJSON(json)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	m, err := manifest.GetManifest(jsonParsed)
 	if err != nil {
 		t.Error("Json parsing failed")
 	}
 
-	for _, srv := range m.Manifest.Search("services").Children() {
-		moduleID := srv.Search("moduelId").Data()
-		serviceName := srv.Search("name").Data()
-		imageName := srv.Search("image").Search("name").Data()
-		imageTag := srv.Search("image").Search("tag").Data()
-
-		fmt.Println("Service:", moduleID, serviceName, imageName, imageTag)
+	for _, module := range m.Modules {
+		fmt.Println("Service:", module.ImageName, module.ImageTag)
 	}
 }

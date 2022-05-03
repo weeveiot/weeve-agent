@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/Jeffail/gabs/v2"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
 	_ "github.com/weeveiot/weeve-agent/testing"
@@ -25,35 +26,47 @@ func TestMain(m *testing.M) {
 // Unit function to validate negative tests
 func ExecuteFailTest(t *testing.T) {
 	json := ioutility.LoadJsonBytes(filePath)
-	m, err := manifest.ParseJSONManifest(json)
+	jsonParsed, err := gabs.ParseJSON(json)
 	if err != nil {
-		t.Error("Json parsing failed")
+		t.Error(err.Error())
 	}
 
-	err = manifest.ValidateManifest(m)
+	err = manifest.ValidateManifest(jsonParsed)
 	if err == nil {
 		t.Error(errMsg)
+	}
+
+	_, err = manifest.GetManifest(jsonParsed)
+	if err != nil {
+		t.Error("Json parsing failed")
 	}
 }
 
 // Unit function to validate positive tests
 func ExecutePassTest(t *testing.T) {
 	json := ioutility.LoadJsonBytes(filePath)
-	m, err := manifest.ParseJSONManifest(json)
-	if err != nil {
-		t.Error("Json parsing failed")
-	}
-
-	err = manifest.ValidateManifest(m)
+	jsonParsed, err := gabs.ParseJSON(json)
 	if err != nil {
 		t.Error(err.Error())
-		t.Error(errMsg)
+	}
+
+	err = manifest.ValidateManifest(jsonParsed)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	_, err = manifest.GetManifest(jsonParsed)
+	if err != nil {
+		t.Error("Json parsing failed")
 	}
 }
 
 func TestInvalidJson(t *testing.T) {
 	json := ioutility.LoadJsonBytes("pipeline_unit/failInvalidJSON.json")
-	_, err := manifest.ParseJSONManifest(json)
+	jsonParsed, err := gabs.ParseJSON(json)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	_, err = manifest.GetManifest(jsonParsed)
 	if err == nil {
 		t.Error("Json parsing should fail")
 	}
@@ -117,9 +130,13 @@ func TestLoad(t *testing.T) {
 	fmt.Println("Load the sample manifest")
 	var sampleManifestBytesMVP []byte = ioutility.LoadJsonBytes("manifest/mvp-manifest.json")
 	// fmt.Println(sampleManifestBytesMVP)
-	manifest, _ := manifest.ParseJSONManifest(sampleManifestBytesMVP)
+	jsonParsed, err := gabs.ParseJSON(sampleManifestBytesMVP)
+	if err != nil {
+		t.Error(err.Error())
+	}
+	manifest, _ := manifest.GetManifest(jsonParsed)
 	// fmt.Print(res.ContainerNamesList())
-	ContainerConfigs := manifest.GetContainerConfig("MVPDataServ_001")
+	ContainerConfigs := manifest.Modules
 	// fmt.Print(ContainerConfig.MountConfigs)
 	fmt.Println("Container details:")
 	for i, ContainerConf := range ContainerConfigs {
@@ -161,7 +178,7 @@ func TestLoad(t *testing.T) {
 // 	if err != nil {
 // 		panic(err)
 // 	}
-// 	startCommands := manifest.GetContainerConfig()
+// 	startCommands := manifest.Modules
 // 	for i, command := range startCommands {
 // 		fmt.Println("Start", i, command)
 // 	}
@@ -174,7 +191,7 @@ func TestLoad(t *testing.T) {
 // 	if err != nil {
 // 		panic(err)
 // 	}
-// 	startCommands := manifest.GetContainerConfig()
+// 	startCommands := manifest.Modules
 // 	flgMosquitto := false
 // 	for _, command := range startCommands {
 // 		// fmt.Println("Start", i, command)
