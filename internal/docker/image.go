@@ -11,12 +11,12 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
-	"github.com/weeveiot/weeve-agent/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/manifest"
 
 	log "github.com/sirupsen/logrus"
 )
 
-func PullImage(imgDetails model.RegistryDetails) error {
+func PullImage(imgDetails manifest.RegistryDetails) error {
 	authConfig := types.AuthConfig{
 		Username: imgDetails.UserName,
 		Password: imgDetails.Password,
