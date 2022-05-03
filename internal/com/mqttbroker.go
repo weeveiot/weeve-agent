@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"strings"
 	"time"
@@ -65,8 +64,11 @@ func RegisterNode() error {
 		if err != nil {
 			return err
 		}
+
+		msg := handler.GetRegistrationMessage(config.GetNodeId(), config.GetNodeName())
+		log.Debugln("Sending registration request.", ">> Body:", msg)
 		for {
-			err := publishMessage(topicRegistration)
+			err := publishMessage(topicRegistration, msg)
 			if err != nil {
 				log.Errorln("Registration failed, gonna try again in", registrationTimeout, "seconds.", err.Error())
 				time.Sleep(time.Second * registrationTimeout)
@@ -94,10 +96,14 @@ func SendHeartbeat() error {
 	if err != nil {
 		return err
 	}
-	err = publishMessage(params.StatusTopicName)
+
+	msg := handler.GetStatusMessage(config.GetNodeId())
+	log.Debugln("Sending update >>", "Topic:", params.StatusTopicName, ">> Body:", msg)
+	err = publishMessage(params.StatusTopicName, msg)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -245,44 +251,23 @@ func newTLSConfig() (*tls.Config, error) {
 	return configTLS, nil
 }
 
-func publishMessage(msgType string) error {
+func publishMessage(topic string, message interface{}) error {
 
 	if !publisher.IsConnected() {
-		log.Infoln("Connecting.....", time.Now().String(), time.Now().UnixNano())
+		log.Infoln("Connecting.....")
 
 		if token := publisher.Connect(); token.Wait() && token.Error() != nil {
 			return token.Error()
 		}
 	}
 
-	var fullTopic string
-	var payload []byte
-	var err error
-	switch msgType {
-	case topicRegistration:
-		fullTopic = params.PubClientId + "/" + config.GetNodeId() + "/" + topicRegistration
-
-		msg := handler.GetRegistrationMessage(config.GetNodeId(), config.GetNodeName())
-		log.Debugln("Sending registration request.", ">> Body:", msg)
-		payload, err = json.Marshal(msg)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-	case params.StatusTopicName:
-		fullTopic = params.PubClientId + "/" + config.GetNodeId() + "/" + params.StatusTopicName
-		msg := handler.GetStatusMessage(config.GetNodeId())
-		log.Debugln("Sending update >>", "Topic:", params.StatusTopicName, ">> Body:", msg)
-		payload, err = json.Marshal(msg)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-	default:
-		return errors.New("Topic not supported")
+	fullTopic := params.PubClientId + "/" + config.GetNodeId() + "/" + topic
+	payload, err := json.Marshal(message)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	log.Debugln("Publishing message >> ", fullTopic, string(payload))
+	log.Debugln("Publishing message >> Topic:", fullTopic, ">> Payload:", string(payload))
 	if token := publisher.Publish(fullTopic, 0, false, payload); token.Wait() && token.Error() != nil {
 		return token.Error()
 	}
