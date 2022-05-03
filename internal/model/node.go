@@ -21,6 +21,7 @@ type Params struct {
 	CertPath        string `long:"cert" short:"f" description:"Path to certificate to authenticate to Broker" required:"false"`
 	KeyPath         string `long:"key" short:"k" description:"Path to private key to authenticate to Broker" required:"false"`
 	ConfigPath      string `long:"config" description:"Path to the .json config file" required:"false"`
+	ManifestPath    string `long:"manifest" description:"Path to the .json manifest file" required:"false"`
 }
 
 type ManifestStatus struct {

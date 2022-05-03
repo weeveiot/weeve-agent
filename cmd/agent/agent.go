@@ -21,6 +21,7 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/com"
 	"github.com/weeveiot/weeve-agent/internal/config"
 	"github.com/weeveiot/weeve-agent/internal/docker"
+	"github.com/weeveiot/weeve-agent/internal/handler"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
 	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
@@ -45,11 +46,18 @@ func init() {
 }
 
 func main() {
-	parseCLIoptions()
+	localManifest := parseCLIoptions()
 
 	manifest.InitKnownManifests()
 
 	docker.SetupDockerClient()
+
+	if localManifest != "" {
+		err := handler.ReadDeployManifestLocal(localManifest)
+		if err != nil {
+			log.Fatal("Deployment of the local manifest failed! CAUSE --> ", err)
+		}
+	}
 
 	err := com.RegisterNode()
 	if err != nil {
@@ -80,7 +88,7 @@ func main() {
 	com.DisconnectNode()
 }
 
-func parseCLIoptions() {
+func parseCLIoptions() string {
 	const configFileName = "nodeconfig.json"
 	var opt model.Params
 
@@ -149,6 +157,8 @@ func parseCLIoptions() {
 
 	// FLAG: Broker, NoTLS, Heartbeat, PubClientId, SubClientId, TopicName
 	com.SetParams(opt)
+
+	return opt.ManifestPath
 }
 
 func validateBrokerUrl(u *url.URL) {

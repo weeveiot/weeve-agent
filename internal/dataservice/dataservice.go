@@ -12,7 +12,7 @@ import (
 
 const CMDDeploy = "deploy"
 const CMDReDeploy = "redeploy"
-const CMDCheckVersion = "CheckVersion"
+const CMDDeployLocal = "local_deploy"
 const CMDStopService = "stopservice"
 const CMDStartService = "startservice"
 const CMDUndeploy = "undeploy"
@@ -35,7 +35,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 			log.Info(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", man.ID, man.Version))
 			return errors.New("data service already exists")
 
-		} else if command == CMDReDeploy {
+		} else if command == CMDReDeploy || command == CMDDeployLocal {
 			// Clean old data service resources
 			err := UndeployDataService(man.ID, man.Version)
 			if err != nil {
@@ -85,7 +85,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 
 	man.UpdateManifest(networkName)
 
-	log.Infoln(deploymentID, "Created network >>", networkName)
+	log.Info(deploymentID, "Created network >> ", networkName)
 
 	//******** STEP 4 - Create, Start, attach all containers *************//
 	log.Info(deploymentID, "Starting all containers ...")
@@ -282,7 +282,6 @@ func DataServiceExist(manifestID string, version string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-
 	if len(networks) > 0 {
 		return true, nil
 	} else {
