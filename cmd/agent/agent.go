@@ -28,6 +28,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/weeveiot/weeve-agent/internal"
 	"github.com/weeveiot/weeve-agent/internal/docker"
+	"github.com/weeveiot/weeve-agent/internal/model"
 	"github.com/weeveiot/weeve-agent/internal/util"
 )
 
@@ -129,15 +130,15 @@ func main() {
 
 	docker.SetupDockerClient()
 
-	var manifestFile []byte
-	var DeploymentStatus = false
 	// file path for the manifest.json
 	if len(opt.ManifestPath) > 0 {
-		internal.ManifestPath = opt.ManifestPath
+		model.ManifestPath = opt.ManifestPath
 		//read Manifest file
-		manifestFile = internal.ReadManifest()
-		fmt.Println(manifestFile)
-		DeploymentStatus = internal.DeploManifestLocal("deploy", manifestFile, true)
+		_, err := model.ReadDeployManifestLocal()
+		if err != nil {
+			log.Fatalf("Deployment failed! CAUSE --> ", err, "!")
+			panic(err)
+		}
 	}
 
 	// OPTION: Parse and validate the Broker url
@@ -184,7 +185,7 @@ func main() {
 		nodeId = nodeConfig[internal.KeyNodeId]
 	}
 
-	if !isRegistered && (opt.ManifestPath == "" || (len(opt.ManifestPath) > 0 && DeploymentStatus)) {
+	if !isRegistered {
 		log.Info("Registering node and downloading certificate and key ...")
 		registered = false
 		publisher = InitBrokerChannel(nodeConfig, opt.PubClientId+"/"+nodeId+"/Registration", false)

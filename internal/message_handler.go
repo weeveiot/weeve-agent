@@ -36,7 +36,7 @@ func ProcessMessage(operation string, payload []byte, retry bool) {
 
 			var thisManifest = model.Manifest{}
 			thisManifest.Manifest = *jsonParsed
-			err := deploy.DeployDataService(thisManifest, operation, false)
+			err := deploy.DeployDataService(thisManifest, operation)
 			if err != nil {
 				log.Info("Deployment failed! CAUSE --> ", err, "!")
 			} else {
@@ -48,7 +48,7 @@ func ProcessMessage(operation string, payload []byte, retry bool) {
 
 			var thisManifest = model.Manifest{}
 			thisManifest.Manifest = *jsonParsed
-			err := deploy.DeployDataService(thisManifest, operation, false)
+			err := deploy.DeployDataService(thisManifest, operation)
 			if err != nil {
 				log.Info("Redeployment failed! CAUSE --> ", err, "!")
 			} else {

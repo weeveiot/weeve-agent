@@ -3,11 +3,14 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"regexp"
 	"strings"
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/docker/go-connections/nat"
+	"github.com/weeveiot/weeve-agent/internal/deploy"
 
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
@@ -43,6 +46,8 @@ type RegistryDetails struct {
 	UserName  string
 	Password  string
 }
+
+var ManifestPath string
 
 // Create a Manifest type
 /* The manifest type holds the parsed JSON of a manifest file, as well as
@@ -295,4 +300,33 @@ func (man Manifest) GetLabels() map[string]string {
 	labels["name"] = man.Manifest.Search("name").Data().(string)
 
 	return labels
+}
+
+//Read local manifest file provided by the CLI command and return payload bytes // deploy local manifest file and return deployment status
+
+func ReadDeployManifestLocal() (bool, error) {
+	jsonFile, err := os.Open(ManifestPath)
+	if err != nil {
+		log.Fatalf("Unable to open Manifest file: %v", err)
+	}
+	defer jsonFile.Close()
+	// read our opened jsonFile as a byte array.
+	byteValue, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		log.Fatalf("Unable to read node manifest file: %v", err)
+		return false, err
+	}
+	log.Info("Processing the message >> ", "deploy_local")
+	thisManifest, err := ParseJSONManifest(byteValue)
+	if err != nil {
+		log.Error("Error on parsing message : ", err)
+		return false, err
+	} else {
+		err := deploy.DeployDataService(thisManifest, "deploy_local")
+		if err != nil {
+			log.Info("Deployment failed! CAUSE --> ", err, "!")
+			return false, err
+		}
+	}
+	return true, nil
 }
