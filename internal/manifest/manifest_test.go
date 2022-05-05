@@ -128,7 +128,7 @@ func TestWorkingManifest(t *testing.T) {
 
 func TestLoad(t *testing.T) {
 	fmt.Println("Load the sample manifest")
-	var sampleManifestBytesMVP []byte = ioutility.LoadJsonBytes("manifest/mvp-manifest.json")
+	var sampleManifestBytesMVP []byte = ioutility.LoadJsonBytes("testdata/manifest/mvp-manifest.json")
 	// fmt.Println(sampleManifestBytesMVP)
 	jsonParsed, err := gabs.ParseJSON(sampleManifestBytesMVP)
 	if err != nil {
