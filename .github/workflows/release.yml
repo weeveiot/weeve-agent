@@ -37,7 +37,7 @@ jobs:
           release_name: Release ${{ github.ref }}
           draft: false
           prerelease: false
-      - name: Upload Release Asset
+      - name: Upload Release Asset for x86_64
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -46,3 +46,30 @@ jobs:
           asset_path: ./build/weeve-agent-${{ github.ref }}-linux-x86
           asset_name: weeve-agent-${{ github.ref }}-linux-x86
           asset_content_type: application/linux-x86
+      - name: Upload Release Asset for arm64
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./build/weeve-agent-${{ github.ref }}-linux-arm64
+          asset_name: weeve-agent-${{ github.ref }}-linux-arm64
+          asset_content_type: application/linux-arm64
+      - name: Upload Release Asset for armhf
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./build/weeve-agent-${{ github.ref }}-linux-arm
+          asset_name: weeve-agent-${{ github.ref }}-linux-arm
+          asset_content_type: application/linux-arm
+      - name: Upload Release Asset for darwin
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./build/weeve-agent-${{ github.ref }}-darwin-x86
+          asset_name: weeve-agent-${{ github.ref }}-darwin-x86
+          asset_content_type: application/darwin-x86
