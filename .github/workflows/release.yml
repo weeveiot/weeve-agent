@@ -33,3 +33,4 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }} 
         asset_path: ./build/weeve-agent-${{ github.ref }}-linux-x86
         asset_name: weeve-agent-${{ github.ref }}-linux-x86
+        asset_content_type: application/linux-x86
