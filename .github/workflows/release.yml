@@ -13,6 +13,12 @@ jobs:
           go-version: 1.18
       - name: Checkout code
         uses: actions/checkout@v3
+      - uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
       - name: Build-x86_64
         run: GOOS=linux GOARCH=amd64 go build -o build/weeve-agent-${{ github.ref }}-linux-x86 ./cmd/agent/agent.go
       - name: Build-arm64
@@ -21,12 +27,7 @@ jobs:
         run: GOOS=linux GOARCH=arm GOARM=7 go build -o build/weeve-agent-${{ github.ref }}-linux-arm ./cmd/agent/agent.go
       - name: Build-darwin
         run: GOOS=darwin GOARCH=amd64 go build -o build/weeve-agent-${{ github.ref }}-darwin-x86 ./cmd/agent/agent.go
-      - uses: actions/cache@v2
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
