@@ -1,17 +1,20 @@
 name: Test
 on:
   push:
-    branches:
-      - cd/artifacts
+    tags:
+    - 'v*'
 jobs:
   build-and-push:
     runs-on: ubuntu-18.04
     steps:
-    - uses: actions/setup-go@v3
+    - name: Setup golang
+      uses: actions/setup-go@v3
       with:
         go-version: 1.18
-    - uses: actions/checkout@v3
-    - run: make build-x86
+    - name: Checkout code
+      uses: actions/checkout@v3
+    - name: Build-x86_64
+      run: GOOS=linux GOARCH=amd64 go build -o build/weeve-agent-${{ github.ref }}-linux-x86 ./cmd/agent/agent.go
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
