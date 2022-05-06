@@ -31,5 +31,5 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} 
-        asset_path: ./build/weeve-agent-0.9.0-linux-x86
-        asset_name: weeve-agent-0.9.0-linux-x86
+        asset_path: ./build/weeve-agent-${{ github.ref }}-linux-x86
+        asset_name: weeve-agent-${{ github.ref }}-linux-x86
