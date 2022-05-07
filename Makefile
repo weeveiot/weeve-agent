@@ -30,7 +30,6 @@ cross:
 	GOOS=linux   GOARM=7 GOARCH=arm go build -o build/weeve-agent-linux-armv7 ./cmd/agent/agent.go
 	GOOS=darwin  GOARCH=amd64 go build -o build/weeve-agent-darwin ./cmd/agent/agent.go
 	GOOS=windows GOARCH=amd64 go build -o build/weeve-agent-windows-x86_64.exe ./cmd/agent/agent.go
-	cp LICENSE ./build/
 .PHONY: cross
 
 secunet:

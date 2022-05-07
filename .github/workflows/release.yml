@@ -28,6 +28,9 @@ jobs:
       - name: Compute checksums
         run: cd build; for f in *; do shasum --binary --algorithm 256 $f | tee -a checksums.txt > $f.sha256; done
 
+      - name: copy License
+        run: cp LICENSE ./build/LICENSE
+
       - name: Release artifacts
         uses: ncipollo/release-action@v1
         with:
