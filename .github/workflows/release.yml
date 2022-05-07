@@ -32,7 +32,6 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: "build/*"
-          generateReleaseNotes: true
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.event.inputs.tag }}
           bodyFile: RELEASE_NOTES.md
