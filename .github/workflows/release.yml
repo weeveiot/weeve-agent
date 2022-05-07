@@ -7,70 +7,37 @@ jobs:
   build-and-push:
     runs-on: ubuntu-18.04
     steps:
-      - name: Setup golang
-        uses: actions/setup-go@v3
-        with:
-          go-version: 1.18
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - uses: actions/cache@v2
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-      - name: Build-x86_64
-        run: GOOS=linux GOARCH=amd64 go build -o build/weeve-agent-${{ github.ref }}-linux-x86 ./cmd/agent/agent.go
-      - name: Build-arm64
-        run: GOOS=linux GOARCH=arm64 go build -o build/weeve-agent-${{ github.ref }}-linux-arm64 ./cmd/agent/agent.go
-      - name: Build-armhf
-        run: GOOS=linux GOARCH=arm GOARM=7 go build -o build/weeve-agent-${{ github.ref }}-linux-arm ./cmd/agent/agent.go
-      - name: Build-darwin
-        run: GOOS=darwin GOARCH=amd64 go build -o build/weeve-agent-${{ github.ref }}-darwin-x86 ./cmd/agent/agent.go
+      - name: ref
+        run: echo ${{ github.ref }}
+      - name: inputs
+        run: echo ${{ github.event.inputs.tag }}
+      # - name: Setup golang
+      #   uses: actions/setup-go@v3
+      #   with:
+      #     go-version: 1.18
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
-      - name: Upload Release Asset for x86_64
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/weeve-agent-${{ github.ref }}-linux-x86
-          asset_name: weeve-agent-${{ github.ref }}-linux-x86
-          asset_content_type: application/linux-x86
-      - name: Upload Release Asset for arm64
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/weeve-agent-${{ github.ref }}-linux-arm64
-          asset_name: weeve-agent-${{ github.ref }}-linux-arm64
-          asset_content_type: application/linux-arm64
-      - name: Upload Release Asset for armhf
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/weeve-agent-${{ github.ref }}-linux-arm
-          asset_name: weeve-agent-${{ github.ref }}-linux-arm
-          asset_content_type: application/linux-arm
-      - name: Upload Release Asset for darwin
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./build/weeve-agent-${{ github.ref }}-darwin-x86
-          asset_name: weeve-agent-${{ github.ref }}-darwin-x86
-          asset_content_type: application/darwin-x86
+      # - name: Checkout code
+      #   uses: actions/checkout@v3
+
+      # - uses: actions/cache@v2
+      #   with:
+      #     path: ~/go/pkg/mod
+      #     key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-go-
+
+      # - name: Build cross compilation binary
+      #   run: make cross
+
+      # - name: Compute checksums
+      #   run: cd bin; for f in *; do shasum --binary --algorithm 256 $f | tee -a checksums.txt > $f.sha256; done
+
+      # - name: Release artifacts
+      #   uses: ncipollo/release-action@v1
+      #   with:
+      #     artifacts: "build/*"
+      #     generateReleaseNotes: true
+      #     draft: true
+      #     commit: "v2"
+      #     token: ${{ secrets.GITHUB_TOKEN }}
+      #     tag: ${{ github.event.inputs.tag }}

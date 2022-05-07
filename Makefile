@@ -22,6 +22,18 @@ build-darwin:
 	GOOS=darwin GOARCH=amd64 go build -o build/weeve-agent-${AGENT_VERSION}-darwin ./cmd/agent/agent.go
 .PHONY: build-darwin
 
+
+cross:
+	rm -rf build
+	GOOS=linux   GOARCH=amd64 go build -o build/weeve-agent-${AGENT_VERSION}-linux-x86_64 ./cmd/agent/agent.go
+	GOOS=linux   GOARCH=arm64 go build -o build/weeve-agent-${AGENT_VERSION}-linux-aarch64 ./cmd/agent/agent.go
+	GOOS=linux   GOARM=6 GOARCH=arm go build -o build/weeve-agent-${AGENT_VERSION}-linux-armv6 ./cmd/agent/agent.go
+	GOOS=linux   GOARM=7 GOARCH=arm go build -o build/weeve-agent-${AGENT_VERSION}-linux-armv7 ./cmd/agent/agent.go
+	GOOS=darwin  GOARCH=amd64 go build -o build/weeve-agent-${AGENT_VERSION}-darwin-x86_64 ./cmd/agent/agent.go
+	GOOS=darwin  GOARCH=arm64 go build -o build/weeve-agent-${AGENT_VERSION}-darwin-aarch64 ./cmd/agent/agent.go
+	GOOS=windows GOARCH=amd64 go build -o build/weeve-agent-${AGENT_VERSION}-windows-x86_64.exe ./cmd/agent/agent.go
+.PHONY: cross
+
 secunet:
 	GOOS=linux GOARCH=amd64 go build -o bin/agent_secunet -tags secunet cmd/agent/agent.go
 	docker build -f Dockerfile.secunet -t secunet-test .
