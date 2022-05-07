@@ -1,11 +1,9 @@
 name: Releaser
-
 on:
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: "Release Tag"
-        required: true
+  push:
+    tags:
+      - "*"
+
 jobs:
   build-and-push:
     runs-on: ubuntu-18.04
@@ -36,7 +34,5 @@ jobs:
         with:
           artifacts: "build/*"
           generateReleaseNotes: true
-          draft: true
-          commit: "v2"
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.event.inputs.tag }}
