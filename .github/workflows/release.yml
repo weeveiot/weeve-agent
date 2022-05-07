@@ -1,0 +1,37 @@
+name: Releaser
+on:
+  push:
+    tags:
+      - "*"
+jobs:
+  build-and-push:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Setup golang
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Build cross compilation binary
+        run: make AGENT_VERSION=${{ github.event.inputs.tag }} cross
+
+      - name: Compute checksums
+        run: cd build; for f in *; do shasum --binary --algorithm 256 $f | tee -a checksums.txt > $f.sha256; done
+
+      - name: Release artifacts
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "build/*"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.event.inputs.tag }}
+          bodyFile: RELEASE_NOTES.md
