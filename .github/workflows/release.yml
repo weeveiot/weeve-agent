@@ -27,7 +27,7 @@ jobs:
         run: make cross
 
       - name: Compute checksums
-        run: cd bin; for f in *; do shasum --binary --algorithm 256 $f | tee -a checksums.txt > $f.sha256; done
+        run: cd build; for f in *; do shasum --binary --algorithm 256 $f | tee -a checksums.txt > $f.sha256; done
 
       - name: Release artifacts
         uses: ncipollo/release-action@v1
