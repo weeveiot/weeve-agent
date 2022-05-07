@@ -1,4 +1,4 @@
-# weeve agent - v2.0.0
+# weeve agent - v1.0.1
 
 ## What's changed
 

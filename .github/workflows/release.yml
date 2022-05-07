@@ -3,8 +3,6 @@ on:
   push:
     tags:
       - "*"
-env:
-  AGENT_VERSION: ${{ github.event.inputs.tag }}
 jobs:
   build-and-push:
     runs-on: ubuntu-18.04
@@ -35,5 +33,5 @@ jobs:
         with:
           artifacts: "build/*"
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ env.AGENT_VERSION }}
+          tag: ${{ github.event.inputs.tag }}
           bodyFile: RELEASE_NOTES.md
