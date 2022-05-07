@@ -3,7 +3,6 @@ on:
   push:
     tags:
       - "*"
-
 jobs:
   build-and-push:
     runs-on: ubuntu-18.04
@@ -24,7 +23,7 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Build cross compilation binary
-        run: make cross
+        run: make AGENT_VERSION=${{ github.event.inputs.tag }} cross
 
       - name: Compute checksums
         run: cd build; for f in *; do shasum --binary --algorithm 256 $f | tee -a checksums.txt > $f.sha256; done
@@ -36,3 +35,4 @@ jobs:
           generateReleaseNotes: true
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.event.inputs.tag }}
+          bodyFile: RELEASE_NOTES.md
