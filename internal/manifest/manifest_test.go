@@ -7,11 +7,13 @@ import (
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
-	_ "github.com/weeveiot/weeve-agent/testing"
 )
 
 var filePath string
 var errMsg string
+
+const invalidJSON = "../../testdata/pipeline_unit/failInvalidJSON.json"
+const mvpManifest = "../../testdata/manifest/mvp-manifest.json"
 
 // Unit function to validate negative tests
 func ExecuteFailTest(t *testing.T) {
@@ -59,7 +61,7 @@ func ExecutePassTest(t *testing.T) {
 }
 
 func TestInvalidJson(t *testing.T) {
-	json, err := ioutil.ReadFile("../../testdata/pipeline_unit/failInvalidJSON.json")
+	json, err := ioutil.ReadFile(invalidJSON)
 	if err != nil {
 		t.Error(err)
 	}
@@ -130,7 +132,7 @@ func TestWorkingManifest(t *testing.T) {
 
 func TestLoad(t *testing.T) {
 	fmt.Println("Load the sample manifest")
-	json, err := ioutil.ReadFile("../../testdata/manifest/mvp-manifest.json")
+	json, err := ioutil.ReadFile(mvpManifest)
 	if err != nil {
 		t.Error(err)
 	}
