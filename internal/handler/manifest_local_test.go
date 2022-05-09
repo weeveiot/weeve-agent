@@ -43,7 +43,7 @@ func TestReadDeployManifestLocalPass(t *testing.T) {
 
 	err = dataservice.UndeployDataService(thisManifest.ID, thisManifest.Version)
 	if err != nil {
-		t.Errorf("UndeployDataService returned %v status", err)
+		t.Error("UndeployDataService returned error: ", err)
 	}
 }
 
