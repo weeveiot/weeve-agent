@@ -7,6 +7,7 @@ package dataservice_test
 
 import (
 	"context"
+	"io/ioutil"
 	"testing"
 
 	"github.com/Jeffail/gabs/v2"
@@ -17,7 +18,6 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
-	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
 )
 
 var manifestID = "PLACEHOLDER"
@@ -25,20 +25,27 @@ var version = "PLACEHOLDER"
 var manifestID2 = "PLACEHOLDER"
 var version2 = "PLACEHOLDER"
 
-const manifestPath = "testdata/manifest/test_manifest.json"
-const manifestPath2 = "testdata/manifest/test_manifest_copy.json"
-const manifestPathRedeploy = "testdata/manifest/test_manifest_redeploy.json"
+const manifestPath = "../../testdata/manifest/test_manifest.json"
+const manifestPath2 = "../../testdata/manifest/test_manifest_copy.json"
+const manifestPathRedeploy = "../../testdata/manifest/test_manifest_redeploy.json"
+
+func init() {
+	docker.SetupDockerClient()
+}
 
 func TestDeployManifest(t *testing.T) {
 	log.Info("TESTING DEPLOYMENT...")
 
 	// Load Manifest JSON from file.
-	json := ioutility.LoadJsonBytes(manifestPath)
+	json, err := ioutil.ReadFile(manifestPath)
+	if err != nil {
+		t.Error(err)
+	}
 
 	// Parse to gabs Container type
 	jsonParsed, err := gabs.ParseJSON(json)
 	if err != nil {
-		log.Info("Error on parsing message: ", err)
+		t.Error("Error on parsing message: ", err)
 	}
 
 	thisManifest, err := manifest.GetManifest(jsonParsed)
@@ -60,7 +67,7 @@ func TestDeployManifest(t *testing.T) {
 	// Check if network exists
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		log.Error(err)
+		t.Error(err)
 	}
 
 	filter := filters.NewArgs()
@@ -245,12 +252,15 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	// Load Manifest JSON from file.
 	log.Info("Loading original manifest...")
 
-	json := ioutility.LoadJsonBytes(manifestPath)
+	json, err := ioutil.ReadFile(manifestPath)
+	if err != nil {
+		t.Error(err)
+	}
 
 	// Parse to gabs Container type
 	jsonParsed, err := gabs.ParseJSON(json)
 	if err != nil {
-		log.Info("Error on parsing message: ", err)
+		t.Error("Error on parsing message: ", err)
 	}
 
 	thisManifest, err := manifest.GetManifest(jsonParsed)
@@ -273,12 +283,15 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	// Load Manifest JSON from file.
 	log.Info("Loading second manifest...")
 
-	json = ioutility.LoadJsonBytes(manifestPath2)
+	json, err = ioutil.ReadFile(manifestPath2)
+	if err != nil {
+		t.Error(err)
+	}
 
 	// Parse to gabs Container type
 	jsonParsed, err = gabs.ParseJSON(json)
 	if err != nil {
-		log.Info("Error on parsing message: ", err)
+		t.Error("Error on parsing message: ", err)
 	}
 
 	thisManifest2, err := manifest.GetManifest(jsonParsed)
@@ -343,12 +356,15 @@ func TestRedeployDataService(t *testing.T) {
 
 	// ***************** LOAD ORIGINAL MANIFEST AND DEPLOY DATA SERVICE ******************** //
 	log.Info("Loading original manifest...")
-	json := ioutility.LoadJsonBytes(manifestPath)
+	json, err := ioutil.ReadFile(manifestPath)
+	if err != nil {
+		t.Error(err)
+	}
 
 	// Parse to gabs Container type
 	jsonParsed, err := gabs.ParseJSON(json)
 	if err != nil {
-		log.Info("Error on parsing message: ", err)
+		t.Error("Error on parsing message: ", err)
 	}
 
 	thisManifest, err := manifest.GetManifest(jsonParsed)
@@ -371,7 +387,7 @@ func TestRedeployDataService(t *testing.T) {
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		log.Error(err)
+		t.Error(err)
 	}
 
 	filter := filters.NewArgs()
@@ -380,7 +396,7 @@ func TestRedeployDataService(t *testing.T) {
 	options := types.NetworkListOptions{Filters: filter}
 	networks, err := cli.NetworkList(ctx, options)
 	if err != nil {
-		log.Error(err)
+		t.Error(err)
 	}
 
 	originalServiceTimestamp := networks[0].Created
@@ -388,12 +404,15 @@ func TestRedeployDataService(t *testing.T) {
 
 	// ***************** LOAD ORIGINAL MANIFEST AND DEPLOY DATA SERVICE ******************** //
 	log.Info("Loading redeployment manifest...")
-	json = ioutility.LoadJsonBytes(manifestPathRedeploy)
+	json, err = ioutil.ReadFile(manifestPathRedeploy)
+	if err != nil {
+		t.Error(err)
+	}
 
 	// Parse to gabs Container type
 	jsonParsed, err = gabs.ParseJSON(json)
 	if err != nil {
-		log.Info("Error on parsing message: ", err)
+		t.Error("Error on parsing message: ", err)
 	}
 
 	thisManifestRedeploy, err := manifest.GetManifest(jsonParsed)
@@ -416,7 +435,7 @@ func TestRedeployDataService(t *testing.T) {
 	// compare new and old networks
 	networksRe, err := cli.NetworkList(ctx, options)
 	if err != nil {
-		log.Info(err)
+		t.Error(err)
 	}
 
 	if originalServiceID == networksRe[0].ID || originalServiceTimestamp == networksRe[0].Created {
