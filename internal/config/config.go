@@ -14,7 +14,7 @@ import (
 
 var ConfigPath string
 
-const defaultId = "4be43aa6f1"
+var environments = []string{"awsdev", "awsdemo", "awssandbox", "awswohnio"}
 
 var params struct {
 	RootCertPath string
@@ -129,6 +129,14 @@ func SetCertPath(certificatePath, keyPath string) {
 }
 
 func IsNodeRegistered() bool {
-	// TODO: change this workaround to check if the node is registered
-	return !(strings.Contains(params.CertPath, defaultId) || strings.Contains(params.KeyPath, defaultId))
+	// TODO: this is just a quick-fix, may need to change this after grooming
+	var result bool
+
+	for _, environment := range environments {
+		result := strings.Contains(params.CertPath, environment) && strings.Contains(params.KeyPath, environment)
+		if result {
+			return !result
+		}
+	}
+	return !result
 }
