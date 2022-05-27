@@ -150,7 +150,7 @@ func TestRedeployDataService(t *testing.T) {
 	}
 
 	if originalServiceID == networksRe[0].ID || originalServiceTimestamp == networksRe[0].Created {
-		t.Errorf("New network was not created.")
+		t.Error("New network was not created.")
 	}
 }
 
