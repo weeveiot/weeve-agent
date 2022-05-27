@@ -72,6 +72,14 @@ validating_docker(){
   fi
 }
 
+build_test_binary(){
+  go build -o ./weeve-agent/test-agent cmd/agent/agent.go
+  log built weeve-agent binary for testing
+  chmod u+x ./weeve-agent/test-agent
+  log Changed file permission
+  BINARY_NAME="test-agent"
+}
+
 download_binary(){
   log Detecting the architecture of the machine ...
   ARCH=$(uname -m)
@@ -225,8 +233,6 @@ systemctl daemon-reload
 # Delcaring and defining variables
 LOG_FILE=installer.log
 
-ACCESS_KEY=""
-
 CURRENT_DIRECTORY=$(pwd)
 WEEVE_AGENT_DIRECTORY="$CURRENT_DIRECTORY"/weeve-agent
 
@@ -234,7 +240,11 @@ SERVICE_FILE=/lib/systemd/system/weeve-agent.service
 
 ARGUMENTS_FILE=/lib/systemd/system/weeve-agent.argconf
 
+ACCESS_KEY=""
+
 BINARY_NAME=""
+
+BUILD="false"
 
 CLEANUP="true"
 
@@ -250,6 +260,7 @@ do
     "token") TOKEN_FILE="$VALUE" ;;
     "environment") ENV="$VALUE" ;;
     "nodename")  NODE_NAME="$VALUE" ;;
+    "test") BUILD="$VALUE" ;;
     *)
   esac
 done
@@ -265,7 +276,7 @@ get_nodename
 log All arguments are set
 log Environment is set to "$ENV"
 log Name of the node is set to "$NODE_NAME"
-
+log Test mode is set to "$BUILD"
 check_for_agent
 
 validating_docker
@@ -273,7 +284,11 @@ validating_docker
 log Creating directory to store the weeve-agent contents ...
 mkdir weeve-agent
 
+if [ "$BUILD" = "true" ]; then
+build_test_binary
+else
 download_binary
+fi
 
 download_dependencies
 
