@@ -214,7 +214,7 @@ Currently, unit testing does not cover the project.
 
 Several developer features are supported in the project.
 
-### Developers - manually starting the weeve agent
+### Manually starting the weeve agent
 
 1. Install docker [docker installation](https://docs.docker.com/engine/install/)
 2. Make a folder in the home folder `mkdir weeve-agent`
