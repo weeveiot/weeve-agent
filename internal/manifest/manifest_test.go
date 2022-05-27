@@ -2,32 +2,29 @@ package manifest_test
 
 import (
 	"fmt"
-	"os"
+	"io/ioutil"
 	"testing"
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/docker/go-connections/nat"
 	"github.com/stretchr/testify/assert"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
-	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
-	_ "github.com/weeveiot/weeve-agent/testing"
 )
 
-var manifestBytesMVP []byte
 var filePath string
 var errMsg string
 
-func TestMain(m *testing.M) {
-
-	manifestBytesMVP = ioutility.LoadJsonBytes("testdata/pipeline_unit/workingMVP.json")
-	code := m.Run()
-
-	os.Exit(code)
-}
+const invalidJSON = "../../testdata/pipeline_unit/failInvalidJSON.json"
+const mvpManifest = "../../testdata/manifest/mvp-manifest.json"
+const sampleManifestBytesMVP = "../../testdata/manifest/test_manifest_3broker.json"
 
 // Unit function to validate negative tests
 func ExecuteFailTest(t *testing.T) {
-	json := ioutility.LoadJsonBytes(filePath)
+	json, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		t.Error(err)
+	}
+
 	jsonParsed, err := gabs.ParseJSON(json)
 	if err != nil {
 		t.Error(err.Error())
@@ -41,7 +38,11 @@ func ExecuteFailTest(t *testing.T) {
 
 // Unit function to validate positive tests
 func ExecutePassTest(t *testing.T) {
-	json := ioutility.LoadJsonBytes(filePath)
+	json, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		t.Error(err)
+	}
+
 	jsonParsed, err := gabs.ParseJSON(json)
 	if err != nil {
 		t.Error(err.Error())
@@ -54,10 +55,14 @@ func ExecutePassTest(t *testing.T) {
 }
 
 func TestInvalidJson(t *testing.T) {
-	json := ioutility.LoadJsonBytes("testdata/pipeline_unit/failInvalidJSON.json")
-	_, err := gabs.ParseJSON(json)
+	json, err := ioutil.ReadFile(invalidJSON)
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, err = gabs.ParseJSON(json)
 	if err == nil {
-		t.Error("Json parsing should fail")
+		t.Error(err.Error())
 	}
 }
 
@@ -117,16 +122,19 @@ func TestWorkingManifest(t *testing.T) {
 
 func TestLoad(t *testing.T) {
 	fmt.Println("Load the sample manifest")
-	var sampleManifestBytesMVP []byte = ioutility.LoadJsonBytes("testdata/manifest/mvp-manifest.json")
-	// fmt.Println(sampleManifestBytesMVP)
-	jsonParsed, err := gabs.ParseJSON(sampleManifestBytesMVP)
+	json, err := ioutil.ReadFile(mvpManifest)
+	if err != nil {
+		t.Error(err)
+	}
+
+	jsonParsed, err := gabs.ParseJSON(json)
 	if err != nil {
 		t.Error(err.Error())
 	}
 	manifest, _ := manifest.GetManifest(jsonParsed)
-	// fmt.Print(res.ContainerNamesList())
+
 	ContainerConfigs := manifest.Modules
-	// fmt.Print(ContainerConfig.MountConfigs)
+
 	fmt.Println("Container details:")
 	for i, ContainerConf := range ContainerConfigs {
 		fmt.Println(i, ContainerConf)
@@ -138,8 +146,11 @@ func TestLoad(t *testing.T) {
 // The simple -p "1883:1883" in a docker run command
 // Expands to multiple complex objects, basic assertions are done in this unittest
 func TestStartOptionsComplex(t *testing.T) {
-	var sampleManifestBytesMVP []byte = ioutility.LoadJsonBytes("testdata/manifest/test_manifest_3broker.json")
-	jsonParsed, err := gabs.ParseJSON(sampleManifestBytesMVP)
+	json, err := ioutil.ReadFile(sampleManifestBytesMVP)
+	if err != nil {
+		t.Error(err)
+	}
+	jsonParsed, err := gabs.ParseJSON(json)
 	if err != nil {
 		t.Error(err.Error())
 	}
