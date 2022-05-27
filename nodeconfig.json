@@ -3,5 +3,6 @@
  "CertPath": "certs/awsdev-certificate.pem.crt",
  "NodeId": "",
  "NodeName": "New Node8081",
- "KeyPath": "certs/awsdev-private.pem.key"
+ "KeyPath": "certs/awsdev-private.pem.key",
+ "Registered": "false"
 }

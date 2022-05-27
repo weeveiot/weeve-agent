@@ -191,6 +191,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 
 		config.SetCertPath(certificatePath, keyPath)
 		registered = true
+		config.SetRegistered()
 		log.Info("Node registration done | Certificates downloaded!")
 
 	} else {

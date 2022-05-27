@@ -14,14 +14,13 @@ import (
 
 var ConfigPath string
 
-var environments = []string{"awsdev", "awsdemo", "awssandbox", "awswohnio"}
-
 var params struct {
 	RootCertPath string
 	CertPath     string
+	KeyPath      string
 	NodeId       string
 	NodeName     string
-	KeyPath      string
+	Registered   string
 }
 
 func GetRootCertPath() string {
@@ -129,14 +128,16 @@ func SetCertPath(certificatePath, keyPath string) {
 }
 
 func IsNodeRegistered() bool {
-	// TODO: this is just a quick-fix, may need to change this after grooming
-	var result bool
-
-	for _, environment := range environments {
-		result := strings.Contains(params.CertPath, environment) && strings.Contains(params.KeyPath, environment)
-		if result {
-			return !result
-		}
+	readNodeConfigFromFile()
+	result := strings.Contains(params.Registered, "false")
+	if result {
+		return !result
 	}
 	return !result
+}
+
+func SetRegistered() {
+	params.Registered = "true"
+
+	writeNodeConfigToFile()
 }
