@@ -16,7 +16,6 @@ validate_token_file(){
   log 2. Paste the Github Personal Access Token into the above mentioned file
   log For more info checkout the README
   log ------------------------------------------------------------------------
-  CLEANUP="false"
   exit 1
   fi
 }
@@ -54,7 +53,6 @@ check_for_agent(){
     cleanup
     else
     log exiting ...
-    CLEANUP="false"
     exit 0
     fi
   fi
@@ -73,11 +71,15 @@ validating_docker(){
 }
 
 build_test_binary(){
-  go build -o ./weeve-agent/test-agent cmd/agent/agent.go
+  if RESULT=$(go build -o ./weeve-agent/test-agent cmd/agent/agent.go 2>&1); then
   log built weeve-agent binary for testing
   chmod u+x ./weeve-agent/test-agent
   log Changed file permission
   BINARY_NAME="test-agent"
+  else
+  log Error occured while building binary for testing: "$RESULT"
+  exit 1
+  fi
 }
 
 download_binary(){
@@ -120,7 +122,7 @@ download_dependencies(){
     log "$DEPENDENCIES" downloaded
   else
     log Error while downloading the dependencies: "$RESULT"
-    rm -r weeve-agent
+    CLEANUP="ture"
     exit 1
   fi
   done
@@ -146,10 +148,10 @@ write_to_service(){
   #   ExecStart=/home/admin/weeve-agent/weeve-agent-x86_64 $ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_PUBLISH $ARG_SUB_CLIENT $ARG_PUB_CLIENT $ARG_ROOT_CERT $ARG_CERT $ARG_KEY $ARG_NODENAME
 
   # line 1
-  WORKING_DIRECTORY="WorkingDirectory=$CURRENT_DIRECTORY/weeve-agent"
+  WORKING_DIRECTORY="WorkingDirectory=$PWD/weeve-agent"
 
   # line 2
-  BINARY_PATH="ExecStart=$CURRENT_DIRECTORY/weeve-agent/$BINARY_NAME"
+  BINARY_PATH="ExecStart=$PWD/weeve-agent/$BINARY_NAME"
   ARGUMENTS='$ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_PUBLISH $ARG_SUB_CLIENT $ARG_PUB_CLIENT $ARG_ROOT_CERT $ARG_CERT $ARG_KEY $ARG_NODENAME'
   EXECUTE_BINARY="$BINARY_PATH $ARGUMENTS"
 
@@ -174,6 +176,7 @@ start_service(){
     log For good measure please check:
     log   1. if the file contains the access token
     log   2. if the access token in github has expired
+    CLEANUP="true"
     exit 1
   fi
 
@@ -185,7 +188,6 @@ tail_agent_log(){
   # on successful completion of the script $CLEANUP is set to false to skip the clean-up on exit
   log tailing the weeve-agent logs
   timeout 10s tail -f ./weeve-agent/Weeve_Agent.log | sed '/ON connect >> connected >> registered : true/ q'
-  CLEANUP="false"
 }
 
 cleanup() {
@@ -233,8 +235,7 @@ systemctl daemon-reload
 # Delcaring and defining variables
 LOG_FILE=installer.log
 
-CURRENT_DIRECTORY=$(pwd)
-WEEVE_AGENT_DIRECTORY="$CURRENT_DIRECTORY"/weeve-agent
+WEEVE_AGENT_DIRECTORY="$PWD"/weeve-agent
 
 SERVICE_FILE=/lib/systemd/system/weeve-agent.service
 
@@ -246,7 +247,7 @@ BINARY_NAME=""
 
 BUILD="false"
 
-CLEANUP="true"
+CLEANUP="false"
 
 trap cleanup EXIT
 
@@ -280,9 +281,6 @@ log Test mode is set to "$BUILD"
 check_for_agent
 
 validating_docker
-
-log Creating directory to store the weeve-agent contents ...
-mkdir weeve-agent
 
 if [ "$BUILD" = "true" ]; then
 build_test_binary
