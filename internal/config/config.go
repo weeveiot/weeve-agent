@@ -128,14 +128,9 @@ func SetCertPath(certificatePath, keyPath string) {
 }
 
 func IsNodeRegistered() bool {
-	//TODO fail with error here if "registered" does not exists in nodeconfig and if the value is something other than true or false
-	//TODO also maybe add validation for nodeconfig
 	readNodeConfigFromFile()
-	result := strings.Contains(params.Registered, "false")
-	if result {
-		return !result
-	}
-	return !result
+
+	return strings.Contains(params.Registered, "true")
 }
 
 func SetRegistered() {
