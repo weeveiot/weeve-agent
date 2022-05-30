@@ -24,12 +24,10 @@ build-darwin:
 
 cross:
 	rm -rf build
-	GOOS=linux   GOARCH=amd64 go build -o build/weeve-agent-linux-x86_64 ./cmd/agent/agent.go
-	GOOS=linux   GOARCH=arm64 go build -o build/weeve-agent-linux-aarch64 ./cmd/agent/agent.go
-	GOOS=linux   GOARM=6 GOARCH=arm go build -o build/weeve-agent-linux-armv6 ./cmd/agent/agent.go
-	GOOS=linux   GOARM=7 GOARCH=arm go build -o build/weeve-agent-linux-armv7 ./cmd/agent/agent.go
-	GOOS=darwin  GOARCH=amd64 go build -o build/weeve-agent-darwin ./cmd/agent/agent.go
-	GOOS=windows GOARCH=amd64 go build -o build/weeve-agent-windows-x86_64.exe ./cmd/agent/agent.go
+	GOOS=linux   GOARCH=amd64 go build -o build/weeve-agent-amd64 ./cmd/agent/agent.go
+	GOOS=linux   GOARCH=arm64 go build -o build/weeve-agent-arm64 ./cmd/agent/agent.go
+	GOOS=linux   GOARCH=arm go build -o build/weeve-agent-arm ./cmd/agent/agent.go
+	GOOS=windows GOARCH=amd64 go build -o build/weeve-agent-windows-amd64.exe ./cmd/agent/agent.go
 .PHONY: cross
 
 secunet:

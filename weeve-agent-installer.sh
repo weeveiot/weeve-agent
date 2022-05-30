@@ -89,8 +89,6 @@ download_binary(){
 
   # detecting the architecture and downloading the respective weeve-agent binary
   case "$ARCH" in
-    "i386" | "i686") BINARY_NAME="weeve-agent-386"
-    ;;
     "x86_64") BINARY_NAME="weeve-agent-amd64"
     ;;
     "arm" | "armv7l") BINARY_NAME="weeve-agent-arm"
