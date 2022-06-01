@@ -8,38 +8,50 @@ log() {
 validate_token_file(){
   # looking for the file containing the github access token to download the dependencies
   if [ -z "$TOKEN_FILE" ]; then
-  log Missing argument! | argument name: token
-  log -----------------------------------------------------------------------
-  log Make sure you have a file containing the token
-  log Follow the steps :
-  log 1. Create a file named .token
-  log 2. Paste the Github Personal Access Token into the above mentioned file
-  log For more info checkout the README
-  log ------------------------------------------------------------------------
-  exit 1
+    log Missing argument! | argument name: token
+    log -----------------------------------------------------------------------
+    log Make sure you have a file containing the token
+    log Follow the steps :
+    log 1. Create a file named .token
+    log 2. Paste the Github Personal Access Token into the above mentioned file
+    log For more info checkout the README
+    log ------------------------------------------------------------------------
+    exit 1
   fi
 }
 
 get_token(){
   if [ -f "$TOKEN_FILE" ];then
-  log Reading the access key ...
-  ACCESS_KEY=$(cat "$TOKEN_FILE")
+    log Reading the access key ...
+    ACCESS_KEY=$(cat "$TOKEN_FILE")
   else
-  log The required file containing the token not found in the path: "$TOKEN_FILE"
-  exit 1
+    log The required file containing the token not found in the path: "$TOKEN_FILE"
+    exit 1
   fi
 }
 
 get_environment(){
   # reading values from the user
   if [ -z "$ENV" ]; then
-  read -r -p "Which environment do you want the node to be registered on: " ENV
+    read -r -p "Which environment do you want the node to be registered on: " ENV
   fi
 }
 
 get_nodename(){
   if [ -z "$NODE_NAME" ]; then
-  read -r -p "Give a node name: " NODE_NAME
+    read -r -p "Give a node name: " NODE_NAME
+  fi
+}
+
+get_release(){
+  if [ -z "$RELEASE" ]; then
+    read -r -p "Mention the release [stable, rolling]: " RELEASE
+  fi
+}
+
+get_test(){
+  if [ -z "$BUILD_LOCAL" ]; then
+    BUILD_LOCAL="false"
   fi
 }
 
@@ -49,11 +61,11 @@ check_for_agent(){
     log Detected existing weeve-agent contents!
     read -r -p "Proceeding with the installation will cause REMOVAL of the existing contents of weeve-agent! Do you want to proceed? y/n: " RESPONSE
     if [ "$RESPONSE" = "y" ] || [ "$RESPONSE" = "yes" ]; then
-    log Proceeding with the removal of existing weeve-agent contents ...
-    cleanup
+      log Proceeding with the removal of existing weeve-agent contents ...
+      cleanup
     else
-    log exiting ...
-    exit 0
+      log exiting ...
+      exit 0
     fi
   fi
 }
@@ -72,14 +84,22 @@ validating_docker(){
 
 build_test_binary(){
   if RESULT=$(go build -o ./weeve-agent/test-agent cmd/agent/agent.go 2>&1); then
-  log built weeve-agent binary for testing
-  chmod u+x ./weeve-agent/test-agent
-  log Changed file permission
-  BINARY_NAME="test-agent"
+    log built weeve-agent binary for testing
+    chmod u+x ./weeve-agent/test-agent
+    log Changed file permission
+    BINARY_NAME="test-agent"
   else
-  log Error occured while building binary for testing: "$RESULT"
-  exit 1
+    log Error occured while building binary for testing: "$RESULT"
+    exit 1
   fi
+}
+
+get_bucket_name(){
+    if [ "$AGENT_RELEASE" = "stable" ]; then
+      S3_BUCKET="weeve-agent"
+    elif [ "$AGENT_RELEASE" = "rolling" ]; then
+      S3_BUCKET="weeve-agent-dev-binaries"
+    fi
 }
 
 download_binary(){
@@ -100,13 +120,15 @@ download_binary(){
     ;;
   esac
 
-  if RESULT=$(cd ./weeve-agent \
-  && curl -sO https://raw.githubusercontent.com/weeveiot/weeve-agent-binaries/master/"$BINARY_NAME" 2>&1); then
+  if RESULT=$(mkdir weeve-agent \
+  && cd ./weeve-agent \
+  && wget http://"$S3_BUCKET".s3.amazonaws.com/"$BINARY_NAME" 2>&1); then
     log Weeve-agent binary downloaded
     chmod u+x ./weeve-agent/"$BINARY_NAME"
     log Changed file permission
   else
     log Error while downloading the executable: "$RESULT"
+    CLEANUP="true"
     exit 1
   fi
 }
@@ -196,32 +218,32 @@ cleanup() {
     log cleaning up the contents ...
 
     if RESULT=$(systemctl is-active weeve-agent 2>&1); then
-    systemctl stop weeve-agent
-    systemctl daemon-reload
-    log weeve-agent service stopped
+      systemctl stop weeve-agent
+      systemctl daemon-reload
+      log weeve-agent service stopped
     else
-    log weeve-agent service not running
+      log weeve-agent service not running
     fi
 
     if [ -f "$SERVICE_FILE" ]; then
-    rm "$SERVICE_FILE"
-    log "$SERVICE_FILE" removed
+      rm "$SERVICE_FILE"
+      log "$SERVICE_FILE" removed
     else
-    log "$SERVICE_FILE" doesnt exists
+      log "$SERVICE_FILE" doesnt exists
     fi
 
     if [ -f "$ARGUMENTS_FILE" ]; then
-    rm "$ARGUMENTS_FILE"
-    log "$ARGUMENTS_FILE" removed
+      rm "$ARGUMENTS_FILE"
+      log "$ARGUMENTS_FILE" removed
     else
-    log "$ARGUMENTS_FILE" doesnt exists
+      log "$ARGUMENTS_FILE" doesnt exists
     fi
 
     if [ -d "$WEEVE_AGENT_DIRECTORY" ] ; then
-    rm -r "$WEEVE_AGENT_DIRECTORY"
-    log "$WEEVE_AGENT_DIRECTORY" removed
+      rm -r "$WEEVE_AGENT_DIRECTORY"
+      log "$WEEVE_AGENT_DIRECTORY" removed
     else
-    log "$WEEVE_AGENT_DIRECTORY" doesnt exists
+      log "$WEEVE_AGENT_DIRECTORY" doesnt exists
     fi
 
   fi
@@ -241,9 +263,11 @@ ARGUMENTS_FILE=/lib/systemd/system/weeve-agent.argconf
 
 ACCESS_KEY=""
 
-BINARY_NAME=""
+BUILD_LOCAL=""
 
-BUILD="false"
+S3_BUCKET=""
+
+BINARY_NAME=""
 
 CLEANUP="false"
 
@@ -256,10 +280,11 @@ do
   VALUE=$(echo "$ARGUMENT" | cut --fields 2 --delimiter='=')
 
   case "$KEY" in
-    "token") TOKEN_FILE="$VALUE" ;;
+    "tokenfile") TOKEN_FILE="$VALUE" ;;
     "environment") ENV="$VALUE" ;;
     "nodename")  NODE_NAME="$VALUE" ;;
-    "test") BUILD="$VALUE" ;;
+    "release") AGENT_RELEASE="$VALUE" ;; 
+    "test") BUILD_LOCAL="$VALUE" ;;
     *)
   esac
 done
@@ -275,15 +300,20 @@ get_nodename
 log All arguments are set
 log Environment is set to "$ENV"
 log Name of the node is set to "$NODE_NAME"
-log Test mode is set to "$BUILD"
+log Release is set to "$AGENT_RELEASE"
+log Test mode is set to "$BUILD_LOCAL"
 check_for_agent
 
 validating_docker
 
-if [ "$BUILD" = "true" ]; then
-build_test_binary
+if [ "$BUILD_LOCAL" = "true" ]; then
+  build_test_binary
 else
-download_binary
+  get_release
+
+  get_bucket_name
+
+  download_binary
 fi
 
 download_dependencies
