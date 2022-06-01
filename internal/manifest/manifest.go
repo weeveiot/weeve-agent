@@ -143,11 +143,11 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 }
 
 func GetCommand(jsonParsed *gabs.Container) (string, error) {
-	command := jsonParsed.Search("Command").Data().(string)
-	if command == "" {
-		return "", errors.New("command not found")
+	if !jsonParsed.Exists("command") {
+		return "", errors.New("command not found in manifest")
 	}
 
+	command := jsonParsed.Search("Command").Data().(string)
 	return command, nil
 }
 
