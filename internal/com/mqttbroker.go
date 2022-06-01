@@ -65,7 +65,7 @@ func RegisterNode() error {
 		msg := handler.GetRegistrationMessage(config.GetNodeId(), config.GetNodeName())
 		log.Debugln("Sending registration request.", ">> Body:", msg)
 		for {
-			err := publishMessage(topicRegistration, msg)
+			err := publishMessage(config.GetNodeId()+"/"+topicRegistration, msg)
 			if err != nil {
 				log.Errorln("Registration failed, gonna try again in", registrationTimeout, "seconds.", err.Error())
 				time.Sleep(time.Second * registrationTimeout)
@@ -257,7 +257,7 @@ func publishMessage(topic string, message interface{}) error {
 		}
 	}
 
-	fullTopic := params.PubClientId + "/" + config.GetNodeId() + "/" + topic
+	fullTopic := params.PubClientId + "/" + topic
 	payload, err := json.Marshal(message)
 	if err != nil {
 		log.Fatal(err)
