@@ -193,6 +193,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 		registered = true
 		config.SetRegistered()
 		log.Info("Node registration done | Certificates downloaded!")
+		log.Info("Start deploying edge-application through Weeve Manager")
 
 	} else {
 		operation := strings.Replace(msg.Topic(), params.SubClientId+"/"+config.GetNodeId()+"/", "", 1)

@@ -20,8 +20,15 @@ curl -s https://raw.githubusercontent.com/weeveiot/weeve-agent/<BRANCH>/weeve-ag
 ```
 
 ```bash
-sudo sh weeve-agent-installer.sh token=<path to the file containing the token> environment=<name of the environment where node is to be registered> nodename=<name of the node>
+sudo sh weeve-agent-installer.sh token=<path to the file containing the token>
 ```
+| Parameter   | Required | Description                                            | Default  |
+| ----------- | -------- | ------------------------------------------------------ | -------- |
+| tokenfile   | true     | takes the path of the file containing the access token |          |
+| environment | false    | to set the environment in which agent is registered    |          |
+| release     | false    | to select which release of agent is to be installed    |          |
+| nodename    | false    | takes the name of the node                             |          |
+| test        | false    | set to 'true' to build agent from local and run        | false    |
 
 ## Un-installation
 
