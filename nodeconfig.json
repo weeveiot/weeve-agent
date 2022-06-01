@@ -1,7 +1,7 @@
 {
- "RootCertPath": "certs/AmazonRootCA1.pem",
- "CertPath": "certs/4be43aa6f1-certificate.pem.crt",
- "NodeId": "",
- "NodeName": "New Node8081",
- "KeyPath": "certs/4be43aa6f1-private.pem.key"
+ "RootCertPath": "F:\\Working_Directory\\Golang\\weeve-agent/certs/AmazonRootCA1.pem",
+ "CertPath": "F:\\Working_Directory\\Golang\\weeve-agent\\certs/c9b366f6-49a4-4d6c-8ec1-cdfdf4ccda3c-certificate.pem.crt",
+ "NodeId": "c9b366f6-49a4-4d6c-8ec1-cdfdf4ccda3c",
+ "NodeName": "NodeWithNewTopic",
+ "KeyPath": "F:\\Working_Directory\\Golang\\weeve-agent\\certs/c9b366f6-49a4-4d6c-8ec1-cdfdf4ccda3c-private.pem.key"
 }

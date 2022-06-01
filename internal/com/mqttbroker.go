@@ -194,7 +194,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 		log.Info("Node registration done | Certificates downloaded!")
 
 	} else if msg.Topic() == params.SubClientId+"/"+config.GetNodeId()+"/"+topicOrchestration {
-		err = handler.ProcessMessage(msg.Payload())
+		err = handler.ProcessMessage(topicOrchestration, msg.Payload())
 		if err != nil {
 			log.Error(err)
 		}
