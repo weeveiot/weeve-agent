@@ -1,10 +1,10 @@
-name: Releaser
+name: dev-release
 on:
   push:
-    tags:
-      - "*"
+    branches:
+    - dev
 jobs:
-  build-and-push:
+  push-to-s3:
     runs-on: ubuntu-18.04
     steps:
       - name: Setup golang
@@ -29,27 +29,13 @@ jobs:
       - name: Build cross compilation binary
         run: make cross
 
-      - name: Compute checksums
-        run: cd build; for f in *; do shasum --binary --algorithm 256 $f | tee -a checksums.txt > $f.sha256; done
-
-      - name: copy License
-        run: mv LICENSE build/LICENSE
-
       - name: Directory to build
         run: ls -la ./build
-
-      - name: Release artifacts
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: "build/*"
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.event.inputs.tag }}
-          bodyFile: RELEASE_NOTES.md
 
       - name: Release Binary to S3
         uses: jakejarvis/s3-sync-action@master
         env:
-          AWS_S3_BUCKET: weeve-agent/${{ github.event.inputs.tag }}
+          AWS_S3_BUCKET: weeve-agent-dev-binaries
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: eu-central-1

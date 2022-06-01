@@ -8,7 +8,7 @@ log() {
 validate_token_file(){
   # looking for the file containing the github access token to download the dependencies
   if [ -z "$TOKEN_FILE" ]; then
-    log Missing argument! | argument name: token
+    log Missing argument: tokenfile
     log -----------------------------------------------------------------------
     log Make sure you have a file containing the token
     log Follow the steps :
@@ -33,19 +33,19 @@ get_token(){
 get_environment(){
   # reading values from the user
   if [ -z "$ENV" ]; then
-    read -r -p "Which environment do you want the node to be registered on: " ENV
+    read -r -p "Enter the environment in which the node is to be registered: " ENV
   fi
 }
 
 get_nodename(){
   if [ -z "$NODE_NAME" ]; then
-    read -r -p "Give a node name: " NODE_NAME
+    read -r -p "Enter node name: " NODE_NAME
   fi
 }
 
 get_release(){
-  if [ -z "$RELEASE" ]; then
-    read -r -p "Mention the release [stable, rolling]: " RELEASE
+  if [ -z "$AGENT_RELEASE" ]; then
+    read -r -p "Select release [stable, dev]: " AGENT_RELEASE
   fi
 }
 
@@ -62,7 +62,9 @@ check_for_agent(){
     read -r -p "Proceeding with the installation will cause REMOVAL of the existing contents of weeve-agent! Do you want to proceed? y/n: " RESPONSE
     if [ "$RESPONSE" = "y" ] || [ "$RESPONSE" = "yes" ]; then
       log Proceeding with the removal of existing weeve-agent contents ...
+      CLEANUP="true"
       cleanup
+      CLEANUP="false"
     else
       log exiting ...
       exit 0
@@ -97,7 +99,7 @@ build_test_binary(){
 get_bucket_name(){
     if [ "$AGENT_RELEASE" = "stable" ]; then
       S3_BUCKET="weeve-agent"
-    elif [ "$AGENT_RELEASE" = "rolling" ]; then
+    elif [ "$AGENT_RELEASE" = "dev" ]; then
       S3_BUCKET="weeve-agent-dev-binaries"
     fi
 }
@@ -297,11 +299,13 @@ get_environment
 
 get_nodename
 
+get_test
+
 log All arguments are set
 log Environment is set to "$ENV"
 log Name of the node is set to "$NODE_NAME"
-log Release is set to "$AGENT_RELEASE"
 log Test mode is set to "$BUILD_LOCAL"
+
 check_for_agent
 
 validating_docker
