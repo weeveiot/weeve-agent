@@ -142,15 +142,6 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 	return manifest, nil
 }
 
-func GetCommand(jsonParsed *gabs.Container) (string, error) {
-	if !jsonParsed.Exists("command") {
-		return "", errors.New("command not found in manifest")
-	}
-
-	command := jsonParsed.Search("Command").Data().(string)
-	return command, nil
-}
-
 func (m Manifest) UpdateManifest(networkName string) {
 	var prevContainerName = ""
 
