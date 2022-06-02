@@ -143,13 +143,14 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 }
 
 func (m Manifest) UpdateManifest(networkName string) {
+	var prevContainerName = ""
+
 	for i, module := range m.Modules {
 		m.Modules[i].NetworkName = networkName
 		m.Modules[i].ContainerName = makeContainerName(networkName, module.ImageName, module.ImageTag, i)
 
 		m.Modules[i].EnvArgs = append(m.Modules[i].EnvArgs, fmt.Sprintf("%v=%v", "INGRESS_HOST", m.Modules[i].ContainerName))
 
-		var prevContainerName = ""
 		if i > 0 {
 			m.Modules[i].EnvArgs = append(m.Modules[i].EnvArgs, fmt.Sprintf("%v=%v", "PREV_CONTAINER_NAME", prevContainerName))
 
@@ -165,7 +166,6 @@ func (m Manifest) UpdateManifest(networkName string) {
 			}
 		}
 		prevContainerName = m.Modules[i].ContainerName
-
 	}
 }
 
