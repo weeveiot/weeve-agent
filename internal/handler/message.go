@@ -35,14 +35,18 @@ type registrationMessage struct {
 	Name      string `json:"name"`
 }
 
-func ProcessMessage(operation string, payload []byte) error {
-	log.Info("Processing the message >> ", operation)
-
+func ProcessMessage(payload []byte) error {
 	jsonParsed, err := gabs.ParseJSON(payload)
 	if err != nil {
 		return err
 	}
 	log.Debug("Parsed JSON >> ", jsonParsed)
+
+	operation, err := manifest.GetCommand(jsonParsed)
+	if err != nil {
+		return err
+	}
+	log.Info("Processing the message >> ", operation)
 
 	switch operation {
 	case dataservice.CMDDeploy:

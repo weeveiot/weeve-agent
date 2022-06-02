@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"io/ioutil"
-	"strings"
 	"time"
 
 	"github.com/Jeffail/gabs/v2"
@@ -194,9 +193,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 		log.Info("Node registration done | Certificates downloaded!")
 
 	} else {
-		operation := strings.Replace(msg.Topic(), params.SubClientId+"/"+config.GetNodeId()+"/", "", 1)
-
-		err = handler.ProcessMessage(operation, msg.Payload())
+		err = handler.ProcessMessage(msg.Payload())
 		if err != nil {
 			log.Error(err)
 		}

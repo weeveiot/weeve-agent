@@ -16,11 +16,12 @@ import (
 )
 
 type Manifest struct {
-	ID      string
-	Version string
-	Name    string
-	Modules []ContainerConfig
-	Labels  map[string]string
+	ID              string
+	VersionName     string
+	VersionNumber   string
+	ApplicationName string
+	Modules         []ContainerConfig
+	Labels          map[string]string
 }
 
 // This struct holds information for starting a container
@@ -54,18 +55,20 @@ The manifest JSON object itself is parsed into a golang 'gabs' object.
 (see https://github.com/Jeffail/gabs)
 */
 func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
-	manifestID := jsonParsed.Search("id").Data().(string)
-	version := jsonParsed.Search("version").Data().(string)
-	manifestName := jsonParsed.Search("name").Data().(string)
+	manifestID := jsonParsed.Search("_id").Data().(string)
+	applicationID := jsonParsed.Search("applicationID").Data().(string)
+	versionName := jsonParsed.Search("versionName").Data().(string)
+	versionNumber := jsonParsed.Search("versionNumber").Data().(string)
 	labels := map[string]string{
-		"manifestID": manifestID,
-		"version":    version,
-		"name":       manifestName,
+		"manifestID":    manifestID,
+		"applicationID": applicationID,
+		"versionName":   versionName,
+		"versionNumber": versionNumber,
 	}
 
 	var containerConfigs []ContainerConfig
 
-	for _, module := range jsonParsed.Search("services").Children() {
+	for _, module := range jsonParsed.Search("modules").Children() {
 		var containerConfig ContainerConfig
 
 		containerConfig.ImageName = module.Search("image").Search("name").Data().(string)
@@ -132,14 +135,24 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 	}
 
 	manifest := Manifest{
-		ID:      manifestID,
-		Version: version,
-		Name:    manifestName,
-		Modules: containerConfigs,
-		Labels:  labels,
+		ID:              manifestID,
+		ApplicationName: applicationID,
+		VersionName:     versionName,
+		VersionNumber:   versionNumber,
+		Modules:         containerConfigs,
+		Labels:          labels,
 	}
 
 	return manifest, nil
+}
+
+func GetCommand(jsonParsed *gabs.Container) (string, error) {
+	if !jsonParsed.Exists("command") {
+		return "", errors.New("command not found in manifest")
+	}
+
+	command := jsonParsed.Search("Command").Data().(string)
+	return command, nil
 }
 
 func (m Manifest) UpdateManifest(networkName string) {
