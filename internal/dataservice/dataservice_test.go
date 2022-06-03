@@ -56,7 +56,7 @@ func TestDeployManifest(t *testing.T) {
 	// Fill the placeholders for Start and Stop tests
 	manifestID = thisManifest.ID
 	log.Info(manifestID)
-	version = thisManifest.Version
+	version = thisManifest.VersionName
 	log.Info(version)
 
 	err = dataservice.DeployDataService(thisManifest, "deploy")
@@ -271,7 +271,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	// Fill the placeholders for Start and Stop tests
 	manifestID = thisManifest.ID
 	log.Info(manifestID)
-	version = thisManifest.Version
+	version = thisManifest.VersionName
 	log.Info(version)
 
 	err = dataservice.DeployDataService(thisManifest, "deploy")
@@ -302,7 +302,7 @@ func TestUndeployDataService2SameServices(t *testing.T) {
 	// Fill the placeholders for Start and Stop tests
 	manifestID2 = thisManifest2.ID
 	log.Info(manifestID2)
-	version2 = thisManifest2.Version
+	version2 = thisManifest2.VersionName
 	log.Info(version2)
 
 	err = dataservice.DeployDataService(thisManifest2, "deploy")
@@ -375,7 +375,7 @@ func TestRedeployDataService(t *testing.T) {
 	// Fill the placeholders for Start and Stop tests
 	manifestID = thisManifest.ID
 	log.Info(manifestID)
-	version = thisManifest.Version
+	version = thisManifest.VersionName
 	log.Info(version)
 
 	err = dataservice.DeployDataService(thisManifest, "deploy")
@@ -423,7 +423,7 @@ func TestRedeployDataService(t *testing.T) {
 	// Fill the placeholders for Start and Stop tests
 	manifestID = thisManifest.ID
 	log.Info(manifestID)
-	version = thisManifest.Version
+	version = thisManifest.VersionName
 	log.Info(version)
 
 	err = dataservice.DeployDataService(thisManifestRedeploy, "redeploy")
@@ -445,7 +445,7 @@ func TestRedeployDataService(t *testing.T) {
 	// ***************** CLEANING AFTER TESTING ******************** //
 	log.Info("Cleaning after testing...")
 	redeployedManifestID := thisManifestRedeploy.ID
-	redeployedVersion := thisManifestRedeploy.Version
+	redeployedVersion := thisManifestRedeploy.VersionName
 	err = dataservice.UndeployDataService(redeployedManifestID, redeployedVersion)
 	if err != nil {
 		t.Errorf("UndeployDataService returned %v status", err)

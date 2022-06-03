@@ -42,6 +42,7 @@ type ContainerConfig struct {
 }
 
 type RegistryDetails struct {
+	Url       string
 	ImageName string
 	UserName  string
 	Password  string
@@ -74,41 +75,33 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 		containerConfig.ImageName = module.Search("image").Search("name").Data().(string)
 		containerConfig.ImageTag = module.Search("image").Search("tag").Data().(string)
 		containerConfig.Labels = labels
-		containerConfig.NetworkDriver = jsonParsed.Search("networks").Search("driver").Data().(string)
 
 		imageName := containerConfig.ImageName
 		if containerConfig.ImageTag != "" {
 			imageName = imageName + ":" + containerConfig.ImageTag
 		}
+
+		var url string
 		var userName string
 		var password string
-		if data := module.Search("registry").Search("userName").Data(); data != nil {
+		if data := module.Search("image").Search("registry").Search("url").Data(); data != nil {
+			url = data.(string)
+		}
+		if data := module.Search("image").Search("registry").Search("userName").Data(); data != nil {
 			userName = data.(string)
 		}
-		if data := module.Search("registry").Search("password").Data(); data != nil {
+		if data := module.Search("image").Search("registry").Search("password").Data(); data != nil {
 			password = data.(string)
 		}
-		containerConfig.Registry = RegistryDetails{imageName, userName, password}
+		containerConfig.Registry = RegistryDetails{url, imageName, userName, password}
 
-		envJson := module.Search("environments").Children()
+		envJson := module.Search("envs").Children()
 		var envArgs = parseArguments(envJson, false)
 
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "SERVICE_ID", manifestID))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_NAME", containerConfig.ImageName))
-		typesMap := map[string]string{
-			"input":   "INGRESS",
-			"process": "PROCESS",
-			"output":  "EGRESS",
-		}
-		moduleType := typesMap[module.Search("type").Data().(string)]
-		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_TYPE", moduleType))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PORT", 80))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PATH", "/"))
-
-		// since there is no cmd in module's dockerfile, need to move commands to environments
-		for _, cmd := range module.Search("commands").Children() {
-			envArgs = append(envArgs, fmt.Sprintf("%v=%v", cmd.Search("key").Data().(string), cmd.Search("value").Data().(string)))
-		}
 
 		containerConfig.EnvArgs = envArgs
 
@@ -151,18 +144,17 @@ func GetCommand(jsonParsed *gabs.Container) (string, error) {
 		return "", errors.New("command not found in manifest")
 	}
 
-	command := jsonParsed.Search("Command").Data().(string)
+	command := jsonParsed.Search("command").Data().(string)
 	return command, nil
 }
 
 func (m Manifest) UpdateManifest(networkName string) {
+	var prevContainerName = ""
 	for i, module := range m.Modules {
 		m.Modules[i].NetworkName = networkName
 		m.Modules[i].ContainerName = makeContainerName(networkName, module.ImageName, module.ImageTag, i)
 
 		m.Modules[i].EnvArgs = append(m.Modules[i].EnvArgs, fmt.Sprintf("%v=%v", "INGRESS_HOST", m.Modules[i].ContainerName))
-
-		var prevContainerName = ""
 		if i > 0 {
 			m.Modules[i].EnvArgs = append(m.Modules[i].EnvArgs, fmt.Sprintf("%v=%v", "PREV_CONTAINER_NAME", prevContainerName))
 

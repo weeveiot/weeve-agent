@@ -19,28 +19,28 @@ const CMDUndeploy = "undeploy"
 
 func DeployDataService(man manifest.Manifest, command string) error {
 	//******** STEP 1 - Check if Data Service is already deployed *************//
-	deploymentID := man.ID + "-" + man.Version + " | "
+	deploymentID := man.ID + "-" + man.VersionName + " | "
 
 	log.Info(deploymentID, fmt.Sprintf("%ving data service ...", command))
 
-	dataServiceExists, err := DataServiceExist(man.ID, man.Version)
+	dataServiceExists, err := DataServiceExist(man.ID, man.VersionName)
 	if err != nil {
 		log.Error(deploymentID, err)
-		manifest.SetStatus(man.ID, man.Version, strings.ToUpper(command)+"_FAILED")
+		manifest.SetStatus(man.ID, man.VersionName, strings.ToUpper(command)+"_FAILED")
 		return err
 	}
 
 	if dataServiceExists {
 		if command == CMDDeploy {
-			log.Info(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", man.ID, man.Version))
+			log.Info(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", man.ID, man.VersionName))
 			return errors.New("data service already exists")
 
 		} else if command == CMDReDeploy || command == CMDDeployLocal {
 			// Clean old data service resources
-			err := UndeployDataService(man.ID, man.Version)
+			err := UndeployDataService(man.ID, man.VersionName)
 			if err != nil {
 				log.Error(deploymentID, "Error while cleaning old data service -> ", err)
-				manifest.SetStatus(man.ID, man.Version, strings.ToUpper(command)+"_FAILED")
+				manifest.SetStatus(man.ID, man.VersionName, strings.ToUpper(command)+"_FAILED")
 				return errors.New("redeployment failed")
 			}
 		}
@@ -66,7 +66,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 			if err != nil {
 				msg := "Unable to pull image/s, " + err.Error()
 				log.Error(deploymentID, msg)
-				manifest.SetStatus(man.ID, man.Version, strings.ToUpper(command))
+				manifest.SetStatus(man.ID, man.VersionName, strings.ToUpper(command))
 				return errors.New("unable to pull image/s")
 
 			}
@@ -76,10 +76,10 @@ func DeployDataService(man manifest.Manifest, command string) error {
 	//******** STEP 3 - Create the network *************//
 	log.Info(deploymentID, "Creating network ...")
 
-	networkName, err := docker.CreateNetwork(man.Name, man.Labels)
+	networkName, err := docker.CreateNetwork(man.ApplicationName, man.Labels)
 	if err != nil {
 		log.Error(err)
-		manifest.SetStatus(man.ID, man.Version, strings.ToUpper(command)+"_FAILED")
+		manifest.SetStatus(man.ID, man.VersionName, strings.ToUpper(command)+"_FAILED")
 		return err
 	}
 
@@ -93,9 +93,9 @@ func DeployDataService(man manifest.Manifest, command string) error {
 
 	if len(containerConfigs) == 0 {
 		log.Error(deploymentID, "No valid contianers in Manifest")
-		manifest.SetStatus(man.ID, man.Version, strings.ToUpper(command)+"_FAILED")
+		manifest.SetStatus(man.ID, man.VersionName, strings.ToUpper(command)+"_FAILED")
 		log.Info(deploymentID, "Initiating rollback ...")
-		UndeployDataService(man.ID, man.Version)
+		UndeployDataService(man.ID, man.VersionName)
 		return errors.New("no valid contianers in manifest")
 	}
 
@@ -104,16 +104,16 @@ func DeployDataService(man manifest.Manifest, command string) error {
 		containerID, err := docker.CreateAndStartContainer(containerConfig)
 		if err != nil {
 			log.Error(deploymentID, "Failed to create and start container", containerConfig.ContainerName)
-			manifest.SetStatus(man.ID, man.Version, strings.ToUpper(command)+"_FAILED")
+			manifest.SetStatus(man.ID, man.VersionName, strings.ToUpper(command)+"_FAILED")
 			log.Info(deploymentID, "Initiating rollback ...")
-			UndeployDataService(man.ID, man.Version)
+			UndeployDataService(man.ID, man.VersionName)
 			return err
 		}
 		log.Info(deploymentID, "Successfully created container ", containerID, " with args: ", containerConfig.EntryPointArgs)
 		log.Info(deploymentID, "Started!")
 	}
 
-	manifest.SetStatus(man.ID, man.Version, strings.ToUpper(command)+"ED")
+	manifest.SetStatus(man.ID, man.VersionName, strings.ToUpper(command)+"ED")
 
 	return nil
 }
