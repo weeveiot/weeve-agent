@@ -18,7 +18,7 @@ import (
 type Manifest struct {
 	ID              string
 	VersionName     string
-	VersionNumber   string
+	VersionNumber   float64
 	ApplicationName string
 	Modules         []ContainerConfig
 	Labels          map[string]string
@@ -59,12 +59,12 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 	manifestID := jsonParsed.Search("_id").Data().(string)
 	applicationID := jsonParsed.Search("applicationID").Data().(string)
 	versionName := jsonParsed.Search("versionName").Data().(string)
-	versionNumber := jsonParsed.Search("versionNumber").Data().(string)
+	versionNumber := jsonParsed.Search("versionNumber").Data().(float64)
 	labels := map[string]string{
 		"manifestID":    manifestID,
 		"applicationID": applicationID,
 		"versionName":   versionName,
-		"versionNumber": versionNumber,
+		"versionNumber": fmt.Sprint(versionNumber),
 	}
 
 	var containerConfigs []ContainerConfig
@@ -104,25 +104,15 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PATH", "/"))
 
 		containerConfig.EnvArgs = envArgs
-
-		if docData := module.Search("document").Data(); docData != nil {
-			document := strings.ReplaceAll(docData.(string), "'", "\"")
-			parsedDoc, err := gabs.ParseJSON([]byte(document))
-			if err != nil {
-				return Manifest{}, err
-			}
-
-			containerConfig.MountConfigs, err = getMounts(parsedDoc)
-			if err != nil {
-				return Manifest{}, err
-			}
-
-			exposedPorts, portBinding := getPorts(parsedDoc, envJson)
-			containerConfig.ExposedPorts = exposedPorts
-			containerConfig.PortBinding = portBinding
+		var err error
+		containerConfig.MountConfigs, err = getMounts(module)
+		if err != nil {
+			return Manifest{}, err
 		}
 
-		containerConfig.EntryPointArgs = parseArguments(module.Search("commands").Children(), true)
+		exposedPorts, portBinding := getPorts(module, envJson)
+		containerConfig.ExposedPorts = exposedPorts
+		containerConfig.PortBinding = portBinding
 
 		containerConfigs = append(containerConfigs, containerConfig)
 	}
@@ -217,7 +207,7 @@ func parseArguments(options []*gabs.Container, cmdArgs bool) []string {
 func getMounts(parsedJson *gabs.Container) ([]mount.Mount, error) {
 	mounts := []mount.Mount{}
 	m, ok := parsedJson.Search("mounts").Data().([]interface{})
-	if ok && m != nil {
+	if ok && len(m) > 0 {
 		strMounts, err := json.Marshal(m)
 		if err != nil {
 			return nil, err

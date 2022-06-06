@@ -34,6 +34,10 @@
 				{
 					"key": "QOS",
 					"value": "1"
+				},
+				{
+					"key":"MODULE_TYPE",
+					"value":"INGRESS"
 				}
 			],
 			"ports": [],
@@ -67,6 +71,10 @@
 				{
 					"key": "COMPARE_VALUE",
 					"value": "15"
+				},
+				{
+					"key":"MODULE_TYPE",
+					"value":"PROCESS"
 				}
 			],
 			"ports": [],
@@ -100,6 +108,10 @@
 				{
 					"key": "LABELS",
 					"value": "temperature, pressure"
+				},
+				{
+					"key":"MODULE_TYPE",
+					"value":"EGRESS"
 				}
 			],
 			"ports": [],
