@@ -8,7 +8,7 @@ log() {
 validate_token_file(){
   # looking for the file containing the github access token to download the dependencies
   if [ -z "$TOKEN_FILE" ]; then
-    log Missing argument: tokenfile
+    log Missing argument: tokenpath
     log -----------------------------------------------------------------------
     log Make sure you have a file containing the token
     log Follow the steps :
@@ -282,7 +282,7 @@ do
   VALUE=$(echo "$ARGUMENT" | cut --fields 2 --delimiter='=')
 
   case "$KEY" in
-    "tokenfile") TOKEN_FILE="$VALUE" ;;
+    "tokenpath") TOKEN_FILE="$VALUE" ;;
     "environment") ENV="$VALUE" ;;
     "nodename")  NODE_NAME="$VALUE" ;;
     "release") AGENT_RELEASE="$VALUE" ;; 
