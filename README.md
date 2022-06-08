@@ -8,10 +8,8 @@ The weeve agent is a lightweight service to orchestrate data pipelines. A data p
 
 Please make sure:
 
-1. You have a Github Personal Access Token
-2. There is a file named .token in the local
-3. The above mentioned file contains the token (token pasted into the file)
-4. Set the value of the argument "token", with the path of the above mentioned file
+1. There is a hidden file in the local machine containing the Github Personal Access Token (pasting the token into the hidden file)
+2. Set the value of the argument "tokenpath", with the path of the above mentioned file
 
 ## Installation
 
@@ -20,7 +18,7 @@ curl -s https://raw.githubusercontent.com/weeveiot/weeve-agent/<BRANCH>/weeve-ag
 ```
 
 ```bash
-sudo sh weeve-agent-installer.sh tokenpath=<path to the file containing the token>
+sudo sh weeve-agent-installer.sh tokenpath=<path to the hidden file containing the token>
 ```
 | Parameter   | Required | Description                                                 | Possible Values            | Default   |
 | ----------- | -------- | ------------------------------------------------------------| ---------------------------|-----------|
@@ -248,7 +246,7 @@ Upon first execution;
 NOTE:
 It is possible to run multiple instances of the weeve agent in a single host. Each process would be running independently and be bootstrapped with as a dedicated IoT thing.
 
-### DELETING A NODE
+### Deleting a node
 
 To delete the IoT thing, call the API - deleteNode.
 This will remove the following:

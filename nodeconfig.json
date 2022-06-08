@@ -1,8 +1,8 @@
 {
  "RootCertPath": "certs/AmazonRootCA1.pem",
- "CertPath": "certs/awsdev-certificate.pem.crt",
- "NodeId": "",
+ "CertPath": "certs/544ff7d7-e024-4d94-8665-45f5c0621749-certificate.pem.crt",
+ "KeyPath": "certs/544ff7d7-e024-4d94-8665-45f5c0621749-private.pem.key",
+ "NodeId": "544ff7d7-e024-4d94-8665-45f5c0621749",
  "NodeName": "New Node8081",
- "KeyPath": "certs/awsdev-private.pem.key",
- "Registered": "false"
+ "Registered": true
 }

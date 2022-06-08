@@ -40,7 +40,6 @@ func SetParams(opt model.Params) {
 	log.Debugf("Set the following MQTT params: %+v", params)
 }
 
-var registered bool
 var connected = false
 
 var publisher mqtt.Client
@@ -51,7 +50,6 @@ const registrationTimeout = 5
 func RegisterNode() error {
 	if !config.IsNodeRegistered() {
 		log.Info("Registering node and downloading certificate and key ...")
-		registered = false
 		config.SetNodeId(uuid.New().String())
 		var err error
 		publisher, err = initBrokerChannel(params.PubClientId+"/"+config.GetNodeId()+"/"+topicRegistration, false)
@@ -76,19 +74,18 @@ func RegisterNode() error {
 		}
 
 		log.Info("Waiting for the registration process to finish...")
-		for !registered {
+		for !config.Params.Registered {
 			time.Sleep(time.Second * registrationTimeout)
 		}
 	} else {
 		log.Info("Node already registered!")
-		registered = true
 	}
 
 	return nil
 }
 
 func SendHeartbeat() error {
-	log.Debug("Node registered >> ", registered, " | connected >> ", connected)
+	log.Debug("Node registered >> ", config.Params.Registered, " | connected >> ", connected)
 	defer time.Sleep(time.Second * time.Duration(params.Heartbeat))
 	err := reconnectIfNecessary()
 	if err != nil {
@@ -190,10 +187,10 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 		}
 
 		config.SetCertPath(certificatePath, keyPath)
-		registered = true
-		config.SetRegistered()
+		config.Params.Registered = true
+		config.WriteNodeConfigToFile()
 		log.Info("Node registration done | Certificates downloaded!")
-		log.Info("Start deploying edge-application through Weeve Manager")
+		log.Info("You can start deploying edge-application through Weeve Manager")
 
 	} else {
 		operation := strings.Replace(msg.Topic(), params.SubClientId+"/"+config.GetNodeId()+"/", "", 1)
@@ -206,10 +203,10 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 }
 
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
-	log.Info("ON connect >> connected >> registered : ", registered)
+	log.Info("ON connect >> connected >> registered : ", config.Params.Registered)
 	var topicName string
 	topicName = params.SubClientId + "/" + config.GetNodeId() + "/" + topicCertificate
-	if registered {
+	if config.Params.Registered {
 		topicName = params.SubClientId + "/" + config.GetNodeId() + "/+"
 	}
 

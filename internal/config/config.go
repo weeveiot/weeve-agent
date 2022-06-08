@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/model"
@@ -14,37 +13,37 @@ import (
 
 var ConfigPath string
 
-var params struct {
+var Params struct {
 	RootCertPath string
 	CertPath     string
 	KeyPath      string
 	NodeId       string
 	NodeName     string
-	Registered   string
+	Registered   bool
 }
 
 func GetRootCertPath() string {
-	return params.RootCertPath
+	return Params.RootCertPath
 }
 
 func GetCertPath() string {
-	return params.CertPath
+	return Params.CertPath
 }
 
 func GetNodeId() string {
-	return params.NodeId
+	return Params.NodeId
 }
 
 func GetNodeName() string {
-	return params.NodeName
+	return Params.NodeName
 }
 
 func GetKeyPath() string {
-	return params.KeyPath
+	return Params.KeyPath
 }
 
-func writeNodeConfigToFile() {
-	encodedJson, err := json.MarshalIndent(params, "", " ")
+func WriteNodeConfigToFile() {
+	encodedJson, err := json.MarshalIndent(Params, "", " ")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -64,7 +63,7 @@ func readNodeConfigFromFile() {
 
 	decoder := json.NewDecoder(jsonFile)
 	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&params)
+	err = decoder.Decode(&Params)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -78,63 +77,55 @@ func UpdateNodeConfig(opt model.Params) {
 
 	var configChanged bool
 	if len(opt.NodeId) > 0 {
-		params.NodeId = opt.NodeId
+		Params.NodeId = opt.NodeId
 		configChanged = true
 	}
 
 	if len(opt.RootCertPath) > 0 {
-		params.RootCertPath = opt.RootCertPath
+		Params.RootCertPath = opt.RootCertPath
 		configChanged = true
 	}
 
 	if len(opt.CertPath) > 0 {
-		params.CertPath = opt.CertPath
+		Params.CertPath = opt.CertPath
 		configChanged = true
 	}
 
 	if len(opt.KeyPath) > 0 {
-		params.KeyPath = opt.KeyPath
+		Params.KeyPath = opt.KeyPath
 		configChanged = true
 	}
 
 	if len(opt.NodeName) > 0 {
-		params.NodeName = opt.NodeName
+		Params.NodeName = opt.NodeName
 		configChanged = true
 	} else {
 		// randomize the default node name from the config file
-		if params.NodeName == "" || params.NodeName == defaultNodeName {
-			params.NodeName = fmt.Sprintf(defaultNodeName+"%d", rand.Intn(maxNumNodes))
+		if Params.NodeName == "" || Params.NodeName == defaultNodeName {
+			Params.NodeName = fmt.Sprintf(defaultNodeName+"%d", rand.Intn(maxNumNodes))
 			configChanged = true
 		}
 	}
 
-	log.Debugf("Set node config to following params: %+v", params)
+	log.Debugf("Set node config to following params: %+v", Params)
 	if configChanged {
-		writeNodeConfigToFile()
+		WriteNodeConfigToFile()
 	}
 }
 
 func SetNodeId(nodeId string) {
-	params.NodeId = nodeId
+	Params.NodeId = nodeId
 
-	writeNodeConfigToFile()
+	WriteNodeConfigToFile()
 }
 
 func SetCertPath(certificatePath, keyPath string) {
-	params.CertPath = certificatePath
-	params.KeyPath = keyPath
+	Params.CertPath = certificatePath
+	Params.KeyPath = keyPath
 
-	writeNodeConfigToFile()
+	WriteNodeConfigToFile()
 }
 
 func IsNodeRegistered() bool {
-	readNodeConfigFromFile()
-
-	return strings.Contains(params.Registered, "true")
-}
-
-func SetRegistered() {
-	params.Registered = "true"
-
-	writeNodeConfigToFile()
+	return Params.Registered
 }

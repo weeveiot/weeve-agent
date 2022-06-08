@@ -12,7 +12,7 @@ validate_token_file(){
     log -----------------------------------------------------------------------
     log Make sure you have a file containing the token
     log Follow the steps :
-    log 1. Create a file named .token
+    log 1. Create a hidden file
     log 2. Paste the Github Personal Access Token into the above mentioned file
     log For more info checkout the README
     log ------------------------------------------------------------------------
@@ -197,7 +197,7 @@ start_service(){
     log Error while starting the weeve-agent service: "$RESULT"
     log For good measure please check:
     log   1. if the file contains the access token
-    log   2. if the access token in github has expired
+    log   2. if the access token in github is not expired
     CLEANUP="true"
     exit 1
   fi
