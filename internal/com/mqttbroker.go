@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"io/ioutil"
-	"strings"
 	"time"
 
 	"github.com/Jeffail/gabs/v2"
@@ -17,21 +16,21 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
-const topicRegistration = "Registration"
-const topicCertificate = "Certificate"
+const topicRegistration = "registration"
+const topicCertificate = "certificate"
+const topicOrchestration = "orchestration"
+const topicNodeStatus = "nodestatus"
 
 var params struct {
-	Broker          string
-	StatusTopicName string
-	PubClientId     string
-	SubClientId     string
-	NoTLS           bool
-	Heartbeat       int
+	Broker      string
+	PubClientId string
+	SubClientId string
+	NoTLS       bool
+	Heartbeat   int
 }
 
 func SetParams(opt model.Params) {
 	params.Broker = opt.Broker
-	params.StatusTopicName = opt.StatusTopicName
 	params.PubClientId = opt.PubClientId
 	params.SubClientId = opt.SubClientId
 	params.NoTLS = opt.NoTLS
@@ -64,7 +63,7 @@ func RegisterNode() error {
 		msg := handler.GetRegistrationMessage(config.GetNodeId(), config.GetNodeName())
 		log.Debugln("Sending registration request.", ">> Body:", msg)
 		for {
-			err := publishMessage(topicRegistration, msg)
+			err := publishMessage(config.GetNodeId()+"/"+topicRegistration, msg)
 			if err != nil {
 				log.Errorln("Registration failed, gonna try again in", registrationTimeout, "seconds.", err.Error())
 				time.Sleep(time.Second * registrationTimeout)
@@ -92,9 +91,10 @@ func SendHeartbeat() error {
 		return err
 	}
 
+	nodeStatusTopic := topicNodeStatus + "/" + config.GetNodeId()
 	msg := handler.GetStatusMessage(config.GetNodeId())
-	log.Debugln("Sending update >>", "Topic:", params.StatusTopicName, ">> Body:", msg)
-	err = publishMessage(params.StatusTopicName, msg)
+	log.Debugln("Sending update >>", "Topic:", nodeStatusTopic, ">> Body:", msg)
+	err = publishMessage(nodeStatusTopic, msg)
 	if err != nil {
 		return err
 	}
@@ -192,10 +192,8 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 		log.Info("Node registration done | Certificates downloaded!")
 		log.Info("You can start deploying edge-application through Weeve Manager")
 
-	} else {
-		operation := strings.Replace(msg.Topic(), params.SubClientId+"/"+config.GetNodeId()+"/", "", 1)
-
-		err = handler.ProcessMessage(operation, msg.Payload())
+	} else if msg.Topic() == params.SubClientId+"/"+config.GetNodeId()+"/"+topicOrchestration {
+		err = handler.ProcessMessage(topicOrchestration, msg.Payload())
 		if err != nil {
 			log.Error(err)
 		}
@@ -206,8 +204,9 @@ var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
 	log.Info("ON connect >> connected >> registered : ", config.Params.Registered)
 	var topicName string
 	topicName = params.SubClientId + "/" + config.GetNodeId() + "/" + topicCertificate
+
 	if config.Params.Registered {
-		topicName = params.SubClientId + "/" + config.GetNodeId() + "/+"
+		topicName = params.SubClientId + "/" + config.GetNodeId() + "/" + topicOrchestration
 	}
 
 	log.Debug("ON connect >> subscribes >> topicName : ", topicName)
@@ -258,7 +257,7 @@ func publishMessage(topic string, message interface{}) error {
 		}
 	}
 
-	fullTopic := params.PubClientId + "/" + config.GetNodeId() + "/" + topic
+	fullTopic := params.PubClientId + "/" + topic
 	payload, err := json.Marshal(message)
 	if err != nil {
 		log.Fatal(err)

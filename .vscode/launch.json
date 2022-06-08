@@ -54,7 +54,61 @@
       ]
     },
     {
+      "name": "WeeveAgentDevAutoReg",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceRoot}/cmd/agent/agent.go",
+      "showLog": true,
+      "args": [
+        "-v",
+        "-b",
+        "tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883",
+        "-s",
+        "nodes/awsdev",
+        "-c",
+        "manager/awsdev",
+        "-r",
+        "${workspaceRoot}/certs/AmazonRootCA1.pem",
+        "-f",
+        "${workspaceRoot}/certs/4be43aa6f1-certificate.pem.crt",
+        "-k",
+        "${workspaceRoot}/certs/4be43aa6f1-private.pem.key",
+        "-n",
+        "NodeWithNewTopic",
+        "--heartbeat",
+        "120",
+        "--loglevel",
+        "debug",
+        "--config",
+        "${workspaceRoot}/nodeconfig.json"
+      ]
+    },
+    {
       "name": "WeeveAgentDev",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceRoot}/cmd/agent/agent.go",
+      "showLog": true,
+      "args": [
+        "-v",
+        "-b",
+        "tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883",
+        "-s",
+        "nodes/awsdev",
+        "-c",
+        "manager/awsdev",
+        "--heartbeat",
+        "120",
+        "--loglevel",
+        "debug",
+        "--config",
+        "${workspaceRoot}/nodeconfig.json"
+      ]
+    },
+    {
+      "name": "WeeveAgentLocalDeploy",
       "type": "go",
       "request": "launch",
       "mode": "debug",
@@ -75,7 +129,9 @@
         "--loglevel",
         "debug",
         "--config",
-        "${workspaceRoot}/nodeconfig.json"
+        "${workspaceRoot}/nodeconfig.json",
+        "--manifest",
+        "F:\\Working_Directory\\Golang\\weeve-agent\\testdata\\pipeline_integration_public\\workingMVP.json"
       ]
     },
     {
