@@ -1,8 +1,8 @@
 {
- "RootCertPath": "certs/AmazonRootCA1.pem",
- "CertPath": "certs/544ff7d7-e024-4d94-8665-45f5c0621749-certificate.pem.crt",
- "KeyPath": "certs/544ff7d7-e024-4d94-8665-45f5c0621749-private.pem.key",
- "NodeId": "544ff7d7-e024-4d94-8665-45f5c0621749",
- "NodeName": "New Node8081",
- "Registered": true
+    "RootCertPath": "certs/AmazonRootCA1.pem",
+    "CertPath": "certs/4be43aa6f1-certificate.pem.crt",
+    "KeyPath": "certs/4be43aa6f1-private.pem.key",
+    "NodeId": "",
+    "NodeName": "New Node8081",
+    "Registered": false
 }
