@@ -134,12 +134,12 @@ func ReadAllContainers() ([]types.Container, error) {
 	return containers, nil
 }
 
-func ReadDataServiceContainers(manifestID string, version string) ([]types.Container, error) {
+func ReadDataServiceContainers(applicationID string, versionName string) ([]types.Container, error) {
 	log.Debug("Docker_container -> ReadDataServiceContainers")
 
 	filter := filters.NewArgs()
-	filter.Add("label", "manifestID="+manifestID)
-	filter.Add("label", "version="+version)
+	filter.Add("label", "applicationID="+applicationID)
+	filter.Add("label", "versionName="+versionName)
 	options := types.ContainerListOptions{All: true, Filters: filter}
 	containers, err := dockerClient.ContainerList(context.Background(), options)
 	if err != nil {

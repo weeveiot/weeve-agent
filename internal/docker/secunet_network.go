@@ -63,8 +63,8 @@ func readAllNetworks() []types.NetworkResource {
 	return networks
 }
 
-func ReadDataServiceNetworks(manifestID string, version string) ([]types.NetworkResource, error) {
-	key := manifestID + version
+func ReadDataServiceNetworks(applicationID string, versionName string) ([]types.NetworkResource, error) {
+	key := applicationID + versionName
 	networkName := existingNetworks[key]
 
 	if networkName == "" {
@@ -85,13 +85,13 @@ func CreateNetwork(name string, labels map[string]string) (string, error) {
 		return "", errors.New("failed to generate network name")
 	}
 
-	key := labels["manifestID"] + labels["version"]
+	key := labels["applicationID"] + labels["versionName"]
 	existingNetworks[key] = networkName
 	return networkName, nil
 }
 
-func NetworkPrune(manifestID string, version string) error {
-	key := manifestID + version
+func NetworkPrune(applicationID string, versionName string) error {
+	key := applicationID + versionName
 	delete(existingNetworks, key)
 	return nil
 }

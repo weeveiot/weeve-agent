@@ -1,7 +1,6 @@
 package manifest
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -16,12 +15,17 @@ import (
 )
 
 type Manifest struct {
-	ID              string
-	VersionName     string
-	VersionNumber   float64
-	ApplicationName string
-	Modules         []ContainerConfig
-	Labels          map[string]string
+	ID            string
+	VersionName   string
+	VersionNumber float64
+	ApplicationID string
+	Modules       []ContainerConfig
+	Labels        map[string]string
+}
+
+type ManifestUniqueID struct {
+	VersionName   string
+	ApplicationID string
 }
 
 // This struct holds information for starting a container
@@ -118,12 +122,12 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 	}
 
 	manifest := Manifest{
-		ID:              manifestID,
-		ApplicationName: applicationID,
-		VersionName:     versionName,
-		VersionNumber:   versionNumber,
-		Modules:         containerConfigs,
-		Labels:          labels,
+		ID:            manifestID,
+		ApplicationID: applicationID,
+		VersionName:   versionName,
+		VersionNumber: versionNumber,
+		Modules:       containerConfigs,
+		Labels:        labels,
 	}
 
 	return manifest, nil
@@ -136,6 +140,16 @@ func GetCommand(jsonParsed *gabs.Container) (string, error) {
 
 	command := jsonParsed.Search("command").Data().(string)
 	return command, nil
+}
+
+func GetEdgeAppUniqueID(parsedJson *gabs.Container) (ManifestUniqueID, error) {
+	applicationID := parsedJson.Search("applicationID").Data().(string)
+	versionName := parsedJson.Search("versionName").Data().(string)
+	if applicationID == "" || versionName == "" {
+		return ManifestUniqueID{}, errors.New("unique ID fields are missing in given manifest")
+	}
+
+	return ManifestUniqueID{ApplicationID: applicationID, VersionName: versionName}, nil
 }
 
 func (m Manifest) UpdateManifest(networkName string) {
@@ -206,60 +220,34 @@ func parseArguments(options []*gabs.Container, cmdArgs bool) []string {
 
 func getMounts(parsedJson *gabs.Container) ([]mount.Mount, error) {
 	mounts := []mount.Mount{}
-	m, ok := parsedJson.Search("mounts").Data().([]interface{})
-	if ok && len(m) > 0 {
-		strMounts, err := json.Marshal(m)
-		if err != nil {
-			return nil, err
+
+	for _, mnt := range parsedJson.Search("mounts").Children() {
+		mount := mount.Mount{
+			Type:        "bind",
+			Source:      mnt.Search("host").Data().(string),
+			Target:      mnt.Search("container").Data().(string),
+			ReadOnly:    true,
+			Consistency: "default",
+			BindOptions: &mount.BindOptions{Propagation: "rprivate", NonRecursive: true},
 		}
-		json.Unmarshal([]byte(strMounts), &mounts)
-		log.Info("Mounts:", mounts)
-	} else {
-		mounts = nil
+
+		mounts = append(mounts, mount)
 	}
 
 	return mounts, nil
 }
 
 func getPorts(document *gabs.Container, envs []*gabs.Container) (nat.PortSet, nat.PortMap) {
-	/* BELOW IS A TEMPORARY SOLUTION TO PORT BINDINGS - NEEDS TO BE REFACTORED */
-	// Read which environmental variables are for ports binding
-	ports_values_map := document.Search("ports").ChildrenMap()
-	if len(ports_values_map) == 0 {
-		return nat.PortSet{}, nat.PortMap{}
+	binding := []nat.PortBinding{}
+	for _, port := range document.Search("ports").Children() {
+		binding = append(binding, nat.PortBinding{HostPort: port.Search("host").Data().(string)})
 	}
 
-	hostIPtag := ports_values_map["HostIP"].Data().(string)
-	hostPorttag := ports_values_map["HostPort"].Data().(string)
-
-	hostIP := ""
-	hostPort := ""
-	for _, env := range envs {
-		if env.Search("key").Data().(string) == hostIPtag {
-			hostIP = env.Search("value").Data().(string)
-		}
-		if env.Search("key").Data().(string) == hostPorttag {
-			hostPort = env.Search("value").Data().(string)
-		}
-	}
-
-	// Handle Ports Binding
-	if hostIP == "" || hostPort == "" {
-		log.Error("Failed ports binding - module environments passed in manifest document ports section do not exist.")
-	}
-	// expose 80/tcp as weeve default port in containers
+	portBinding := nat.PortMap{nat.Port("80/tcp"): binding}
 	exposedPorts := nat.PortSet{
 		nat.Port("80/tcp"): struct{}{},
 	}
 
-	portBinding := nat.PortMap{
-		nat.Port("80/tcp"): []nat.PortBinding{
-			{
-				HostIP:   hostIP,
-				HostPort: hostPort,
-			},
-		},
-	}
 	return exposedPorts, portBinding
 }
 
@@ -270,9 +258,9 @@ func ValidateManifest(jsonParsed *gabs.Container) error {
 	if id == nil {
 		errorList = append(errorList, "Please provide data service id")
 	}
-	version := jsonParsed.Search("version").Data()
-	if version == nil {
-		errorList = append(errorList, "Please provide data service version")
+	versionName := jsonParsed.Search("versionName").Data()
+	if versionName == nil {
+		errorList = append(errorList, "Please provide data service versionName")
 	}
 	name := jsonParsed.Search("name").Data()
 	if name == nil {
@@ -329,9 +317,9 @@ func ValidateStartStopJSON(jsonParsed *gabs.Container) error {
 	if serviceID == nil {
 		errorList = append(errorList, "Expected Data Service ID 'id' in JSON, but not found.")
 	}
-	serviceVersion := jsonParsed.Search("version").Data()
-	if serviceVersion == nil {
-		errorList = append(errorList, "Expected Data Service Version 'version' in JSON, but not found.")
+	versionName := jsonParsed.Search("versionName").Data()
+	if versionName == nil {
+		errorList = append(errorList, "Expected Data Service VersionName in JSON, but not found.")
 	}
 
 	if len(errorList) > 0 {

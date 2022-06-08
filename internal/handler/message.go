@@ -8,23 +8,36 @@ import (
 
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
-	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 type statusMessage struct {
-	Id                 string                 `json:"ID"`
-	Timestamp          int64                  `json:"timestamp"`
-	Status             string                 `json:"status"`
-	ActiveServiceCount int                    `json:"activeServiceCount"`
-	ServiceCount       int                    `json:"serviceCount"`
-	ServicesStatus     []model.ManifestStatus `json:"servicesStatus"`
-	DeviceParams       deviceParams           `json:"deviceParams"`
+	Status           string             `json:"status"`
+	EdgeApplications []edgeApplications `json:"edgeApplications"`
+	DeviceParams     deviceParams       `json:"deviceParams"`
+}
+
+const (
+	Connected    string = "connected"
+	Disconnected string = "disconnected"
+	Running      string = "running"
+)
+
+type edgeApplications struct {
+	ManifestID string     `json:"manifestID"`
+	Status     string     `json:"status"`
+	Containers containers `json:"containers"`
+}
+
+type containers struct {
+	Name   string `json:"name"`
+	Status string `json:"status"`
 }
 
 type deviceParams struct {
-	Sensors string `json:"sensors"`
-	Uptime  string `json:"uptime"`
-	CpuTemp string `json:"cputemp"`
+	SystemUpTime float64 `json:"systemUpTime"`
+	SystemLoad   int     `json:"systemLoad"`
+	StorageFree  int     `json:"storageFree"`
+	RamFree      int     `json:"ramFree"`
 }
 
 type registrationMessage struct {
@@ -86,11 +99,14 @@ func ProcessMessage(payload []byte) error {
 		err := manifest.ValidateStartStopJSON(jsonParsed)
 		if err != nil {
 			return err
-		}
-		serviceId := jsonParsed.Search("id").Data().(string)
-		serviceVersion := jsonParsed.Search("version").Data().(string)
 
-		err = dataservice.StopDataService(serviceId, serviceVersion)
+		}
+
+		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(jsonParsed)
+		if err != nil {
+			return err
+		}
+		err = dataservice.StopDataService(manifestUniqueID.ApplicationID, manifestUniqueID.VersionName)
 		if err != nil {
 			return err
 		}
@@ -102,10 +118,11 @@ func ProcessMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		serviceId := jsonParsed.Search("id").Data().(string)
-		serviceVersion := jsonParsed.Search("version").Data().(string)
-
-		err = dataservice.StartDataService(serviceId, serviceVersion)
+		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(jsonParsed)
+		if err != nil {
+			return err
+		}
+		err = dataservice.StartDataService(manifestUniqueID.ApplicationID, manifestUniqueID.VersionName)
 		if err != nil {
 			return err
 		}
@@ -117,10 +134,12 @@ func ProcessMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		serviceId := jsonParsed.Search("id").Data().(string)
-		serviceVersion := jsonParsed.Search("version").Data().(string)
 
-		err = dataservice.UndeployDataService(serviceId, serviceVersion)
+		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(jsonParsed)
+		if err != nil {
+			return err
+		}
+		err = dataservice.UndeployDataService(manifestUniqueID.ApplicationID, manifestUniqueID.VersionName)
 		if err != nil {
 			return err
 		}
@@ -132,24 +151,18 @@ func ProcessMessage(payload []byte) error {
 
 func GetStatusMessage(nodeId string) statusMessage {
 	knownManifests := manifest.GetKnownManifests()
-	deviceParams := deviceParams{Sensors: "10", Uptime: "10", CpuTemp: "20"}
 
-	actv_cnt := 0
-	serv_cnt := len(knownManifests)
 	for _, manifest := range knownManifests {
 		if manifest.Status == "SUCCESS" {
-			actv_cnt++
+
 		}
 	}
 
+	deviceParams := deviceParams{SystemUpTime: 10000, SystemLoad: 1, StorageFree: 1, RamFree: 1}
 	msg := statusMessage{
-		Id:                 nodeId,
-		Timestamp:          time.Now().UnixMilli(),
-		Status:             "Available",
-		ActiveServiceCount: actv_cnt,
-		ServiceCount:       serv_cnt,
-		ServicesStatus:     knownManifests,
-		DeviceParams:       deviceParams,
+		Status:           "Available",
+		EdgeApplications: nil,
+		DeviceParams:     deviceParams,
 	}
 	return msg
 }

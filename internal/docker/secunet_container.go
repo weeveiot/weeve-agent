@@ -133,7 +133,7 @@ func CreateAndStartContainer(containerConfig manifest.ContainerConfig) (string, 
 
 	log.Debugln("Created container", containerConfig.ContainerName, "with ID", containerID)
 
-	existingContainers[containerID] = containerConfig.Labels["manifestID"] + containerConfig.Labels["version"]
+	existingContainers[containerID] = containerConfig.Labels["applicationID"] + containerConfig.Labels["versionName"]
 
 	return containerID, nil
 }
@@ -229,7 +229,7 @@ func ReadAllContainers() ([]types.Container, error) {
 	return containerStructs, nil
 }
 
-func ReadDataServiceContainers(manifestID string, version string) ([]types.Container, error) {
+func ReadDataServiceContainers(applicationID string, versionName string) ([]types.Container, error) {
 	var dataServiceContainers []types.Container
 
 	allContainers, err := ReadAllContainers()
@@ -238,7 +238,7 @@ func ReadDataServiceContainers(manifestID string, version string) ([]types.Conta
 	}
 
 	for _, container := range allContainers {
-		if existingContainers[container.ID] == manifestID+version {
+		if existingContainers[container.ID] == applicationID+versionName {
 			dataServiceContainers = append(dataServiceContainers, container)
 		}
 	}
