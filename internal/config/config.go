@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/model"
@@ -14,14 +13,13 @@ import (
 
 var ConfigPath string
 
-const defaultId = "4be43aa6f1"
-
 var params struct {
 	RootCertPath string
 	CertPath     string
+	KeyPath      string
 	NodeId       string
 	NodeName     string
-	KeyPath      string
+	Registered   bool
 }
 
 func GetRootCertPath() string {
@@ -42,6 +40,10 @@ func GetNodeName() string {
 
 func GetKeyPath() string {
 	return params.KeyPath
+}
+
+func GetRegistered() bool {
+	return params.Registered
 }
 
 func writeNodeConfigToFile() {
@@ -128,7 +130,8 @@ func SetCertPath(certificatePath, keyPath string) {
 	writeNodeConfigToFile()
 }
 
-func IsNodeRegistered() bool {
-	// TODO: change this workaround to check if the node is registered
-	return !(strings.Contains(params.CertPath, defaultId) || strings.Contains(params.KeyPath, defaultId))
+func SetRegistered(registered bool) {
+	params.Registered = registered
+
+	writeNodeConfigToFile()
 }

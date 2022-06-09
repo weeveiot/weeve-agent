@@ -17,3 +17,4 @@ agent_darwin_amd64
 weeve_agent
 cmd/agent/__debug_bin
 nodeconfig.json
+weeve-agent/

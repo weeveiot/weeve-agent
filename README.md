@@ -1,6 +1,36 @@
 # weeve agent
 The weeve agent is a lightweight service to orchestrate data pipelines. A data pipeline is defined in a manifest file and consists of several interconnected docker containers. The data pipeline is instantiated by subscription to an MQTT topic for the stage and node. The logic of the service then pulls images from docker hub if they do not exist on the machine. The weeve agent creates and starts containers based on a specified manifest. A bridge network is instantiated to facilitate container communication. The agent publishes status messages over MQTT on a defined interval to monitor the state of the IOT edge comprised of multiple edge nodes running weeve agents.
 
+# Installing weeve agent using installer script
+## Requirements
+
+The Github personal access key is required to download the contents for the agents.
+Please make sure there is a file in the local machine containing the Github Personal Access Token.
+
+## Installation
+
+```bash
+curl -s https://raw.githubusercontent.com/weeveiot/weeve-agent/<BRANCH>/weeve-agent-installer.sh > weeve-agent-installer.sh
+```
+
+```bash
+sudo sh weeve-agent-installer.sh tokenpath=<path to the file containing the token>
+```
+| Parameter   | Required | Description                                                 | Possible Values            | Default   |
+| ----------- | -------- | ------------------------------------------------------------| ---------------------------|-----------|
+| tokenpath   | true     | takes the path of the file containing the access token      |                            |           |
+| environment | false    | name of the environment where the agent is to be registered | dev, demo, sandbox, wohnio |           |
+| release     | false    | to select which release of agent is to be installed         | stable, dev                |           |
+| nodename    | false    | takes the name of the node                                  |                            |           |
+| test        | false    | set to 'true' to build agent from local and run             |                            | false     |
+
+## Un-installation
+
+```bash
+curl -s https://raw.githubusercontent.com/weeveiot/weeve-agent/<BRANCH>/weeve-agent-uninstaller.sh | sudo sh
+
+```
+
 ## Architecture
 The weeve agent can be considered as a Docker orchestration layer with a purpose built business logic for a data service - multiple containers in communication with each other. As such, the project relies on the [Golang Docker SDK](https://godoc.org/github.com/docker/docker).
 
@@ -125,7 +155,7 @@ All the below params can be updated into json instead of arguments as above
 	"AWSRootCert": "/path/to/AmazonRootCA1.pem",
 	"PrivateKey": "/path/to/<node private key/bootstrap private key file name>",
 	"Certificate": "/path/to/<node certificate/bootstrap certificate file name>",
-	"NodeId": "<node id>" //Empty initially for auto registration
+	"NodeId": "<node id>", //Empty initially for auto registration
 	"NodeName": "<node name>" //Node name for auto registration
 }
 ```
@@ -184,6 +214,56 @@ Currently, unit testing does not cover the project.
 ## Developer environment
 
 Several developer features are supported in the project.
+
+### Manually running the weeve agent as systemd service on a edge-node
+
+1. Install docker [docker installation](https://docs.docker.com/engine/install/)
+2. Create a new directory and copy the following to the directory
+	1. weeve agent binary (AWS: s3 bucket)
+	2. nodeconfig.json and bootstrap certificates (Github repository: weeve-agent-dependencies)
+3. Make the binary executable `chmod u+x weeve-agent/<agent-binary-name>`
+4. Create weeve-agent.argconf file which will contain the CLI arguments for the weeve agent
+```bash
+ARG_VERBOSE=-v
+ARG_HEARTBEAT=--heartbeat 300
+ARG_BROKER=--broker tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883
+ARG_PUBLISH=--publish status
+<add more arguments as required>
+``` 
+5. Create weeve-agent.service file which will define the service
+```bash
+[Unit]
+Description=Weeve Agent
+[Install]
+WantedBy=multi-user.target
+[Service]
+Type=simple
+Restart=always
+RestartSec=60s
+EnvironmentFile=/lib/systemd/system/weeve-agent.argconf
+WorkingDirectory=<path to the directory containing weeve agent contents>
+ExecStart=<weeve agent binary path> $ARG_VERBOSE $ARG_BROKER $ARG_PUBLISH $ARG_HEARTBEAT <add more arguments as required matching the ones from weeve-agent.argconf>
+```
+6. Move .service and .argconf files to `/lib/systemd/system/`
+7. Enable the service to start at start-up `sudo systemctl enable weeve-agent`
+8. Start the service `sudo systemctl start weeve-agent`
+
+Upon first execution;
+1. The weeve agent bootstraps.
+2. The thing name will be the environment followed by the ID, for example; `awsdev_f5adbd1a-d4b7-4485-b5f4-2b901a92c80f`.
+3. The certificate is created and uploaded to S3
+
+NOTE:
+It is possible to run multiple instances of the weeve agent in a single host. Each process would be running independently and be bootstrapped with as a dedicated IoT thing.
+
+### Deleting a node
+
+To delete the IoT thing, call the API - deleteNode.
+This will remove the following:
+
+- Things from IoT core
+- Node and deployments from DB
+- Certificate from s3 bucket
 
 ### Dependencies
 
