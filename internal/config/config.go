@@ -13,7 +13,7 @@ import (
 
 var ConfigPath string
 
-var Params struct {
+var params struct {
 	RootCertPath string
 	CertPath     string
 	KeyPath      string
@@ -23,27 +23,31 @@ var Params struct {
 }
 
 func GetRootCertPath() string {
-	return Params.RootCertPath
+	return params.RootCertPath
 }
 
 func GetCertPath() string {
-	return Params.CertPath
+	return params.CertPath
 }
 
 func GetNodeId() string {
-	return Params.NodeId
+	return params.NodeId
 }
 
 func GetNodeName() string {
-	return Params.NodeName
+	return params.NodeName
 }
 
 func GetKeyPath() string {
-	return Params.KeyPath
+	return params.KeyPath
 }
 
-func WriteNodeConfigToFile() {
-	encodedJson, err := json.MarshalIndent(Params, "", " ")
+func GetRegistered() bool {
+	return params.Registered
+}
+
+func writeNodeConfigToFile() {
+	encodedJson, err := json.MarshalIndent(params, "", " ")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -63,7 +67,7 @@ func readNodeConfigFromFile() {
 
 	decoder := json.NewDecoder(jsonFile)
 	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&Params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -77,55 +81,57 @@ func UpdateNodeConfig(opt model.Params) {
 
 	var configChanged bool
 	if len(opt.NodeId) > 0 {
-		Params.NodeId = opt.NodeId
+		params.NodeId = opt.NodeId
 		configChanged = true
 	}
 
 	if len(opt.RootCertPath) > 0 {
-		Params.RootCertPath = opt.RootCertPath
+		params.RootCertPath = opt.RootCertPath
 		configChanged = true
 	}
 
 	if len(opt.CertPath) > 0 {
-		Params.CertPath = opt.CertPath
+		params.CertPath = opt.CertPath
 		configChanged = true
 	}
 
 	if len(opt.KeyPath) > 0 {
-		Params.KeyPath = opt.KeyPath
+		params.KeyPath = opt.KeyPath
 		configChanged = true
 	}
 
 	if len(opt.NodeName) > 0 {
-		Params.NodeName = opt.NodeName
+		params.NodeName = opt.NodeName
 		configChanged = true
 	} else {
 		// randomize the default node name from the config file
-		if Params.NodeName == "" || Params.NodeName == defaultNodeName {
-			Params.NodeName = fmt.Sprintf(defaultNodeName+"%d", rand.Intn(maxNumNodes))
+		if params.NodeName == "" || params.NodeName == defaultNodeName {
+			params.NodeName = fmt.Sprintf(defaultNodeName+"%d", rand.Intn(maxNumNodes))
 			configChanged = true
 		}
 	}
 
-	log.Debugf("Set node config to following params: %+v", Params)
+	log.Debugf("Set node config to following params: %+v", params)
 	if configChanged {
-		WriteNodeConfigToFile()
+		writeNodeConfigToFile()
 	}
 }
 
 func SetNodeId(nodeId string) {
-	Params.NodeId = nodeId
+	params.NodeId = nodeId
 
-	WriteNodeConfigToFile()
+	writeNodeConfigToFile()
 }
 
 func SetCertPath(certificatePath, keyPath string) {
-	Params.CertPath = certificatePath
-	Params.KeyPath = keyPath
+	params.CertPath = certificatePath
+	params.KeyPath = keyPath
 
-	WriteNodeConfigToFile()
+	writeNodeConfigToFile()
 }
 
-func IsNodeRegistered() bool {
-	return Params.Registered
+func SetRegistered(registered bool) {
+	params.Registered = registered
+
+	writeNodeConfigToFile()
 }
