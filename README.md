@@ -1,15 +1,11 @@
 # weeve agent
 The weeve agent is a lightweight service to orchestrate data pipelines. A data pipeline is defined in a manifest file and consists of several interconnected docker containers. The data pipeline is instantiated by subscription to an MQTT topic for the stage and node. The logic of the service then pulls images from docker hub if they do not exist on the machine. The weeve agent creates and starts containers based on a specified manifest. A bridge network is instantiated to facilitate container communication. The agent publishes status messages over MQTT on a defined interval to monitor the state of the IOT edge comprised of multiple edge nodes running weeve agents.
 
-# Installing weeve agent
+# Installing weeve agent using installer script
 ## Requirements
 
-(For registering with the script) The Github personal access key is required to download the contents for the agents.
-
-Please make sure:
-
-1. There is a hidden file in the local machine containing the Github Personal Access Token (paste the token into the hidden file)
-2. Set the value of the argument "tokenpath", with the path of the above mentioned file
+The Github personal access key is required to download the contents for the agents.
+Please make sure there is a file in the local machine containing the Github Personal Access Token.
 
 ## Installation
 
@@ -18,7 +14,7 @@ curl -s https://raw.githubusercontent.com/weeveiot/weeve-agent/<BRANCH>/weeve-ag
 ```
 
 ```bash
-sudo sh weeve-agent-installer.sh tokenpath=<path to the hidden file containing the token>
+sudo sh weeve-agent-installer.sh tokenpath=<path to the file containing the token>
 ```
 | Parameter   | Required | Description                                                 | Possible Values            | Default   |
 | ----------- | -------- | ------------------------------------------------------------| ---------------------------|-----------|
