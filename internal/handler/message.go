@@ -176,6 +176,8 @@ func GetStatusMessage(nodeId string) statusMessage {
 	}
 	deviceParams.SystemLoad = per
 
+	if free, err := host.Uptime(); err == nil {
+
 	msg := statusMessage{
 		Status:           "Available",
 		EdgeApplications: nil,
