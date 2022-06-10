@@ -240,7 +240,8 @@ func getMounts(parsedJson *gabs.Container) ([]mount.Mount, error) {
 func getPorts(document *gabs.Container, envs []*gabs.Container) (nat.PortSet, nat.PortMap) {
 	binding := []nat.PortBinding{}
 	for _, port := range document.Search("ports").Children() {
-		binding = append(binding, nat.PortBinding{HostPort: port.Search("host").Data().(string)})
+		hostPort := port.Search("host").Data().(string)
+		binding = append(binding, nat.PortBinding{HostPort: hostPort})
 	}
 
 	portBinding := nat.PortMap{nat.Port("80/tcp"): binding}

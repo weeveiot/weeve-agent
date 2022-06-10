@@ -6,6 +6,8 @@ import (
 	"github.com/Jeffail/gabs/v2"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/host"
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 )
@@ -34,8 +36,8 @@ type containers struct {
 }
 
 type deviceParams struct {
-	SystemUpTime float64 `json:"systemUpTime"`
-	SystemLoad   int     `json:"systemLoad"`
+	SystemUpTime uint64  `json:"systemUpTime"`
+	SystemLoad   float64 `json:"systemLoad"`
 	StorageFree  int     `json:"storageFree"`
 	RamFree      int     `json:"ramFree"`
 }
@@ -106,7 +108,7 @@ func ProcessMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		err = dataservice.StopDataService(manifestUniqueID.ApplicationID, manifestUniqueID.VersionName)
+		err = dataservice.StopDataService(manifestUniqueID)
 		if err != nil {
 			return err
 		}
@@ -122,7 +124,7 @@ func ProcessMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		err = dataservice.StartDataService(manifestUniqueID.ApplicationID, manifestUniqueID.VersionName)
+		err = dataservice.StartDataService(manifestUniqueID)
 		if err != nil {
 			return err
 		}
@@ -139,7 +141,7 @@ func ProcessMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		err = dataservice.UndeployDataService(manifestUniqueID.ApplicationID, manifestUniqueID.VersionName)
+		err = dataservice.UndeployDataService(manifestUniqueID)
 		if err != nil {
 			return err
 		}
@@ -158,12 +160,28 @@ func GetStatusMessage(nodeId string) statusMessage {
 		}
 	}
 
-	deviceParams := deviceParams{SystemUpTime: 10000, SystemLoad: 1, StorageFree: 1, RamFree: 1}
+	deviceParams := deviceParams{}
+	if uptime, err := host.Uptime(); err == nil {
+		deviceParams.SystemUpTime = uptime
+	}
+
+	var per float64 = 0
+	if cpu, err := cpu.Percent(0, false); err == nil {
+		for _, c := range cpu {
+			per = per + c
+		}
+		if len(cpu) > 0 {
+			per = per / float64(len(cpu))
+		}
+	}
+	deviceParams.SystemLoad = per
+
 	msg := statusMessage{
 		Status:           "Available",
 		EdgeApplications: nil,
 		DeviceParams:     deviceParams,
 	}
+
 	return msg
 }
 

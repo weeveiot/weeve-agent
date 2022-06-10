@@ -13,6 +13,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	log "github.com/sirupsen/logrus"
+	"github.com/weeveiot/weeve-agent/internal/manifest"
 )
 
 // Network name constraints
@@ -31,12 +32,12 @@ func readAllNetworks() ([]types.NetworkResource, error) {
 	return networks, nil
 }
 
-func ReadDataServiceNetworks(applicationID string, versionName string) ([]types.NetworkResource, error) {
+func ReadDataServiceNetworks(manifestUniqueID manifest.ManifestUniqueID) ([]types.NetworkResource, error) {
 	log.Debug("Docker_container -> ReadDataServiceNetworks")
 
 	filter := filters.NewArgs()
-	filter.Add("label", "applicationID="+applicationID)
-	filter.Add("label", "versionName="+versionName)
+	filter.Add("label", "applicationID="+manifestUniqueID.ApplicationID)
+	filter.Add("label", "versionName="+manifestUniqueID.VersionName)
 	options := types.NetworkListOptions{Filters: filter}
 
 	networks, err := dockerClient.NetworkList(ctx, options)
@@ -104,10 +105,10 @@ func CreateNetwork(name string, labels map[string]string) (string, error) {
 	return networkName, nil
 }
 
-func NetworkPrune(applicationID string, versionName string) error {
+func NetworkPrune(manifestUniqueID manifest.ManifestUniqueID) error {
 	filter := filters.NewArgs()
-	filter.Add("label", "applicationID="+applicationID)
-	filter.Add("label", "versionName="+versionName)
+	filter.Add("label", "applicationID="+manifestUniqueID.ApplicationID)
+	filter.Add("label", "versionName="+manifestUniqueID.VersionName)
 
 	pruneReport, err := dockerClient.NetworksPrune(ctx, filter)
 	if err != nil {
