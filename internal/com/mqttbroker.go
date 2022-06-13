@@ -9,7 +9,6 @@ import (
 
 	"github.com/Jeffail/gabs/v2"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/config"
 	"github.com/weeveiot/weeve-agent/internal/handler"
@@ -17,7 +16,6 @@ import (
 )
 
 const topicRegistration = "registration"
-const topicCertificate = "certificate"
 const topicOrchestration = "orchestration"
 const topicNodeStatus = "nodestatus"
 
@@ -43,45 +41,6 @@ var connected = false
 
 var publisher mqtt.Client
 var subscriber mqtt.Client
-
-const registrationTimeout = 5
-
-func RegisterNode() error {
-	if !config.GetRegistered() {
-		log.Info("Registering node and downloading certificate and key ...")
-		config.SetNodeId(uuid.New().String())
-		var err error
-		publisher, err = initBrokerChannel(params.PubClientId+"/"+config.GetNodeId()+"/"+topicRegistration, false)
-		if err != nil {
-			return err
-		}
-		subscriber, err = initBrokerChannel(params.SubClientId+"/"+config.GetNodeId()+"/"+topicCertificate, true)
-		if err != nil {
-			return err
-		}
-
-		msg := handler.GetRegistrationMessage(config.GetNodeId(), config.GetNodeName())
-		log.Debugln("Sending registration request.", ">> Body:", msg)
-		for {
-			err := publishMessage(config.GetNodeId()+"/"+topicRegistration, msg)
-			if err != nil {
-				log.Errorln("Registration failed, gonna try again in", registrationTimeout, "seconds.", err.Error())
-				time.Sleep(time.Second * registrationTimeout)
-			} else {
-				break
-			}
-		}
-
-		log.Info("Waiting for the registration process to finish...")
-		for !config.GetRegistered() {
-			time.Sleep(time.Second * registrationTimeout)
-		}
-	} else {
-		log.Info("Node already registered!")
-	}
-
-	return nil
-}
 
 func SendHeartbeat() error {
 	log.Debug("Node registered >> ", config.GetRegistered(), " | connected >> ", connected)
@@ -144,6 +103,8 @@ func initBrokerChannel(pubsubClientId string, isSubscribe bool) (mqtt.Client, er
 	}
 
 	if !params.NoTLS {
+		channelOptions.SetUsername(config.GetNodeId())
+		channelOptions.SetPassword(config.GetPassword())
 		tlsconfig, err := newTLSConfig()
 		if err != nil {
 			return nil, err
@@ -176,22 +137,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 	}
 	log.Debugln("Received message on topic:", msg.Topic(), "JSON:", *jsonParsed)
 
-	if msg.Topic() == params.SubClientId+"/"+config.GetNodeId()+"/"+topicCertificate {
-		certificateUrl := jsonParsed.Search("Certificate").Data().(string)
-		keyUrl := jsonParsed.Search("PrivateKey").Data().(string)
-
-		certificatePath, keyPath, err := handler.DownloadCertificates(certificateUrl, keyUrl)
-		if err != nil {
-			log.Error(err)
-			return
-		}
-
-		config.SetCertPath(certificatePath, keyPath)
-		config.SetRegistered(true)
-		log.Info("Node registration done | Certificates downloaded!")
-		log.Info("You can start deploying edge-application through Weeve Manager")
-
-	} else if msg.Topic() == params.SubClientId+"/"+config.GetNodeId()+"/"+topicOrchestration {
+	if msg.Topic() == params.SubClientId+"/"+config.GetNodeId()+"/"+topicOrchestration {
 		err = handler.ProcessMessage(topicOrchestration, msg.Payload())
 		if err != nil {
 			log.Error(err)
@@ -201,16 +147,14 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
 	log.Info("ON connect >> connected >> registered : ", config.GetRegistered())
-	var topicName string
-	topicName = params.SubClientId + "/" + config.GetNodeId() + "/" + topicCertificate
 
 	if config.GetRegistered() {
-		topicName = params.SubClientId + "/" + config.GetNodeId() + "/" + topicOrchestration
-	}
+		topicName := params.SubClientId + "/" + config.GetNodeId() + "/" + topicOrchestration
 
-	log.Debug("ON connect >> subscribes >> topicName : ", topicName)
-	if token := c.Subscribe(topicName, 0, messagePubHandler); token.Wait() && token.Error() != nil {
-		log.Error("Error on subscribe connection: ", token.Error())
+		log.Debug("ON connect >> subscribes >> topicName : ", topicName)
+		if token := c.Subscribe(topicName, 0, messagePubHandler); token.Wait() && token.Error() != nil {
+			log.Error("Error on subscribe connection: ", token.Error())
+		}
 	}
 }
 
@@ -222,26 +166,16 @@ func newTLSConfig() (*tls.Config, error) {
 	log.Debug("MQTT root cert path >> ", config.GetRootCertPath())
 
 	certpool := x509.NewCertPool()
-	pemCerts, err := ioutil.ReadFile(config.GetRootCertPath())
+	rootCert, err := ioutil.ReadFile(config.GetRootCertPath())
 	if err != nil {
 		return nil, err
 	}
-	certpool.AppendCertsFromPEM(pemCerts)
-
-	log.Debug("MQTT cert path >> ", config.GetCertPath())
-	log.Debug("MQTT key path >> ", config.GetKeyPath())
-
-	cert, err := tls.LoadX509KeyPair(config.GetCertPath(), config.GetKeyPath())
-	if err != nil {
-		return nil, err
-	}
+	certpool.AppendCertsFromPEM(rootCert)
 
 	configTLS := &tls.Config{
-		MinVersion:   tls.VersionTLS12,
-		RootCAs:      certpool,
-		ClientAuth:   tls.NoClientCert,
-		ClientCAs:    nil,
-		Certificates: []tls.Certificate{cert},
+		MinVersion: tls.VersionTLS12,
+		RootCAs:    certpool,
+		ClientAuth: tls.NoClientCert,
 	}
 	return configTLS, nil
 }

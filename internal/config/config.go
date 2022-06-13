@@ -15,9 +15,9 @@ var ConfigPath string
 
 var params struct {
 	RootCertPath string
-	CertPath     string
-	KeyPath      string
 	NodeId       string
+	Password     string
+	APIkey       string
 	NodeName     string
 	Registered   bool
 }
@@ -26,20 +26,20 @@ func GetRootCertPath() string {
 	return params.RootCertPath
 }
 
-func GetCertPath() string {
-	return params.CertPath
-}
-
 func GetNodeId() string {
 	return params.NodeId
 }
 
-func GetNodeName() string {
-	return params.NodeName
+func GetPassword() string {
+	return params.Password
 }
 
-func GetKeyPath() string {
-	return params.KeyPath
+func GetAPIkey() string {
+	return params.APIkey
+}
+
+func GetNodeName() string {
+	return params.NodeName
 }
 
 func GetRegistered() bool {
@@ -90,16 +90,6 @@ func UpdateNodeConfig(opt model.Params) {
 		configChanged = true
 	}
 
-	if len(opt.CertPath) > 0 {
-		params.CertPath = opt.CertPath
-		configChanged = true
-	}
-
-	if len(opt.KeyPath) > 0 {
-		params.KeyPath = opt.KeyPath
-		configChanged = true
-	}
-
 	if len(opt.NodeName) > 0 {
 		params.NodeName = opt.NodeName
 		configChanged = true
@@ -119,13 +109,6 @@ func UpdateNodeConfig(opt model.Params) {
 
 func SetNodeId(nodeId string) {
 	params.NodeId = nodeId
-
-	writeNodeConfigToFile()
-}
-
-func SetCertPath(certificatePath, keyPath string) {
-	params.CertPath = certificatePath
-	params.KeyPath = keyPath
 
 	writeNodeConfigToFile()
 }
