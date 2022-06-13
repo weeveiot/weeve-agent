@@ -48,7 +48,7 @@ var subscriber mqtt.Client
 const registrationTimeout = 5
 
 func RegisterNode() error {
-	if !config.IsNodeRegistered() {
+	if !config.GetRegistered() {
 		log.Info("Registering node and downloading certificate and key ...")
 		config.SetNodeId(uuid.New().String())
 		var err error
@@ -74,7 +74,7 @@ func RegisterNode() error {
 		}
 
 		log.Info("Waiting for the registration process to finish...")
-		for !config.Params.Registered {
+		for !config.GetRegistered() {
 			time.Sleep(time.Second * registrationTimeout)
 		}
 	} else {
@@ -85,7 +85,7 @@ func RegisterNode() error {
 }
 
 func SendHeartbeat() error {
-	log.Debug("Node registered >> ", config.Params.Registered, " | connected >> ", connected)
+	log.Debug("Node registered >> ", config.GetRegistered(), " | connected >> ", connected)
 	defer time.Sleep(time.Second * time.Duration(params.Heartbeat))
 	err := reconnectIfNecessary()
 	if err != nil {
@@ -187,8 +187,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 		}
 
 		config.SetCertPath(certificatePath, keyPath)
-		config.Params.Registered = true
-		config.WriteNodeConfigToFile()
+		config.SetRegistered(true)
 		log.Info("Node registration done | Certificates downloaded!")
 		log.Info("You can start deploying edge-application through Weeve Manager")
 
@@ -203,10 +202,10 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 }
 
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
-	log.Info("ON connect >> connected >> registered : ", config.Params.Registered)
+	log.Info("ON connect >> connected >> registered : ", config.GetRegistered())
 	var topicName string
 	topicName = params.SubClientId + "/" + config.GetNodeId() + "/" + topicCertificate
-	if config.Params.Registered {
+	if config.GetRegistered() {
 		topicName = params.SubClientId + "/" + config.GetNodeId() + "/+"
 	}
 
