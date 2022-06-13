@@ -10,7 +10,7 @@ Please make sure there is a file in the local machine containing the Github Pers
 ## Installation
 
 ```bash
-curl -s https://raw.githubusercontent.com/weeveiot/weeve-agent/<BRANCH>/weeve-agent-installer.sh > weeve-agent-installer.sh
+curl -s https://weeveiot:<GITHUB_ACCESS_TOKEN>@raw.githubusercontent.com/weeveiot/weeve-agent/<BRANCH>/weeve-agent-installer.sh > weeve-agent-installer.sh
 ```
 
 ```bash

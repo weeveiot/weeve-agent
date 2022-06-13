@@ -100,7 +100,7 @@ get_bucket_name(){
     if [ "$AGENT_RELEASE" = "stable" ]; then
       S3_BUCKET="weeve-agent"
     elif [ "$AGENT_RELEASE" = "dev" ]; then
-      S3_BUCKET="weeve-agent-dev-binaries"
+      S3_BUCKET="weeve-agent-legacy-dev"
     fi
 }
 
@@ -140,7 +140,7 @@ download_dependencies(){
   for DEPENDENCIES in AmazonRootCA1.pem aws"$ENV"-certificate.pem.crt aws"$ENV"-private.pem.key nodeconfig.json weeve-agent.service weeve-agent.argconf
   do
   if RESULT=$(cd ./weeve-agent \
-  && curl -sO https://"$ACCESS_KEY"@raw.githubusercontent.com/weeveiot/weeve-agent-dependencies/master/"$DEPENDENCIES" 2>&1); then
+  && curl -sO https://"$ACCESS_KEY"@raw.githubusercontent.com/weeveiot/weeve-agent-legacy-dependencies/master/"$DEPENDENCIES" 2>&1); then
     log "$DEPENDENCIES" downloaded
   else
     log Error while downloading the dependencies: "$RESULT"
