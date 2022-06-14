@@ -46,9 +46,6 @@ A data model for the manifest object and supporting structures is found in the i
 | ----------- | ----- | -------- | ------------------------------------------------------ | -------- |
 | verbose     | v     | false    | Show verbose debug information                         |          |
 | broker      | b     | true     | Broker to connect                                      |          |
-| pubClientId | c     | true     | Publisher ClientId                                     |          |
-| subClientId | s     | true     | Subscriber ClientId                                    |          |
-| publish     | t     | true     | Topic Name                                             |          |
 | heartbeat   | h     | false    | Heartbeat time in seconds                              | 30       |
 | mqttlogs    | m     | false    | For developer - Display detailed MQTT logging messages |          |
 | notls       |       | false    | For developer - disable TLS for MQTT                   |          |
@@ -61,8 +58,6 @@ A data model for the manifest object and supporting structures is found in the i
 | nodeId      | i     | false    | ID of this node                                        | register |
 | name        | n     | false    | Name of this node to be registered                     |          |
 | rootcert    | r     | false    | Path to MQTT broker (server) certificate               |          |
-| cert        | f     | false    | Path to certificate to authenticate to Broker          |          |
-| key         | k     | false    | Path to private key to authenticate to Broker          |          |
 | config      |       | false    | Path to the .json config file                          |<exe dir> |
 
 ## Getting started
@@ -88,9 +83,6 @@ In a final terminal, run the weeve agent and connect to the broker to publish st
 ```bash
 go run <path-to-agent>/agent.go -v --notls \
 	--broker tcp://localhost:8080 \ # Broker to connect to \
-	--subClientId nodes/localtest \ # Subscriber ClientId \
-	--pubClientId manager/localtest \ # Publisher ClientId \
-	--publish CheckVersion  \ # Topic Name \
 	--heartbeat 3 # Status message publishing interval
 	--nodeId local-test-node-1 \ # ID of this node optional \
 	--config <path-to-config>
@@ -105,16 +97,11 @@ Start with registering a new Node with GraphQL or with weeve UI. Then download c
 Since TLS configuration requires the full path to all secrets and certificates, execute the following code:
 
 ```bash
-SERVER_CERTIFICATE=<path-to-root-cert>/AmazonRootCA1.pem
-CLIENT_CERTIFICATE=<path-to-cert>/<nodeid>-certificate.pem.crt
-CLIENT_PRIVATE_KEY=<path-to-private-key>/<nodeid>-private.pem.key
+SERVER_CERTIFICATE=<path-to-root-cert>/ca.crt
 go run <path-to-agent>/agent.go -v \
 	--nodeId awsdev-test-node-1 \ # ID of this node (optional here)\
 	--name awsdev-test-node-1 \ # Name of this node (optional here)\
 	--broker tls://<broker host url>:8883 \ # Broker to connect to \
-	--subClientId nodes/awsdev \ # Subscriber ClientId \
-	--pubClientId manager/awsdev \ # Publisher ClientId \
-	--publish status \ # Topic bame for publishing status messages \
 	--heartbeat 10   # Status message publishing interval \
 	--config <path-to-config>
 	# --mqttlogs # Enable detailed debug logs for the MQTT connection
@@ -141,9 +128,6 @@ Download AmazonRootCA1.pem from Google. Then, follow the steps:
 ```bash
 go run <path-to-agent>/agent.go -v \
 	--broker tls://<broker host url>:8883 \ # Broker to connect to \
-	--subClientId nodes/awsdev \ # Subscriber ClientId \
-	--pubClientId manager/awsdev \  # Publisher ClientId \
-	--publish CheckVersion \ # Topic bame for publishing status messages \
 	--heartbeat 60 # Status message publishing interval \
 	--config <path-to-config>
 ```
@@ -229,7 +213,7 @@ ARG_HEARTBEAT=--heartbeat 300
 ARG_BROKER=--broker tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883
 ARG_PUBLISH=--publish status
 <add more arguments as required>
-``` 
+```
 5. Create weeve-agent.service file which will define the service
 ```bash
 [Unit]

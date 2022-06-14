@@ -1,0 +1,9 @@
+[Unit]
+Description=Weeve Agent
+[Install]
+WantedBy=multi-user.target
+[Service]
+Type=simple
+Restart=always
+RestartSec=60s
+EnvironmentFile=/lib/systemd/system/weeve-agent.argconf

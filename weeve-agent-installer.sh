@@ -137,14 +137,14 @@ download_binary(){
 
 download_dependencies(){
   log Downloading the dependencies ...
-  for DEPENDENCIES in AmazonRootCA1.pem aws"$ENV"-certificate.pem.crt aws"$ENV"-private.pem.key nodeconfig.json weeve-agent.service weeve-agent.argconf
+  for DEPENDENCIES in ca.crt nodeconfig.json weeve-agent.service weeve-agent.argconf
   do
   if RESULT=$(cd ./weeve-agent \
-  && curl -sO https://"$ACCESS_KEY"@raw.githubusercontent.com/weeveiot/weeve-agent-dependencies/master/"$DEPENDENCIES" 2>&1); then
+  && curl -sO https://"$ACCESS_KEY"@raw.githubusercontent.com/weeveiot/weeve-agent/WD-449-create-new-broker-certificates/"$DEPENDENCIES" 2>&1); then
     log "$DEPENDENCIES" downloaded
   else
     log Error while downloading the dependencies: "$RESULT"
-    CLEANUP="ture"
+    CLEANUP="true"
     exit 1
   fi
   done
@@ -154,11 +154,7 @@ download_dependencies(){
 write_to_argconf(){
   log Appeding the required command line arguments by the agent ...
   {
-    printf "ARG_SUB_CLIENT=--subClientId nodes/aws%s\n" "$ENV"
-    printf "ARG_PUB_CLIENT=--pubClientId manager/aws%s\n" "$ENV"
-    printf "ARG_ROOT_CERT=--rootcert AmazonRootCA1.pem\n"
-    printf "ARG_CERT=--cert aws%s-certificate.pem.crt\n" "$ENV"
-    printf "ARG_KEY=--key aws%s-private.pem.key\n" "$ENV"
+    printf "ARG_ROOT_CERT=--rootcert ca.crt\n"
     printf "ARG_NODENAME=--name %s" "$NODE_NAME"
   }  >> ./weeve-agent/weeve-agent.argconf
 }
@@ -167,14 +163,14 @@ write_to_service(){
   # appending the required strings to the .service to point systemd to the path of the binary and to run it
   # following are the example for the lines appended to weeve-agent.service:
   #   WorkingDirectory=/home/admin/weeve-agent
-  #   ExecStart=/home/admin/weeve-agent/weeve-agent-x86_64 $ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_PUBLISH $ARG_SUB_CLIENT $ARG_PUB_CLIENT $ARG_ROOT_CERT $ARG_CERT $ARG_KEY $ARG_NODENAME
+  #   ExecStart=/home/admin/weeve-agent/weeve-agent-x86_64 $ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_ROOT_CERT $ARG_NODENAME
 
   # line 1
   WORKING_DIRECTORY="WorkingDirectory=$PWD/weeve-agent"
 
   # line 2
   BINARY_PATH="ExecStart=$PWD/weeve-agent/$BINARY_NAME"
-  ARGUMENTS='$ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_PUBLISH $ARG_SUB_CLIENT $ARG_PUB_CLIENT $ARG_ROOT_CERT $ARG_CERT $ARG_KEY $ARG_NODENAME'
+  ARGUMENTS='$ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_ROOT_CERT $ARG_NODENAME'
   EXECUTE_BINARY="$BINARY_PATH $ARGUMENTS"
 
   log Adding the binary path to service file ...
@@ -188,10 +184,10 @@ start_service(){
   log Starting the service ...
 
   # moving .service and .argconf to systemd and starting the service
-  if RESULT=$(mv weeve-agent/weeve-agent.service /lib/systemd/system/ \
-  && mv weeve-agent/weeve-agent.argconf /lib/systemd/system/ \
-  && systemctl enable weeve-agent \
-  && systemctl start weeve-agent 2>&1); then
+  if RESULT=$(sudo mv weeve-agent/weeve-agent.service $SERVICE_FILE \
+  && sudo mv weeve-agent/weeve-agent.argconf $ARGUMENTS_FILE \
+  && sudo systemctl enable weeve-agent \
+  && sudo systemctl start weeve-agent 2>&1); then
     log Weeve-agent is initiated ...
   else
     log Error while starting the weeve-agent service: "$RESULT"
@@ -220,22 +216,22 @@ cleanup() {
     log cleaning up the contents ...
 
     if RESULT=$(systemctl is-active weeve-agent 2>&1); then
-      systemctl stop weeve-agent
-      systemctl daemon-reload
+      sudo systemctl stop weeve-agent
+      sudo systemctl daemon-reload
       log weeve-agent service stopped
     else
       log weeve-agent service not running
     fi
 
     if [ -f "$SERVICE_FILE" ]; then
-      rm "$SERVICE_FILE"
+      sudo rm "$SERVICE_FILE"
       log "$SERVICE_FILE" removed
     else
       log "$SERVICE_FILE" doesnt exists
     fi
 
     if [ -f "$ARGUMENTS_FILE" ]; then
-      rm "$ARGUMENTS_FILE"
+      sudo rm "$ARGUMENTS_FILE"
       log "$ARGUMENTS_FILE" removed
     else
       log "$ARGUMENTS_FILE" doesnt exists
@@ -252,7 +248,7 @@ cleanup() {
 }
 
 # if in case the user have deleted the weeve-agent.service and did not reload the systemd daemon
-systemctl daemon-reload
+sudo systemctl daemon-reload
 
 # Delcaring and defining variables
 LOG_FILE=installer.log
@@ -285,7 +281,7 @@ do
     "tokenpath") TOKEN_FILE="$VALUE" ;;
     "environment") ENV="$VALUE" ;;
     "nodename")  NODE_NAME="$VALUE" ;;
-    "release") AGENT_RELEASE="$VALUE" ;; 
+    "release") AGENT_RELEASE="$VALUE" ;;
     "test") BUILD_LOCAL="$VALUE" ;;
     *)
   esac

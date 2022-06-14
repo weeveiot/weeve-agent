@@ -15,22 +15,17 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
-const topicRegistration = "registration"
 const topicOrchestration = "orchestration"
 const topicNodeStatus = "nodestatus"
 
 var params struct {
-	Broker      string
-	PubClientId string
-	SubClientId string
-	NoTLS       bool
-	Heartbeat   int
+	Broker    string
+	NoTLS     bool
+	Heartbeat int
 }
 
 func SetParams(opt model.Params) {
 	params.Broker = opt.Broker
-	params.PubClientId = opt.PubClientId
-	params.SubClientId = opt.SubClientId
 	params.NoTLS = opt.NoTLS
 	params.Heartbeat = opt.Heartbeat
 
@@ -63,11 +58,11 @@ func SendHeartbeat() error {
 
 func ConnectNode() error {
 	var err error
-	publisher, err = initBrokerChannel(params.PubClientId+"/"+config.GetNodeId(), false)
+	publisher, err = initBrokerChannel(config.GetNodeId(), false)
 	if err != nil {
 		return err
 	}
-	subscriber, err = initBrokerChannel(params.SubClientId+"/"+config.GetNodeId(), true)
+	subscriber, err = initBrokerChannel(config.GetNodeId(), true)
 	if err != nil {
 		return err
 	}
@@ -137,7 +132,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 	}
 	log.Debugln("Received message on topic:", msg.Topic(), "JSON:", *jsonParsed)
 
-	if msg.Topic() == params.SubClientId+"/"+config.GetNodeId()+"/"+topicOrchestration {
+	if msg.Topic() == config.GetNodeId()+"/"+topicOrchestration {
 		err = handler.ProcessMessage(topicOrchestration, msg.Payload())
 		if err != nil {
 			log.Error(err)
@@ -149,7 +144,7 @@ var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
 	log.Info("ON connect >> connected >> registered : ", config.GetRegistered())
 
 	if config.GetRegistered() {
-		topicName := params.SubClientId + "/" + config.GetNodeId() + "/" + topicOrchestration
+		topicName := config.GetNodeId() + "/" + topicOrchestration
 
 		log.Debug("ON connect >> subscribes >> topicName : ", topicName)
 		if token := c.Subscribe(topicName, 0, messagePubHandler); token.Wait() && token.Error() != nil {
@@ -190,14 +185,13 @@ func publishMessage(topic string, message interface{}) error {
 		}
 	}
 
-	fullTopic := params.PubClientId + "/" + topic
 	payload, err := json.Marshal(message)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Debugln("Publishing message >> Topic:", fullTopic, ">> Payload:", string(payload))
-	if token := publisher.Publish(fullTopic, 0, false, payload); token.Wait() && token.Error() != nil {
+	log.Debugln("Publishing message >> Topic:", topic, ">> Payload:", string(payload))
+	if token := publisher.Publish(topic, 0, false, payload); token.Wait() && token.Error() != nil {
 		return token.Error()
 	}
 
