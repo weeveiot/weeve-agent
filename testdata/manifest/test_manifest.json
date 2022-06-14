@@ -1,6 +1,6 @@
 {
 	"_id": "6064fa29-e111-4a9a-af03-313988346f6d",
-	"applicationID": "MQTTEgress-Test",
+	"manifestName": "MQTTEgress-Test",
 	"versionName": "1.0.0",
 	"versionNumber": 1,
 	"command": "DEPLOY",

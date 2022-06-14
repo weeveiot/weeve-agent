@@ -18,14 +18,14 @@ type Manifest struct {
 	ID            string
 	VersionName   string
 	VersionNumber float64
-	ApplicationID string
+	ManifestName  string
 	Modules       []ContainerConfig
 	Labels        map[string]string
 }
 
 type ManifestUniqueID struct {
-	VersionName   string
-	ApplicationID string
+	VersionName  string
+	ManifestName string
 }
 
 // This struct holds information for starting a container
@@ -61,12 +61,12 @@ The manifest JSON object itself is parsed into a golang 'gabs' object.
 */
 func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 	manifestID := jsonParsed.Search("_id").Data().(string)
-	applicationID := jsonParsed.Search("applicationID").Data().(string)
+	manifestName := jsonParsed.Search("manifestName").Data().(string)
 	versionName := jsonParsed.Search("versionName").Data().(string)
 	versionNumber := jsonParsed.Search("versionNumber").Data().(float64)
 	labels := map[string]string{
 		"manifestID":    manifestID,
-		"applicationID": applicationID,
+		"manifestName":  manifestName,
 		"versionName":   versionName,
 		"versionNumber": fmt.Sprint(versionNumber),
 	}
@@ -123,7 +123,7 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 
 	manifest := Manifest{
 		ID:            manifestID,
-		ApplicationID: applicationID,
+		ManifestName:  manifestName,
 		VersionName:   versionName,
 		VersionNumber: versionNumber,
 		Modules:       containerConfigs,
@@ -143,13 +143,13 @@ func GetCommand(jsonParsed *gabs.Container) (string, error) {
 }
 
 func GetEdgeAppUniqueID(parsedJson *gabs.Container) (ManifestUniqueID, error) {
-	applicationID := parsedJson.Search("applicationID").Data().(string)
+	manifestName := parsedJson.Search("manifestName").Data().(string)
 	versionName := parsedJson.Search("versionName").Data().(string)
-	if applicationID == "" || versionName == "" {
+	if manifestName == "" || versionName == "" {
 		return ManifestUniqueID{}, errors.New("unique ID fields are missing in given manifest")
 	}
 
-	return ManifestUniqueID{ApplicationID: applicationID, VersionName: versionName}, nil
+	return ManifestUniqueID{ManifestName: manifestName, VersionName: versionName}, nil
 }
 
 func (m Manifest) UpdateManifest(networkName string) {

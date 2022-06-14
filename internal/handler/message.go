@@ -168,7 +168,7 @@ func GetStatusMessage(nodeId string) (statusMessage, error) {
 		if manif.Status == "SUCCESS" {
 			edgeApplication.Status = Connected
 
-			appContainers, err := docker.ReadDataServiceContainers(manifest.ManifestUniqueID{ApplicationID: "", VersionName: ""})
+			appContainers, err := docker.ReadDataServiceContainers(manifest.ManifestUniqueID{ManifestName: manif.ManifestName, VersionName: manif.VersionName})
 			if err != nil {
 				return statusMessage{}, err
 			}

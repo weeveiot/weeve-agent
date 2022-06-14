@@ -19,9 +19,9 @@ const CMDUndeploy = "undeploy"
 
 func DeployDataService(man manifest.Manifest, command string) error {
 	//******** STEP 1 - Check if Data Service is already deployed *************//
-	manifestUniqueID := manifest.ManifestUniqueID{ApplicationID: man.ApplicationID, VersionName: man.VersionName}
+	manifestUniqueID := manifest.ManifestUniqueID{ManifestName: man.ManifestName, VersionName: man.VersionName}
 
-	deploymentID := manifestUniqueID.ApplicationID + "-" + man.VersionName + " | "
+	deploymentID := manifestUniqueID.ManifestName + "-" + man.VersionName + " | "
 
 	log.Info(deploymentID, fmt.Sprintf("%ving data service ...", command))
 
@@ -34,7 +34,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 
 	if dataServiceExists {
 		if command == CMDDeploy {
-			log.Info(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", manifestUniqueID.ApplicationID, man.VersionName))
+			log.Info(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", manifestUniqueID.ManifestName, man.VersionName))
 			return errors.New("data service already exists")
 
 		} else if command == CMDReDeploy || command == CMDDeployLocal {
@@ -78,7 +78,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 	//******** STEP 3 - Create the network *************//
 	log.Info(deploymentID, "Creating network ...")
 
-	networkName, err := docker.CreateNetwork(man.ApplicationID, man.Labels)
+	networkName, err := docker.CreateNetwork(man.ManifestName, man.Labels)
 	if err != nil {
 		log.Error(err)
 		manifest.SetStatus(manifestUniqueID, strings.ToUpper(command)+"_FAILED")
@@ -123,7 +123,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 func StopDataService(manifestUniqueID manifest.ManifestUniqueID) error {
 	const stateRunning = "running"
 
-	log.Info("Stopping data service:", manifestUniqueID.ApplicationID, manifestUniqueID.VersionName)
+	log.Info("Stopping data service:", manifestUniqueID.ManifestName, manifestUniqueID.VersionName)
 
 	containers, err := docker.ReadDataServiceContainers(manifestUniqueID)
 	if err != nil {
@@ -154,7 +154,7 @@ func StopDataService(manifestUniqueID manifest.ManifestUniqueID) error {
 }
 
 func StartDataService(manifestUniqueID manifest.ManifestUniqueID) error {
-	log.Infoln("Starting data service:", manifestUniqueID.ApplicationID, manifestUniqueID.VersionName)
+	log.Infoln("Starting data service:", manifestUniqueID.ManifestName, manifestUniqueID.VersionName)
 
 	const stateExited = "exited"
 	const stateCreated = "created"
@@ -191,9 +191,9 @@ func StartDataService(manifestUniqueID manifest.ManifestUniqueID) error {
 }
 
 func UndeployDataService(manifestUniqueID manifest.ManifestUniqueID) error {
-	log.Info("Undeploying data service ...", manifestUniqueID.ApplicationID, manifestUniqueID.VersionName)
+	log.Info("Undeploying data service ...", manifestUniqueID.ManifestName, manifestUniqueID.VersionName)
 
-	deploymentID := manifestUniqueID.ApplicationID + "-" + manifestUniqueID.VersionName + " | "
+	deploymentID := manifestUniqueID.ManifestName + "-" + manifestUniqueID.VersionName + " | "
 
 	// Check if data service already exist
 	dataServiceExists, err := DataServiceExist(manifestUniqueID)
@@ -204,7 +204,7 @@ func UndeployDataService(manifestUniqueID manifest.ManifestUniqueID) error {
 	}
 
 	if !dataServiceExists {
-		log.Errorln(deploymentID, "Data service", manifestUniqueID.ApplicationID, manifestUniqueID.VersionName, "does not exist")
+		log.Errorln(deploymentID, "Data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionName, "does not exist")
 		manifest.SetStatus(manifestUniqueID, "UNDEPLOY_FAILED")
 		return nil
 	}

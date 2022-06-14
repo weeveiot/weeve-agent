@@ -18,10 +18,10 @@ func GetKnownManifests() []model.ManifestStatus {
 }
 
 func SetStatus(manifestUniqueID ManifestUniqueID, status string) {
-	log.Debugln("Setting status", status, "to data service", manifestUniqueID.ApplicationID, manifestUniqueID.VersionName)
+	log.Debugln("Setting status", status, "to data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionName)
 	manifestKnown := false
 	for i, manifest := range knownManifests {
-		if manifest.ApplicationId == manifestUniqueID.ApplicationID && manifest.VersionName == manifestUniqueID.VersionName {
+		if manifest.ManifestName == manifestUniqueID.ManifestName && manifest.VersionName == manifestUniqueID.VersionName {
 			knownManifests[i].Status = status
 			manifestKnown = true
 			break
@@ -29,9 +29,9 @@ func SetStatus(manifestUniqueID ManifestUniqueID, status string) {
 	}
 	if !manifestKnown {
 		knownManifests = append(knownManifests, model.ManifestStatus{
-			ApplicationId: manifestUniqueID.ApplicationID,
-			VersionName:   manifestUniqueID.VersionName,
-			Status:        status,
+			ManifestName: manifestUniqueID.ManifestName,
+			VersionName:  manifestUniqueID.VersionName,
+			Status:       status,
 		})
 	}
 

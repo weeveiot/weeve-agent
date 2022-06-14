@@ -138,7 +138,7 @@ func ReadDataServiceContainers(manifestUniqueID manifest.ManifestUniqueID) ([]ty
 	log.Debug("Docker_container -> ReadDataServiceContainers")
 
 	filter := filters.NewArgs()
-	filter.Add("label", "applicationID="+manifestUniqueID.ApplicationID)
+	filter.Add("label", "manifestName="+manifestUniqueID.ManifestName)
 	filter.Add("label", "versionName="+manifestUniqueID.VersionName)
 	options := types.ContainerListOptions{All: true, Filters: filter}
 	containers, err := dockerClient.ContainerList(context.Background(), options)
