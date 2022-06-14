@@ -95,7 +95,10 @@ func SendHeartbeat() error {
 	}
 
 	nodeStatusTopic := topicNodeStatus + "/" + config.GetNodeId()
-	msg := handler.GetStatusMessage(config.GetNodeId())
+	msg, err := handler.GetStatusMessage(config.GetNodeId())
+	if err != nil {
+		return err
+	}
 	log.Debugln("Sending update >>", "Topic:", nodeStatusTopic, ">> Body:", msg)
 	err = publishMessage(nodeStatusTopic, msg)
 	if err != nil {

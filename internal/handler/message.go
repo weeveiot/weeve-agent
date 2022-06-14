@@ -1,14 +1,18 @@
 package handler
 
 import (
+	"strings"
 	"time"
 
 	"github.com/Jeffail/gabs/v2"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/host"
+	"github.com/shirou/gopsutil/mem"
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
+	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 )
 
@@ -22,24 +26,26 @@ const (
 	Connected    string = "connected"
 	Disconnected string = "disconnected"
 	Running      string = "running"
+	Alarm        string = "alarm"
+	Restarting   string = "restarting"
 )
 
 type edgeApplications struct {
-	ManifestID string     `json:"manifestID"`
-	Status     string     `json:"status"`
-	Containers containers `json:"containers"`
+	ManifestID string      `json:"manifestID"`
+	Status     string      `json:"status"`
+	Containers []container `json:"containers"`
 }
 
-type containers struct {
+type container struct {
 	Name   string `json:"name"`
 	Status string `json:"status"`
 }
 
 type deviceParams struct {
-	SystemUpTime uint64  `json:"systemUpTime"`
+	SystemUpTime float64 `json:"systemUpTime"`
 	SystemLoad   float64 `json:"systemLoad"`
-	StorageFree  int     `json:"storageFree"`
-	RamFree      int     `json:"ramFree"`
+	StorageFree  uint64  `json:"storageFree"`
+	RamFree      uint64  `json:"ramFree"`
 }
 
 type registrationMessage struct {
@@ -151,18 +157,47 @@ func ProcessMessage(payload []byte) error {
 	return nil
 }
 
-func GetStatusMessage(nodeId string) statusMessage {
+func GetStatusMessage(nodeId string) (statusMessage, error) {
+	edgeApps := []edgeApplications{}
 	knownManifests := manifest.GetKnownManifests()
 
-	for _, manifest := range knownManifests {
-		if manifest.Status == "SUCCESS" {
+	for _, manif := range knownManifests {
+		edgeApplication := edgeApplications{}
+		containersStat := []container{}
 
+		if manif.Status == "SUCCESS" {
+			edgeApplication.Status = Connected
+
+			appContainers, err := docker.ReadDataServiceContainers(manifest.ManifestUniqueID{ApplicationID: "", VersionName: ""})
+			if err != nil {
+				return statusMessage{}, err
+			}
+
+			edgeApplication.Status = Running
+
+			for _, con := range appContainers {
+				container := container{Name: strings.Join(con.Names, ", "), Status: con.Status}
+				containersStat = append(containersStat, container)
+
+				if con.Status != Running {
+					edgeApplication.Status = Alarm
+					if con.Status == Restarting {
+						edgeApplication.Status = Restarting
+					}
+				}
+			}
+		} else {
+			edgeApplication.Status = manif.Status
 		}
+
+		edgeApplication.Containers = containersStat
+
+		edgeApps = append(edgeApps, edgeApplication)
 	}
 
 	deviceParams := deviceParams{}
-	if uptime, err := host.Uptime(); err == nil {
-		deviceParams.SystemUpTime = uptime
+	if uptime, err := host.Uptime(); err == nil && uptime > 0 {
+		deviceParams.SystemUpTime = float64((uptime / 60) / 24)
 	}
 
 	var per float64 = 0
@@ -176,15 +211,20 @@ func GetStatusMessage(nodeId string) statusMessage {
 	}
 	deviceParams.SystemLoad = per
 
-	if free, err := host.Uptime(); err == nil {
+	if diskStat, err := disk.Usage("/"); err == nil {
+		deviceParams.StorageFree = diskStat.Free
+	}
+	if verMem, err := mem.VirtualMemory(); err == nil {
+		deviceParams.RamFree = verMem.Free
+	}
 
 	msg := statusMessage{
 		Status:           "Available",
-		EdgeApplications: nil,
+		EdgeApplications: edgeApps,
 		DeviceParams:     deviceParams,
 	}
 
-	return msg
+	return msg, nil
 }
 
 func GetRegistrationMessage(nodeId string, nodeName string) registrationMessage {
