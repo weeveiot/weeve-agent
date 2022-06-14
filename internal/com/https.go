@@ -13,6 +13,7 @@ func RegisterNode() error {
 	if !config.GetRegistered() {
 		log.Info("Registering node and downloading certificate and key ...")
 		time.Sleep(registrationTimeout)
+		config.SetRegistered(true)
 		// TODO: do node registration stuff
 	} else {
 		log.Info("Node already registered!")

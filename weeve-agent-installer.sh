@@ -154,7 +154,6 @@ download_dependencies(){
 write_to_argconf(){
   log Appeding the required command line arguments by the agent ...
   {
-    printf "ARG_ROOT_CERT=--rootcert ca.crt\n"
     printf "ARG_NODENAME=--name %s" "$NODE_NAME"
   }  >> ./weeve-agent/weeve-agent.argconf
 }

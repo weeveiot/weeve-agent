@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"io/ioutil"
+	"strings"
 	"time"
 
 	"github.com/Jeffail/gabs/v2"
@@ -58,11 +59,11 @@ func SendHeartbeat() error {
 
 func ConnectNode() error {
 	var err error
-	publisher, err = initBrokerChannel(config.GetNodeId(), false)
+	publisher, err = initBrokerChannel(config.GetNodeId() + "_pub")
 	if err != nil {
 		return err
 	}
-	subscriber, err = initBrokerChannel(config.GetNodeId(), true)
+	subscriber, err = initBrokerChannel(config.GetNodeId() + "_sub")
 	if err != nil {
 		return err
 	}
@@ -84,8 +85,8 @@ func DisconnectNode() {
 	}
 }
 
-func initBrokerChannel(pubsubClientId string, isSubscribe bool) (mqtt.Client, error) {
-	log.Debug("Client id >> ", pubsubClientId, " | subscription >> ", isSubscribe)
+func initBrokerChannel(pubsubClientId string) (mqtt.Client, error) {
+	log.Debug("Client id >> ", pubsubClientId)
 
 	// Build the options for the mqtt client
 	channelOptions := mqtt.NewClientOptions()
@@ -93,7 +94,7 @@ func initBrokerChannel(pubsubClientId string, isSubscribe bool) (mqtt.Client, er
 	channelOptions.SetClientID(pubsubClientId)
 	channelOptions.SetDefaultPublishHandler(messagePubHandler)
 	channelOptions.OnConnectionLost = connectLostHandler
-	if isSubscribe {
+	if strings.Contains(pubsubClientId, "sub") {
 		channelOptions.OnConnect = connectHandler
 	}
 
@@ -114,11 +115,7 @@ func initBrokerChannel(pubsubClientId string, isSubscribe bool) (mqtt.Client, er
 	if token := pubsubClient.Connect(); token.Wait() && token.Error() != nil {
 		return nil, token.Error()
 	} else {
-		if isSubscribe {
-			log.Debug("MQTT subscriber connected!")
-		} else {
-			log.Debug("MQTT Publisher connected!")
-		}
+		log.Debug(pubsubClientId, " connected!")
 	}
 
 	return pubsubClient, nil
