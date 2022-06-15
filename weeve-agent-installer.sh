@@ -220,7 +220,7 @@ cleanup() {
     fi
 
     if [ -d "$WEEVE_AGENT_DIR" ] ; then
-      rm -r "$WEEVE_AGENT_DIR"
+      sudo rm -r "$WEEVE_AGENT_DIR"
       log "$WEEVE_AGENT_DIR" removed
     else
       log "$WEEVE_AGENT_DIR" doesnt exists
@@ -252,7 +252,7 @@ CLEANUP="false"
 ARG_VERBOSE="-v"
 ARG_HEARTBEAT="--heartbeat 300"
 ARG_BROKER="--broker tls://mapi-dev.weeve.engineering:8883"
-ARG_ROOT_CERT="--rootcert ca.crt"
+ARG_ROOT_CERT="--rootcert $WEEVE_AGENT_DIR/ca.crt"
 
 trap cleanup EXIT
 

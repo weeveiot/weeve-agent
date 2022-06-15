@@ -28,7 +28,7 @@ log "$SERVICE_FILE" doesnt exists
 fi
 
 if [ -d "$WEEVE_AGENT_DIR" ] ; then
-rm -r "$WEEVE_AGENT_DIR"
+sudo rm -r "$WEEVE_AGENT_DIR"
 log "$WEEVE_AGENT_DIR" removed
 else
 log "$WEEVE_AGENT_DIR" doesnt exists
