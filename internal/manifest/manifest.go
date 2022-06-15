@@ -226,7 +226,7 @@ func getMounts(parsedJson *gabs.Container) ([]mount.Mount, error) {
 			Type:        "bind",
 			Source:      mnt.Search("host").Data().(string),
 			Target:      mnt.Search("container").Data().(string),
-			ReadOnly:    true,
+			ReadOnly:    false,
 			Consistency: "default",
 			BindOptions: &mount.BindOptions{Propagation: "rprivate", NonRecursive: true},
 		}

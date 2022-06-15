@@ -20,9 +20,9 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 )
 
-var manifestID = "PLACEHOLDER"
+var manifestName = "PLACEHOLDER"
 var version = "PLACEHOLDER"
-var manifestID2 = "PLACEHOLDER"
+var manifestName2 = "PLACEHOLDER"
 var version2 = "PLACEHOLDER"
 
 const manifestPath = "../../testdata/manifest/test_manifest.json"
@@ -54,8 +54,8 @@ func TestDeployManifest(t *testing.T) {
 	}
 
 	// Fill the placeholders for Start and Stop tests
-	manifestID = thisManifest.ManifestName
-	log.Info(manifestID)
+	manifestName = thisManifest.ManifestName
+	log.Info(manifestName)
 	version = thisManifest.VersionName
 	log.Info(version)
 
@@ -71,7 +71,7 @@ func TestDeployManifest(t *testing.T) {
 	}
 
 	filter := filters.NewArgs()
-	filter.Add("label", "applicationID="+manifestID)
+	filter.Add("label", "manifestName="+manifestName)
 	filter.Add("label", "versionName="+version)
 	options := types.NetworkListOptions{Filters: filter}
 	networks, err := cli.NetworkList(context.Background(), options)
