@@ -206,15 +206,7 @@ Several developer features are supported in the project.
 	1. weeve agent binary (AWS: s3 bucket)
 	2. nodeconfig.json and bootstrap certificates (Github repository: weeve-agent-dependencies)
 3. Make the binary executable `chmod u+x weeve-agent/<agent-binary-name>`
-4. Create weeve-agent.argconf file which will contain the CLI arguments for the weeve agent
-```bash
-ARG_VERBOSE=-v
-ARG_HEARTBEAT=--heartbeat 300
-ARG_BROKER=--broker tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883
-ARG_PUBLISH=--publish status
-<add more arguments as required>
-```
-5. Create weeve-agent.service file which will define the service
+4. Create weeve-agent.service file which will define the service
 ```bash
 [Unit]
 Description=Weeve Agent
@@ -224,13 +216,12 @@ WantedBy=multi-user.target
 Type=simple
 Restart=always
 RestartSec=60s
-EnvironmentFile=/lib/systemd/system/weeve-agent.argconf
 WorkingDirectory=<path to the directory containing weeve agent contents>
-ExecStart=<weeve agent binary path> $ARG_VERBOSE $ARG_BROKER $ARG_PUBLISH $ARG_HEARTBEAT <add more arguments as required matching the ones from weeve-agent.argconf>
+ExecStart=<weeve agent binary path> $ARG_VERBOSE $ARG_BROKER $ARG_PUBLISH $ARG_HEARTBEAT <add more arguments as required >
 ```
-6. Move .service and .argconf files to `/lib/systemd/system/`
-7. Enable the service to start at start-up `sudo systemctl enable weeve-agent`
-8. Start the service `sudo systemctl start weeve-agent`
+1. Move .service file to `/lib/systemd/system/`
+2. Enable the service to start at start-up `sudo systemctl enable weeve-agent`
+3. Start the service `sudo systemctl start weeve-agent`
 
 Upon first execution;
 1. The weeve agent bootstraps.

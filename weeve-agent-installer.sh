@@ -173,7 +173,7 @@ write_to_service(){
 start_service(){
   log Starting the service ...
 
-  # moving .service and .argconf to systemd and starting the service
+  # moving .service to systemd and starting the service
   if RESULT=$(sudo mv weeve-agent/weeve-agent.service $SERVICE_FILE \
   && sudo systemctl enable weeve-agent \
   && sudo systemctl start weeve-agent 2>&1); then
@@ -302,8 +302,6 @@ else
 fi
 
 download_dependencies
-
-write_to_argconf
 
 write_to_service
 
