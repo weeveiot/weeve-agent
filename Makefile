@@ -1,9 +1,7 @@
 NODE_ID=7ced3826-7738-4c9f-84b8-9302cb436e89
 
 
-SERVER_CERTIFICATE=./AmazonRootCA1.pem
-CLIENT_CERTIFICATE=./${NODE_ID}-certificate.pem.crt
-CLIENT_PRIVATE_KEY=./${NODE_ID}-private.pem.key
+SERVER_CERTIFICATE=./ca.crt
 
 .DEFAULT_GOAL := build
 

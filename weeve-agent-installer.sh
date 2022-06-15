@@ -57,7 +57,7 @@ get_test(){
 
 check_for_agent(){
   # looking for existing agent instance
-  if [ -d "$WEEVE_AGENT_DIRECTORY" ] || [ -f "$SERVICE_FILE" ] || [ -f "$ARGUMENTS_FILE" ]; then
+  if [ -d "$WEEVE_AGENT_DIR" ] || [ -f "$SERVICE_FILE" ]; then
     log Detected existing weeve-agent contents!
     read -r -p "Proceeding with the installation will cause REMOVAL of the existing contents of weeve-agent! Do you want to proceed? y/n: " RESPONSE
     if [ "$RESPONSE" = "y" ] || [ "$RESPONSE" = "yes" ]; then
@@ -85,9 +85,9 @@ validating_docker(){
 }
 
 build_test_binary(){
-  if RESULT=$(go build -o ./weeve-agent/test-agent cmd/agent/agent.go 2>&1); then
+  if RESULT=$(go build -o $WEEVE_AGENT_DIR/test-agent cmd/agent/agent.go 2>&1); then
     log built weeve-agent binary for testing
-    chmod u+x ./weeve-agent/test-agent
+    chmod u+x $WEEVE_AGENT_DIR/test-agent
     log Changed file permission
     BINARY_NAME="test-agent"
   else
@@ -123,10 +123,10 @@ download_binary(){
   esac
 
   if RESULT=$(mkdir weeve-agent \
-  && cd ./weeve-agent \
+  && cd $WEEVE_AGENT_DIR \
   && wget http://"$S3_BUCKET".s3.amazonaws.com/"$BINARY_NAME" 2>&1); then
     log Weeve-agent binary downloaded
-    chmod u+x ./weeve-agent/"$BINARY_NAME"
+    chmod u+x $WEEVE_AGENT_DIR/"$BINARY_NAME"
     log Changed file permission
   else
     log Error while downloading the executable: "$RESULT"
@@ -137,61 +137,46 @@ download_binary(){
 
 download_dependencies(){
   log Downloading the dependencies ...
-  for DEPENDENCIES in AmazonRootCA1.pem aws"$ENV"-certificate.pem.crt aws"$ENV"-private.pem.key nodeconfig.json weeve-agent.service weeve-agent.argconf
+  for DEPENDENCIES in ca.crt nodeconfig.json weeve-agent.service
   do
-  if RESULT=$(cd ./weeve-agent \
-  && curl -sO https://"$ACCESS_KEY"@raw.githubusercontent.com/weeveiot/weeve-agent-dependencies/master/"$DEPENDENCIES" 2>&1); then
+  if RESULT=$(cd $WEEVE_AGENT_DIR \
+  && curl -sO https://"$ACCESS_KEY"@raw.githubusercontent.com/weeveiot/weeve-agent/WD-444-update-agent-to-the-new-data-model/"$DEPENDENCIES" 2>&1); then
     log "$DEPENDENCIES" downloaded
   else
     log Error while downloading the dependencies: "$RESULT"
-    CLEANUP="ture"
+    CLEANUP="true"
     exit 1
   fi
   done
   log Dependencies downloaded.
 }
 
-write_to_argconf(){
-  log Appeding the required command line arguments by the agent ...
-  {
-    printf "ARG_SUB_CLIENT=--subClientId nodes/aws%s\n" "$ENV"
-    printf "ARG_PUB_CLIENT=--pubClientId manager/aws%s\n" "$ENV"
-    printf "ARG_ROOT_CERT=--rootcert AmazonRootCA1.pem\n"
-    printf "ARG_CERT=--cert aws%s-certificate.pem.crt\n" "$ENV"
-    printf "ARG_KEY=--key aws%s-private.pem.key\n" "$ENV"
-    printf "ARG_NODENAME=--name %s" "$NODE_NAME"
-  }  >> ./weeve-agent/weeve-agent.argconf
-}
-
 write_to_service(){
   # appending the required strings to the .service to point systemd to the path of the binary and to run it
   # following are the example for the lines appended to weeve-agent.service:
   #   WorkingDirectory=/home/admin/weeve-agent
-  #   ExecStart=/home/admin/weeve-agent/weeve-agent-x86_64 $ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_PUBLISH $ARG_SUB_CLIENT $ARG_PUB_CLIENT $ARG_ROOT_CERT $ARG_CERT $ARG_KEY $ARG_NODENAME
+  #   ExecStart=/home/admin/weeve-agent/weeve-agent-x86_64 $ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_ROOT_CERT $ARG_NODENAME
 
-  # line 1
-  WORKING_DIRECTORY="WorkingDirectory=$PWD/weeve-agent"
-
-  # line 2
-  BINARY_PATH="ExecStart=$PWD/weeve-agent/$BINARY_NAME"
-  ARGUMENTS='$ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_PUBLISH $ARG_SUB_CLIENT $ARG_PUB_CLIENT $ARG_ROOT_CERT $ARG_CERT $ARG_KEY $ARG_NODENAME'
+  BINARY_PATH="$WEEVE_AGENT_DIR/$BINARY_NAME"
+  ARG_NODENAME="--name $NODE_NAME"
+  ARG_NODECONFIG="--config $WEEVE_AGENT_DIR/nodeconfig.json"
+  ARGUMENTS="$ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_ROOT_CERT $ARG_NODENAME $ARG_NODECONFIG"
   EXECUTE_BINARY="$BINARY_PATH $ARGUMENTS"
 
   log Adding the binary path to service file ...
   {
-    printf "%s\n" "$WORKING_DIRECTORY"
-    printf "%s\n" "$EXECUTE_BINARY"
-  } >> ./weeve-agent/weeve-agent.service
+    printf "WorkingDirectory=%s\n" "$WEEVE_AGENT_DIR"
+    printf "ExecStart=%s\n" "$EXECUTE_BINARY"
+  } >> $WEEVE_AGENT_DIR/weeve-agent.service
 }
 
 start_service(){
   log Starting the service ...
 
-  # moving .service and .argconf to systemd and starting the service
-  if RESULT=$(mv weeve-agent/weeve-agent.service /lib/systemd/system/ \
-  && mv weeve-agent/weeve-agent.argconf /lib/systemd/system/ \
-  && systemctl enable weeve-agent \
-  && systemctl start weeve-agent 2>&1); then
+  # moving .service to systemd and starting the service
+  if RESULT=$(sudo mv $WEEVE_AGENT_DIR/weeve-agent.service $SERVICE_FILE \
+  && sudo systemctl enable weeve-agent \
+  && sudo systemctl start weeve-agent 2>&1); then
     log Weeve-agent is initiated ...
   else
     log Error while starting the weeve-agent service: "$RESULT"
@@ -209,7 +194,7 @@ tail_agent_log(){
   # parsing the weeve-agent log for to verify if the weeve-agent is registered and connected
   # on successful completion of the script $CLEANUP is set to false to skip the clean-up on exit
   log tailing the weeve-agent logs
-  timeout 10s tail -f ./weeve-agent/Weeve_Agent.log | sed '/ON connect >> connected >> registered : true/ q'
+  timeout 10s tail -f $WEEVE_AGENT_DIR/Weeve_Agent.log | sed '/ON connect >> connected >> registered : true/ q'
 }
 
 cleanup() {
@@ -220,48 +205,39 @@ cleanup() {
     log cleaning up the contents ...
 
     if RESULT=$(systemctl is-active weeve-agent 2>&1); then
-      systemctl stop weeve-agent
-      systemctl daemon-reload
+      sudo systemctl stop weeve-agent
+      sudo systemctl daemon-reload
       log weeve-agent service stopped
     else
       log weeve-agent service not running
     fi
 
     if [ -f "$SERVICE_FILE" ]; then
-      rm "$SERVICE_FILE"
+      sudo rm "$SERVICE_FILE"
       log "$SERVICE_FILE" removed
     else
       log "$SERVICE_FILE" doesnt exists
     fi
 
-    if [ -f "$ARGUMENTS_FILE" ]; then
-      rm "$ARGUMENTS_FILE"
-      log "$ARGUMENTS_FILE" removed
+    if [ -d "$WEEVE_AGENT_DIR" ] ; then
+      sudo rm -r "$WEEVE_AGENT_DIR"
+      log "$WEEVE_AGENT_DIR" removed
     else
-      log "$ARGUMENTS_FILE" doesnt exists
-    fi
-
-    if [ -d "$WEEVE_AGENT_DIRECTORY" ] ; then
-      rm -r "$WEEVE_AGENT_DIRECTORY"
-      log "$WEEVE_AGENT_DIRECTORY" removed
-    else
-      log "$WEEVE_AGENT_DIRECTORY" doesnt exists
+      log "$WEEVE_AGENT_DIR" doesnt exists
     fi
 
   fi
 }
 
 # if in case the user have deleted the weeve-agent.service and did not reload the systemd daemon
-systemctl daemon-reload
+sudo systemctl daemon-reload
 
 # Delcaring and defining variables
 LOG_FILE=installer.log
 
-WEEVE_AGENT_DIRECTORY="$PWD"/weeve-agent
+WEEVE_AGENT_DIR="$PWD/weeve-agent"
 
 SERVICE_FILE=/lib/systemd/system/weeve-agent.service
-
-ARGUMENTS_FILE=/lib/systemd/system/weeve-agent.argconf
 
 ACCESS_KEY=""
 
@@ -272,6 +248,12 @@ S3_BUCKET=""
 BINARY_NAME=""
 
 CLEANUP="false"
+
+ARG_VERBOSE="-v"
+ARG_HEARTBEAT="--heartbeat 10"
+ARG_BROKER="--broker tls://mapi-dev.weeve.engineering:8883"
+ARG_ROOT_CERT="--rootcert $WEEVE_AGENT_DIR/ca.crt"
+ARG_LOG_LEVEL="--loglevel debug"
 
 trap cleanup EXIT
 
@@ -285,7 +267,7 @@ do
     "tokenpath") TOKEN_FILE="$VALUE" ;;
     "environment") ENV="$VALUE" ;;
     "nodename")  NODE_NAME="$VALUE" ;;
-    "release") AGENT_RELEASE="$VALUE" ;; 
+    "release") AGENT_RELEASE="$VALUE" ;;
     "test") BUILD_LOCAL="$VALUE" ;;
     *)
   esac
@@ -321,8 +303,6 @@ else
 fi
 
 download_dependencies
-
-write_to_argconf
 
 write_to_service
 
