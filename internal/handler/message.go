@@ -162,10 +162,11 @@ func GetStatusMessage(nodeId string) (statusMessage, error) {
 	knownManifests := manifest.GetKnownManifests()
 
 	for _, manif := range knownManifests {
-		edgeApplication := edgeApplications{}
+		// TODO: Change ManifestID value as per requirment
+		edgeApplication := edgeApplications{ManifestID: manif.ManifestName + manif.VersionName}
 		containersStat := []container{}
 
-		if manif.Status == "SUCCESS" {
+		if manif.Status == "DEPLOYED" {
 			edgeApplication.Status = Connected
 
 			appContainers, err := docker.ReadDataServiceContainers(manifest.ManifestUniqueID{ManifestName: manif.ManifestName, VersionName: manif.VersionName})
@@ -201,19 +202,18 @@ func GetStatusMessage(nodeId string) (statusMessage, error) {
 	}
 
 	var per float64 = 0
-	if cpu, err := cpu.Percent(0, false); err == nil {
+	if cpu, err := cpu.Percent(0, false); err == nil && len(cpu) > 0 {
 		for _, c := range cpu {
 			per = per + c
 		}
-		if len(cpu) > 0 {
-			per = per / float64(len(cpu))
-		}
+		per = per / float64(len(cpu))
 	}
 	deviceParams.SystemLoad = per
 
 	if diskStat, err := disk.Usage("/"); err == nil {
 		deviceParams.StorageFree = diskStat.Free
 	}
+
 	if verMem, err := mem.VirtualMemory(); err == nil {
 		deviceParams.RamFree = verMem.Free
 	}
