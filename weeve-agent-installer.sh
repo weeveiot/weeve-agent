@@ -85,9 +85,9 @@ validating_docker(){
 }
 
 build_test_binary(){
-  if RESULT=$(go build -o ./weeve-agent/test-agent cmd/agent/agent.go 2>&1); then
+  if RESULT=$(go build -o $WEEVE_AGENT_DIR/test-agent cmd/agent/agent.go 2>&1); then
     log built weeve-agent binary for testing
-    chmod u+x ./weeve-agent/test-agent
+    chmod u+x $WEEVE_AGENT_DIR/test-agent
     log Changed file permission
     BINARY_NAME="test-agent"
   else
@@ -123,10 +123,10 @@ download_binary(){
   esac
 
   if RESULT=$(mkdir weeve-agent \
-  && cd ./weeve-agent \
+  && cd $WEEVE_AGENT_DIR \
   && wget http://"$S3_BUCKET".s3.amazonaws.com/"$BINARY_NAME" 2>&1); then
     log Weeve-agent binary downloaded
-    chmod u+x ./weeve-agent/"$BINARY_NAME"
+    chmod u+x $WEEVE_AGENT_DIR/"$BINARY_NAME"
     log Changed file permission
   else
     log Error while downloading the executable: "$RESULT"
@@ -139,7 +139,7 @@ download_dependencies(){
   log Downloading the dependencies ...
   for DEPENDENCIES in ca.crt nodeconfig.json weeve-agent.service
   do
-  if RESULT=$(cd ./weeve-agent \
+  if RESULT=$(cd $WEEVE_AGENT_DIR \
   && curl -sO https://"$ACCESS_KEY"@raw.githubusercontent.com/weeveiot/weeve-agent/WD-449-create-new-broker-certificates/"$DEPENDENCIES" 2>&1); then
     log "$DEPENDENCIES" downloaded
   else
@@ -159,7 +159,7 @@ write_to_service(){
 
   BINARY_PATH="$WEEVE_AGENT_DIR/$BINARY_NAME"
   ARG_NODENAME="--name $NODE_NAME"
-  ARG_NODECONFIG="--config $WORKING_DIR/nodeconfig.json"
+  ARG_NODECONFIG="--config $WEEVE_AGENT_DIR/nodeconfig.json"
   ARGUMENTS="$ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_ROOT_CERT $ARG_NODENAME $ARG_NODECONFIG"
   EXECUTE_BINARY="$BINARY_PATH $ARGUMENTS"
 
@@ -167,14 +167,14 @@ write_to_service(){
   {
     printf "WorkingDirectory=%s\n" "$WEEVE_AGENT_DIR"
     printf "ExecStart=%s\n" "$EXECUTE_BINARY"
-  } >> ./weeve-agent/weeve-agent.service
+  } >> $WEEVE_AGENT_DIR/weeve-agent.service
 }
 
 start_service(){
   log Starting the service ...
 
   # moving .service to systemd and starting the service
-  if RESULT=$(sudo mv weeve-agent/weeve-agent.service $SERVICE_FILE \
+  if RESULT=$(sudo mv $WEEVE_AGENT_DIR/weeve-agent.service $SERVICE_FILE \
   && sudo systemctl enable weeve-agent \
   && sudo systemctl start weeve-agent 2>&1); then
     log Weeve-agent is initiated ...
@@ -194,7 +194,7 @@ tail_agent_log(){
   # parsing the weeve-agent log for to verify if the weeve-agent is registered and connected
   # on successful completion of the script $CLEANUP is set to false to skip the clean-up on exit
   log tailing the weeve-agent logs
-  timeout 10s tail -f ./weeve-agent/Weeve_Agent.log | sed '/ON connect >> connected >> registered : true/ q'
+  timeout 10s tail -f $WEEVE_AGENT_DIR/Weeve_Agent.log | sed '/ON connect >> connected >> registered : true/ q'
 }
 
 cleanup() {
@@ -249,10 +249,10 @@ BINARY_NAME=""
 
 CLEANUP="false"
 
-ARG_VERBOSE=-v
-ARG_HEARTBEAT=--heartbeat 300
-ARG_BROKER=--broker tls://mapi-dev.weeve.engineering:8883
-ARG_ROOT_CERT=--rootcert ca.crt
+ARG_VERBOSE="-v"
+ARG_HEARTBEAT="--heartbeat 300"
+ARG_BROKER="--broker tls://mapi-dev.weeve.engineering:8883"
+ARG_ROOT_CERT="--rootcert ca.crt"
 
 trap cleanup EXIT
 

@@ -8,7 +8,7 @@ log() {
 sudo systemctl daemon-reload
 
 CURRENT_DIRECTORY=$(pwd)
-WEEVE_AGENT_DIRECTORY="$CURRENT_DIRECTORY"/weeve-agent
+WEEVE_AGENT_DIR="$CURRENT_DIRECTORY"/weeve-agent
 
 SERVICE_FILE=/lib/systemd/system/weeve-agent.service
 
@@ -27,11 +27,11 @@ else
 log "$SERVICE_FILE" doesnt exists
 fi
 
-if [ -d "$WEEVE_AGENT_DIRECTORY" ] ; then
-rm -r "$WEEVE_AGENT_DIRECTORY"
-log "$WEEVE_AGENT_DIRECTORY" removed
+if [ -d "$WEEVE_AGENT_DIR" ] ; then
+rm -r "$WEEVE_AGENT_DIR"
+log "$WEEVE_AGENT_DIR" removed
 else
-log "$WEEVE_AGENT_DIRECTORY" doesnt exists
+log "$WEEVE_AGENT_DIR" doesnt exists
 fi
 
 log done
