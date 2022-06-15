@@ -162,8 +162,7 @@ func GetStatusMessage(nodeId string) (statusMessage, error) {
 	knownManifests := manifest.GetKnownManifests()
 
 	for _, manif := range knownManifests {
-		// TODO: Change ManifestID value as per requirment
-		edgeApplication := edgeApplications{ManifestID: manif.ManifestName + manif.VersionName}
+		edgeApplication := edgeApplications{ManifestID: manif.ManifestID}
 		containersStat := []container{}
 
 		if manif.Status == "DEPLOYED" {
