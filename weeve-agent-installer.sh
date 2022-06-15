@@ -250,9 +250,10 @@ BINARY_NAME=""
 CLEANUP="false"
 
 ARG_VERBOSE="-v"
-ARG_HEARTBEAT="--heartbeat 300"
+ARG_HEARTBEAT="--heartbeat 10"
 ARG_BROKER="--broker tls://mapi-dev.weeve.engineering:8883"
 ARG_ROOT_CERT="--rootcert $WEEVE_AGENT_DIR/ca.crt"
+ARG_LOG_LEVEL="--loglevel debug"
 
 trap cleanup EXIT
 
