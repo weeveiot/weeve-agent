@@ -140,7 +140,7 @@ download_dependencies(){
   for DEPENDENCIES in ca.crt nodeconfig.json weeve-agent.service
   do
   if RESULT=$(cd $WEEVE_AGENT_DIR \
-  && curl -sO https://"$ACCESS_KEY"@raw.githubusercontent.com/weeveiot/weeve-agent/WD-449-create-new-broker-certificates/"$DEPENDENCIES" 2>&1); then
+  && curl -sO https://"$ACCESS_KEY"@raw.githubusercontent.com/weeveiot/weeve-agent/WD-444-update-agent-to-the-new-data-model/"$DEPENDENCIES" 2>&1); then
     log "$DEPENDENCIES" downloaded
   else
     log Error while downloading the dependencies: "$RESULT"
