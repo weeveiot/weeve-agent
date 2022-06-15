@@ -6,4 +6,3 @@ WantedBy=multi-user.target
 Type=simple
 Restart=always
 RestartSec=60s
-EnvironmentFile=/lib/systemd/system/weeve-agent.argconf

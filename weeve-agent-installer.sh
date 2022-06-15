@@ -57,7 +57,7 @@ get_test(){
 
 check_for_agent(){
   # looking for existing agent instance
-  if [ -d "$WEEVE_AGENT_DIRECTORY" ] || [ -f "$SERVICE_FILE" ] || [ -f "$ARGUMENTS_FILE" ]; then
+  if [ -d "$WEEVE_AGENT_DIR" ] || [ -f "$SERVICE_FILE" ]; then
     log Detected existing weeve-agent contents!
     read -r -p "Proceeding with the installation will cause REMOVAL of the existing contents of weeve-agent! Do you want to proceed? y/n: " RESPONSE
     if [ "$RESPONSE" = "y" ] || [ "$RESPONSE" = "yes" ]; then
@@ -137,7 +137,7 @@ download_binary(){
 
 download_dependencies(){
   log Downloading the dependencies ...
-  for DEPENDENCIES in ca.crt nodeconfig.json weeve-agent.service weeve-agent.argconf
+  for DEPENDENCIES in ca.crt nodeconfig.json weeve-agent.service
   do
   if RESULT=$(cd ./weeve-agent \
   && curl -sO https://"$ACCESS_KEY"@raw.githubusercontent.com/weeveiot/weeve-agent/WD-449-create-new-broker-certificates/"$DEPENDENCIES" 2>&1); then
@@ -151,31 +151,22 @@ download_dependencies(){
   log Dependencies downloaded.
 }
 
-write_to_argconf(){
-  log Appeding the required command line arguments by the agent ...
-  {
-    printf "ARG_NODENAME=--name %s" "$NODE_NAME"
-  }  >> ./weeve-agent/weeve-agent.argconf
-}
-
 write_to_service(){
   # appending the required strings to the .service to point systemd to the path of the binary and to run it
   # following are the example for the lines appended to weeve-agent.service:
   #   WorkingDirectory=/home/admin/weeve-agent
   #   ExecStart=/home/admin/weeve-agent/weeve-agent-x86_64 $ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_ROOT_CERT $ARG_NODENAME
 
-  # line 1
-  WORKING_DIRECTORY="WorkingDirectory=$PWD/weeve-agent"
-
-  # line 2
-  BINARY_PATH="ExecStart=$PWD/weeve-agent/$BINARY_NAME"
-  ARGUMENTS='$ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_ROOT_CERT $ARG_NODENAME'
+  BINARY_PATH="$WEEVE_AGENT_DIR/$BINARY_NAME"
+  ARG_NODENAME="--name $NODE_NAME"
+  ARG_NODECONFIG="--config $WORKING_DIR/nodeconfig.json"
+  ARGUMENTS="$ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_ROOT_CERT $ARG_NODENAME $ARG_NODECONFIG"
   EXECUTE_BINARY="$BINARY_PATH $ARGUMENTS"
 
   log Adding the binary path to service file ...
   {
-    printf "%s\n" "$WORKING_DIRECTORY"
-    printf "%s\n" "$EXECUTE_BINARY"
+    printf "WorkingDirectory=%s\n" "$WEEVE_AGENT_DIR"
+    printf "ExecStart=%s\n" "$EXECUTE_BINARY"
   } >> ./weeve-agent/weeve-agent.service
 }
 
@@ -184,7 +175,6 @@ start_service(){
 
   # moving .service and .argconf to systemd and starting the service
   if RESULT=$(sudo mv weeve-agent/weeve-agent.service $SERVICE_FILE \
-  && sudo mv weeve-agent/weeve-agent.argconf $ARGUMENTS_FILE \
   && sudo systemctl enable weeve-agent \
   && sudo systemctl start weeve-agent 2>&1); then
     log Weeve-agent is initiated ...
@@ -229,18 +219,11 @@ cleanup() {
       log "$SERVICE_FILE" doesnt exists
     fi
 
-    if [ -f "$ARGUMENTS_FILE" ]; then
-      sudo rm "$ARGUMENTS_FILE"
-      log "$ARGUMENTS_FILE" removed
+    if [ -d "$WEEVE_AGENT_DIR" ] ; then
+      rm -r "$WEEVE_AGENT_DIR"
+      log "$WEEVE_AGENT_DIR" removed
     else
-      log "$ARGUMENTS_FILE" doesnt exists
-    fi
-
-    if [ -d "$WEEVE_AGENT_DIRECTORY" ] ; then
-      rm -r "$WEEVE_AGENT_DIRECTORY"
-      log "$WEEVE_AGENT_DIRECTORY" removed
-    else
-      log "$WEEVE_AGENT_DIRECTORY" doesnt exists
+      log "$WEEVE_AGENT_DIR" doesnt exists
     fi
 
   fi
@@ -252,11 +235,9 @@ sudo systemctl daemon-reload
 # Delcaring and defining variables
 LOG_FILE=installer.log
 
-WEEVE_AGENT_DIRECTORY="$PWD"/weeve-agent
+WEEVE_AGENT_DIR="$PWD/weeve-agent"
 
 SERVICE_FILE=/lib/systemd/system/weeve-agent.service
-
-ARGUMENTS_FILE=/lib/systemd/system/weeve-agent.argconf
 
 ACCESS_KEY=""
 
@@ -267,6 +248,11 @@ S3_BUCKET=""
 BINARY_NAME=""
 
 CLEANUP="false"
+
+ARG_VERBOSE=-v
+ARG_HEARTBEAT=--heartbeat 300
+ARG_BROKER=--broker tls://mapi-dev.weeve.engineering:8883
+ARG_ROOT_CERT=--rootcert ca.crt
 
 trap cleanup EXIT
 

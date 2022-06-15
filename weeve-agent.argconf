@@ -1,4 +1,0 @@
-ARG_VERBOSE=-v
-ARG_HEARTBEAT=--heartbeat 300
-ARG_BROKER=--broker tls://mapi-dev.weeve.engineering:8883
-ARG_ROOT_CERT=--rootcert ca.crt
