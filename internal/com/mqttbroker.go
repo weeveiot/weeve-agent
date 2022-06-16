@@ -47,7 +47,7 @@ func SendHeartbeat() error {
 	}
 
 	nodeStatusTopic := topicNodeStatus + "/" + config.GetNodeId()
-	msg, err := handler.GetStatusMessage(config.GetNodeId())
+	msg, err := handler.GetStatusMessage()
 	if err != nil {
 		return err
 	}

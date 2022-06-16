@@ -157,7 +157,7 @@ func ProcessMessage(payload []byte) error {
 	return nil
 }
 
-func GetStatusMessage(nodeId string) (statusMessage, error) {
+func GetStatusMessage() (statusMessage, error) {
 	edgeApps := []edgeApplications{}
 	knownManifests := manifest.GetKnownManifests()
 
