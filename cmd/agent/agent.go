@@ -155,7 +155,7 @@ func parseCLIoptions() string {
 		}
 	}
 
-	// FLAG: Broker, NoTLS, Heartbeat, PubClientId, SubClientId, TopicName
+	// FLAG: Broker, NoTLS, Heartbeat, TopicName
 	com.SetParams(opt)
 
 	return opt.ManifestPath

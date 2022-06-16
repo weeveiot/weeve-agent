@@ -9,9 +9,7 @@ COPY archive.sh .
 
 COPY bin/agent_secunet .
 
-COPY certs/4be43aa6f1-certificate.pem.crt certs/
-COPY certs/4be43aa6f1-private.pem.key certs/
-COPY certs/AmazonRootCA1.pem certs/
+COPY ca.crt .
 COPY nodeconfig_secunet.json nodeconfig.json
 
-CMD ["./agent_secunet", "-v", "--broker=tls://asnhp33z3nubs-ats.iot.us-east-1.amazonaws.com:8883", "--subClientId=nodes/awsdev", "--pubClientId=manager/awsdev", "--publish=status", "--heartbeat=100", "--loglevel=debug"]
+CMD ["./agent_secunet", "-v", "--broker=tls://mapi-dev.weeve.engineering:8883", "--heartbeat=100", "--loglevel=debug"]
