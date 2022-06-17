@@ -13,7 +13,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	log "github.com/sirupsen/logrus"
-	"github.com/weeveiot/weeve-agent/internal/manifest"
+	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 // Network name constraints
@@ -32,7 +32,7 @@ func readAllNetworks() ([]types.NetworkResource, error) {
 	return networks, nil
 }
 
-func ReadDataServiceNetworks(manifestUniqueID manifest.ManifestUniqueID) ([]types.NetworkResource, error) {
+func ReadDataServiceNetworks(manifestUniqueID model.ManifestUniqueID) ([]types.NetworkResource, error) {
 	log.Debug("Docker_container -> ReadDataServiceNetworks")
 
 	filter := filters.NewArgs()
@@ -105,7 +105,7 @@ func CreateNetwork(name string, labels map[string]string) (string, error) {
 	return networkName, nil
 }
 
-func NetworkPrune(manifestUniqueID manifest.ManifestUniqueID) error {
+func NetworkPrune(manifestUniqueID model.ManifestUniqueID) error {
 	filter := filters.NewArgs()
 	filter.Add("label", "manifestName="+manifestUniqueID.ManifestName)
 	filter.Add("label", "versionName="+manifestUniqueID.VersionName)

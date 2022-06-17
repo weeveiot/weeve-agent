@@ -12,6 +12,7 @@ import (
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
+	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 var ctx = context.Background()
@@ -134,7 +135,7 @@ func ReadAllContainers() ([]types.Container, error) {
 	return containers, nil
 }
 
-func ReadDataServiceContainers(manifestUniqueID manifest.ManifestUniqueID) ([]types.Container, error) {
+func ReadDataServiceContainers(manifestUniqueID model.ManifestUniqueID) ([]types.Container, error) {
 	log.Debug("Docker_container -> ReadDataServiceContainers")
 
 	filter := filters.NewArgs()

@@ -17,11 +17,11 @@ func GetKnownManifests() []model.ManifestStatus {
 	return knownManifests
 }
 
-func SetStatus(manifestID string, containerCount int, manifestUniqueID ManifestUniqueID, status string) {
+func SetStatus(manifestID string, containerCount int, manifestUniqueID model.ManifestUniqueID, status string) {
 	log.Debugln("Setting status", status, "to data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionName)
 	manifestKnown := false
 	for i, manifest := range knownManifests {
-		if manifest.ManifestName == manifestUniqueID.ManifestName && manifest.VersionName == manifestUniqueID.VersionName {
+		if manifest.ManifestUniqueID == manifestUniqueID {
 			knownManifests[i].Status = status
 			manifestKnown = true
 			break
@@ -29,11 +29,10 @@ func SetStatus(manifestID string, containerCount int, manifestUniqueID ManifestU
 	}
 	if !manifestKnown {
 		knownManifests = append(knownManifests, model.ManifestStatus{
-			ManifestID:     manifestID,
-			ManifestName:   manifestUniqueID.ManifestName,
-			VersionName:    manifestUniqueID.VersionName,
-			Status:         status,
-			ContainerCount: containerCount,
+			ManifestID:       manifestID,
+			ManifestUniqueID: manifestUniqueID,
+			Status:           status,
+			ContainerCount:   containerCount,
 		})
 	}
 

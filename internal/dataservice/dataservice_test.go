@@ -54,9 +54,9 @@ func TestDeployManifest(t *testing.T) {
 	}
 
 	// Fill the placeholders for Start and Stop tests
-	manifestName = thisManifest.ManifestName
+	manifestName = thisManifest.ManifestUniqueID.ManifestName
 	log.Info(manifestName)
-	version = thisManifest.VersionName
+	version = thisManifest.ManifestUniqueID.VersionName
 	log.Info(version)
 
 	err = dataservice.DeployDataService(thisManifest, "deploy")
@@ -81,7 +81,7 @@ func TestDeployManifest(t *testing.T) {
 
 	if len(networks) > 0 {
 		// Check if containers exist
-		dsContainers, _ := docker.ReadDataServiceContainers(manifest.ManifestUniqueID{ManifestName: thisManifest.ManifestName, VersionName: thisManifest.VersionName})
+		dsContainers, _ := docker.ReadDataServiceContainers(thisManifest.ManifestUniqueID)
 		containers := thisManifest.Modules
 		for _, dsContainer := range dsContainers {
 			containersExist := false

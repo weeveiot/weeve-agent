@@ -155,11 +155,10 @@ func GetStatusMessage() (statusMessage, error) {
 	knownManifests := manifest.GetKnownManifests()
 
 	for _, manif := range knownManifests {
-		manifestUniqueID := manifest.ManifestUniqueID{ManifestName: manif.ManifestName, VersionName: manif.VersionName}
 		edgeApplication := edgeApplications{ManifestID: manif.ManifestID, Status: manifest.Running}
 		containersStat := []container{}
 
-		appContainers, err := docker.ReadDataServiceContainers(manifestUniqueID)
+		appContainers, err := docker.ReadDataServiceContainers(manif.ManifestUniqueID)
 		if err != nil {
 			return statusMessage{}, err
 		}
@@ -188,7 +187,7 @@ func GetStatusMessage() (statusMessage, error) {
 		}
 
 		edgeApplication.Containers = containersStat
-		manifest.SetStatus("", 0, manifestUniqueID, edgeApplication.Status)
+		manifest.SetStatus("", 0, manif.ManifestUniqueID, edgeApplication.Status)
 
 		edgeApps = append(edgeApps, edgeApplication)
 	}

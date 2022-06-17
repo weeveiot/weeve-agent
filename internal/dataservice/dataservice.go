@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
+	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 const CMDDeploy = "deploy"
@@ -19,31 +20,30 @@ const CMDUndeploy = "undeploy"
 
 func DeployDataService(man manifest.Manifest, command string) error {
 	//******** STEP 1 - Check if Data Service is already deployed *************//
-	manifestUniqueID := manifest.ManifestUniqueID{ManifestName: man.ManifestName, VersionName: man.VersionName}
 	containerCount := len(man.Modules)
 
-	deploymentID := manifestUniqueID.ManifestName + "-" + man.VersionName + " | "
+	deploymentID := man.ManifestUniqueID.ManifestName + "-" + man.ManifestUniqueID.VersionName + " | "
 
 	log.Info(deploymentID, fmt.Sprintf("%ving data service ...", command))
 
-	dataServiceExists, err := DataServiceExist(manifestUniqueID)
+	dataServiceExists, err := DataServiceExist(man.ManifestUniqueID)
 	if err != nil {
 		log.Error(deploymentID, err)
-		manifest.SetStatus(man.ID, containerCount, manifestUniqueID, manifest.Error)
+		manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Error)
 		return err
 	}
 
 	if dataServiceExists {
 		if command == CMDDeploy {
-			log.Info(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", manifestUniqueID.ManifestName, man.VersionName))
+			log.Info(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", man.ManifestUniqueID.ManifestName, man.ManifestUniqueID.VersionName))
 			return errors.New("data service already exists")
 
 		} else if command == CMDReDeploy || command == CMDDeployLocal {
 			// Clean old data service resources
-			err := UndeployDataService(manifestUniqueID)
+			err := UndeployDataService(man.ManifestUniqueID)
 			if err != nil {
 				log.Error(deploymentID, "Error while cleaning old data service -> ", err)
-				manifest.SetStatus(man.ID, containerCount, manifestUniqueID, manifest.Error)
+				manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Error)
 				return errors.New("redeployment failed")
 			}
 		}
@@ -69,7 +69,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 			if err != nil {
 				msg := "Unable to pull image/s, " + err.Error()
 				log.Error(deploymentID, msg)
-				manifest.SetStatus(man.ID, containerCount, manifestUniqueID, manifest.Error)
+				manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Error)
 				return errors.New("unable to pull image/s")
 
 			}
@@ -79,10 +79,10 @@ func DeployDataService(man manifest.Manifest, command string) error {
 	//******** STEP 3 - Create the network *************//
 	log.Info(deploymentID, "Creating network ...")
 
-	networkName, err := docker.CreateNetwork(man.ManifestName, man.Labels)
+	networkName, err := docker.CreateNetwork(man.ManifestUniqueID.ManifestName, man.Labels)
 	if err != nil {
 		log.Error(err)
-		manifest.SetStatus(man.ID, containerCount, manifestUniqueID, manifest.Error)
+		manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Error)
 		return err
 	}
 
@@ -96,9 +96,9 @@ func DeployDataService(man manifest.Manifest, command string) error {
 
 	if len(containerConfigs) == 0 {
 		log.Error(deploymentID, "No valid contianers in Manifest")
-		manifest.SetStatus(man.ID, containerCount, manifestUniqueID, manifest.Error)
+		manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Error)
 		log.Info(deploymentID, "Initiating rollback ...")
-		UndeployDataService(manifestUniqueID)
+		UndeployDataService(man.ManifestUniqueID)
 		return errors.New("no valid contianers in manifest")
 	}
 
@@ -107,21 +107,21 @@ func DeployDataService(man manifest.Manifest, command string) error {
 		containerID, err := docker.CreateAndStartContainer(containerConfig)
 		if err != nil {
 			log.Error(deploymentID, "Failed to create and start container", containerConfig.ContainerName)
-			manifest.SetStatus(man.ID, containerCount, manifestUniqueID, manifest.Error)
+			manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Error)
 			log.Info(deploymentID, "Initiating rollback ...")
-			UndeployDataService(manifestUniqueID)
+			UndeployDataService(man.ManifestUniqueID)
 			return err
 		}
 		log.Info(deploymentID, "Successfully created container ", containerID, " with args: ", containerConfig.EntryPointArgs)
 		log.Info(deploymentID, "Started!")
 	}
 
-	manifest.SetStatus(man.ID, containerCount, manifestUniqueID, manifest.Running)
+	manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Running)
 
 	return nil
 }
 
-func StopDataService(manifestUniqueID manifest.ManifestUniqueID) error {
+func StopDataService(manifestUniqueID model.ManifestUniqueID) error {
 	const stateRunning = "running"
 
 	log.Info("Stopping data service:", manifestUniqueID.ManifestName, manifestUniqueID.VersionName)
@@ -154,7 +154,7 @@ func StopDataService(manifestUniqueID manifest.ManifestUniqueID) error {
 	return nil
 }
 
-func StartDataService(manifestUniqueID manifest.ManifestUniqueID) error {
+func StartDataService(manifestUniqueID model.ManifestUniqueID) error {
 	log.Infoln("Starting data service:", manifestUniqueID.ManifestName, manifestUniqueID.VersionName)
 
 	const stateExited = "exited"
@@ -191,7 +191,7 @@ func StartDataService(manifestUniqueID manifest.ManifestUniqueID) error {
 	return nil
 }
 
-func UndeployDataService(manifestUniqueID manifest.ManifestUniqueID) error {
+func UndeployDataService(manifestUniqueID model.ManifestUniqueID) error {
 	log.Info("Undeploying data service ...", manifestUniqueID.ManifestName, manifestUniqueID.VersionName)
 
 	deploymentID := manifestUniqueID.ManifestName + "-" + manifestUniqueID.VersionName + " | "
@@ -280,7 +280,7 @@ func UndeployDataService(manifestUniqueID manifest.ManifestUniqueID) error {
 	}
 }
 
-func DataServiceExist(manifestUniqueID manifest.ManifestUniqueID) (bool, error) {
+func DataServiceExist(manifestUniqueID model.ManifestUniqueID) (bool, error) {
 	networks, err := docker.ReadDataServiceNetworks(manifestUniqueID)
 	if err != nil {
 		return false, err

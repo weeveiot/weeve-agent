@@ -8,6 +8,7 @@ import (
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/docker/go-connections/nat"
+	"github.com/weeveiot/weeve-agent/internal/model"
 
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
@@ -15,17 +16,11 @@ import (
 )
 
 type Manifest struct {
-	ID            string
-	VersionName   string
-	VersionNumber float64
-	ManifestName  string
-	Modules       []ContainerConfig
-	Labels        map[string]string
-}
-
-type ManifestUniqueID struct {
-	VersionName  string
-	ManifestName string
+	ID               string
+	ManifestUniqueID model.ManifestUniqueID
+	VersionNumber    float64
+	Modules          []ContainerConfig
+	Labels           map[string]string
 }
 
 // This struct holds information for starting a container
@@ -133,12 +128,11 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 	}
 
 	manifest := Manifest{
-		ID:            manifestID,
-		ManifestName:  manifestName,
-		VersionName:   versionName,
-		VersionNumber: versionNumber,
-		Modules:       containerConfigs,
-		Labels:        labels,
+		ID:               manifestID,
+		ManifestUniqueID: model.ManifestUniqueID{ManifestName: manifestName, VersionName: versionName},
+		VersionNumber:    versionNumber,
+		Modules:          containerConfigs,
+		Labels:           labels,
 	}
 
 	return manifest, nil
@@ -153,14 +147,14 @@ func GetCommand(jsonParsed *gabs.Container) (string, error) {
 	return command, nil
 }
 
-func GetEdgeAppUniqueID(parsedJson *gabs.Container) (ManifestUniqueID, error) {
+func GetEdgeAppUniqueID(parsedJson *gabs.Container) (model.ManifestUniqueID, error) {
 	manifestName := parsedJson.Search("manifestName").Data().(string)
 	versionName := parsedJson.Search("versionName").Data().(string)
 	if manifestName == "" || versionName == "" {
-		return ManifestUniqueID{}, errors.New("unique ID fields are missing in given manifest")
+		return model.ManifestUniqueID{}, errors.New("unique ID fields are missing in given manifest")
 	}
 
-	return ManifestUniqueID{ManifestName: manifestName, VersionName: versionName}, nil
+	return model.ManifestUniqueID{ManifestName: manifestName, VersionName: versionName}, nil
 }
 
 func (m Manifest) UpdateManifest(networkName string) {
