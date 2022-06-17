@@ -123,7 +123,7 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 			return Manifest{}, err
 		}
 
-		containerConfig.ExposedPorts, containerConfig.PortBinding = getPorts(module, envJson)
+		containerConfig.ExposedPorts, containerConfig.PortBinding = getPorts(module)
 		containerConfigs = append(containerConfigs, containerConfig)
 	}
 
@@ -234,16 +234,14 @@ func getMounts(parsedJson *gabs.Container) ([]mount.Mount, error) {
 	return mounts, nil
 }
 
-func getPorts(document *gabs.Container, envs []*gabs.Container) (nat.PortSet, nat.PortMap) {
-	binding := []nat.PortBinding{}
-	for _, port := range document.Search("ports").Children() {
+func getPorts(parsedJson *gabs.Container) (nat.PortSet, nat.PortMap) {
+	exposedPorts := nat.PortSet{}
+	portBinding := nat.PortMap{}
+	for _, port := range parsedJson.Search("ports").Children() {
 		hostPort := port.Search("host").Data().(string)
-		binding = append(binding, nat.PortBinding{HostPort: hostPort})
-	}
-
-	portBinding := nat.PortMap{nat.Port("80/tcp"): binding}
-	exposedPorts := nat.PortSet{
-		nat.Port("80/tcp"): struct{}{},
+		containerPort := port.Search("container").Data().(string)
+		exposedPorts[nat.Port(containerPort)] = struct{}{}
+		portBinding[nat.Port(containerPort)] = []nat.PortBinding{{HostPort: hostPort}}
 	}
 
 	return exposedPorts, portBinding
