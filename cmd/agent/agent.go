@@ -20,7 +20,6 @@ import (
 
 	"github.com/weeveiot/weeve-agent/internal/com"
 	"github.com/weeveiot/weeve-agent/internal/config"
-	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/handler"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
@@ -179,7 +178,7 @@ func monitorDataServiceStatus() {
 	var edgeApps []model.EdgeApplications
 
 	for {
-		latestEdgeApps, statusChange, err := dataservice.CompareDataServiceStatus(edgeApps)
+		latestEdgeApps, statusChange, err := handler.CompareDataServiceStatus(edgeApps)
 		if err != nil {
 			log.Error(err)
 		}
