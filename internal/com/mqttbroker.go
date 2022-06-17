@@ -38,9 +38,11 @@ var connected = false
 var publisher mqtt.Client
 var subscriber mqtt.Client
 
-func SendHeartbeat() error {
+func SendHeartbeat(sleep bool) error {
 	log.Debug("Node registered >> ", config.GetRegistered(), " | connected >> ", connected)
-	defer time.Sleep(time.Second * time.Duration(params.Heartbeat))
+	if sleep {
+		defer time.Sleep(time.Second * time.Duration(params.Heartbeat))
+	}
 	err := reconnectIfNecessary()
 	if err != nil {
 		return err

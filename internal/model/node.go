@@ -24,3 +24,14 @@ type ManifestStatus struct {
 	ManifestVersion string `json:"manifestVersion"`
 	Status          string `json:"status"`
 }
+
+type Container struct {
+	Name   string `json:"name"`
+	Status string `json:"status"`
+}
+
+type EdgeApplications struct {
+	ManifestID string      `json:"manifestID"`
+	Status     string      `json:"status"`
+	Containers []Container `json:"containers"`
+}

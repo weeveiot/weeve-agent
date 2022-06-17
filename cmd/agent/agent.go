@@ -20,6 +20,7 @@ import (
 
 	"github.com/weeveiot/weeve-agent/internal/com"
 	"github.com/weeveiot/weeve-agent/internal/config"
+	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/handler"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
@@ -44,6 +45,8 @@ func init() {
 	plainFormatter.TimestampFormat = dateTimeFormat
 	log.SetFormatter(plainFormatter)
 }
+
+var edgeApps []model.EdgeApplications
 
 func main() {
 	localManifest := parseCLIoptions()
@@ -76,7 +79,10 @@ func main() {
 	// MAIN LOOP
 	go func() {
 		for {
-			err = com.SendHeartbeat()
+			monitorDataServiceStatus()
+			log.Info("struct", edgeApps)
+
+			err = com.SendHeartbeat(true)
 			if err != nil {
 				log.Error(err)
 			}
@@ -170,4 +176,19 @@ func validateBrokerUrl(u *url.URL) {
 	}
 
 	log.Infof("Broker host->%v at port->%v over %v", host, port, u.Scheme)
+}
+
+func monitorDataServiceStatus() {
+	latestEdgeApps, statusChange, err := dataservice.CompareDataServiceStatus(edgeApps)
+	if err != nil {
+		log.Error(err)
+	}
+	edgeApps = latestEdgeApps
+
+	if statusChange == true {
+		err = com.SendHeartbeat(false)
+		if err != nil {
+			log.Error(err)
+		}
+	}
 }
