@@ -9,11 +9,11 @@ import (
 )
 
 const (
-	Connected    string = "connected"
-	Disconnected string = "disconnected"
-	Running      string = "running"
-	Alarm        string = "alarm"
-	Restarting   string = "restarting"
+	Connected  string = "connected"
+	Running    string = "running"
+	Alarm      string = "alarm"
+	Restarting string = "restarting"
+	Exited     string = "exited"
 )
 
 func GetDataServiceStatus() ([]model.EdgeApplications, error) {
@@ -35,14 +35,16 @@ func GetDataServiceStatus() ([]model.EdgeApplications, error) {
 			edgeApplication.Status = Running
 
 			for _, con := range appContainers {
-				container := model.Container{Name: strings.Join(con.Names, ", "), Status: con.Status}
+				container := model.Container{Name: strings.Join(con.Names, ", "), Status: con.State}
 				containersStat = append(containersStat, container)
-
-				if con.Status != Running {
+			}
+			for _, con := range appContainers {
+				if con.State == Exited {
 					edgeApplication.Status = Alarm
-					if con.Status == Restarting {
-						edgeApplication.Status = Restarting
-					}
+					break
+				}
+				if con.State == Restarting {
+					edgeApplication.Status = Restarting
 				}
 			}
 		} else {

@@ -46,8 +46,6 @@ func init() {
 	log.SetFormatter(plainFormatter)
 }
 
-var edgeApps []model.EdgeApplications
-
 func main() {
 	localManifest := parseCLIoptions()
 
@@ -77,11 +75,10 @@ func main() {
 	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
 
 	// MAIN LOOP
+	go monitorDataServiceStatus()
+
 	go func() {
 		for {
-			monitorDataServiceStatus()
-			log.Info("struct", edgeApps)
-
 			err = com.SendHeartbeat(true)
 			if err != nil {
 				log.Error(err)
@@ -179,16 +176,20 @@ func validateBrokerUrl(u *url.URL) {
 }
 
 func monitorDataServiceStatus() {
-	latestEdgeApps, statusChange, err := dataservice.CompareDataServiceStatus(edgeApps)
-	if err != nil {
-		log.Error(err)
-	}
-	edgeApps = latestEdgeApps
+	var edgeApps []model.EdgeApplications
 
-	if statusChange == true {
-		err = com.SendHeartbeat(false)
+	for {
+		latestEdgeApps, statusChange, err := dataservice.CompareDataServiceStatus(edgeApps)
 		if err != nil {
 			log.Error(err)
+		}
+		edgeApps = latestEdgeApps
+
+		if statusChange == true {
+			err = com.SendHeartbeat(false)
+			if err != nil {
+				log.Error(err)
+			}
 		}
 	}
 }
