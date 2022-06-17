@@ -49,6 +49,8 @@ func DeployDataService(man manifest.Manifest, command string) error {
 		}
 	}
 
+	manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Initiated, false)
+
 	//******** STEP 2 - Pull all images *************//
 	log.Info(deploymentID, "Iterating modules, pulling image into host if missing ...")
 
@@ -214,6 +216,8 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID) error {
 		return nil
 	}
 
+	manifest.SetStatus("", 0, manifestUniqueID, manifest.Deleted, false)
+
 	//******** STEP 1 - Stop and Remove Containers *************//
 
 	// map { imageID: number_of_allocated_containers }, needed for removing images as not supported by Go-Docker SDK
@@ -273,8 +277,6 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID) error {
 		manifest.SetStatus("", 0, manifestUniqueID, manifest.Error, false)
 		errorlist = fmt.Sprintf("%v,%v", errorlist, err)
 	}
-
-	manifest.SetStatus("", 0, manifestUniqueID, manifest.Deleted, false)
 
 	if errorlist != "" {
 		log.Error(deploymentID, err)
