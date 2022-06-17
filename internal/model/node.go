@@ -20,8 +20,9 @@ type Params struct {
 }
 
 type ManifestStatus struct {
-	ManifestID   string `json:"manifestID"`
-	ManifestName string `json:"manifestName"`
-	VersionName  string `json:"versionName"`
-	Status       string `json:"status"`
+	ManifestID     string `json:"manifestID"`
+	ManifestName   string `json:"manifestName"`
+	VersionName    string `json:"versionName"`
+	Status         string `json:"status"`
+	ContainerCount int    `json:"containerCount"`
 }

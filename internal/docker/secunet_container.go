@@ -229,7 +229,7 @@ func ReadAllContainers() ([]types.Container, error) {
 	return containerStructs, nil
 }
 
-func ReadDataServiceContainers(manifestName string, versionName string) ([]types.Container, error) {
+func ReadDataServiceContainers(manifestUniqueID manifest.ManifestUniqueID) ([]types.Container, error) {
 	var dataServiceContainers []types.Container
 
 	allContainers, err := ReadAllContainers()
@@ -238,7 +238,7 @@ func ReadDataServiceContainers(manifestName string, versionName string) ([]types
 	}
 
 	for _, container := range allContainers {
-		if existingContainers[container.ID] == manifestName+versionName {
+		if existingContainers[container.ID] == manifestUniqueID.ManifestName+manifestUniqueID.VersionName {
 			dataServiceContainers = append(dataServiceContainers, container)
 		}
 	}

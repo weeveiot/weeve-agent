@@ -63,8 +63,8 @@ func readAllNetworks() []types.NetworkResource {
 	return networks
 }
 
-func ReadDataServiceNetworks(manifestName string, versionName string) ([]types.NetworkResource, error) {
-	key := manifestName + versionName
+func ReadDataServiceNetworks(manifestUniqueID manifest.ManifestUniqueID) ([]types.NetworkResource, error) {
+	key := manifestUniqueID.ManifestName + manifestUniqueID.VersionName
 	networkName := existingNetworks[key]
 
 	if networkName == "" {
@@ -90,8 +90,8 @@ func CreateNetwork(name string, labels map[string]string) (string, error) {
 	return networkName, nil
 }
 
-func NetworkPrune(manifestName string, versionName string) error {
-	key := manifestName + versionName
+func NetworkPrune(manifestUniqueID manifest.ManifestUniqueID) error {
+	key := manifestUniqueID.ManifestName + manifestUniqueID.VersionName
 	delete(existingNetworks, key)
 	return nil
 }

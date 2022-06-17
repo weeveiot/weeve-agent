@@ -11,6 +11,7 @@ import (
 	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/host"
 	"github.com/shirou/gopsutil/mem"
+	"github.com/weeveiot/weeve-agent/internal/config"
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
@@ -21,14 +22,6 @@ type statusMessage struct {
 	EdgeApplications []edgeApplications `json:"edgeApplications"`
 	DeviceParams     deviceParams       `json:"deviceParams"`
 }
-
-const (
-	Connected    string = "connected"
-	Disconnected string = "disconnected"
-	Running      string = "running"
-	Alarm        string = "alarm"
-	Restarting   string = "restarting"
-)
 
 type edgeApplications struct {
 	ManifestID string      `json:"manifestID"`
@@ -104,7 +97,7 @@ func ProcessMessage(payload []byte) error {
 
 	case dataservice.CMDStopService:
 
-		err := manifest.ValidateStartStopJSON(jsonParsed)
+		err := manifest.ValidateUniqueIDExist(jsonParsed)
 		if err != nil {
 			return err
 
@@ -122,7 +115,7 @@ func ProcessMessage(payload []byte) error {
 
 	case dataservice.CMDStartService:
 
-		err := manifest.ValidateStartStopJSON(jsonParsed)
+		err := manifest.ValidateUniqueIDExist(jsonParsed)
 		if err != nil {
 			return err
 		}
@@ -138,7 +131,7 @@ func ProcessMessage(payload []byte) error {
 
 	case dataservice.CMDUndeploy:
 
-		err := manifest.ValidateStartStopJSON(jsonParsed)
+		err := manifest.ValidateUniqueIDExist(jsonParsed)
 		if err != nil {
 			return err
 		}
@@ -162,63 +155,85 @@ func GetStatusMessage() (statusMessage, error) {
 	knownManifests := manifest.GetKnownManifests()
 
 	for _, manif := range knownManifests {
-		edgeApplication := edgeApplications{ManifestID: manif.ManifestID}
+		manifestUniqueID := manifest.ManifestUniqueID{ManifestName: manif.ManifestName, VersionName: manif.VersionName}
+		edgeApplication := edgeApplications{ManifestID: manif.ManifestID, Status: manifest.Running}
 		containersStat := []container{}
 
-		if manif.Status == "DEPLOYED" {
-			edgeApplication.Status = Connected
+		appContainers, err := docker.ReadDataServiceContainers(manifestUniqueID)
+		if err != nil {
+			return statusMessage{}, err
+		}
 
-			appContainers, err := docker.ReadDataServiceContainers(manifest.ManifestUniqueID{ManifestName: manif.ManifestName, VersionName: manif.VersionName})
-			if err != nil {
-				return statusMessage{}, err
-			}
+		if len(appContainers) != manif.ContainerCount {
+			edgeApplication.Status = manifest.Alarm
+		}
 
-			edgeApplication.Status = Running
+		for _, con := range appContainers {
+			container := container{Name: strings.Join(con.Names, ", "), Status: con.State}
+			containersStat = append(containersStat, container)
 
-			for _, con := range appContainers {
-				container := container{Name: strings.Join(con.Names, ", "), Status: con.Status}
-				containersStat = append(containersStat, container)
-
-				if con.Status != Running {
-					edgeApplication.Status = Alarm
-					if con.Status == Restarting {
-						edgeApplication.Status = Restarting
-					}
+			// TODO: Pause and Running proper check
+			if edgeApplication.Status == manifest.Running || edgeApplication.Status == manifest.Paused {
+				switch con.State {
+				case manifest.Initiated:
+					edgeApplication.Status = manifest.Initiated
+				case manifest.Paused:
+					edgeApplication.Status = manifest.Paused
+				case manifest.Restarting:
+					edgeApplication.Status = manifest.Restarting
+				case manifest.Dead:
+					edgeApplication.Status = manifest.Alarm
 				}
 			}
-		} else {
-			edgeApplication.Status = manif.Status
 		}
 
 		edgeApplication.Containers = containersStat
+		manifest.SetStatus("", 0, manifestUniqueID, edgeApplication.Status)
 
 		edgeApps = append(edgeApps, edgeApplication)
 	}
 
 	deviceParams := deviceParams{}
-	if uptime, err := host.Uptime(); err == nil && uptime > 0 {
+	uptime, err := host.Uptime()
+	if err != nil {
+		return statusMessage{}, err
+	}
+	if uptime > 0 {
 		deviceParams.SystemUpTime = float64((uptime / 60) / 24)
 	}
 
-	var per float64 = 0
-	if cpu, err := cpu.Percent(0, false); err == nil && len(cpu) > 0 {
+	deviceParams.SystemLoad = 0
+	cpu, err := cpu.Percent(0, false)
+	if err != nil {
+		return statusMessage{}, err
+	}
+	if len(cpu) > 0 {
 		for _, c := range cpu {
-			per = per + c
+			deviceParams.SystemLoad = deviceParams.SystemLoad + c
 		}
-		per = per / float64(len(cpu))
-	}
-	deviceParams.SystemLoad = per
-
-	if diskStat, err := disk.Usage("/"); err == nil {
-		deviceParams.StorageFree = diskStat.Free
+		deviceParams.SystemLoad = deviceParams.SystemLoad / float64(len(cpu))
 	}
 
-	if verMem, err := mem.VirtualMemory(); err == nil {
-		deviceParams.RamFree = verMem.Free
+	diskStat, err := disk.Usage("/")
+	if err != nil {
+		return statusMessage{}, err
+	}
+	deviceParams.StorageFree = diskStat.Free
+
+	verMem, err := mem.VirtualMemory()
+	if err != nil {
+		return statusMessage{}, err
+	}
+	deviceParams.RamFree = verMem.Free
+
+	// TODO: Do proper check for node status
+	nodeStatus := manifest.Alarm
+	if config.GetRegistered() {
+		nodeStatus = manifest.Connected
 	}
 
 	msg := statusMessage{
-		Status:           "Available",
+		Status:           nodeStatus,
 		EdgeApplications: edgeApps,
 		DeviceParams:     deviceParams,
 	}

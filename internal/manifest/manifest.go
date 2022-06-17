@@ -52,6 +52,20 @@ type RegistryDetails struct {
 	Password  string
 }
 
+const (
+	Connected  string = "connected"
+	Alarm      string = "alarm"
+	Running    string = "running"
+	Error      string = "error"
+	Paused     string = "paused"
+	Initiated  string = "initiated"
+	Restarting string = "restarting"
+	Created    string = "created"
+	Exited     string = "exited"
+	Dead       string = "dead"
+	Deleted    string = "deleted"
+)
+
 // Create a Manifest type
 /* The manifest type holds the parsed JSON of a manifest file, as well as
 several convenience attributes.
@@ -100,7 +114,7 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 		containerConfig.Registry = RegistryDetails{url, imageName, userName, password}
 
 		envJson := module.Search("envs").Children()
-		var envArgs = parseArguments(envJson, false)
+		var envArgs = parseArguments(envJson)
 
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "SERVICE_ID", manifestID))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_NAME", containerConfig.ImageName))
@@ -114,10 +128,7 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 			return Manifest{}, err
 		}
 
-		exposedPorts, portBinding := getPorts(module, envJson)
-		containerConfig.ExposedPorts = exposedPorts
-		containerConfig.PortBinding = portBinding
-
+		containerConfig.ExposedPorts, containerConfig.PortBinding = getPorts(module, envJson)
 		containerConfigs = append(containerConfigs, containerConfig)
 	}
 
@@ -195,24 +206,16 @@ func makeContainerName(networkName string, imageName string, tag string, index i
 	return containerName
 }
 
-func parseArguments(options []*gabs.Container, cmdArgs bool) []string {
-	if cmdArgs {
-		log.Debug("Processing CLI arguments")
-	} else {
-		log.Debug("Processing environments arguments")
-	}
+func parseArguments(options []*gabs.Container) []string {
+	log.Debug("Processing environments arguments")
+
 	var args []string
 	for _, arg := range options {
 		key := arg.Search("key").Data().(string)
 		val := arg.Search("value").Data().(string)
 
 		if key != "" && val != "" {
-			if cmdArgs { // CLI arguments
-				args = append(args, fmt.Sprintf("--%v", key))
-				args = append(args, fmt.Sprintf("%v", val))
-			} else { // env varialbes
-				args = append(args, fmt.Sprintf("%v=%v", key, val))
-			}
+			args = append(args, fmt.Sprintf("%v=%v", key, val))
 		}
 	}
 	return args
@@ -255,31 +258,35 @@ func getPorts(document *gabs.Container, envs []*gabs.Container) (nat.PortSet, na
 func ValidateManifest(jsonParsed *gabs.Container) error {
 	var errorList []string
 
-	id := jsonParsed.Search("id").Data()
+	id := jsonParsed.Search("_id").Data()
 	if id == nil {
-		errorList = append(errorList, "Please provide data service id")
+		errorList = append(errorList, "Please provide manifest id")
+	}
+	manifestName := jsonParsed.Search("manifestName").Data()
+	if manifestName == nil {
+		errorList = append(errorList, "Please provide manifest manifestName")
 	}
 	versionName := jsonParsed.Search("versionName").Data()
 	if versionName == nil {
-		errorList = append(errorList, "Please provide data service versionName")
+		errorList = append(errorList, "Please provide manifest versionName")
 	}
-	name := jsonParsed.Search("name").Data()
-	if name == nil {
-		errorList = append(errorList, "Please provide data service name")
+	command := jsonParsed.Search("command").Data()
+	if command == nil {
+		errorList = append(errorList, "Please provide manifest command")
 	}
-	services := jsonParsed.Search("services").Children()
+	services := jsonParsed.Search("modules").Children()
 	// Check if manifest contains services
 	if services == nil || len(services) < 1 {
 		errorList = append(errorList, "Please provide at least one service")
 	} else {
 		for _, srv := range services {
-			moduleID := srv.Search("id").Data()
+			moduleID := srv.Search("moduleID").Data()
 			if moduleID == nil {
 				errorList = append(errorList, "Please provide moduleId for all services")
 			}
-			serviceName := srv.Search("name").Data()
-			if serviceName == nil {
-				errorList = append(errorList, "Please provide service name for all services")
+			moduleName := srv.Search("moduleName").Data()
+			if moduleName == nil {
+				errorList = append(errorList, "Please provide module name for all services")
 			} else {
 				imageName := srv.Search("image").Search("name").Data()
 				if imageName == nil {
@@ -292,15 +299,6 @@ func ValidateManifest(jsonParsed *gabs.Container) error {
 			}
 		}
 	}
-	network := jsonParsed.Search("networks").Data()
-	if network == nil {
-		errorList = append(errorList, "Please provide data service network")
-	} else {
-		networkName := jsonParsed.Search("networks").Search("driver").Data()
-		if networkName == nil {
-			errorList = append(errorList, "Please provide data service network driver")
-		}
-	}
 
 	if len(errorList) > 0 {
 		return errors.New(strings.Join(errorList[:], ","))
@@ -309,18 +307,18 @@ func ValidateManifest(jsonParsed *gabs.Container) error {
 	}
 }
 
-func ValidateStartStopJSON(jsonParsed *gabs.Container) error {
+func ValidateUniqueIDExist(jsonParsed *gabs.Container) error {
 
-	// Expected JSON: {"id": dataServiceID, "version": dataServiceVesion}
+	// Expected JSON: {"manifestName": "Manifest name", "versionName": "Manifest version name"}
 
 	var errorList []string
-	serviceID := jsonParsed.Search("id").Data()
-	if serviceID == nil {
-		errorList = append(errorList, "Expected Data Service ID 'id' in JSON, but not found.")
+	manifestName := jsonParsed.Search("manifestName").Data()
+	if manifestName == nil {
+		errorList = append(errorList, "Expected manifest name in JSON, but not found.")
 	}
 	versionName := jsonParsed.Search("versionName").Data()
 	if versionName == nil {
-		errorList = append(errorList, "Expected Data Service VersionName in JSON, but not found.")
+		errorList = append(errorList, "Expected manifest version name in JSON, but not found.")
 	}
 
 	if len(errorList) > 0 {
