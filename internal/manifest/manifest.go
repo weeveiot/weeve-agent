@@ -48,13 +48,27 @@ type RegistryDetails struct {
 }
 
 const (
-	Connected string = "connected"
-	Alarm     string = "alarm"
-	Running   string = "running"
-	Error     string = "error"
-	Paused    string = "paused"
-	Initiated string = "initiated"
-	Deleted   string = "deleted"
+	Connected = "Connected"
+	Alarm     = "Alarm"
+	Running   = "Running"
+	Error     = "Error"
+	Paused    = "Paused"
+	Initiated = "Initiated"
+	Deleted   = "Deleted"
+)
+
+// uncomment when all changes for v1 modules were done
+// const (
+// 	ModuleTypeInput      = "Input"
+// 	ModuleTypeOutput     = "Output"
+// 	ModuleTypeProcessing = "Processing"
+// )
+
+// kept for interoperability with pre-v1 modules, delete when the transition to v1 is complete
+const (
+	ModuleTypeInput      = "INGRESS"
+	ModuleTypeOutput     = "EGRESS"
+	ModuleTypeProcessing = "PROCESS"
 )
 
 // Create a Manifest type
@@ -78,7 +92,8 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 
 	var containerConfigs []ContainerConfig
 
-	for _, module := range jsonParsed.Search("modules").Children() {
+	modules := jsonParsed.Search("modules").Children()
+	for index, module := range modules {
 		var containerConfig ContainerConfig
 
 		containerConfig.ImageName = module.Search("image").Search("name").Data().(string)
@@ -110,6 +125,13 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_NAME", containerConfig.ImageName))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PORT", 80))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PATH", "/"))
+		if index == 0 {
+			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_TYPE", ModuleTypeInput))
+		} else if index == len(modules)-1 {
+			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_TYPE", ModuleTypeOutput))
+		} else {
+			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_TYPE", ModuleTypeProcessing))
+		}
 
 		containerConfig.EnvArgs = envArgs
 		var err error
@@ -233,8 +255,8 @@ func getPorts(parsedJson *gabs.Container) (nat.PortSet, nat.PortMap) {
 	exposedPorts := nat.PortSet{}
 	portBinding := nat.PortMap{}
 	for _, port := range parsedJson.Search("ports").Children() {
-		hostPort := fmt.Sprintf("%d", port.Search("host").Data())
-		containerPort := fmt.Sprintf("%d", port.Search("container").Data())
+		hostPort := fmt.Sprintf("%v", port.Search("host").Data().(float64))
+		containerPort := fmt.Sprintf("%v", port.Search("container").Data().(float64))
 		exposedPorts[nat.Port(containerPort)] = struct{}{}
 		portBinding[nat.Port(containerPort)] = []nat.PortBinding{{HostPort: hostPort}}
 	}
@@ -261,25 +283,25 @@ func ValidateManifest(jsonParsed *gabs.Container) error {
 	if command == nil {
 		errorList = append(errorList, "Please provide manifest command")
 	}
-	services := jsonParsed.Search("modules").Children()
+	modules := jsonParsed.Search("modules").Children()
 	// Check if manifest contains services
-	if services == nil || len(services) < 1 {
+	if modules == nil || len(modules) < 1 {
 		errorList = append(errorList, "Please provide at least one service")
 	} else {
-		for _, srv := range services {
-			moduleID := srv.Search("moduleID").Data()
+		for _, module := range modules {
+			moduleID := module.Search("moduleID").Data()
 			if moduleID == nil {
 				errorList = append(errorList, "Please provide moduleId for all services")
 			}
-			moduleName := srv.Search("moduleName").Data()
+			moduleName := module.Search("moduleName").Data()
 			if moduleName == nil {
 				errorList = append(errorList, "Please provide module name for all services")
 			} else {
-				imageName := srv.Search("image").Search("name").Data()
+				imageName := module.Search("image").Search("name").Data()
 				if imageName == nil {
 					errorList = append(errorList, "Please provide image name for all services")
 				}
-				imageTag := srv.Search("image").Search("tag").Data()
+				imageTag := module.Search("image").Search("tag").Data()
 				if imageTag == nil {
 					errorList = append(errorList, "Please provide image tags for all services")
 				}

@@ -108,7 +108,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 		log.Info(deploymentID, "Creating ", containerConfig.ContainerName, " from ", containerConfig.ImageName, ":", containerConfig.ImageTag)
 		containerID, err := docker.CreateAndStartContainer(containerConfig)
 		if err != nil {
-			log.Error(deploymentID, "Failed to create and start container", containerConfig.ContainerName)
+			log.Error(deploymentID, "Failed to create and start container ", containerConfig.ContainerName)
 			manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Error, false)
 			log.Info(deploymentID, "Initiating rollback ...")
 			UndeployDataService(man.ManifestUniqueID)
