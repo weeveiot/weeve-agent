@@ -16,7 +16,7 @@ const (
 	Exited     string = "exited"
 )
 
-func GetDataServiceStatus() ([]model.EdgeApplications, error) {
+func getDataServiceStatus() ([]model.EdgeApplications, error) {
 	edgeApps := []model.EdgeApplications{}
 	knownManifests := manifest.GetKnownManifests()
 
@@ -61,16 +61,16 @@ func GetDataServiceStatus() ([]model.EdgeApplications, error) {
 func CompareDataServiceStatus(edgeApps []model.EdgeApplications) ([]model.EdgeApplications, bool, error) {
 	statusChange := false
 
-	latestEdgeApps, err := GetDataServiceStatus()
+	latestEdgeApps, err := getDataServiceStatus()
 	if err != nil {
 		return nil, false, err
 	}
-
-	for index, edgeApp := range edgeApps {
-		if edgeApp.Status != latestEdgeApps[index].Status {
-			statusChange = true
+	if len(edgeApps) == len(latestEdgeApps) {
+		for index, edgeApp := range edgeApps {
+			if edgeApp.Status != latestEdgeApps[index].Status {
+				statusChange = true
+			}
 		}
 	}
-
 	return latestEdgeApps, statusChange, nil
 }
