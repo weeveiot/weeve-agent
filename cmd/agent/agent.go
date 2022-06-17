@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/jessevdk/go-flags"
@@ -46,6 +47,8 @@ func init() {
 }
 
 func main() {
+	var opt model.Params
+
 	localManifest := parseCLIoptions()
 
 	manifest.InitKnownManifests()
@@ -78,10 +81,11 @@ func main() {
 
 	go func() {
 		for {
-			err = com.SendHeartbeat(true)
+			err = com.SendHeartbeat()
 			if err != nil {
 				log.Error(err)
 			}
+			time.Sleep(time.Second * time.Duration(opt.Heartbeat))
 		}
 	}()
 
@@ -185,7 +189,7 @@ func monitorDataServiceStatus() {
 		edgeApps = latestEdgeApps
 
 		if statusChange == true {
-			err = com.SendHeartbeat(false)
+			err = com.SendHeartbeat()
 			if err != nil {
 				log.Error(err)
 			}
