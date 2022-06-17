@@ -108,8 +108,7 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 		}
 		containerConfig.Registry = RegistryDetails{url, imageName, userName, password}
 
-		envJson := module.Search("envs").Children()
-		var envArgs = parseArguments(envJson)
+		envArgs := parseArguments(module.Search("envs").Children())
 
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "SERVICE_ID", manifestID))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_NAME", containerConfig.ImageName))
@@ -206,9 +205,9 @@ func parseArguments(options []*gabs.Container) []string {
 	var args []string
 	for _, arg := range options {
 		key := arg.Search("key").Data().(string)
-		val := arg.Search("value").Data().(string)
+		val := arg.Search("value").Data()
 
-		if key != "" && val != "" {
+		if key != "" {
 			args = append(args, fmt.Sprintf("%v=%v", key, val))
 		}
 	}
@@ -238,8 +237,8 @@ func getPorts(parsedJson *gabs.Container) (nat.PortSet, nat.PortMap) {
 	exposedPorts := nat.PortSet{}
 	portBinding := nat.PortMap{}
 	for _, port := range parsedJson.Search("ports").Children() {
-		hostPort := port.Search("host").Data().(string)
-		containerPort := port.Search("container").Data().(string)
+		hostPort := fmt.Sprintf("%d", port.Search("host").Data())
+		containerPort := fmt.Sprintf("%d", port.Search("container").Data())
 		exposedPorts[nat.Port(containerPort)] = struct{}{}
 		portBinding[nat.Port(containerPort)] = []nat.PortBinding{{HostPort: hostPort}}
 	}
