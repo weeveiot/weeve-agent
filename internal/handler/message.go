@@ -155,7 +155,7 @@ func GetStatusMessage() (statusMessage, error) {
 	knownManifests := manifest.GetKnownManifests()
 
 	for _, manif := range knownManifests {
-		edgeApplication := edgeApplications{ManifestID: manif.ManifestID, Status: manifest.Running}
+		edgeApplication := edgeApplications{ManifestID: manif.ManifestID, Status: manif.Status}
 		containersStat := []container{}
 
 		appContainers, err := docker.ReadDataServiceContainers(manif.ManifestUniqueID)
@@ -163,7 +163,7 @@ func GetStatusMessage() (statusMessage, error) {
 			return statusMessage{}, err
 		}
 
-		if len(appContainers) != manif.ContainerCount {
+		if (edgeApplication.Status == manifest.Running || edgeApplication.Status == manifest.Paused) && len(appContainers) != manif.ContainerCount {
 			edgeApplication.Status = manifest.Alarm
 		}
 
@@ -171,23 +171,18 @@ func GetStatusMessage() (statusMessage, error) {
 			container := container{Name: strings.Join(con.Names, ", "), Status: con.State}
 			containersStat = append(containersStat, container)
 
-			// TODO: Pause and Running proper check
-			if edgeApplication.Status == manifest.Running || edgeApplication.Status == manifest.Paused {
-				switch con.State {
-				case manifest.Initiated:
-					edgeApplication.Status = manifest.Initiated
-				case manifest.Paused:
-					edgeApplication.Status = manifest.Paused
-				case manifest.Restarting:
-					edgeApplication.Status = manifest.Restarting
-				case manifest.Dead:
+			if !manif.InTransition {
+				if edgeApplication.Status == manifest.Running && con.State != manifest.Running {
+					edgeApplication.Status = manifest.Alarm
+				}
+				if edgeApplication.Status == manifest.Paused && con.State != manifest.Paused {
 					edgeApplication.Status = manifest.Alarm
 				}
 			}
 		}
 
 		edgeApplication.Containers = containersStat
-		manifest.SetStatus("", 0, manif.ManifestUniqueID, edgeApplication.Status)
+		manifest.SetStatus("", 0, manif.ManifestUniqueID, edgeApplication.Status, manif.InTransition)
 
 		edgeApps = append(edgeApps, edgeApplication)
 	}

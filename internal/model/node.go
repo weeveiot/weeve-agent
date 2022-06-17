@@ -24,6 +24,7 @@ type ManifestStatus struct {
 	ManifestUniqueID ManifestUniqueID `json:"manifestUniqueID"`
 	Status           string           `json:"status"`
 	ContainerCount   int              `json:"containerCount"`
+	InTransition     bool             `json:"inTransition"`
 }
 
 type ManifestUniqueID struct {

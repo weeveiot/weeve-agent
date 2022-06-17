@@ -108,8 +108,7 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 		}
 		containerConfig.Registry = RegistryDetails{url, imageName, userName, password}
 
-		envJson := module.Search("envs").Children()
-		var envArgs = parseArguments(envJson)
+		envArgs := parseArguments(module.Search("envs").Children())
 
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "SERVICE_ID", manifestID))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_NAME", containerConfig.ImageName))
@@ -123,7 +122,7 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 			return Manifest{}, err
 		}
 
-		containerConfig.ExposedPorts, containerConfig.PortBinding = getPorts(module, envJson)
+		containerConfig.ExposedPorts, containerConfig.PortBinding = getPorts(module)
 		containerConfigs = append(containerConfigs, containerConfig)
 	}
 
@@ -206,9 +205,9 @@ func parseArguments(options []*gabs.Container) []string {
 	var args []string
 	for _, arg := range options {
 		key := arg.Search("key").Data().(string)
-		val := arg.Search("value").Data().(string)
+		val := arg.Search("value").Data()
 
-		if key != "" && val != "" {
+		if key != "" {
 			args = append(args, fmt.Sprintf("%v=%v", key, val))
 		}
 	}
@@ -234,16 +233,14 @@ func getMounts(parsedJson *gabs.Container) ([]mount.Mount, error) {
 	return mounts, nil
 }
 
-func getPorts(document *gabs.Container, envs []*gabs.Container) (nat.PortSet, nat.PortMap) {
-	binding := []nat.PortBinding{}
-	for _, port := range document.Search("ports").Children() {
-		hostPort := port.Search("host").Data().(string)
-		binding = append(binding, nat.PortBinding{HostPort: hostPort})
-	}
-
-	portBinding := nat.PortMap{nat.Port("80/tcp"): binding}
-	exposedPorts := nat.PortSet{
-		nat.Port("80/tcp"): struct{}{},
+func getPorts(parsedJson *gabs.Container) (nat.PortSet, nat.PortMap) {
+	exposedPorts := nat.PortSet{}
+	portBinding := nat.PortMap{}
+	for _, port := range parsedJson.Search("ports").Children() {
+		hostPort := fmt.Sprintf("%d", port.Search("host").Data())
+		containerPort := fmt.Sprintf("%d", port.Search("container").Data())
+		exposedPorts[nat.Port(containerPort)] = struct{}{}
+		portBinding[nat.Port(containerPort)] = []nat.PortBinding{{HostPort: hostPort}}
 	}
 
 	return exposedPorts, portBinding
