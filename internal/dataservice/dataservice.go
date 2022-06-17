@@ -29,7 +29,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 	dataServiceExists, err := DataServiceExist(man.ManifestUniqueID)
 	if err != nil {
 		log.Error(deploymentID, err)
-		manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Error)
+		manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Error, false)
 		return err
 	}
 
@@ -43,7 +43,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 			err := UndeployDataService(man.ManifestUniqueID)
 			if err != nil {
 				log.Error(deploymentID, "Error while cleaning old data service -> ", err)
-				manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Error)
+				manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Error, false)
 				return errors.New("redeployment failed")
 			}
 		}
@@ -69,7 +69,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 			if err != nil {
 				msg := "Unable to pull image/s, " + err.Error()
 				log.Error(deploymentID, msg)
-				manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Error)
+				manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Error, false)
 				return errors.New("unable to pull image/s")
 
 			}
@@ -82,7 +82,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 	networkName, err := docker.CreateNetwork(man.ManifestUniqueID.ManifestName, man.Labels)
 	if err != nil {
 		log.Error(err)
-		manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Error)
+		manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Error, false)
 		return err
 	}
 
@@ -96,7 +96,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 
 	if len(containerConfigs) == 0 {
 		log.Error(deploymentID, "No valid contianers in Manifest")
-		manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Error)
+		manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Error, false)
 		log.Info(deploymentID, "Initiating rollback ...")
 		UndeployDataService(man.ManifestUniqueID)
 		return errors.New("no valid contianers in manifest")
@@ -107,7 +107,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 		containerID, err := docker.CreateAndStartContainer(containerConfig)
 		if err != nil {
 			log.Error(deploymentID, "Failed to create and start container", containerConfig.ContainerName)
-			manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Error)
+			manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Error, false)
 			log.Info(deploymentID, "Initiating rollback ...")
 			UndeployDataService(man.ManifestUniqueID)
 			return err
@@ -116,7 +116,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 		log.Info(deploymentID, "Started!")
 	}
 
-	manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Running)
+	manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Running, false)
 
 	return nil
 }
@@ -129,9 +129,11 @@ func StopDataService(manifestUniqueID model.ManifestUniqueID) error {
 	containers, err := docker.ReadDataServiceContainers(manifestUniqueID)
 	if err != nil {
 		log.Error("Failed to read data service containers.")
-		manifest.SetStatus("", 0, manifestUniqueID, manifest.Error)
+		manifest.SetStatus("", 0, manifestUniqueID, manifest.Error, false)
 		return err
 	}
+
+	manifest.SetStatus("", 0, manifestUniqueID, manifest.Paused, true)
 
 	for _, container := range containers {
 		if container.State == stateRunning {
@@ -139,7 +141,7 @@ func StopDataService(manifestUniqueID model.ManifestUniqueID) error {
 			err := docker.StopContainer(container.ID)
 			if err != nil {
 				log.Error("Could not stop a container")
-				manifest.SetStatus("", 0, manifestUniqueID, manifest.Error)
+				manifest.SetStatus("", 0, manifestUniqueID, manifest.Error, false)
 				return err
 
 			}
@@ -149,7 +151,7 @@ func StopDataService(manifestUniqueID model.ManifestUniqueID) error {
 		}
 	}
 
-	manifest.SetStatus("", 0, manifestUniqueID, manifest.Paused)
+	manifest.SetStatus("", 0, manifestUniqueID, manifest.Paused, false)
 
 	return nil
 }
@@ -164,14 +166,16 @@ func StartDataService(manifestUniqueID model.ManifestUniqueID) error {
 	containers, err := docker.ReadDataServiceContainers(manifestUniqueID)
 	if err != nil {
 		log.Error("Failed to read data service containers.")
-		manifest.SetStatus("", 0, manifestUniqueID, manifest.Error)
+		manifest.SetStatus("", 0, manifestUniqueID, manifest.Error, false)
 		return err
 	}
 
 	if len(containers) == 0 {
-		manifest.SetStatus("", 0, manifestUniqueID, manifest.Error)
+		manifest.SetStatus("", 0, manifestUniqueID, manifest.Error, false)
 		return errors.New("no data service containers found")
 	}
+
+	manifest.SetStatus("", 0, manifestUniqueID, manifest.Running, true)
 
 	for _, container := range containers {
 		if container.State == stateExited || container.State == stateCreated || container.State == statePaused {
@@ -179,14 +183,14 @@ func StartDataService(manifestUniqueID model.ManifestUniqueID) error {
 			err := docker.StartContainer(container.ID)
 			if err != nil {
 				log.Errorln("Could not start a container", err)
-				manifest.SetStatus("", 0, manifestUniqueID, manifest.Error)
+				manifest.SetStatus("", 0, manifestUniqueID, manifest.Error, false)
 				return err
 			}
 			log.Info(strings.Join(container.Names[:], ","), ": ", container.State, "--> running")
 		}
 	}
 
-	manifest.SetStatus("", 0, manifestUniqueID, manifest.Running)
+	manifest.SetStatus("", 0, manifestUniqueID, manifest.Running, false)
 
 	return nil
 }
@@ -200,13 +204,13 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID) error {
 	dataServiceExists, err := DataServiceExist(manifestUniqueID)
 	if err != nil {
 		log.Error(deploymentID, err)
-		manifest.SetStatus("", 0, manifestUniqueID, manifest.Error)
+		manifest.SetStatus("", 0, manifestUniqueID, manifest.Error, false)
 		return err
 	}
 
 	if !dataServiceExists {
 		log.Errorln(deploymentID, "Data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionName, "does not exist")
-		manifest.SetStatus("", 0, manifestUniqueID, manifest.Error)
+		manifest.SetStatus("", 0, manifestUniqueID, manifest.Error, false)
 		return nil
 	}
 
@@ -218,7 +222,7 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID) error {
 	dsContainers, err := docker.ReadDataServiceContainers(manifestUniqueID)
 	if err != nil {
 		log.Error(deploymentID, "Failed to read data service containers.")
-		manifest.SetStatus("", 0, manifestUniqueID, manifest.Error)
+		manifest.SetStatus("", 0, manifestUniqueID, manifest.Error, false)
 		return err
 	}
 
@@ -229,7 +233,7 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID) error {
 		err := docker.StopAndRemoveContainer(dsContainer.ID)
 		if err != nil {
 			log.Error(deploymentID, err)
-			manifest.SetStatus("", 0, manifestUniqueID, manifest.Error)
+			manifest.SetStatus("", 0, manifestUniqueID, manifest.Error, false)
 			errorlist = fmt.Sprintf("%v,%v", errorlist, err)
 		}
 	}
@@ -238,7 +242,7 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID) error {
 	containers, err := docker.ReadAllContainers()
 	if err != nil {
 		log.Error(deploymentID, "Failed to read all containers.")
-		manifest.SetStatus("", 0, manifestUniqueID, manifest.Error)
+		manifest.SetStatus("", 0, manifestUniqueID, manifest.Error, false)
 		return err
 	}
 
@@ -254,7 +258,7 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID) error {
 			err := docker.ImageRemove(imageID)
 			if err != nil {
 				log.Error(deploymentID, err)
-				manifest.SetStatus("", 0, manifestUniqueID, manifest.Error)
+				manifest.SetStatus("", 0, manifestUniqueID, manifest.Error, false)
 				errorlist = fmt.Sprintf("%v,%v", errorlist, err)
 			}
 		}
@@ -266,11 +270,11 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID) error {
 	err = docker.NetworkPrune(manifestUniqueID)
 	if err != nil {
 		log.Error(deploymentID, err)
-		manifest.SetStatus("", 0, manifestUniqueID, manifest.Error)
+		manifest.SetStatus("", 0, manifestUniqueID, manifest.Error, false)
 		errorlist = fmt.Sprintf("%v,%v", errorlist, err)
 	}
 
-	manifest.SetStatus("", 0, manifestUniqueID, manifest.Deleted)
+	manifest.SetStatus("", 0, manifestUniqueID, manifest.Deleted, false)
 
 	if errorlist != "" {
 		log.Error(deploymentID, err)
