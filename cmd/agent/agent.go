@@ -179,7 +179,10 @@ func validateBrokerUrl(u *url.URL) {
 }
 
 func monitorDataServiceStatus() {
-	var edgeApps []model.EdgeApplications
+	edgeApps, err := handler.GetDataServiceStatus()
+	if err != nil {
+		log.Error(err)
+	}
 
 	for {
 		latestEdgeApps, statusChange, err := handler.CompareDataServiceStatus(edgeApps)
