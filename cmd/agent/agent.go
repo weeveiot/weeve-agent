@@ -47,8 +47,6 @@ func init() {
 }
 
 func main() {
-	var opt model.Params
-
 	localManifest := parseCLIoptions()
 
 	manifest.InitKnownManifests()
@@ -85,7 +83,7 @@ func main() {
 			if err != nil {
 				log.Error(err)
 			}
-			time.Sleep(time.Second * time.Duration(opt.Heartbeat))
+			time.Sleep(time.Second * time.Duration(com.GetHeartbeat()))
 		}
 	}()
 

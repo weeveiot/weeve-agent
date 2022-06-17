@@ -33,6 +33,10 @@ func SetParams(opt model.Params) {
 	log.Debugf("Set the following MQTT params: %+v", params)
 }
 
+func GetHeartbeat() int {
+	return params.Heartbeat
+}
+
 var connected = false
 
 var publisher mqtt.Client

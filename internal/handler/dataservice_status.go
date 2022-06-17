@@ -71,6 +71,8 @@ func CompareDataServiceStatus(edgeApps []model.EdgeApplications) ([]model.EdgeAp
 				statusChange = true
 			}
 		}
+	} else {
+		statusChange = true
 	}
 	return latestEdgeApps, statusChange, nil
 }
