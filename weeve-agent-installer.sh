@@ -37,12 +37,6 @@ get_environment(){
   fi
 }
 
-get_nodename(){
-  if [ -z "$NODE_NAME" ]; then
-    read -r -p "Enter node name: " NODE_NAME
-  fi
-}
-
 get_release(){
   if [ -z "$AGENT_RELEASE" ]; then
     read -r -p "Select release [stable, dev]: " AGENT_RELEASE
@@ -52,6 +46,30 @@ get_release(){
 get_test(){
   if [ -z "$BUILD_LOCAL" ]; then
     BUILD_LOCAL="false"
+  fi
+}
+
+get_broker(){
+  if [ -z "$BROKER" ]; then
+    BROKER="tls://mapi-dev.weeve.engineering:8883"
+  fi
+}
+
+get_nodename(){
+  if [ -z "$NODE_NAME" ]; then
+    read -r -p "Enter node name: " NODE_NAME
+  fi
+}
+
+get_loglevel(){
+  if [ -z "$LOG_LEVEL" ]; then
+    LOG_LEVEL="info"
+  fi
+}
+
+get_heartbeat(){
+  if [ -z "$HEARTBEAT" ]; then
+    HEARTBEAT="300"
   fi
 }
 
@@ -85,9 +103,9 @@ validating_docker(){
 }
 
 build_test_binary(){
-  if RESULT=$(go build -o $WEEVE_AGENT_DIR/test-agent cmd/agent/agent.go 2>&1); then
+  if RESULT=$(go build -o "$WEEVE_AGENT_DIR"/test-agent cmd/agent/agent.go 2>&1); then
     log built weeve-agent binary for testing
-    chmod u+x $WEEVE_AGENT_DIR/test-agent
+    chmod u+x "$WEEVE_AGENT_DIR"/test-agent
     log Changed file permission
     BINARY_NAME="test-agent"
   else
@@ -123,10 +141,10 @@ download_binary(){
   esac
 
   if RESULT=$(mkdir weeve-agent \
-  && cd $WEEVE_AGENT_DIR \
+  && cd "$WEEVE_AGENT_DIR" \
   && wget http://"$S3_BUCKET".s3.amazonaws.com/"$BINARY_NAME" 2>&1); then
     log Weeve-agent binary downloaded
-    chmod u+x $WEEVE_AGENT_DIR/"$BINARY_NAME"
+    chmod u+x "$WEEVE_AGENT_DIR"/"$BINARY_NAME"
     log Changed file permission
   else
     log Error while downloading the executable: "$RESULT"
@@ -139,7 +157,7 @@ download_dependencies(){
   log Downloading the dependencies ...
   for DEPENDENCIES in ca.crt nodeconfig.json weeve-agent.service
   do
-  if RESULT=$(cd $WEEVE_AGENT_DIR \
+  if RESULT=$(cd "$WEEVE_AGENT_DIR" \
   && curl -sO https://"$ACCESS_KEY"@raw.githubusercontent.com/weeveiot/weeve-agent/WD-444-update-agent-to-the-new-data-model/"$DEPENDENCIES" 2>&1); then
     log "$DEPENDENCIES" downloaded
   else
@@ -158,23 +176,31 @@ write_to_service(){
   #   ExecStart=/home/admin/weeve-agent/weeve-agent-x86_64 $ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_ROOT_CERT $ARG_NODENAME
 
   BINARY_PATH="$WEEVE_AGENT_DIR/$BINARY_NAME"
+
+  # the CLI arguments for weeve agent
+  ARG_VERBOSE="-v"
+  ARG_BROKER="--broker $BROKER"
+  ARG_ROOT_CERT="--rootcert $WEEVE_AGENT_DIR/ca.crt"
+  ARG_NODE_ID="--nodeId $NODE_ID"   #! nodeid is required until MAPI is ready
   ARG_NODENAME="--name $NODE_NAME"
+  ARG_LOG_LEVEL="--loglevel $LOG_LEVEL"
+  ARG_HEARTBEAT="--heartbeat $HEARTBEAT"
   ARG_NODECONFIG="--config $WEEVE_AGENT_DIR/nodeconfig.json"
-  ARGUMENTS="$ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_ROOT_CERT $ARG_NODENAME $ARG_NODECONFIG"
+  ARGUMENTS="$ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_ROOT_CERT $ARG_NODE_ID $ARG_NODENAME $ARG_LOG_LEVEL $ARG_NODECONFIG"
   EXECUTE_BINARY="$BINARY_PATH $ARGUMENTS"
 
   log Adding the binary path to service file ...
   {
     printf "WorkingDirectory=%s\n" "$WEEVE_AGENT_DIR"
     printf "ExecStart=%s\n" "$EXECUTE_BINARY"
-  } >> $WEEVE_AGENT_DIR/weeve-agent.service
+  } >> "$WEEVE_AGENT_DIR"/weeve-agent.service
 }
 
 start_service(){
   log Starting the service ...
 
   # moving .service to systemd and starting the service
-  if RESULT=$(sudo mv $WEEVE_AGENT_DIR/weeve-agent.service $SERVICE_FILE \
+  if RESULT=$(sudo mv "$WEEVE_AGENT_DIR"/weeve-agent.service "$SERVICE_FILE" \
   && sudo systemctl enable weeve-agent \
   && sudo systemctl start weeve-agent 2>&1); then
     log Weeve-agent is initiated ...
@@ -194,7 +220,7 @@ tail_agent_log(){
   # parsing the weeve-agent log for to verify if the weeve-agent is registered and connected
   # on successful completion of the script $CLEANUP is set to false to skip the clean-up on exit
   log tailing the weeve-agent logs
-  timeout 10s tail -f $WEEVE_AGENT_DIR/Weeve_Agent.log | sed '/ON connect >> connected >> registered : true/ q'
+  timeout 10s tail -f "$WEEVE_AGENT_DIR"/Weeve_Agent.log | sed '/ON connect >> connected >> registered : true/ q'
 }
 
 cleanup() {
@@ -249,12 +275,6 @@ BINARY_NAME=""
 
 CLEANUP="false"
 
-ARG_VERBOSE="-v"
-ARG_HEARTBEAT="--heartbeat 10"
-ARG_BROKER="--broker tls://mapi-dev.weeve.engineering:8883"
-ARG_ROOT_CERT="--rootcert $WEEVE_AGENT_DIR/ca.crt"
-ARG_LOG_LEVEL="--loglevel debug"
-
 trap cleanup EXIT
 
 # read command line arguments
@@ -266,9 +286,13 @@ do
   case "$KEY" in
     "tokenpath") TOKEN_FILE="$VALUE" ;;
     "environment") ENV="$VALUE" ;;
-    "nodename")  NODE_NAME="$VALUE" ;;
     "release") AGENT_RELEASE="$VALUE" ;;
     "test") BUILD_LOCAL="$VALUE" ;;
+    "broker") BROKER="$VALUE" ;;
+    "nodeid") NODE_ID="$VALUE" ;;
+    "nodename") NODE_NAME="$VALUE" ;;
+    "loglevel") LOG_LEVEL="$VALUE" ;;
+    "heartbeat") HEARTBEAT="$VALUE" ;;
     *)
   esac
 done
@@ -279,14 +303,23 @@ get_token
 
 get_environment
 
+get_test
+
+get_broker
+
 get_nodename
 
-get_test
+get_loglevel
+
+get_heartbeat
 
 log All arguments are set
 log Environment is set to "$ENV"
-log Name of the node is set to "$NODE_NAME"
 log Test mode is set to "$BUILD_LOCAL"
+log Broker is set to "$BROKER"
+log Name of the node is set to "$NODE_NAME"
+log Log level is set to "$LOG_LEVEL"
+log Heartbeat interval is set to "$HEARTBEAT"
 
 check_for_agent
 
