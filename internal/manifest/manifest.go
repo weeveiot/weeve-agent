@@ -48,17 +48,13 @@ type RegistryDetails struct {
 }
 
 const (
-	Connected  string = "connected"
-	Alarm      string = "alarm"
-	Running    string = "running"
-	Error      string = "error"
-	Paused     string = "paused"
-	Initiated  string = "initiated"
-	Restarting string = "restarting"
-	Created    string = "created"
-	Exited     string = "exited"
-	Dead       string = "dead"
-	Deleted    string = "deleted"
+	Connected string = "connected"
+	Alarm     string = "alarm"
+	Running   string = "running"
+	Error     string = "error"
+	Paused    string = "paused"
+	Initiated string = "initiated"
+	Deleted   string = "deleted"
 )
 
 // Create a Manifest type

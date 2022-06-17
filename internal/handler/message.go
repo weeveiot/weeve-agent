@@ -163,27 +163,25 @@ func GetStatusMessage() (statusMessage, error) {
 			return statusMessage{}, err
 		}
 
-		if (edgeApplication.Status == manifest.Running || edgeApplication.Status == manifest.Paused) && len(appContainers) != manif.ContainerCount {
-			edgeApplication.Status = manifest.Alarm
+		if (manif.Status == manifest.Running || manif.Status == manifest.Paused) && len(appContainers) != manif.ContainerCount {
+			edgeApplication.Status = manifest.Error
 		}
 
 		for _, con := range appContainers {
 			container := container{Name: strings.Join(con.Names, ", "), Status: con.State}
 			containersStat = append(containersStat, container)
 
-			if !manif.InTransition {
-				if edgeApplication.Status == manifest.Running && con.State != manifest.Running {
-					edgeApplication.Status = manifest.Alarm
+			if !manif.InTransition && edgeApplication.Status != manifest.Error {
+				if manif.Status == manifest.Running && con.State != manifest.Running {
+					edgeApplication.Status = manifest.Error
 				}
-				if edgeApplication.Status == manifest.Paused && con.State != manifest.Paused {
-					edgeApplication.Status = manifest.Alarm
+				if manif.Status == manifest.Paused && con.State != manifest.Paused {
+					edgeApplication.Status = manifest.Error
 				}
 			}
 		}
 
 		edgeApplication.Containers = containersStat
-		manifest.SetStatus("", 0, manif.ManifestUniqueID, edgeApplication.Status, manif.InTransition)
-
 		edgeApps = append(edgeApps, edgeApplication)
 	}
 
