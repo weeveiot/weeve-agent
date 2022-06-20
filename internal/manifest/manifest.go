@@ -261,8 +261,8 @@ func getPorts(parsedJson *gabs.Container) (nat.PortSet, nat.PortMap) {
 	exposedPorts := nat.PortSet{}
 	portBinding := nat.PortMap{}
 	for _, port := range parsedJson.Search("ports").Children() {
-		hostPort := fmt.Sprintf("%v", port.Search("host").Data().(float64))
-		containerPort := fmt.Sprintf("%v", port.Search("container").Data().(float64))
+		hostPort := port.Search("host").Data().(string)
+		containerPort := port.Search("container").Data().(string)
 		exposedPorts[nat.Port(containerPort)] = struct{}{}
 		portBinding[nat.Port(containerPort)] = []nat.PortBinding{{HostPort: hostPort}}
 	}
