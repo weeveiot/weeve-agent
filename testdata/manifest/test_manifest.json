@@ -1,428 +1,121 @@
 {
-  "id": "1c4cb11d-0e06-4edd-a305-354b9b49e558",
-  "version": "1.0.0",
-  "name": "Test_1",
-  "created": 1635350155690,
-  "modified": 1635350155690,
-  "description": "Test_1",
-  "networks": {
-    "driver": "bridge"
-  },
-  "services": [
-    {
-      "id": "9549e775-27b0-4674-9ad6-910c7ebcb610",
-      "version": "1.0.0",
-      "name": "MQTT Ingress",
-      "description": "Data ingress for MQTT",
-      "icon": "https://icons-020-demo.s3.eu-central-1.amazonaws.com/MQTT.png",
-      "type": "input",
-      "created": null,
-      "modified": null,
-      "document": "{\"ports\":[],\"volumes\":[],\"restart_policy\":{\"condition\":\"on-failure\",\"delay\":\"10s\",\"max_attempts\":3,\"window\":\"120s\"}}",
-      "commands": [],
-      "environments": [
-        {
-          "name": "MQTT Broker",
-          "description": "Broker to subscribe from",
-          "key": "MQTT_BROKER",
-          "value": "mqtt://18.193.133.162",
-          "default": "",
-          "type": "string",
-          "options": null
-        },
-        {
-          "name": "Port",
-          "description": "Port on which the broker is listening",
-          "key": "PORT",
-          "value": "1883",
-          "default": "",
-          "type": "integer",
-          "options": null
-        },
-        {
-          "name": "Protocol",
-          "description": "Protocol used for connection",
-          "key": "PROTOCOL",
-          "value": "",
-          "default": "mqtt",
-          "type": "enum",
-          "options": [
-            "mqtt",
-            "ws"
-          ]
-        },
-        {
-          "name": "Topic",
-          "description": "Topic to subscribe",
-          "key": "TOPIC",
-          "value": "weeve/hackathon/air-quality-monitor",
-          "default": "",
-          "type": "string",
-          "options": null
-        },
-        {
-          "name": "QOS",
-          "description": "Quality of service for the connection",
-          "key": "QOS",
-          "value": "",
-          "default": "0",
-          "type": "enum",
-          "options": [
-            "0",
-            "1",
-            "2"
-          ]
-        }
-      ],
-      "image": {
-        "name": "weevenetwork/weeve-ingress-mqtt",
-        "tag": "latest"
-      },
-      "categories": [
-        {
-          "id": "category",
-          "name": "Ingress"
-        }
-      ],
-      "tags": [
-        "MQTT Ingress",
-        "input",
-        "Data",
-        "ingress",
-        "MQTT"
-      ]
-    },
-    {
-      "id": "b05d8c75-eea5-455b-90af-8686da27682a",
-      "version": "1.0.0",
-      "name": "Cleaner",
-      "description": "Data Sanitization and Anomaly Detection",
-      "icon": "https://icons-020-demo.s3.eu-central-1.amazonaws.com/Sweeper.png",
-      "type": "process",
-      "created": null,
-      "modified": null,
-      "document": "{\"ports\":[],\"volumes\":[],\"restart_policy\":{\"condition\":\"on-failure\",\"delay\":\"10s\",\"max_attempts\":3,\"window\":\"120s\"}}",
-      "commands": [],
-      "environments": [
-        {
-          "name": "Upper Threshold",
-          "description": "The value above which data would be considered as anomaly",
-          "key": "UPPER_THRESHOLD",
-          "value": "30",
-          "default": "",
-          "type": "integer",
-          "options": null
-        },
-        {
-          "name": "Lower Threshold",
-          "description": "The value below which data would be considered as anomaly",
-          "key": "LOWER_THRESHOLD",
-          "value": "-10",
-          "default": "",
-          "type": "integer",
-          "options": null
-        },
-        {
-          "name": "Anomaly (+ve) rate of change",
-          "description": "Anomaly +ve rate of change  (per second)",
-          "key": "ANOMALY_POSITIVE_RATE_OF_CHANGE",
-          "value": "40",
-          "default": "",
-          "type": "float",
-          "options": null
-        },
-        {
-          "name": "Anomaly (-ve) rate of change",
-          "description": "Anomaly -ve rate of change  (per second)",
-          "key": "ANOMALY_NEGATIVE_RATE_OF_CHANGE",
-          "value": "-30",
-          "default": "",
-          "type": "float",
-          "options": null
-        },
-        {
-          "name": "Out-of-bound Data",
-          "description": "What to do with out of bound data",
-          "key": "OUT-OF-BOUND_DATA",
-          "value": "smooth",
-          "default": "",
-          "type": "enum",
-          "options": [
-            "keep",
-            "remove",
-            "smooth"
-          ]
-        },
-        {
-          "name": "Input Label",
-          "description": "The input label on which anomaly is detected",
-          "key": "INPUT_LABEL",
-          "value": "temperature",
-          "default": "",
-          "type": "string",
-          "options": null
-        },
-        {
-          "name": "Input Unit",
-          "description": "The input unit",
-          "key": "INPUT_UNIT",
-          "value": "",
-          "default": "Celsius",
-          "type": "string",
-          "options": null
-        },
-        {
-          "name": "Output Label",
-          "description": "The out label as which data is dispatched",
-          "key": "OUTPUT_LABEL",
-          "value": "smoothTemp",
-          "default": "",
-          "type": "string",
-          "options": null
-        },
-        {
-          "name": "Output Unit",
-          "description": "The output unit",
-          "key": "OUTPUT_UNIT",
-          "value": "Celsius",
-          "default": "",
-          "type": "string",
-          "options": null
-        }
-      ],
-      "image": {
-        "name": "weevenetwork/weeve-sweeper",
-        "tag": "latest"
-      },
-      "categories": [
-        {
-          "id": "category",
-          "name": "Filter"
-        }
-      ],
-      "tags": [
-        "Cleaner",
-        "process",
-        "Data",
-        "Sanitization",
-        "Anomaly",
-        "Detection"
-      ]
-    },
-    {
-      "id": "6822b825-d527-4564-ac1e-3bb5ab968182",
-      "version": "1.0.0",
-      "name": "WeevAgator",
-      "description": "Data Sanitization and Anomaly Detection",
-      "icon": "https://icons-020-demo.s3.eu-central-1.amazonaws.com/Aggregator.png",
-      "type": "process",
-      "created": null,
-      "modified": null,
-      "document": "{\"ports\":[],\"volumes\":[],\"restart_policy\":{\"condition\":\"on-failure\",\"delay\":\"10s\",\"max_attempts\":3,\"window\":\"120s\"}}",
-      "commands": [
-        {
-          "name": "Input Label",
-          "description": "The input label on which anomaly is detected",
-          "key": "INPUT_LABEL",
-          "value": "smoothTemp",
-          "default": "",
-          "type": "string",
-          "options": null
-        },
-        {
-          "name": "Data Type",
-          "description": "Type of data in the above mentioned label",
-          "key": "DATA_TYPE",
-          "value": "",
-          "default": "float",
-          "type": "enum",
-          "options": [
-            "float",
-            "integer"
-          ]
-        },
-        {
-          "name": "Output Label",
-          "description": "The out label as which data is dispatched",
-          "key": "OUTPUT_LABEL",
-          "value": "meanTemp",
-          "default": "",
-          "type": "string",
-          "options": null
-        },
-        {
-          "name": "Output Unit",
-          "description": "The out unit in which data is dispatched",
-          "key": "OUTPUT_UNIT",
-          "value": "Celsius",
-          "default": "",
-          "type": "string",
-          "options": null
-        }
-      ],
-      "environments": [
-        {
-          "name": "Interval Unit",
-          "description": "Unit for time interval",
-          "key": "INTERVAL_UNIT",
-          "value": "s",
-          "default": "",
-          "type": "enum",
-          "options": [
-            "ms",
-            "s",
-            "m",
-            "h",
-            "d"
-          ]
-        },
-        {
-          "name": "Interval Period",
-          "description": "The Time Interval on which the aggregation will be applied",
-          "key": "INTERVAL_PERIOD",
-          "value": "20",
-          "default": "",
-          "type": "integer",
-          "options": null
-        },
-        {
-          "name": "Function",
-          "description": "The Aggregation function to apply",
-          "key": "FUNCTION",
-          "value": "mean",
-          "default": "",
-          "type": "enum",
-          "options": [
-            "mean",
-            "max",
-            "spread",
-            "median",
-            "sum",
-            "stddv",
-            "count",
-            "first",
-            "min",
-            "last"
-          ]
-        }
-      ],
-      "image": {
-        "name": "weevenetwork/weeve-weevagator",
-        "tag": "latest"
-      },
-      "categories": [
-        {
-          "id": "category",
-          "name": "Aggregate"
-        }
-      ],
-      "tags": [
-        "WeevAgator",
-        "process",
-        "Data",
-        "Sanitization",
-        "Anomaly",
-        "Detection"
-      ]
-    },
-    {
-      "id": "369b611e-35cb-4f2b-a9f7-1c9cdba0f88b",
-      "version": "1.0.0",
-      "name": "Slack Alert",
-      "description": "Filtering data according to query",
-      "icon": "https://icons-020-demo.s3.eu-central-1.amazonaws.com/slack.png",
-      "type": "output",
-      "created": null,
-      "modified": null,
-      "document": "{\"ports\":[],\"volumes\":[],\"restart_policy\":{\"condition\":\"on-failure\",\"delay\":\"10s\",\"max_attempts\":3,\"window\":\"120s\"}}",
-      "commands": [],
-      "environments": [
-        {
-          "name": "Input Label",
-          "description": "The field to apply alert on",
-          "key": "INPUT_LABEL",
-          "value": "meanTemp",
-          "default": "",
-          "type": "string",
-          "options": null
-        },
-        {
-          "name": "Input Unit",
-          "description": "The input unit",
-          "key": "INPUT_UNIT",
-          "value": "Celsius",
-          "default": "",
-          "type": "string",
-          "options": null
-        },
-        {
-          "name": "Condition",
-          "description": "Query/Condition for alerting",
-          "key": "CONDITION",
-          "value": ">",
-          "default": "",
-          "type": "enum",
-          "options": [
-            "No condition",
-            "(==) equal to",
-            "(!=) not equal to",
-            "(>) greater than",
-            "(>=) greater than or equal to",
-            "(<) less than",
-            "(<=) less than or equal to"
-          ]
-        },
-        {
-          "name": "Compare value",
-          "description": "The value to compare with",
-          "key": "COMPARE_VALUE",
-          "value": "27",
-          "default": "20",
-          "type": "integer",
-          "options": null
-        },
-        {
-          "name": "Alert Severity",
-          "description": "Order of the results",
-          "key": "ALERT_SEVERITY",
-          "value": "",
-          "default": "Warning",
-          "type": "enum",
-          "options": [
-            "Warning",
-            "Alarming",
-            "Caution",
-            "Broken"
-          ]
-        },
-        {
-          "name": "Slack Webhook URL",
-          "description": "Webhook to the slack channel to put alerts on",
-          "key": "SLACK_WEBHOOK_URL",
-          "value": "https://hooks.slack.com/services/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",
-          "default": "",
-          "type": "string",
-          "options": null
-        }
-      ],
-      "image": {
-        "name": "weevenetwork/weeve-slack-alert",
-        "tag": "latest"
-      },
-      "categories": [
-        {
-          "id": "category",
-          "name": "Alert"
-        }
-      ],
-      "tags": [
-        "Slack Alert",
-        "output",
-        "Filtering",
-        "data",
-        "according",
-        "query"
-      ]
-    }
-  ]
+	"_id": "6064fa29-e111-4a9a-af03-313988346f6d",
+	"manifestName": "MQTTEgress-Test",
+	"versionName": "1.0.0",
+	"versionNumber": 1,
+	"command": "DEPLOY",
+	"connections": {},
+	"modules": [
+		{
+			"moduleID": "2b6e064f-9571-4484-ba72-4962af51794b",
+			"moduleName": "MQTT Ingress",
+			"image": {
+				"name": "weevenetwork/mqtt-ingress",
+				"tag": "latest",
+				"registry": {}
+			},
+			"envs": [
+				{
+					"key": "MQTT_BROKER",
+					"value": "mqtt://44.197.202.139"
+				},
+				{
+					"key": "PORT",
+					"value": "1883"
+				},
+				{
+					"key": "PROTOCOL",
+					"value": "mqtt"
+				},
+				{
+					"key": "TOPIC",
+					"value": "weeve/ncs/coffee"
+				},
+				{
+					"key": "QOS",
+					"value": "1"
+				},
+				{
+					"key":"MODULE_TYPE",
+					"value":"INGRESS"
+				}
+			],
+			"ports": [],
+			"mounts": []
+		},
+		{
+			"moduleID": "11b28b9a-4062-4634-95d7-94a7d0a52b33",
+			"moduleName": "Comparison Filter",
+			"image": {
+				"name": "weevenetwork/comparison-filter",
+				"tag": "latest",
+				"registry": {}
+			},
+			"envs": [
+				{
+					"key": "INPUT_LABEL",
+					"value": "reject_rate"
+				},
+				{
+					"key": "OUTPUT_LABEL",
+					"value": "Reject_Rate"
+				},
+				{
+					"key": "OUTPUT_UNIT",
+					"value": "%"
+				},
+				{
+					"key": "CONDITION",
+					"value": "(>) greater than"
+				},
+				{
+					"key": "COMPARE_VALUE",
+					"value": "15"
+				},
+				{
+					"key":"MODULE_TYPE",
+					"value":"PROCESS"
+				}
+			],
+			"ports": [],
+			"mounts": []
+		},
+		{
+			"moduleID": "4decbe05-0501-4c74-9db6-7bc560cf1576",
+			"moduleName": "MQTT Egress",
+			"image": {
+				"name": "weevenetwork/mqtt-egress",
+				"tag": "latest",
+				"registry": {}
+			},
+			"envs": [
+				{
+					"key": "MQTT_BROKER",
+					"value": "mqtt://test.mosquitto.org"
+				},
+				{
+					"key": "PORT",
+					"value": "1883"
+				},
+				{
+					"key": "TOPIC",
+					"value": "weeve/factory"
+				},
+				{
+					"key": "QOS",
+					"value": "1"
+				},
+				{
+					"key": "LABELS",
+					"value": "temperature, pressure"
+				},
+				{
+					"key":"MODULE_TYPE",
+					"value":"EGRESS"
+				}
+			],
+			"ports": [],
+			"mounts": []
+		}
+	]
 }

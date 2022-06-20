@@ -12,6 +12,7 @@ import (
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
+	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 var ctx = context.Background()
@@ -134,10 +135,10 @@ func ReadAllContainers() ([]types.Container, error) {
 	return containers, nil
 }
 
-func ReadDataServiceContainers(manifestID string, version string) ([]types.Container, error) {
+func ReadDataServiceContainers(manifestUniqueID model.ManifestUniqueID) ([]types.Container, error) {
 	filter := filters.NewArgs()
-	filter.Add("label", "manifestID="+manifestID)
-	filter.Add("label", "version="+version)
+	filter.Add("label", "manifestName="+manifestUniqueID.ManifestName)
+	filter.Add("label", "versionName="+manifestUniqueID.VersionName)
 	options := types.ContainerListOptions{All: true, Filters: filter}
 	containers, err := dockerClient.ContainerList(context.Background(), options)
 	if err != nil {

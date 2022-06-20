@@ -6,25 +6,26 @@ import (
 	"github.com/Jeffail/gabs/v2"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/disk"
+	"github.com/shirou/gopsutil/host"
+	"github.com/shirou/gopsutil/mem"
+	"github.com/weeveiot/weeve-agent/internal/config"
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
-	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 type statusMessage struct {
-	Id                 string                 `json:"ID"`
-	Timestamp          int64                  `json:"timestamp"`
-	Status             string                 `json:"status"`
-	ActiveServiceCount int                    `json:"activeServiceCount"`
-	ServiceCount       int                    `json:"serviceCount"`
-	ServicesStatus     []model.ManifestStatus `json:"servicesStatus"`
-	DeviceParams       deviceParams           `json:"deviceParams"`
+	Status           string             `json:"status"`
+	EdgeApplications []edgeApplications `json:"edgeApplications"`
+	DeviceParams     deviceParams       `json:"deviceParams"`
 }
 
 type deviceParams struct {
-	Sensors string `json:"sensors"`
-	Uptime  string `json:"uptime"`
-	CpuTemp string `json:"cputemp"`
+	SystemUpTime float64 `json:"systemUpTime"`
+	SystemLoad   float64 `json:"systemLoad"`
+	StorageFree  uint64  `json:"storageFree"`
+	RamFree      uint64  `json:"ramFree"`
 }
 
 type registrationMessage struct {
@@ -35,14 +36,18 @@ type registrationMessage struct {
 	Name      string `json:"name"`
 }
 
-func ProcessMessage(operation string, payload []byte) error {
-	log.Info("Processing the message >> ", operation)
-
+func ProcessMessage(payload []byte) error {
 	jsonParsed, err := gabs.ParseJSON(payload)
 	if err != nil {
 		return err
 	}
 	log.Debug("Parsed JSON >> ", jsonParsed)
+
+	operation, err := manifest.GetCommand(jsonParsed)
+	if err != nil {
+		return err
+	}
+	log.Info("Processing the message >> ", operation)
 
 	switch operation {
 	case dataservice.CMDDeploy:
@@ -79,14 +84,17 @@ func ProcessMessage(operation string, payload []byte) error {
 
 	case dataservice.CMDStopService:
 
-		err := manifest.ValidateStartStopJSON(jsonParsed)
+		err := manifest.ValidateUniqueIDExist(jsonParsed)
+		if err != nil {
+			return err
+
+		}
+
+		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(jsonParsed)
 		if err != nil {
 			return err
 		}
-		serviceId := jsonParsed.Search("id").Data().(string)
-		serviceVersion := jsonParsed.Search("version").Data().(string)
-
-		err = dataservice.StopDataService(serviceId, serviceVersion)
+		err = dataservice.StopDataService(manifestUniqueID)
 		if err != nil {
 			return err
 		}
@@ -94,14 +102,15 @@ func ProcessMessage(operation string, payload []byte) error {
 
 	case dataservice.CMDStartService:
 
-		err := manifest.ValidateStartStopJSON(jsonParsed)
+		err := manifest.ValidateUniqueIDExist(jsonParsed)
 		if err != nil {
 			return err
 		}
-		serviceId := jsonParsed.Search("id").Data().(string)
-		serviceVersion := jsonParsed.Search("version").Data().(string)
-
-		err = dataservice.StartDataService(serviceId, serviceVersion)
+		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(jsonParsed)
+		if err != nil {
+			return err
+		}
+		err = dataservice.StartDataService(manifestUniqueID)
 		if err != nil {
 			return err
 		}
@@ -109,14 +118,16 @@ func ProcessMessage(operation string, payload []byte) error {
 
 	case dataservice.CMDUndeploy:
 
-		err := manifest.ValidateStartStopJSON(jsonParsed)
+		err := manifest.ValidateUniqueIDExist(jsonParsed)
 		if err != nil {
 			return err
 		}
-		serviceId := jsonParsed.Search("id").Data().(string)
-		serviceVersion := jsonParsed.Search("version").Data().(string)
 
-		err = dataservice.UndeployDataService(serviceId, serviceVersion)
+		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(jsonParsed)
+		if err != nil {
+			return err
+		}
+		err = dataservice.UndeployDataService(manifestUniqueID)
 		if err != nil {
 			return err
 		}
@@ -126,28 +137,55 @@ func ProcessMessage(operation string, payload []byte) error {
 	return nil
 }
 
-func GetStatusMessage(nodeId string) statusMessage {
-	knownManifests := manifest.GetKnownManifests()
-	deviceParams := deviceParams{Sensors: "10", Uptime: "10", CpuTemp: "20"}
+func GetStatusMessage() (statusMessage, error) {
+	edgeApps, err := GetDataServiceStatus()
 
-	actv_cnt := 0
-	serv_cnt := len(knownManifests)
-	for _, manifest := range knownManifests {
-		if manifest.Status == "SUCCESS" {
-			actv_cnt++
+	deviceParams := deviceParams{}
+	uptime, err := host.Uptime()
+	if err != nil {
+		return statusMessage{}, err
+	}
+	if uptime > 0 {
+		deviceParams.SystemUpTime = float64((uptime / 60) / 24)
+	}
+
+	deviceParams.SystemLoad = 0
+	cpu, err := cpu.Percent(0, false)
+	if err != nil {
+		return statusMessage{}, err
+	}
+	if len(cpu) > 0 {
+		for _, c := range cpu {
+			deviceParams.SystemLoad = deviceParams.SystemLoad + c
 		}
+		deviceParams.SystemLoad = deviceParams.SystemLoad / float64(len(cpu))
+	}
+
+	diskStat, err := disk.Usage("/")
+	if err != nil {
+		return statusMessage{}, err
+	}
+	deviceParams.StorageFree = diskStat.Free
+
+	verMem, err := mem.VirtualMemory()
+	if err != nil {
+		return statusMessage{}, err
+	}
+	deviceParams.RamFree = verMem.Free
+
+	// TODO: Do proper check for node status
+	nodeStatus := manifest.Alarm
+	if config.GetRegistered() {
+		nodeStatus = manifest.Connected
 	}
 
 	msg := statusMessage{
-		Id:                 nodeId,
-		Timestamp:          time.Now().UnixMilli(),
-		Status:             "Available",
-		ActiveServiceCount: actv_cnt,
-		ServiceCount:       serv_cnt,
-		ServicesStatus:     knownManifests,
-		DeviceParams:       deviceParams,
+		Status:           nodeStatus,
+		EdgeApplications: edgeApps,
+		DeviceParams:     deviceParams,
 	}
-	return msg
+
+	return msg, nil
 }
 
 func GetRegistrationMessage(nodeId string, nodeName string) registrationMessage {

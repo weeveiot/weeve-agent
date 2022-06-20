@@ -76,16 +76,16 @@ func main() {
 
 	// MAIN LOOP
 	go monitorDataServiceStatus()
-
-	go func() {
-		for {
-			err = com.SendHeartbeat()
-			if err != nil {
-				log.Error(err)
-			}
-			time.Sleep(time.Second * time.Duration(com.GetHeartbeat()))
-		}
-	}()
+	//! should revert this
+	// go func() {
+	// 	for {
+	// 		err = com.SendHeartbeat()
+	// 		if err != nil {
+	// 			log.Error(err)
+	// 		}
+	// 		time.Sleep(time.Second * time.Duration(com.GetHeartbeat()))
+	// 	}
+	// }()
 
 	// Cleanup on ending the process
 	<-done
@@ -195,5 +195,8 @@ func monitorDataServiceStatus() {
 				log.Error(err)
 			}
 		}
+		//! should remove this
+		log.Debug(edgeApps)
+		time.Sleep(time.Second * time.Duration(20))
 	}
 }

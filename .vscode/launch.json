@@ -17,28 +17,12 @@
         "-b",
         "tcp://localhost:8080",
         "--heartbeat",
-        "600",
+        "150",
         "--config",
-        "${workspaceRoot}/nodeconfig.json"
-      ]
-    },
-    {
-      "name": "WeeveAgentDemo",
-      "type": "go",
-      "request": "launch",
-      "mode": "debug",
-      "program": "${workspaceRoot}/cmd/agent/agent.go",
-      "showLog": true,
-      "args": [
-        "-v",
-        "-b",
-        "tls://mapi-dev.weeve.engineering:8883",
-        "--heartbeat",
-        "120",
+        "${workspaceRoot}/nodeconfig.json",
         "--loglevel",
-        "debug",
-        "--config",
-        "${workspaceRoot}/nodeconfig.json"
+        "debug"
+
       ]
     },
     {
@@ -109,7 +93,6 @@
       "type": "go",
       "request": "launch",
       "mode": "test",
-      "remotePath": "",
       "program": "${workspaceRoot}/internal/deploy",
       "env": {},
       "args": [],

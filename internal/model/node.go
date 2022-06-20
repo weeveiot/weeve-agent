@@ -20,18 +20,14 @@ type Params struct {
 }
 
 type ManifestStatus struct {
-	ManifestId      string `json:"manifestId"`
-	ManifestVersion string `json:"manifestVersion"`
-	Status          string `json:"status"`
+	ManifestID       string           `json:"manifestID"`
+	ManifestUniqueID ManifestUniqueID `json:"manifestUniqueID"`
+	Status           string           `json:"status"`
+	ContainerCount   int              `json:"containerCount"`
+	InTransition     bool             `json:"inTransition"`
 }
 
-type Container struct {
-	Name   string `json:"name"`
-	Status string `json:"status"`
-}
-
-type EdgeApplications struct {
-	ManifestID string      `json:"manifestID"`
-	Status     string      `json:"status"`
-	Containers []Container `json:"containers"`
+type ManifestUniqueID struct {
+	VersionName  string
+	ManifestName string
 }
