@@ -136,8 +136,6 @@ func ReadAllContainers() ([]types.Container, error) {
 }
 
 func ReadDataServiceContainers(manifestUniqueID model.ManifestUniqueID) ([]types.Container, error) {
-	log.Debug("Docker_container -> ReadDataServiceContainers")
-
 	filter := filters.NewArgs()
 	filter.Add("label", "manifestName="+manifestUniqueID.ManifestName)
 	filter.Add("label", "versionName="+manifestUniqueID.VersionName)
@@ -146,7 +144,6 @@ func ReadDataServiceContainers(manifestUniqueID model.ManifestUniqueID) ([]types
 	if err != nil {
 		return nil, err
 	}
-	log.Debug("Docker_container -> ReadAllContainers response", containers)
 
 	return containers, nil
 }

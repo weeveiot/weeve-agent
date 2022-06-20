@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/Jeffail/gabs/v2"
@@ -14,7 +13,6 @@ import (
 	"github.com/shirou/gopsutil/mem"
 	"github.com/weeveiot/weeve-agent/internal/config"
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
-	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 )
 
@@ -22,17 +20,6 @@ type statusMessage struct {
 	Status           string             `json:"status"`
 	EdgeApplications []edgeApplications `json:"edgeApplications"`
 	DeviceParams     deviceParams       `json:"deviceParams"`
-}
-
-type edgeApplications struct {
-	ManifestID string      `json:"manifestID"`
-	Status     string      `json:"status"`
-	Containers []container `json:"containers"`
-}
-
-type container struct {
-	Name   string `json:"name"`
-	Status string `json:"status"`
 }
 
 type deviceParams struct {
@@ -154,39 +141,7 @@ func ProcessMessage(payload []byte) error {
 }
 
 func GetStatusMessage() (statusMessage, error) {
-	edgeApps := []edgeApplications{}
-	knownManifests := manifest.GetKnownManifests()
-
-	for _, manif := range knownManifests {
-		edgeApplication := edgeApplications{ManifestID: manif.ManifestID, Status: manif.Status}
-		containersStat := []container{}
-
-		appContainers, err := docker.ReadDataServiceContainers(manif.ManifestUniqueID)
-		if err != nil {
-			return statusMessage{}, err
-		}
-
-		if !manif.InTransition && (manif.Status == manifest.Running || manif.Status == manifest.Paused) && len(appContainers) != manif.ContainerCount {
-			edgeApplication.Status = manifest.Error
-		}
-
-		for _, con := range appContainers {
-			container := container{Name: strings.Join(con.Names, ", "), Status: con.State}
-			containersStat = append(containersStat, container)
-
-			if !manif.InTransition && edgeApplication.Status != manifest.Error {
-				if manif.Status == manifest.Running && con.State != manifest.Running {
-					edgeApplication.Status = manifest.Error
-				}
-				if manif.Status == manifest.Paused && con.State != manifest.Paused {
-					edgeApplication.Status = manifest.Error
-				}
-			}
-		}
-
-		edgeApplication.Containers = containersStat
-		edgeApps = append(edgeApps, edgeApplication)
-	}
+	edgeApps, err := GetDataServiceStatus()
 
 	deviceParams := deviceParams{}
 	uptime, err := host.Uptime()

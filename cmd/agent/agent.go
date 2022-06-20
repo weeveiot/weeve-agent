@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/jessevdk/go-flags"
@@ -74,12 +75,14 @@ func main() {
 	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
 
 	// MAIN LOOP
+	go monitorDataServiceStatus()
 	go func() {
 		for {
 			err = com.SendHeartbeat()
 			if err != nil {
 				log.Error(err)
 			}
+			time.Sleep(time.Second * time.Duration(com.GetHeartbeat()))
 		}
 	}()
 
@@ -170,4 +173,27 @@ func validateBrokerUrl(u *url.URL) {
 	}
 
 	log.Infof("Broker host->%v at port->%v over %v", host, port, u.Scheme)
+}
+
+func monitorDataServiceStatus() {
+	edgeApps, err := handler.GetDataServiceStatus()
+	if err != nil {
+		log.Error(err)
+	}
+
+	for {
+		latestEdgeApps, statusChange, err := handler.CompareDataServiceStatus(edgeApps)
+		if err != nil {
+			log.Error(err)
+		}
+		if statusChange == true {
+			err = com.SendHeartbeat()
+			if err != nil {
+				log.Error(err)
+			}
+		}
+		edgeApps = latestEdgeApps
+		log.Debug("Latest edge app status: ", edgeApps)
+		time.Sleep(time.Second * time.Duration(5))
+	}
 }

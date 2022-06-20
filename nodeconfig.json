@@ -1,8 +1,8 @@
 {
  "RootCertPath": "ca.crt",
- "NodeId": "",
+ "NodeId": "62ac2689e045763402987e7a",
  "Password": "",
  "APIkey": "",
- "NodeName": "New Node8081",
- "Registered": false
+ "NodeName": "LastTestNode",
+ "Registered": true
 }

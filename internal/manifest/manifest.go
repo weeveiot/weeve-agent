@@ -51,13 +51,13 @@ type RegistryDetails struct {
 type connectionsType map[string][]string
 
 const (
-	Connected = "Connected"
-	Alarm     = "Alarm"
-	Running   = "Running"
-	Error     = "Error"
-	Paused    = "Paused"
-	Initiated = "Initiated"
-	Deleted   = "Deleted"
+	Connected = "connected"
+	Alarm     = "alarm"
+	Running   = "running"
+	Error     = "error"
+	Paused    = "paused"
+	Initiated = "initiated"
+	Deleted   = "deleted"
 )
 
 // uncomment when all changes for v1 modules were done
