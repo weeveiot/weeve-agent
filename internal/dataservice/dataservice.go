@@ -11,12 +11,12 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
-const CMDDeploy = "deploy"
-const CMDReDeploy = "redeploy"
-const CMDDeployLocal = "local_deploy"
-const CMDStopService = "stopservice"
-const CMDStartService = "startservice"
-const CMDUndeploy = "undeploy"
+const CMDDeploy = "DEPLOY"
+const CMDReDeploy = "REDEPLOY"
+const CMDDeployLocal = "LOCAL_DEPLOY"
+const CMDStopService = "STOP"
+const CMDStartService = "START"
+const CMDUndeploy = "UNDEPLOY"
 
 func DeployDataService(man manifest.Manifest, command string) error {
 	//******** STEP 1 - Check if Data Service is already deployed *************//

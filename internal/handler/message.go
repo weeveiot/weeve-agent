@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"strings"
 	"time"
 
@@ -145,6 +146,8 @@ func ProcessMessage(payload []byte) error {
 			return err
 		}
 		log.Info("Undeployment done!")
+	default:
+		return errors.New("Received message with unknown command")
 	}
 
 	return nil
