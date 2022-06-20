@@ -18,8 +18,9 @@ import (
 
 func PullImage(imgDetails manifest.RegistryDetails) error {
 	authConfig := types.AuthConfig{
-		Username: imgDetails.UserName,
-		Password: imgDetails.Password,
+		Username:      imgDetails.UserName,
+		Password:      imgDetails.Password,
+		ServerAddress: imgDetails.Url,
 	}
 
 	encodedJSON, err := json.Marshal(authConfig)

@@ -47,7 +47,10 @@ func SendHeartbeat() error {
 	}
 
 	nodeStatusTopic := topicNodeStatus + "/" + config.GetNodeId()
-	msg := handler.GetStatusMessage(config.GetNodeId())
+	msg, err := handler.GetStatusMessage()
+	if err != nil {
+		return err
+	}
 	log.Debugln("Sending update >>", "Topic:", nodeStatusTopic, ">> Body:", msg)
 	err = publishMessage(nodeStatusTopic, msg)
 	if err != nil {
@@ -130,7 +133,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 	log.Debugln("Received message on topic:", msg.Topic(), "JSON:", *jsonParsed)
 
 	if msg.Topic() == config.GetNodeId()+"/"+topicOrchestration {
-		err = handler.ProcessMessage(topicOrchestration, msg.Payload())
+		err = handler.ProcessMessage(msg.Payload())
 		if err != nil {
 			log.Error(err)
 		}
