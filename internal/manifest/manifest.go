@@ -1,6 +1,7 @@
 package manifest
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -47,6 +48,8 @@ type RegistryDetails struct {
 	Password  string
 }
 
+type connectionsType map[string][]string
+
 const (
 	Connected = "Connected"
 	Alarm     = "Alarm"
@@ -92,6 +95,21 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 
 	var containerConfigs []ContainerConfig
 
+	var connections connectionsType
+
+	err := json.Unmarshal(jsonParsed.Search("connections").Bytes(), &connections)
+	if err != nil {
+		return Manifest{}, err
+	}
+
+	revertedConnections := make(connectionsType)
+
+	for key, value := range connections {
+		for _, v := range value {
+			revertedConnections[v] = append(revertedConnections[v], key)
+		}
+	}
+
 	modules := jsonParsed.Search("modules").Children()
 	for index, module := range modules {
 		var containerConfig ContainerConfig
@@ -125,16 +143,16 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_NAME", containerConfig.ImageName))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PORT", 80))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PATH", "/"))
-		if index == 0 {
+
+		if revertedConnections[fmt.Sprint(index+1)] == nil {
 			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_TYPE", ModuleTypeInput))
-		} else if index == len(modules)-1 {
+		} else if connections[fmt.Sprint(index+1)] == nil {
 			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_TYPE", ModuleTypeOutput))
 		} else {
 			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_TYPE", ModuleTypeProcessing))
 		}
 
 		containerConfig.EnvArgs = envArgs
-		var err error
 		containerConfig.MountConfigs, err = getMounts(module)
 		if err != nil {
 			return Manifest{}, err
