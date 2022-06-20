@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"time"
 
 	"github.com/Jeffail/gabs/v2"
@@ -132,6 +133,8 @@ func ProcessMessage(payload []byte) error {
 			return err
 		}
 		log.Info("Undeployment done!")
+	default:
+		return errors.New("Received message with unknown command")
 	}
 
 	return nil

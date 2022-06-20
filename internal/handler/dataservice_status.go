@@ -31,7 +31,7 @@ func GetDataServiceStatus() ([]edgeApplications, error) {
 			return edgeApps, err
 		}
 
-		if (manif.Status == manifest.Running || manif.Status == manifest.Paused) && len(appContainers) != manif.ContainerCount {
+		if !manif.InTransition && (manif.Status == manifest.Running || manif.Status == manifest.Paused) && len(appContainers) != manif.ContainerCount {
 			edgeApplication.Status = manifest.Error
 		}
 

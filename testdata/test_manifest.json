@@ -1,168 +1,170 @@
 {
-    "_id": "62ac2695e0457634029882bb",
-    "manifestName": "feel-like-making-love-manifest",
+    "_id": "62b09c984b303ba38597edd6",
     "command": "DEPLOY",
-    "versionName": "v1",
-    "versionNumber": 1,
     "connections": {
         "1": [
             "2"
         ],
         "2": [
             "3"
-        ],
-        "3": [
-            "4"
         ]
     },
+    "manifestName": "kunbus-demo-manifest",
     "modules": [
         {
-            "moduleID": "62aef9606a59b0a9898ef415",
-            "moduleName": "mqtt-ingress",
+            "devices": [],
+            "envs": [
+                {
+                    "key": "MQTT_BROKER",
+                    "value": "mqtt://mapi-dev.weeve.engineering"
+                },
+                {
+                    "key": "PORT",
+                    "value": "1883"
+                },
+                {
+                    "key": "PROTOCOL",
+                    "value": "mqtt"
+                },
+                {
+                    "key": "TOPIC",
+                    "value": "revpi_I14"
+                },
+                {
+                    "key": "QOS",
+                    "value": "0"
+                }
+            ],
             "image": {
                 "name": "weevenetwork/mqtt-ingress",
-                "tag": "latest",
                 "registry": {
-                    "url": "",
-                    "username": "",
-                    "password": ""
-                }
+                    "password": "",
+                    "url": "https://hub.docker.com",
+                    "userName": ""
+                },
+                "tag": "latest"
             },
-            "envs": [
-                {
-                  "key": "MQTT_BROKER",
-                  "value": "mqtt://mapi-dev.weeve.engineering"
-                },
-                {
-                  "key": "PORT",
-                  "value": "1883"
-                },
-                {
-                  "key": "PROTOCOL",
-                  "value": "mqtt"
-                },
-                {
-                  "key": "TOPIC",
-                  "value": "revpi_I14"
-                },
-                {
-                  "key": "QOS",
-                  "value": "0"
-                }
-            ],
-            "ports": [],
+            "moduleID": "62b09bae4b303ba38597e5b8",
+            "moduleName": "mqtt-ingress",
             "mounts": [],
-            "devices": []
+            "ports": [
+                {
+                    "container": "1883",
+                    "host": "1883"
+                }
+            ]
         },
         {
-            "moduleID": "62aef9606a59b0a9898ef401",
-            "moduleName": "fluctuation-filter",
+            "devices": [],
+            "envs": [
+                {
+                    "key": "INPUT_LABEL",
+                    "value": "sensorData"
+                },
+                {
+                    "key": "OUTPUT_LABEL",
+                    "value": "stableData"
+                },
+                {
+                    "key": "WINDOW_SIZE",
+                    "value": "3"
+                },
+                {
+                    "key": "SEND_ON_CHANGE",
+                    "value": "true"
+                }
+            ],
             "image": {
                 "name": "weevenetwork/fluctuation-filter",
-                "tag": "latest",
                 "registry": {
-                    "url": "",
-                    "username": "",
-                    "password": ""
-                }
+                    "password": "",
+                    "url": "https://hub.docker.com",
+                    "userName": ""
+                },
+                "tag": "latest"
             },
-            "envs": [
-                {
-                  "key": "INPUT_LABEL",
-                  "value": "sensorData"
-                },
-                {
-                  "key": "OUTPUT_LABEL",
-                  "value": "stableData"
-                },
-                {
-                  "key": "WINDOW_SIZE",
-                  "value": "3"
-                },
-                {
-                  "key": "SEND_ON_CHANGE",
-                  "value": "true"
-                }
-            ],
-            "ports": [],
+            "moduleID": "62b09bae4b303ba38597e5a4",
+            "moduleName": "fluctuation-filter",
             "mounts": [],
-            "devices": []
+            "ports": []
         },
         {
-            "moduleID": "62aef9606a59b0a9898ef40b",
-            "moduleName": "comparison-filter",
+            "devices": [],
+            "envs": [
+                {
+                    "key": "INPUT_LABEL",
+                    "value": "stableData"
+                },
+                {
+                    "key": "OUTPUT_LABEL",
+                    "value": "compareData"
+                },
+                {
+                    "key": "OUTPUT_UNIT",
+                    "value": "number"
+                },
+                {
+                    "key": "CONDITION",
+                    "value": "(==) equal to"
+                },
+                {
+                    "key": "COMPARE_VALUE",
+                    "value": "1"
+                }
+            ],
             "image": {
                 "name": "weevenetwork/comparison-filter",
-                "tag": "latest",
                 "registry": {
-                    "url": "",
-                    "username": "",
-                    "password": ""
-                }
+                    "password": "",
+                    "url": "https://hub.docker.com",
+                    "userName": ""
+                },
+                "tag": "latest"
             },
-            "envs": [
-                {
-                  "key": "INPUT_LABEL",
-                  "value": "stableData"
-                },
-                {
-                  "key": "OUTPUT_LABEL",
-                  "value": "compareData"
-                },
-                {
-                  "key": "OUTPUT_UNIT",
-                  "value": "number"
-                },
-                {
-                  "key": "CONDITION",
-                  "value": "(==) equal to"
-                },
-                {
-                  "key": "COMPARE_VALUE",
-                  "value": "1"
-                }
-            ],
-            "ports": [],
+            "moduleID": "62b09bae4b303ba38597e5ae",
+            "moduleName": "comparison-filter",
             "mounts": [],
-            "devices": []
+            "ports": []
         },
         {
-            "moduleID": "62aef9606a59b0a9898ef417",
-            "moduleName": "slack-alert",
-            "image": {
-                "name": "weevenetwork/slack-alert",
-                "tag": "latest",
-                "registry": {
-                    "url": "",
-                    "username": "",
-                    "password": ""
-                }
-            },
+            "devices": [],
             "envs": [
                 {
-                  "key": "INPUT_LABEL",
-                  "value": "compareData"
+                    "key": "INPUT_LABEL",
+                    "value": "compareData"
                 },
                 {
-                  "key": "INPUT_UNIT",
-                  "value": "number"
+                    "key": "INPUT_UNIT",
+                    "value": "number"
                 },
                 {
-                  "key": "ALERT_SEVERITY",
-                  "value": "Warning"
+                    "key": "ALERT_SEVERITY",
+                    "value": "Warning"
                 },
                 {
-                  "key": "ALERT_MESSAGE",
-                  "value": "{{alert_severity}}: Leak detected on device {{device_name}} at {{time}}"
+                    "key": "ALERT_MESSAGE",
+                    "value": "{{alert_severity}}: Leak detected on device {{device_name}} at {{time}}"
                 },
                 {
-                  "key": "SLACK_WEBHOOK_URL",
-                  "value": "https://hooks.slack.com/services/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"
+                    "key": "SLACK_WEBHOOK_URL",
+                    "value": "https://hooks.slack.com/services/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"
                 }
             ],
-            "ports": [],
+            "image": {
+                "name": "weevenetwork/slack-alert",
+                "registry": {
+                    "password": "",
+                    "url": "https://hub.docker.com",
+                    "userName": ""
+                },
+                "tag": "latest"
+            },
+            "moduleID": "62b09bae4b303ba38597e5ba",
+            "moduleName": "slack-alert",
             "mounts": [],
-            "devices": []
+            "ports": []
         }
-    ]
+    ],
+    "versionName": "v1",
+    "versionNumber": 1
 }
