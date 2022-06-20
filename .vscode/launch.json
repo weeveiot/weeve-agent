@@ -85,7 +85,9 @@
         "--config",
         "${workspaceRoot}/nodeconfig.json",
         "--manifest",
-        "F:\\Working_Directory\\Golang\\weeve-agent\\testdata\\pipeline_integration_public\\workingMVP.json"
+        "${workspaceRoot}/testdata/test_manifest.json",
+        "--rootcert",
+        "${workspaceRoot}/ca.crt"
       ]
     },
     {

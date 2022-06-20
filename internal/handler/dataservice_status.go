@@ -40,9 +40,9 @@ func GetDataServiceStatus() ([]edgeApplications, error) {
 			containersStat = append(containersStat, container)
 
 			if !manif.InTransition && edgeApplication.Status != manifest.Error {
-				// if manif.Status == manifest.Running && con.State != manifest.Running {
-				// 	edgeApplication.Status = manifest.Error
-				// }
+				if manif.Status == manifest.Running && con.State != manifest.Running {
+					edgeApplication.Status = manifest.Error
+				}
 				if manif.Status == manifest.Paused && con.State != manifest.Paused {
 					edgeApplication.Status = manifest.Error
 				}

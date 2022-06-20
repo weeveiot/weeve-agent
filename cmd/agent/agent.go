@@ -76,16 +76,15 @@ func main() {
 
 	// MAIN LOOP
 	go monitorDataServiceStatus()
-	//! should revert this
-	// go func() {
-	// 	for {
-	// 		err = com.SendHeartbeat()
-	// 		if err != nil {
-	// 			log.Error(err)
-	// 		}
-	// 		time.Sleep(time.Second * time.Duration(com.GetHeartbeat()))
-	// 	}
-	// }()
+	go func() {
+		for {
+			err = com.SendHeartbeat()
+			if err != nil {
+				log.Error(err)
+			}
+			time.Sleep(time.Second * time.Duration(com.GetHeartbeat()))
+		}
+	}()
 
 	// Cleanup on ending the process
 	<-done
@@ -187,16 +186,14 @@ func monitorDataServiceStatus() {
 		if err != nil {
 			log.Error(err)
 		}
-		edgeApps = latestEdgeApps
-
 		if statusChange == true {
 			err = com.SendHeartbeat()
 			if err != nil {
 				log.Error(err)
 			}
 		}
-		//! should remove this
-		log.Debug(edgeApps)
-		time.Sleep(time.Second * time.Duration(20))
+		edgeApps = latestEdgeApps
+		log.Debug("Latest edge app status: ", edgeApps)
+		time.Sleep(time.Second * time.Duration(5))
 	}
 }
