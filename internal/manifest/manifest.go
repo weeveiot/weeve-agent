@@ -74,13 +74,6 @@ const (
 	ModuleTypeProcessing = "PROCESS"
 )
 
-// Create a Manifest type
-/* The manifest type holds the parsed JSON of a manifest file, as well as
-several convenience attributes.
-
-The manifest JSON object itself is parsed into a golang 'gabs' object.
-(see https://github.com/Jeffail/gabs)
-*/
 func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 	manifestID := jsonParsed.Search("_id").Data().(string)
 	manifestName := jsonParsed.Search("manifestName").Data().(string)
@@ -95,6 +88,7 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 
 	var containerConfigs []ContainerConfig
 
+	// this map holds the directed connections from ingress towards egress key -> value
 	var connections connectionsType
 
 	err := json.Unmarshal(jsonParsed.Search("connections").Bytes(), &connections)
@@ -102,6 +96,7 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 		return Manifest{}, err
 	}
 
+	// this map holds the reverted directed connections from egress towards ingress key <- value
 	revertedConnections := make(connectionsType)
 
 	for key, value := range connections {
@@ -193,18 +188,12 @@ func GetEdgeAppUniqueID(parsedJson *gabs.Container) (model.ManifestUniqueID, err
 }
 
 func (m Manifest) UpdateManifest(networkName string) {
-	var prevContainerName = ""
 	for i, module := range m.Modules {
 		m.Modules[i].NetworkName = networkName
 		m.Modules[i].ContainerName = makeContainerName(networkName, module.ImageName, module.ImageTag, i)
 
 		m.Modules[i].EnvArgs = append(m.Modules[i].EnvArgs, fmt.Sprintf("%v=%v", "INGRESS_HOST", m.Modules[i].ContainerName))
 		if i > 0 {
-			m.Modules[i].EnvArgs = append(m.Modules[i].EnvArgs, fmt.Sprintf("%v=%v", "PREV_CONTAINER_NAME", prevContainerName))
-
-			nextContainerNameArg := fmt.Sprintf("%v=%v", "NEXT_CONTAINER_NAME", m.Modules[i].ContainerName)
-			m.Modules[i-1].EnvArgs = append(m.Modules[i-1].EnvArgs, nextContainerNameArg)
-
 			// following egressing convention 2: http://host:80/
 			egressUrlArg := fmt.Sprintf("%v=http://%v:80/", "EGRESS_URL", m.Modules[i].ContainerName)
 			m.Modules[i-1].EnvArgs = append(m.Modules[i-1].EnvArgs, egressUrlArg)
@@ -213,7 +202,6 @@ func (m Manifest) UpdateManifest(networkName string) {
 				m.Modules[i].EnvArgs = append(m.Modules[i].EnvArgs, fmt.Sprintf("%v=%v", "EGRESS_URL", "None"))
 			}
 		}
-		prevContainerName = m.Modules[i].ContainerName
 
 	}
 }
