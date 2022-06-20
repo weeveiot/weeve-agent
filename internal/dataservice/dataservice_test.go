@@ -87,7 +87,7 @@ func TestDeployManifest(t *testing.T) {
 			containersExist := false
 			for _, dsContainerName := range dsContainer.Names {
 				for _, container := range containers {
-					if dsContainerName == container.ContainerName {
+					if dsContainerName == "/"+container.ContainerName {
 						containersExist = true
 					}
 				}
