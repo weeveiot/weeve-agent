@@ -17,6 +17,7 @@ const CMDDeployLocal = "LOCAL_DEPLOY"
 const CMDStopService = "STOP"
 const CMDStartService = "START"
 const CMDUndeploy = "UNDEPLOY"
+const CMDRemove = "REMOVE"
 
 func DeployDataService(man manifest.Manifest, command string) error {
 	//******** STEP 1 - Check if Data Service is already deployed *************//
@@ -40,7 +41,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 
 		} else if command == CMDReDeploy || command == CMDDeployLocal {
 			// Clean old data service resources
-			err := UndeployDataService(man.ManifestUniqueID)
+			err := UndeployDataService(man.ManifestUniqueID, CMDUndeploy)
 			if err != nil {
 				log.Error(deploymentID, "Error while cleaning old data service -> ", err)
 				manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Error, false)
@@ -100,7 +101,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 		log.Error(deploymentID, "No valid contianers in Manifest")
 		manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Error, false)
 		log.Info(deploymentID, "Initiating rollback ...")
-		UndeployDataService(man.ManifestUniqueID)
+		UndeployDataService(man.ManifestUniqueID, CMDRemove)
 		return errors.New("no valid contianers in manifest")
 	}
 
@@ -111,7 +112,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 			log.Error(deploymentID, "Failed to create and start container ", containerConfig.ContainerName)
 			manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Error, false)
 			log.Info(deploymentID, "Initiating rollback ...")
-			UndeployDataService(man.ManifestUniqueID)
+			UndeployDataService(man.ManifestUniqueID, CMDRemove)
 			return err
 		}
 		log.Info(deploymentID, "Successfully created container ", containerID, " with args: ", containerConfig.EntryPointArgs)
@@ -197,7 +198,7 @@ func StartDataService(manifestUniqueID model.ManifestUniqueID) error {
 	return nil
 }
 
-func UndeployDataService(manifestUniqueID model.ManifestUniqueID) error {
+func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string) error {
 	log.Info("Undeploying data service ...", manifestUniqueID.ManifestName, manifestUniqueID.VersionName)
 
 	deploymentID := manifestUniqueID.ManifestName + "-" + manifestUniqueID.VersionName + " | "
@@ -242,28 +243,30 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID) error {
 		}
 	}
 
-	//******** STEP 2 - Remove Images WITHOUT Containers *************//
-	containers, err := docker.ReadAllContainers()
-	if err != nil {
-		log.Error(deploymentID, "Failed to read all containers.")
-		manifest.SetStatus("", 0, manifestUniqueID, manifest.Error, false)
-		return err
-	}
-
-	for imageID := range numContainersPerImage {
-		for _, container := range containers {
-			if container.ImageID == imageID {
-				numContainersPerImage[imageID]++
-			}
+	if command == CMDRemove {
+		//******** STEP 2 - Remove Images WITHOUT Containers *************//
+		containers, err := docker.ReadAllContainers()
+		if err != nil {
+			log.Error(deploymentID, "Failed to read all containers.")
+			manifest.SetStatus("", 0, manifestUniqueID, manifest.Error, false)
+			return err
 		}
 
-		if numContainersPerImage[imageID] == 0 {
-			log.Info(deploymentID, "Remove Image - ", imageID)
-			err := docker.ImageRemove(imageID)
-			if err != nil {
-				log.Error(deploymentID, err)
-				manifest.SetStatus("", 0, manifestUniqueID, manifest.Error, false)
-				errorlist = fmt.Sprintf("%v,%v", errorlist, err)
+		for imageID := range numContainersPerImage {
+			for _, container := range containers {
+				if container.ImageID == imageID {
+					numContainersPerImage[imageID]++
+				}
+			}
+
+			if numContainersPerImage[imageID] == 0 {
+				log.Info(deploymentID, "Remove Image - ", imageID)
+				err := docker.ImageRemove(imageID)
+				if err != nil {
+					log.Error(deploymentID, err)
+					manifest.SetStatus("", 0, manifestUniqueID, manifest.Error, false)
+					errorlist = fmt.Sprintf("%v,%v", errorlist, err)
+				}
 			}
 		}
 	}

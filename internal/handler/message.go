@@ -128,11 +128,28 @@ func ProcessMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		err = dataservice.UndeployDataService(manifestUniqueID)
+		err = dataservice.UndeployDataService(manifestUniqueID, operation)
 		if err != nil {
 			return err
 		}
 		log.Info("Undeployment done!")
+
+	case dataservice.CMDRemove:
+
+		err := manifest.ValidateUniqueIDExist(jsonParsed)
+		if err != nil {
+			return err
+		}
+
+		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(jsonParsed)
+		if err != nil {
+			return err
+		}
+		err = dataservice.UndeployDataService(manifestUniqueID, operation)
+		if err != nil {
+			return err
+		}
+		log.Info("Full removal done!")
 	default:
 		return errors.New("Received message with unknown command")
 	}
