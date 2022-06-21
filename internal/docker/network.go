@@ -37,7 +37,7 @@ func ReadDataServiceNetworks(manifestUniqueID model.ManifestUniqueID) ([]types.N
 
 	filter := filters.NewArgs()
 	filter.Add("label", "manifestName="+manifestUniqueID.ManifestName)
-	filter.Add("label", "versionName="+manifestUniqueID.VersionName)
+	filter.Add("label", "versionNumber="+manifestUniqueID.VersionNumber)
 	options := types.NetworkListOptions{Filters: filter}
 
 	networks, err := dockerClient.NetworkList(ctx, options)
@@ -108,7 +108,7 @@ func CreateNetwork(name string, labels map[string]string) (string, error) {
 func NetworkPrune(manifestUniqueID model.ManifestUniqueID) error {
 	filter := filters.NewArgs()
 	filter.Add("label", "manifestName="+manifestUniqueID.ManifestName)
-	filter.Add("label", "versionName="+manifestUniqueID.VersionName)
+	filter.Add("label", "versionNumber="+manifestUniqueID.VersionNumber)
 
 	pruneReport, err := dockerClient.NetworksPrune(ctx, filter)
 	if err != nil {

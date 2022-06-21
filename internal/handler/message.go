@@ -91,10 +91,7 @@ func ProcessMessage(payload []byte) error {
 
 		}
 
-		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(jsonParsed)
-		if err != nil {
-			return err
-		}
+		manifestUniqueID := manifest.GetEdgeAppUniqueID(jsonParsed)
 		err = dataservice.StopDataService(manifestUniqueID)
 		if err != nil {
 			return err
@@ -107,10 +104,7 @@ func ProcessMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(jsonParsed)
-		if err != nil {
-			return err
-		}
+		manifestUniqueID := manifest.GetEdgeAppUniqueID(jsonParsed)
 		err = dataservice.StartDataService(manifestUniqueID)
 		if err != nil {
 			return err
@@ -124,10 +118,7 @@ func ProcessMessage(payload []byte) error {
 			return err
 		}
 
-		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(jsonParsed)
-		if err != nil {
-			return err
-		}
+		manifestUniqueID := manifest.GetEdgeAppUniqueID(jsonParsed)
 		err = dataservice.UndeployDataService(manifestUniqueID, operation)
 		if err != nil {
 			return err
@@ -141,10 +132,7 @@ func ProcessMessage(payload []byte) error {
 			return err
 		}
 
-		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(jsonParsed)
-		if err != nil {
-			return err
-		}
+		manifestUniqueID := manifest.GetEdgeAppUniqueID(jsonParsed)
 		err = dataservice.UndeployDataService(manifestUniqueID, operation)
 		if err != nil {
 			return err

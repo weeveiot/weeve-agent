@@ -23,7 +23,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 	//******** STEP 1 - Check if Data Service is already deployed *************//
 	containerCount := len(man.Modules)
 
-	deploymentID := man.ManifestUniqueID.ManifestName + "-" + man.ManifestUniqueID.VersionName + " | "
+	deploymentID := man.ManifestUniqueID.ManifestName + "-" + man.ManifestUniqueID.VersionNumber + " | "
 
 	log.Info(deploymentID, fmt.Sprintf("%ving data service ...", command))
 
@@ -36,7 +36,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 
 	if dataServiceExists {
 		if command == CMDDeploy {
-			log.Info(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", man.ManifestUniqueID.ManifestName, man.ManifestUniqueID.VersionName))
+			log.Info(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", man.ManifestUniqueID.ManifestName, man.ManifestUniqueID.VersionNumber))
 			return errors.New("data service already exists")
 
 		} else if command == CMDReDeploy || command == CMDDeployLocal {
@@ -127,7 +127,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 func StopDataService(manifestUniqueID model.ManifestUniqueID) error {
 	const stateRunning = "running"
 
-	log.Info("Stopping data service:", manifestUniqueID.ManifestName, manifestUniqueID.VersionName)
+	log.Infoln("Stopping data service:", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
 
 	containers, err := docker.ReadDataServiceContainers(manifestUniqueID)
 	if err != nil {
@@ -160,7 +160,7 @@ func StopDataService(manifestUniqueID model.ManifestUniqueID) error {
 }
 
 func StartDataService(manifestUniqueID model.ManifestUniqueID) error {
-	log.Infoln("Starting data service:", manifestUniqueID.ManifestName, manifestUniqueID.VersionName)
+	log.Infoln("Starting data service:", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
 
 	const stateExited = "exited"
 	const stateCreated = "created"
@@ -199,9 +199,9 @@ func StartDataService(manifestUniqueID model.ManifestUniqueID) error {
 }
 
 func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string) error {
-	log.Info("Undeploying data service ...", manifestUniqueID.ManifestName, manifestUniqueID.VersionName)
+	log.Infoln("Undeploying data service:", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
 
-	deploymentID := manifestUniqueID.ManifestName + "-" + manifestUniqueID.VersionName + " | "
+	deploymentID := manifestUniqueID.ManifestName + "-" + manifestUniqueID.VersionNumber + " | "
 
 	// Check if data service already exist
 	dataServiceExists, err := DataServiceExist(manifestUniqueID)
@@ -212,7 +212,7 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string
 	}
 
 	if !dataServiceExists {
-		log.Errorln(deploymentID, "Data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionName, "does not exist")
+		log.Errorln(deploymentID, "Data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber, "does not exist")
 		manifest.SetStatus("", 0, manifestUniqueID, manifest.Error, false)
 		return nil
 	}

@@ -138,7 +138,7 @@ func ReadAllContainers() ([]types.Container, error) {
 func ReadDataServiceContainers(manifestUniqueID model.ManifestUniqueID) ([]types.Container, error) {
 	filter := filters.NewArgs()
 	filter.Add("label", "manifestName="+manifestUniqueID.ManifestName)
-	filter.Add("label", "versionName="+manifestUniqueID.VersionName)
+	filter.Add("label", "versionNumber="+manifestUniqueID.VersionNumber)
 	options := types.ContainerListOptions{All: true, Filters: filter}
 	containers, err := dockerClient.ContainerList(context.Background(), options)
 	if err != nil {

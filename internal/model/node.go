@@ -28,6 +28,6 @@ type ManifestStatus struct {
 }
 
 type ManifestUniqueID struct {
-	VersionName  string
-	ManifestName string
+	VersionNumber string
+	ManifestName  string
 }

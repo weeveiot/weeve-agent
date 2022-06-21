@@ -159,7 +159,7 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 
 	manifest := Manifest{
 		ID:               manifestID,
-		ManifestUniqueID: model.ManifestUniqueID{ManifestName: manifestName, VersionName: versionName},
+		ManifestUniqueID: model.ManifestUniqueID{ManifestName: manifestName, VersionNumber: fmt.Sprint(versionNumber)},
 		VersionNumber:    versionNumber,
 		Modules:          containerConfigs,
 		Labels:           labels,
@@ -177,14 +177,11 @@ func GetCommand(jsonParsed *gabs.Container) (string, error) {
 	return command, nil
 }
 
-func GetEdgeAppUniqueID(parsedJson *gabs.Container) (model.ManifestUniqueID, error) {
+func GetEdgeAppUniqueID(parsedJson *gabs.Container) model.ManifestUniqueID {
 	manifestName := parsedJson.Search("manifestName").Data().(string)
-	versionName := parsedJson.Search("versionName").Data().(string)
-	if manifestName == "" || versionName == "" {
-		return model.ManifestUniqueID{}, errors.New("unique ID fields are missing in given manifest")
-	}
+	versionNumber := parsedJson.Search("versionNumber").Data().(float64)
 
-	return model.ManifestUniqueID{ManifestName: manifestName, VersionName: versionName}, nil
+	return model.ManifestUniqueID{ManifestName: manifestName, VersionNumber: fmt.Sprint(versionNumber)}
 }
 
 func (m Manifest) UpdateManifest(networkName string) {
@@ -285,6 +282,10 @@ func ValidateManifest(jsonParsed *gabs.Container) error {
 	if versionName == nil {
 		errorList = append(errorList, "Please provide manifest versionName")
 	}
+	versionNumber := jsonParsed.Search("versionNumber").Data()
+	if versionNumber == nil {
+		errorList = append(errorList, "Please provide manifest versionNumber")
+	}
 	command := jsonParsed.Search("command").Data()
 	if command == nil {
 		errorList = append(errorList, "Please provide manifest command")
@@ -324,16 +325,16 @@ func ValidateManifest(jsonParsed *gabs.Container) error {
 
 func ValidateUniqueIDExist(jsonParsed *gabs.Container) error {
 
-	// Expected JSON: {"manifestName": "Manifest name", "versionName": "Manifest version name"}
+	// Expected JSON: {"manifestName": "Manifest name", "versionNumber": "Manifest version number"}
 
 	var errorList []string
 	manifestName := jsonParsed.Search("manifestName").Data()
 	if manifestName == nil {
 		errorList = append(errorList, "Expected manifest name in JSON, but not found.")
 	}
-	versionName := jsonParsed.Search("versionName").Data()
-	if versionName == nil {
-		errorList = append(errorList, "Expected manifest version name in JSON, but not found.")
+	versionNumber := jsonParsed.Search("versionNumber").Data()
+	if versionNumber == nil {
+		errorList = append(errorList, "Expected manifest version number in JSON, but not found.")
 	}
 
 	if len(errorList) > 0 {
