@@ -12,4 +12,4 @@ COPY bin/agent_secunet .
 COPY ca.crt .
 COPY nodeconfig_secunet.json nodeconfig.json
 
-CMD ["./agent_secunet", "-out", "--broker=tls://mapi-dev.weeve.engineering:8883", "--heartbeat=100", "--loglevel=debug"]
+CMD ["./agent_secunet", "--out", "--broker=tls://mapi-dev.weeve.engineering:8883", "--heartbeat=100", "--loglevel=debug"]

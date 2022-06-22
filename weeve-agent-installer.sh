@@ -178,7 +178,7 @@ write_to_service(){
   BINARY_PATH="$WEEVE_AGENT_DIR/$BINARY_NAME"
 
   # the CLI arguments for weeve agent
-  ARG_STDOUT="-out"
+  ARG_STDOUT="--out"
   ARG_BROKER="--broker $BROKER"
   ARG_ROOT_CERT="--rootcert $WEEVE_AGENT_DIR/ca.crt"
   ARG_NODE_ID="--nodeId $NODE_ID"   #! nodeid is required until MAPI is ready
