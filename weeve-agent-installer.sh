@@ -173,12 +173,12 @@ write_to_service(){
   # appending the required strings to the .service to point systemd to the path of the binary and to run it
   # following are the example for the lines appended to weeve-agent.service:
   #   WorkingDirectory=/home/admin/weeve-agent
-  #   ExecStart=/home/admin/weeve-agent/weeve-agent-x86_64 $ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_ROOT_CERT $ARG_NODENAME
+  #   ExecStart=/home/admin/weeve-agent/weeve-agent-x86_64 $ARG_STDOUT $ARG_HEARTBEAT $ARG_BROKER $ARG_ROOT_CERT $ARG_NODENAME
 
   BINARY_PATH="$WEEVE_AGENT_DIR/$BINARY_NAME"
 
   # the CLI arguments for weeve agent
-  ARG_VERBOSE="-v"
+  ARG_STDOUT="-out"
   ARG_BROKER="--broker $BROKER"
   ARG_ROOT_CERT="--rootcert $WEEVE_AGENT_DIR/ca.crt"
   ARG_NODE_ID="--nodeId $NODE_ID"   #! nodeid is required until MAPI is ready
@@ -186,7 +186,7 @@ write_to_service(){
   ARG_LOG_LEVEL="--loglevel $LOG_LEVEL"
   ARG_HEARTBEAT="--heartbeat $HEARTBEAT"
   ARG_NODECONFIG="--config $WEEVE_AGENT_DIR/nodeconfig.json"
-  ARGUMENTS="$ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_ROOT_CERT $ARG_NODE_ID $ARG_NODENAME $ARG_LOG_LEVEL $ARG_NODECONFIG"
+  ARGUMENTS="$ARG_STDOUT $ARG_HEARTBEAT $ARG_BROKER $ARG_ROOT_CERT $ARG_NODE_ID $ARG_NODENAME $ARG_LOG_LEVEL $ARG_NODECONFIG"
   EXECUTE_BINARY="$BINARY_PATH $ARGUMENTS"
 
   log Adding the binary path to service file ...

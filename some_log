@@ -1,0 +1,26 @@
+2022-06-22 17:17:31 info : Started logging!
+2022-06-22 17:17:31 info : Logging level set to debug!
+2022-06-22 17:17:31 debug : Set node config to following params: {RootCertPath:ca.crt NodeId:62b09ba74b303ba38597e474 Password: APIkey: NodeName:Common lancehead Registered:true}
+2022-06-22 17:17:31 info : Broker host->mapi-dev.weeve.engineering at port->8883 over tls
+2022-06-22 17:17:31 debug : Set the following MQTT params: {Broker:tls://mapi-dev.weeve.engineering:8883 NoTLS:false Heartbeat:30}
+2022-06-22 17:17:31 info : Node already registered!
+2022-06-22 17:17:31 info : Disconnecting.....
+2022-06-22 17:17:31 debug : Client id >> 62b09ba74b303ba38597e474_pub
+2022-06-22 17:17:31 debug : MQTT root cert path >> ca.crt
+2022-06-22 17:17:31 debug : options >> &{[tls://mapi-dev.weeve.engineering:8883] 62b09ba74b303ba38597e474_pub 62b09ba74b303ba38597e474  <nil> true true false  [] 0 false 0 false 0xc000338180 30 10s 30s 10m0s true 30s false <nil> 0x7cd340 <nil> 0x7cd880 <nil> 0s 0 false map[] 0xc000336b10}
+2022-06-22 17:17:31 debug : Parsing done! | MQTT configuration done!
+2022-06-22 17:17:32 debug : 62b09ba74b303ba38597e474_pub connected!
+2022-06-22 17:17:32 debug : Client id >> 62b09ba74b303ba38597e474_sub
+2022-06-22 17:17:32 debug : MQTT root cert path >> ca.crt
+2022-06-22 17:17:32 debug : options >> &{[tls://mapi-dev.weeve.engineering:8883] 62b09ba74b303ba38597e474_sub 62b09ba74b303ba38597e474  <nil> true true false  [] 0 false 0 false 0xc0004bc000 30 10s 30s 10m0s true 30s false <nil> 0x7cd340 0x7cd600 0x7cd880 <nil> 0s 0 false map[] 0xc000488020}
+2022-06-22 17:17:32 debug : Parsing done! | MQTT configuration done!
+2022-06-22 17:17:32 debug : 62b09ba74b303ba38597e474_sub connected!
+2022-06-22 17:17:32 info : ON connect >> connected >> registered : true
+2022-06-22 17:17:32 debug : ON connect >> subscribes >> topicName : weeve/62b09ba74b303ba38597e474/orchestration
+2022-06-22 17:17:32 debug : Node registered >> true | connected >> true
+2022-06-22 17:17:32 debug : Sending update >> Topic: nodestatus/62b09ba74b303ba38597e474 >> Body: {connected [{62b09c984b303ba38597edd6 deleted []}] {317 30.107526882923413 379758444544 769703936}}
+2022-06-22 17:17:32 debug : Latest edge app status: [{62b09c984b303ba38597edd6 deleted []}]
+2022-06-22 17:17:32 debug : Publishing message >> Topic: nodestatus/62b09ba74b303ba38597e474 >> Payload: {"status":"connected","edgeApplications":[{"manifestID":"62b09c984b303ba38597edd6","status":"deleted","containers":[]}],"deviceParams":{"systemUpTime":317,"systemLoad":30.107526882923413,"storageFree":379758444544,"ramFree":769703936}}
+2022-06-22 17:17:36 info : Disconnecting.....
+2022-06-22 17:17:36 debug : Publisher disconnected
+2022-06-22 17:17:36 debug : Subscriber disconnected

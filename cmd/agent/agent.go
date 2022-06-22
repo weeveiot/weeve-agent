@@ -114,9 +114,9 @@ func parseCLIoptions() string {
 		Compress:   opt.LogCompress,
 	}
 
-	// FLAG: Verbose
-	if opt.Verbose {
-		multiWriter := io.MultiWriter(os.Stderr, logger)
+	// FLAG: Stdout
+	if opt.Stdout {
+		multiWriter := io.MultiWriter(os.Stdout, logger)
 		log.SetOutput(multiWriter)
 	} else {
 		log.SetOutput(logger)
