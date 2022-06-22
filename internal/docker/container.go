@@ -50,7 +50,8 @@ func createContainer(containerConfig manifest.ContainerConfig) (string, error) {
 			Name:              "on-failure",
 			MaximumRetryCount: 100,
 		},
-		Mounts: containerConfig.MountConfigs,
+		Mounts:    containerConfig.MountConfigs,
+		Resources: containerConfig.Resources,
 	}
 
 	networkConfig := &network.NetworkingConfig{

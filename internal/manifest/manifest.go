@@ -11,6 +11,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/weeveiot/weeve-agent/internal/model"
 
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	log "github.com/sirupsen/logrus"
@@ -39,6 +40,7 @@ type ContainerConfig struct {
 	MountConfigs   []mount.Mount
 	Labels         map[string]string
 	Registry       RegistryDetails
+	Resources      container.Resources
 }
 
 type RegistryDetails struct {
@@ -153,6 +155,12 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 			return Manifest{}, err
 		}
 
+		devices, err := getDevices(module)
+		if err != nil {
+			return Manifest{}, err
+		}
+		containerConfig.Resources = container.Resources{Devices: devices}
+
 		containerConfig.ExposedPorts, containerConfig.PortBinding = getPorts(module)
 		containerConfigs = append(containerConfigs, containerConfig)
 	}
@@ -255,6 +263,21 @@ func getMounts(parsedJson *gabs.Container) ([]mount.Mount, error) {
 	}
 
 	return mounts, nil
+}
+
+func getDevices(parsedJson *gabs.Container) ([]container.DeviceMapping, error) {
+	devices := []container.DeviceMapping{}
+
+	for _, mnt := range parsedJson.Search("devices").Children() {
+		device := container.DeviceMapping{
+			PathOnHost:      mnt.Search("host").Data().(string),
+			PathInContainer: mnt.Search("container").Data().(string),
+		}
+
+		devices = append(devices, device)
+	}
+
+	return devices, nil
 }
 
 func getPorts(parsedJson *gabs.Container) (nat.PortSet, nat.PortMap) {
