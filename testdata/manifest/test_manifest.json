@@ -41,7 +41,8 @@
 				}
 			],
 			"ports": [],
-			"mounts": []
+			"mounts": [],
+			"devices": []
 		},
 		{
 			"moduleID": "11b28b9a-4062-4634-95d7-94a7d0a52b33",
@@ -78,7 +79,8 @@
 				}
 			],
 			"ports": [],
-			"mounts": []
+			"mounts": [],
+			"devices": []
 		},
 		{
 			"moduleID": "4decbe05-0501-4c74-9db6-7bc560cf1576",
@@ -115,7 +117,8 @@
 				}
 			],
 			"ports": [],
-			"mounts": []
+			"mounts": [],
+			"devices": []
 		}
 	]
 }
