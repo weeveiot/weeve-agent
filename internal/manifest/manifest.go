@@ -270,8 +270,9 @@ func getDevices(parsedJson *gabs.Container) ([]container.DeviceMapping, error) {
 
 	for _, mnt := range parsedJson.Search("devices").Children() {
 		device := container.DeviceMapping{
-			PathOnHost:      mnt.Search("host").Data().(string),
-			PathInContainer: mnt.Search("container").Data().(string),
+			PathOnHost:        mnt.Search("host").Data().(string),
+			PathInContainer:   mnt.Search("container").Data().(string),
+			CgroupPermissions: "r",
 		}
 
 		devices = append(devices, device)
