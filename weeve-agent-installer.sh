@@ -137,7 +137,7 @@ download_binary(){
 
 download_dependencies(){
   log Downloading the dependencies ...
-  for DEPENDENCIES in AmazonRootCA1.pem aws"$ENV"-certificate.pem.crt aws"$ENV"-private.pem.key nodeconfig.json weeve-agent.service weeve-agent.argconf
+  for DEPENDENCIES in AmazonRootCA1.pem aws"$ENV"-certificate.pem.crt aws"$ENV"-private.pem.key weeve-agent.service weeve-agent.argconf
   do
   if RESULT=$(cd ./weeve-agent \
   && curl -sO https://"$ACCESS_KEY"@raw.githubusercontent.com/weeveiot/weeve-agent-legacy-dependencies/master/"$DEPENDENCIES" 2>&1); then
@@ -149,6 +149,20 @@ download_dependencies(){
   fi
   done
   log Dependencies downloaded.
+}
+
+create_nodeconfig(){
+  log Creating the node configuration file ...
+  {
+    printf "{\n"
+    printf "\"RootCertPath\": \"AmazonRootCA1.pem\",\n"
+    printf "\"CertPath\": \"aws"$ENV"-certificate.pem.crt\",\n"
+    printf "\"KeyPath\": \"aws"$ENV"-private.pem.key\",\n"
+    printf "\"NodeId\": \"\",\n"
+    printf "\"NodeName\": \"\",\n"
+    printf "\"Registered\": false\n"
+    printf "}\n"
+  } >> ./weeve-agent/nodeconfig.json
 }
 
 write_to_argconf(){
@@ -167,14 +181,14 @@ write_to_service(){
   # appending the required strings to the .service to point systemd to the path of the binary and to run it
   # following are the example for the lines appended to weeve-agent.service:
   #   WorkingDirectory=/home/admin/weeve-agent
-  #   ExecStart=/home/admin/weeve-agent/weeve-agent-x86_64 $ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_PUBLISH $ARG_SUB_CLIENT $ARG_PUB_CLIENT $ARG_ROOT_CERT $ARG_CERT $ARG_KEY $ARG_NODENAME
+  #   ExecStart=/home/admin/weeve-agent/weeve-agent-x86_64 $ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_PUBLISH $ARG_SUB_CLIENT $ARG_PUB_CLIENT $ARG_NODENAME
 
   # line 1
   WORKING_DIRECTORY="WorkingDirectory=$PWD/weeve-agent"
 
   # line 2
   BINARY_PATH="ExecStart=$PWD/weeve-agent/$BINARY_NAME"
-  ARGUMENTS='$ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_PUBLISH $ARG_SUB_CLIENT $ARG_PUB_CLIENT $ARG_ROOT_CERT $ARG_CERT $ARG_KEY $ARG_NODENAME'
+  ARGUMENTS='$ARG_VERBOSE $ARG_HEARTBEAT $ARG_BROKER $ARG_PUBLISH $ARG_SUB_CLIENT $ARG_PUB_CLIENT $ARG_NODENAME'
   EXECUTE_BINARY="$BINARY_PATH $ARGUMENTS"
 
   log Adding the binary path to service file ...
@@ -285,7 +299,7 @@ do
     "tokenpath") TOKEN_FILE="$VALUE" ;;
     "environment") ENV="$VALUE" ;;
     "nodename")  NODE_NAME="$VALUE" ;;
-    "release") AGENT_RELEASE="$VALUE" ;; 
+    "release") AGENT_RELEASE="$VALUE" ;;
     "test") BUILD_LOCAL="$VALUE" ;;
     *)
   esac
@@ -321,6 +335,8 @@ else
 fi
 
 download_dependencies
+
+create_nodeconfig
 
 write_to_argconf
 
