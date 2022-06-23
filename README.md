@@ -81,14 +81,14 @@ In a new terminal instance, subscribe to all topics for that broker; `mosquitto_
 #### Terminal: Weeve agent
 In a final terminal, run the weeve agent and connect to the broker to publish status messages;
 ```bash
-go run <path-to-agent>/agent.go -out --notls \
+go run <path-to-agent>/agent.go --out --notls \
 	--broker tcp://localhost:8080 \ # Broker to connect to \
 	--heartbeat 3 # Status message publishing interval
 	--nodeId local-test-node-1 \ # ID of this node optional \
 	--config <path-to-config>
 ```
 
-The `-out` flag enables logs in terminal, and the `--notls` flag disables TLS configuation. Further logs from the `paho` MQTT client can be enabled with the `--mqttlogs` flag, and the `--loglevel` flag enables to set desired logging level.
+The `--out` flag enables logs in terminal, and the `--notls` flag disables TLS configuation. Further logs from the `paho` MQTT client can be enabled with the `--mqttlogs` flag, and the `--loglevel` flag enables to set desired logging level.
 
 ### With TLS
 
@@ -98,7 +98,7 @@ Since TLS configuration requires the full path to all secrets and certificates, 
 
 ```bash
 SERVER_CERTIFICATE=<path-to-root-cert>/ca.crt
-go run <path-to-agent>/agent.go -out \
+go run <path-to-agent>/agent.go --out \
 	--nodeId awsdev-test-node-1 \ # ID of this node (optional here)\
 	--name awsdev-test-node-1 \ # Name of this node (optional here)\
 	--broker tls://<broker host url>:8883 \ # Broker to connect to \
@@ -126,7 +126,7 @@ Download AmazonRootCA1.pem from Google. Then, follow the steps:
 
 1) Run command:
 ```bash
-go run <path-to-agent>/agent.go -out \
+go run <path-to-agent>/agent.go --out \
 	--broker tls://<broker host url>:8883 \ # Broker to connect to \
 	--heartbeat 60 # Status message publishing interval \
 	--config <path-to-config>
