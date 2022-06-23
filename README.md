@@ -44,9 +44,9 @@ A data model for the manifest object and supporting structures is found in the i
 
 | Parameter   | Short | Required | Description                                            | Default  |
 | ----------- | ----- | -------- | ------------------------------------------------------ | -------- |
-| verbose     | v     | false    | Show verbose debug information                         |          |
+| out         |       | false    | Print logs to stdout                                   | false    |
 | broker      | b     | true     | Broker to connect                                      |          |
-| heartbeat   | h     | false    | Heartbeat time in seconds                              | 30       |
+| heartbeat   | t     | false    | Heartbeat time in seconds                              | 30       |
 | mqttlogs    | m     | false    | For developer - Display detailed MQTT logging messages |          |
 | notls       |       | false    | For developer - disable TLS for MQTT                   |          |
 | loglevel    | l     | false    | Set the logging level                                  | info     |
@@ -81,14 +81,14 @@ In a new terminal instance, subscribe to all topics for that broker; `mosquitto_
 #### Terminal: Weeve agent
 In a final terminal, run the weeve agent and connect to the broker to publish status messages;
 ```bash
-go run <path-to-agent>/agent.go -v --notls \
+go run <path-to-agent>/agent.go --out --notls \
 	--broker tcp://localhost:8080 \ # Broker to connect to \
 	--heartbeat 3 # Status message publishing interval
 	--nodeId local-test-node-1 \ # ID of this node optional \
 	--config <path-to-config>
 ```
 
-The `-v` flag enables logs in terminal, and the `--notls` flag disables TLS configuation. Further logs from the `paho` MQTT client can be enabled with the `--mqttlogs` flag, and the `--loglevel` flag enables to set desired logging level.
+The `--out` flag enables logs in terminal, and the `--notls` flag disables TLS configuation. Further logs from the `paho` MQTT client can be enabled with the `--mqttlogs` flag, and the `--loglevel` flag enables to set desired logging level.
 
 ### With TLS
 
@@ -98,7 +98,7 @@ Since TLS configuration requires the full path to all secrets and certificates, 
 
 ```bash
 SERVER_CERTIFICATE=<path-to-root-cert>/ca.crt
-go run <path-to-agent>/agent.go -v \
+go run <path-to-agent>/agent.go --out \
 	--nodeId awsdev-test-node-1 \ # ID of this node (optional here)\
 	--name awsdev-test-node-1 \ # Name of this node (optional here)\
 	--broker tls://<broker host url>:8883 \ # Broker to connect to \
@@ -126,7 +126,7 @@ Download AmazonRootCA1.pem from Google. Then, follow the steps:
 
 1) Run command:
 ```bash
-go run <path-to-agent>/agent.go -v \
+go run <path-to-agent>/agent.go --out \
 	--broker tls://<broker host url>:8883 \ # Broker to connect to \
 	--heartbeat 60 # Status message publishing interval \
 	--config <path-to-config>
@@ -149,14 +149,6 @@ Weeve agent can also run in a container given the right environment. Currently w
 
 # [BELOW IS WIP]
 
-The latest binary can be downloaded from S3 bucket :
-https://weeve-binaries-release.s3.eu-central-1.amazonaws.com/node-service/node-service-0-1-1
-
-The compiled binary found as a release can be executed by specifying the port to be exposed;
-
-`./node-service -v -p 8030`
-The `-v` verbose flag is optional and will present the Debug level logging messages.
-
 ### Docker container
 Currently, running the project with Docker is not supported. Since the main function of the Weeve Node Service is to orchestrate a set of docker containers, running the project inside docker presents additional complexities due to the interaction with the host machine. A docker file is present to facilitate unit testing only.
 
@@ -172,13 +164,6 @@ Build Node API Service mode
 
 Build Node MQTT listener mode
 `go build ./cmd/node_listener.go`
-
-### Run the Golang project
-`go run ./cmd/service/node-service.go -v -p 8030`
-
-The root of the command is the project root directory.
-
-The `-v` verbose flag is optional and will present the Debug level logging messages.
 
 ### Unit-test the Golang project
 
@@ -217,7 +202,7 @@ Type=simple
 Restart=always
 RestartSec=60s
 WorkingDirectory=<path to the directory containing weeve agent contents>
-ExecStart=<weeve agent binary path> $ARG_VERBOSE $ARG_BROKER $ARG_PUBLISH $ARG_HEARTBEAT <add more arguments as required >
+ExecStart=<weeve agent binary path> $ARG_STDOUT $ARG_BROKER $ARG_PUBLISH $ARG_HEARTBEAT <add more arguments as required >
 ```
 1. Move .service file to `/lib/systemd/system/`
 2. Enable the service to start at start-up `sudo systemctl enable weeve-agent`

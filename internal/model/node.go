@@ -1,9 +1,9 @@
 package model
 
 type Params struct {
-	Verbose      bool   `long:"verbose" short:"v" description:"Show verbose debug information"`
+	Stdout       bool   `long:"out" description:"Print logs to stdout"`
 	Broker       string `long:"broker" short:"b" description:"Broker to connect" required:"true"`
-	Heartbeat    int    `long:"heartbeat" short:"h" description:"Heartbeat time in seconds" required:"false" default:"30"`
+	Heartbeat    int    `long:"heartbeat" short:"t" description:"Heartbeat time in seconds" required:"false" default:"30"`
 	MqttLogs     bool   `long:"mqttlogs" short:"m" description:"For developer - Display detailed MQTT logging messages" required:"false"`
 	NoTLS        bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
 	LogLevel     string `long:"loglevel" short:"l" default:"info" description:"Set the logging level" required:"false"`
@@ -28,6 +28,6 @@ type ManifestStatus struct {
 }
 
 type ManifestUniqueID struct {
-	VersionName  string
-	ManifestName string
+	VersionNumber string
+	ManifestName  string
 }

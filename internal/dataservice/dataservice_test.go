@@ -21,7 +21,7 @@ import (
 )
 
 var manifestName = "PLACEHOLDER"
-var version = "PLACEHOLDER"
+var versionNumber = "PLACEHOLDER"
 var manifestName2 = "PLACEHOLDER"
 var version2 = "PLACEHOLDER"
 
@@ -56,8 +56,8 @@ func TestDeployManifest(t *testing.T) {
 	// Fill the placeholders for Start and Stop tests
 	manifestName = thisManifest.ManifestUniqueID.ManifestName
 	log.Info(manifestName)
-	version = thisManifest.ManifestUniqueID.VersionName
-	log.Info(version)
+	versionNumber = thisManifest.ManifestUniqueID.VersionNumber
+	log.Info(versionNumber)
 
 	err = dataservice.DeployDataService(thisManifest, "deploy")
 	if err != nil {
@@ -72,7 +72,7 @@ func TestDeployManifest(t *testing.T) {
 
 	filter := filters.NewArgs()
 	filter.Add("label", "manifestName="+manifestName)
-	filter.Add("label", "versionName="+version)
+	filter.Add("label", "versionNumber="+versionNumber)
 	options := types.NetworkListOptions{Filters: filter}
 	networks, err := cli.NetworkList(context.Background(), options)
 	if err != nil {
