@@ -156,8 +156,8 @@ create_nodeconfig(){
   {
     printf "{\n"
     printf "\"RootCertPath\": \"AmazonRootCA1.pem\",\n"
-    printf "\"CertPath\": \"aws"$ENV"-certificate.pem.crt\",\n"
-    printf "\"KeyPath\": \"aws"$ENV"-private.pem.key\",\n"
+    printf "\"CertPath\": \"aws%s-certificate.pem.crt\",\n" "$ENV"
+    printf "\"KeyPath\": \"aws%s-private.pem.key\",\n" "$ENV"
     printf "\"NodeId\": \"\",\n"
     printf "\"NodeName\": \"\",\n"
     printf "\"Registered\": false\n"
