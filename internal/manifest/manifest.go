@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/Jeffail/gabs/v2"
@@ -23,6 +24,7 @@ type Manifest struct {
 	VersionNumber    float64
 	Modules          []ContainerConfig
 	Labels           map[string]string
+	Connections      connectionsInt
 }
 
 // This struct holds information for starting a container
@@ -50,7 +52,8 @@ type RegistryDetails struct {
 	Password  string
 }
 
-type connectionsType map[string][]string
+type connectionsInt map[int][]int
+type connectionsString map[string][]string
 
 const (
 	Connected = "connected"
@@ -60,20 +63,6 @@ const (
 	Paused    = "paused"
 	Initiated = "initiated"
 	Deleted   = "deleted"
-)
-
-// uncomment when all changes for v1 modules were done
-// const (
-// 	ModuleTypeInput      = "Input"
-// 	ModuleTypeOutput     = "Output"
-// 	ModuleTypeProcessing = "Processing"
-// )
-
-// kept for interoperability with pre-v1 modules, delete when the transition to v1 is complete
-const (
-	ModuleTypeInput      = "INGRESS"
-	ModuleTypeOutput     = "EGRESS"
-	ModuleTypeProcessing = "PROCESS"
 )
 
 func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
@@ -88,27 +77,15 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 		"versionNumber": fmt.Sprint(versionNumber),
 	}
 
-	var containerConfigs []ContainerConfig
-
-	// this map holds the directed connections from ingress towards egress key -> value
-	var connections connectionsType
-
-	err := json.Unmarshal(jsonParsed.Search("connections").Bytes(), &connections)
+	connections, err := getConnections(jsonParsed)
 	if err != nil {
 		return Manifest{}, err
 	}
 
-	// this map holds the reverted directed connections from egress towards ingress key <- value
-	revertedConnections := make(connectionsType)
-
-	for key, value := range connections {
-		for _, v := range value {
-			revertedConnections[v] = append(revertedConnections[v], key)
-		}
-	}
+	var containerConfigs []ContainerConfig
 
 	modules := jsonParsed.Search("modules").Children()
-	for index, module := range modules {
+	for _, module := range modules {
 		var containerConfig ContainerConfig
 
 		containerConfig.ImageName = module.Search("image").Search("name").Data().(string)
@@ -141,14 +118,6 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PORT", 80))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PATH", "/"))
 
-		if revertedConnections[fmt.Sprint(index+1)] == nil {
-			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_TYPE", ModuleTypeInput))
-		} else if connections[fmt.Sprint(index+1)] == nil {
-			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_TYPE", ModuleTypeOutput))
-		} else {
-			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_TYPE", ModuleTypeProcessing))
-		}
-
 		containerConfig.EnvArgs = envArgs
 		containerConfig.MountConfigs, err = getMounts(module)
 		if err != nil {
@@ -171,6 +140,7 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 		VersionNumber:    versionNumber,
 		Modules:          containerConfigs,
 		Labels:           labels,
+		Connections:      connections,
 	}
 
 	return manifest, nil
@@ -198,16 +168,14 @@ func (m Manifest) UpdateManifest(networkName string) {
 		m.Modules[i].ContainerName = makeContainerName(networkName, module.ImageName, module.ImageTag, i)
 
 		m.Modules[i].EnvArgs = append(m.Modules[i].EnvArgs, fmt.Sprintf("%v=%v", "INGRESS_HOST", m.Modules[i].ContainerName))
-		if i > 0 {
-			// following egressing convention 2: http://host:80/
-			egressUrlArg := fmt.Sprintf("%v=http://%v:80/", "EGRESS_URL", m.Modules[i].ContainerName)
-			m.Modules[i-1].EnvArgs = append(m.Modules[i-1].EnvArgs, egressUrlArg)
-			if i == len(m.Modules)-1 { // last module is alsways an EGRESS module
-				// need to pass anything as EGRESS_URL for module's validation script
-				m.Modules[i].EnvArgs = append(m.Modules[i].EnvArgs, fmt.Sprintf("%v=%v", "EGRESS_URL", "None"))
-			}
-		}
+	}
 
+	for start, ends := range m.Connections {
+		var endpointStrings []string
+		for _, end := range ends {
+			endpointStrings = append(endpointStrings, fmt.Sprintf("http://%v:80/", m.Modules[end].ContainerName))
+		}
+		m.Modules[start].EnvArgs = append(m.Modules[start].EnvArgs, fmt.Sprintf("%v=%v", "EGRESS_URLS", strings.Join(endpointStrings, ",")))
 	}
 }
 
@@ -289,6 +257,34 @@ func getPorts(parsedJson *gabs.Container) (nat.PortSet, nat.PortMap) {
 	}
 
 	return exposedPorts, portBinding
+}
+
+func getConnections(parsedJson *gabs.Container) (map[int][]int, error) {
+	var connectionsStringMap connectionsString
+	connectionsIntMap := make(connectionsInt)
+
+	err := json.Unmarshal(parsedJson.Search("connections").Bytes(), &connectionsStringMap)
+	if err != nil {
+		return nil, err
+	}
+
+	for key, values := range connectionsStringMap {
+		var valuesInt []int
+		for _, value := range values {
+			valueInt, err := strconv.Atoi(value)
+			if err != nil {
+				return nil, err
+			}
+			valuesInt = append(valuesInt, valueInt)
+		}
+		keyInt, err := strconv.Atoi(key)
+		if err != nil {
+			return nil, err
+		}
+		connectionsIntMap[keyInt] = valuesInt
+	}
+
+	return connectionsIntMap, nil
 }
 
 func ValidateManifest(jsonParsed *gabs.Container) error {

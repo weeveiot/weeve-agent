@@ -2,6 +2,9 @@
     "_id": "62b09c984b303ba38597edd6",
     "command": "DEPLOY",
     "connections": {
+        "0": [
+            "1"
+        ],
         "1": [
             "2"
         ],
@@ -14,6 +17,10 @@
         {
             "devices": [],
             "envs": [
+                {
+                    "key": "MODULE_TYPE",
+                    "value": "INGRESS"
+                },
                 {
                     "key": "MQTT_BROKER",
                     "value": "mqtt://mapi-dev.weeve.engineering"
@@ -58,6 +65,10 @@
             "devices": [],
             "envs": [
                 {
+                    "key": "MODULE_TYPE",
+                    "value": "PROCESS"
+                },
+                {
                     "key": "INPUT_LABEL",
                     "value": "sensorData"
                 },
@@ -91,6 +102,10 @@
         {
             "devices": [],
             "envs": [
+                {
+                    "key": "MODULE_TYPE",
+                    "value": "PROCESS"
+                },
                 {
                     "key": "INPUT_LABEL",
                     "value": "stableData"
@@ -129,6 +144,10 @@
         {
             "devices": [],
             "envs": [
+                {
+                    "key": "MODULE_TYPE",
+                    "value": "EGRESS"
+                },
                 {
                     "key": "INPUT_LABEL",
                     "value": "compareData"
