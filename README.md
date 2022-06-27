@@ -19,6 +19,7 @@ sudo sh weeve-agent-installer.sh tokenpath=<path to the file containing the toke
 | Parameter   | Required | Description                                                 | Possible Values            | Default   |
 | ----------- | -------- | ------------------------------------------------------------| ---------------------------|-----------|
 | tokenpath   | true     | takes the path of the file containing the access token      |                            |           |
+| configpath  | false    | takes the path of the JSON file with node configuration     |                            |           |
 | environment | false    | name of the environment where the agent is to be registered | dev, demo, sandbox, wohnio |           |
 | release     | false    | to select which release of agent is to be installed         | stable, dev                |           |
 | nodename    | false    | takes the name of the node                                  |                            |           |
