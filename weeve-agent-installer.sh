@@ -30,6 +30,21 @@ get_token(){
   fi
 }
 
+get_config(){
+  if [ -z "$CONFIG_FILE" ]; then
+    read -r -p "Enter the path to the node configuration JSON file: " CONFIG_FILE
+  fi
+}
+
+validate_config(){
+  if [ -f "$CONFIG_FILE" ];then
+    log The node configuration JSON file exists
+  else
+    log The required file containing the node configurations not found in the path: "$CONFIG_FILE"
+    exit 1
+  fi
+}
+
 get_environment(){
   # reading values from the user
   if [ -z "$ENV" ]; then
@@ -52,12 +67,6 @@ get_test(){
 get_broker(){
   if [ -z "$BROKER" ]; then
     BROKER="tls://mapi-dev.weeve.engineering:8883"
-  fi
-}
-
-get_nodename(){
-  if [ -z "$NODE_NAME" ]; then
-    read -r -p "Enter node name: " NODE_NAME
   fi
 }
 
@@ -155,7 +164,7 @@ download_binary(){
 
 download_dependencies(){
   log Downloading the dependencies ...
-  for DEPENDENCIES in ca.crt nodeconfig.json weeve-agent.service
+  for DEPENDENCIES in ca.crt weeve-agent.service
   do
   if RESULT=$(cd "$WEEVE_AGENT_DIR" \
   && curl -sO https://"$ACCESS_KEY"@raw.githubusercontent.com/weeveiot/weeve-agent/WD-444-update-agent-to-the-new-data-model/"$DEPENDENCIES" 2>&1); then
@@ -180,13 +189,10 @@ write_to_service(){
   # the CLI arguments for weeve agent
   ARG_STDOUT="--out"
   ARG_BROKER="--broker $BROKER"
-  ARG_ROOT_CERT="--rootcert $WEEVE_AGENT_DIR/ca.crt"
-  ARG_NODE_ID="--nodeId $NODE_ID"   #! nodeid is required until MAPI is ready
-  ARG_NODENAME="--name $NODE_NAME"
   ARG_LOG_LEVEL="--loglevel $LOG_LEVEL"
   ARG_HEARTBEAT="--heartbeat $HEARTBEAT"
-  ARG_NODECONFIG="--config $WEEVE_AGENT_DIR/nodeconfig.json"
-  ARGUMENTS="$ARG_STDOUT $ARG_HEARTBEAT $ARG_BROKER $ARG_ROOT_CERT $ARG_NODE_ID $ARG_NODENAME $ARG_LOG_LEVEL $ARG_NODECONFIG"
+  ARG_NODECONFIG="--config $CONFIG_FILE"
+  ARGUMENTS="$ARG_STDOUT $ARG_HEARTBEAT $ARG_BROKER $ARG_ROOT_CERT $ARG_LOG_LEVEL $ARG_NODECONFIG"
   EXECUTE_BINARY="$BINARY_PATH $ARGUMENTS"
 
   log Adding the binary path to service file ...
@@ -285,12 +291,11 @@ do
 
   case "$KEY" in
     "tokenpath") TOKEN_FILE="$VALUE" ;;
+    "configpath") CONFIG_FILE="$VALUE" ;;
     "environment") ENV="$VALUE" ;;
     "release") AGENT_RELEASE="$VALUE" ;;
     "test") BUILD_LOCAL="$VALUE" ;;
     "broker") BROKER="$VALUE" ;;
-    "nodeid") NODE_ID="$VALUE" ;;
-    "nodename") NODE_NAME="$VALUE" ;;
     "loglevel") LOG_LEVEL="$VALUE" ;;
     "heartbeat") HEARTBEAT="$VALUE" ;;
     *)
@@ -301,13 +306,15 @@ validate_token_file
 
 get_token
 
+get_config
+
+validate_config
+
 get_environment
 
 get_test
 
 get_broker
-
-get_nodename
 
 get_loglevel
 
@@ -317,7 +324,6 @@ log All arguments are set
 log Environment is set to "$ENV"
 log Test mode is set to "$BUILD_LOCAL"
 log Broker is set to "$BROKER"
-log Name of the node is set to "$NODE_NAME"
 log Log level is set to "$LOG_LEVEL"
 log Heartbeat interval is set to "$HEARTBEAT"
 
