@@ -180,15 +180,14 @@ download_dependencies(){
 
 write_to_service(){
   # appending the required strings to the .service to point systemd to the path of the binary and to run it
-  # following are the example for the lines appended to weeve-agent.service:
-  #   WorkingDirectory=/home/admin/weeve-agent
-  #   ExecStart=/home/admin/weeve-agent/weeve-agent-x86_64 $ARG_STDOUT $ARG_HEARTBEAT $ARG_BROKER $ARG_ROOT_CERT $ARG_NODENAME
+  # following are the example for the lines appended to weeve-agent.service
 
   BINARY_PATH="$WEEVE_AGENT_DIR/$BINARY_NAME"
 
   # the CLI arguments for weeve agent
   ARG_STDOUT="--out"
   ARG_BROKER="--broker $BROKER"
+  ARG_ROOT_CERT="--rootcert $WEEVE_AGENT_DIR/ca.crt"
   ARG_LOG_LEVEL="--loglevel $LOG_LEVEL"
   ARG_HEARTBEAT="--heartbeat $HEARTBEAT"
   ARG_NODECONFIG="--config $CONFIG_FILE"
