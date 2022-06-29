@@ -25,6 +25,7 @@ type Manifest struct {
 	Modules          []ContainerConfig
 	Labels           map[string]string
 	Connections      connectionsInt
+	Command          string
 }
 
 // This struct holds information for starting a container
