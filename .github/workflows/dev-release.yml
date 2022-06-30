@@ -2,7 +2,8 @@ name: dev-release
 on:
   push:
     branches:
-    - dev
+    # - dev
+    - WD-536--remove-token-requirement
 jobs:
   push-to-s3:
     runs-on: ubuntu-18.04
@@ -28,6 +29,9 @@ jobs:
 
       - name: Build cross compilation binary
         run: make cross
+
+      - name: Copy installer contents
+        run: mv ca.crt weeve-agent.service weeve-agent-installer weeve-agent-uninstaller ./build
 
       - name: Directory to build
         run: ls -la ./build

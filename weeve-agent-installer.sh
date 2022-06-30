@@ -5,31 +5,6 @@ log() {
   echo '[' "$(date +"%Y-%m-%d %T")" ']:' INFO "$@" | tee -a "$LOG_FILE"
 }
 
-validate_token_file(){
-  # looking for the file containing the github access token to download the dependencies
-  if [ -z "$TOKEN_FILE" ]; then
-    log Missing argument: tokenpath
-    log -----------------------------------------------------------------------
-    log Make sure you have a file containing the token
-    log Follow the steps :
-    log 1. Create a hidden file
-    log 2. Paste the Github Personal Access Token into the above mentioned file
-    log For more info checkout the README
-    log ------------------------------------------------------------------------
-    exit 1
-  fi
-}
-
-get_token(){
-  if [ -f "$TOKEN_FILE" ];then
-    log Reading the access key ...
-    ACCESS_KEY=$(cat "$TOKEN_FILE")
-  else
-    log The required file containing the token not found in the path: "$TOKEN_FILE"
-    exit 1
-  fi
-}
-
 get_config(){
   if [ -z "$CONFIG_FILE" ]; then
     read -r -p "Enter the path to the node configuration JSON file: " CONFIG_FILE
@@ -167,7 +142,7 @@ download_dependencies(){
   for DEPENDENCIES in ca.crt weeve-agent.service
   do
   if RESULT=$(cd "$WEEVE_AGENT_DIR" \
-  && curl -sO https://"$ACCESS_KEY"@raw.githubusercontent.com/weeveiot/weeve-agent/WD-444-update-agent-to-the-new-data-model/"$DEPENDENCIES" 2>&1); then
+  && wget http://"$S3_BUCKET".s3.amazonaws.com/"$DEPENDENCIES" 2>&1); then
     log "$DEPENDENCIES" downloaded
   else
     log Error while downloading the dependencies: "$RESULT"
@@ -270,7 +245,6 @@ WEEVE_AGENT_DIR="$PWD/weeve-agent"
 
 SERVICE_FILE=/lib/systemd/system/weeve-agent.service
 
-ACCESS_KEY=""
 
 BUILD_LOCAL=""
 
@@ -289,7 +263,6 @@ do
   VALUE=$(echo "$ARGUMENT" | cut --fields 2 --delimiter='=')
 
   case "$KEY" in
-    "tokenpath") TOKEN_FILE="$VALUE" ;;
     "configpath") CONFIG_FILE="$VALUE" ;;
     "environment") ENV="$VALUE" ;;
     "release") AGENT_RELEASE="$VALUE" ;;
@@ -300,10 +273,6 @@ do
     *)
   esac
 done
-
-validate_token_file
-
-get_token
 
 get_config
 
