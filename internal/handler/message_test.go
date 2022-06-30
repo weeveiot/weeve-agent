@@ -28,13 +28,13 @@ func TestProcessMessagePass(t *testing.T) {
 	log.Info("TESTING DEPLOYMENT...")
 
 	var manCmd struct {
-		ManifestName  string `json:"manifestName"`
-		VersionNumber string `json:"versionNumber"`
-		Command       string `json:"command"`
+		ManifestName  string  `json:"manifestName"`
+		VersionNumber float64 `json:"versionNumber"`
+		Command       string  `json:"command"`
 	}
 
-	// 1 Prepare test data
-	manifestPath := "../../testdata/manifest/mvp-manifest-deploy.json"
+	// Prepare test data
+	manifestPath := "../../testdata/test_manifest.json"
 	jsonBytes, err := ioutil.ReadFile(manifestPath)
 	if err != nil {
 		t.Error(err)
@@ -50,11 +50,10 @@ func TestProcessMessagePass(t *testing.T) {
 		t.Error(err)
 	}
 
-	// you data
 	manCmd.ManifestName = man.ManifestUniqueID.ManifestName
-	manCmd.VersionNumber = man.ManifestUniqueID.VersionNumber
+	manCmd.VersionNumber = man.VersionNumber
 
-	// 2 Process deploy manifest
+	// Process deploy edge application
 	err = handler.ProcessMessage(jsonBytes)
 	if err != nil {
 		t.Errorf("ProcessMessage returned %v status", err)
@@ -65,7 +64,7 @@ func TestProcessMessagePass(t *testing.T) {
 		t.Error(err)
 	}
 
-	// 3 Verify deployment
+	// Verify deployment
 	exist, err := CheckNetworkExist(man.ManifestUniqueID, cli)
 	if err != nil {
 		t.Error(err)
@@ -80,7 +79,7 @@ func TestProcessMessagePass(t *testing.T) {
 		t.Error("Network not created")
 	}
 
-	// JSON encoding
+	// Process stop edge application
 	manCmd.Command = dataservice.CMDStopService
 	jsonB, err := json.Marshal(manCmd)
 	if err != nil {
@@ -97,7 +96,7 @@ func TestProcessMessagePass(t *testing.T) {
 		t.Error(err)
 	}
 
-	// JSON encoding
+	// Process start edge application
 	manCmd.Command = dataservice.CMDStartService
 	jsonB, err = json.Marshal(manCmd)
 	if err != nil {
@@ -114,7 +113,7 @@ func TestProcessMessagePass(t *testing.T) {
 		t.Error(err)
 	}
 
-	// JSON encoding
+	// Process undeploy edge application
 	manCmd.Command = dataservice.CMDUndeploy
 	jsonB, err = json.Marshal(manCmd)
 	if err != nil {
