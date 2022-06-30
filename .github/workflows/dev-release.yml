@@ -31,7 +31,7 @@ jobs:
         run: make cross
 
       - name: Copy installer contents
-        run: mv ca.crt weeve-agent.service weeve-agent-installer weeve-agent-uninstaller ./build
+        run: mv ca.crt weeve-agent.service weeve-agent-installer.sh weeve-agent-uninstaller.sh ./build
 
       - name: Directory to build
         run: ls -la ./build
