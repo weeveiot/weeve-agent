@@ -27,12 +27,6 @@ get_environment(){
   fi
 }
 
-get_release(){
-  if [ -z "$AGENT_RELEASE" ]; then
-    read -r -p "Select release [stable, dev]: " AGENT_RELEASE
-  fi
-}
-
 get_test(){
   if [ -z "$BUILD_LOCAL" ]; then
     BUILD_LOCAL="false"
@@ -96,14 +90,6 @@ build_test_binary(){
     log Error occured while building binary for testing: "$RESULT"
     exit 1
   fi
-}
-
-get_bucket_name(){
-    if [ "$AGENT_RELEASE" = "stable" ]; then
-      S3_BUCKET="weeve-agent"
-    elif [ "$AGENT_RELEASE" = "dev" ]; then
-      S3_BUCKET="weeve-agent-dev-binaries"
-    fi
 }
 
 download_binary(){
@@ -245,10 +231,9 @@ WEEVE_AGENT_DIR="$PWD/weeve-agent"
 
 SERVICE_FILE=/lib/systemd/system/weeve-agent.service
 
-
 BUILD_LOCAL=""
 
-S3_BUCKET=""
+S3_BUCKET="weeve-agent-dev-binaries"
 
 BINARY_NAME=""
 
@@ -265,7 +250,6 @@ do
   case "$KEY" in
     "configpath") CONFIG_FILE="$VALUE" ;;
     "environment") ENV="$VALUE" ;;
-    "release") AGENT_RELEASE="$VALUE" ;;
     "test") BUILD_LOCAL="$VALUE" ;;
     "broker") BROKER="$VALUE" ;;
     "loglevel") LOG_LEVEL="$VALUE" ;;
@@ -302,10 +286,6 @@ validating_docker
 if [ "$BUILD_LOCAL" = "true" ]; then
   build_test_binary
 else
-  get_release
-
-  get_bucket_name
-
   download_binary
 fi
 
