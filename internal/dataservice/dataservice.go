@@ -51,6 +51,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 	}
 
 	manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, manifest.Initiated, false)
+	//TODO: We need to publish status back to MAPI here, to show client that this Node received the DEPLOY
 
 	//******** STEP 2 - Pull all images *************//
 	log.Info(deploymentID, "Iterating modules, pulling image into host if missing ...")
