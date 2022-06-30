@@ -2,7 +2,8 @@ name: dev-release
 on:
   push:
     branches:
-    - dev
+    # - dev
+    - WD-536--remove-token-requirement
 jobs:
   push-to-s3:
     runs-on: ubuntu-18.04
