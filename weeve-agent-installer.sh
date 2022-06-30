@@ -233,7 +233,7 @@ SERVICE_FILE=/lib/systemd/system/weeve-agent.service
 
 BUILD_LOCAL=""
 
-S3_BUCKET="weeve-agent-dev-binaries"
+S3_BUCKET="weeve-agent-dev"
 
 BINARY_NAME=""
 
