@@ -36,6 +36,7 @@ func GetDataServiceStatus() ([]edgeApplications, error) {
 		}
 
 		for _, con := range appContainers {
+			// The Status of each container is (assumed to be): Running, Paused, Restarting, Created, Exited
 			container := container{Name: strings.Join(con.Names, ", "), Status: con.State}
 			containersStat = append(containersStat, container)
 
