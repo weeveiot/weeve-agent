@@ -3,6 +3,7 @@ package ioutility
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -14,4 +15,11 @@ func GetExeDir() string {
 	}
 	dir := filepath.Dir(exePath)
 	return dir
+}
+
+func FirstToUpper(str string) string {
+	if len(str) == 0 {
+		return str
+	}
+	return strings.ToUpper(string(str[0])) + str[1:]
 }

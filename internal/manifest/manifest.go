@@ -55,16 +55,6 @@ type RegistryDetails struct {
 type connectionsInt map[int][]int
 type connectionsString map[string][]string
 
-const (
-	Connected = "connected"
-	Alarm     = "alarm"
-	Running   = "running"
-	Error     = "error"
-	Paused    = "paused"
-	Initiated = "initiated"
-	Deleted   = "deleted"
-)
-
 func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 	manifestID := jsonParsed.Search("_id").Data().(string)
 	manifestName := jsonParsed.Search("manifestName").Data().(string)
@@ -97,6 +87,8 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 			imageName = imageName + ":" + containerConfig.ImageTag
 		}
 
+		moduleType := module.Search("type").Data().(string)
+
 		var url string
 		var userName string
 		var password string
@@ -117,6 +109,7 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_NAME", containerConfig.ImageName))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PORT", 80))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PATH", "/"))
+		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_TYPE", moduleType))
 
 		containerConfig.EnvArgs = envArgs
 		containerConfig.MountConfigs, err = getMounts(module)
