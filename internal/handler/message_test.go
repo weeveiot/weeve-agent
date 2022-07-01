@@ -3,6 +3,7 @@ package handler_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"testing"
@@ -24,14 +25,17 @@ func init() {
 	docker.SetupDockerClient()
 }
 
+var manCmd struct {
+	ManifestName  string  `json:"manifestName"`
+	VersionNumber float64 `json:"versionNumber"`
+	Command       string  `json:"command"`
+}
+
+var ctx = context.Background()
+var dockerCli *client.Client
+
 func TestProcessMessagePass(t *testing.T) {
 	log.Info("TESTING DEPLOYMENT...")
-
-	var manCmd struct {
-		ManifestName  string  `json:"manifestName"`
-		VersionNumber float64 `json:"versionNumber"`
-		Command       string  `json:"command"`
-	}
 
 	// Prepare test data
 	manifestPath := "../../testdata/test_manifest.json"
@@ -53,32 +57,58 @@ func TestProcessMessagePass(t *testing.T) {
 	manCmd.ManifestName = man.ManifestUniqueID.ManifestName
 	manCmd.VersionNumber = man.VersionNumber
 
-	// Process deploy edge application
-	err = handler.ProcessMessage(jsonBytes)
-	if err != nil {
-		t.Errorf("ProcessMessage returned %v status", err)
-	}
-
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	dockerCli, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		t.Error(err)
+	}
+
+	err = DeployEdgeApplication(jsonBytes, man)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = StopEdgeApplication(man)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = StartEdgeApplication(man)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = UndeployEdgeApplication(man)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func DeployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
+	// Process deploy edge application
+	err := handler.ProcessMessage(jsonBytes)
+	if err != nil {
+		return fmt.Errorf("ProcessMessage returned %v status", err)
 	}
 
 	// Verify deployment
-	exist, err := CheckNetworkExist(man.ManifestUniqueID, cli)
+	exist, err := CheckNetworkExist(man.ManifestUniqueID)
 	if err != nil {
-		t.Error(err)
+		return err
 	}
 
 	if exist {
-		_, err := CheckContainersWithStatus(man.ManifestUniqueID, len(man.Modules), manifest.Running, cli)
+		_, err := CheckContainersExistWithStatus(man.ManifestUniqueID, len(man.Modules), manifest.Running)
 		if err != nil {
-			t.Error(err)
+			return err
 		}
 	} else {
-		t.Error("Network not created")
+		return errors.New("Network not created")
 	}
 
+	return nil
+}
+
+func StopEdgeApplication(man manifest.Manifest) error {
 	// Process stop edge application
 	manCmd.Command = dataservice.CMDStopService
 	jsonB, err := json.Marshal(manCmd)
@@ -88,54 +118,73 @@ func TestProcessMessagePass(t *testing.T) {
 
 	err = handler.ProcessMessage(jsonB)
 	if err != nil {
-		t.Errorf("ProcessMessage returned %v status", err)
+		return fmt.Errorf("ProcessMessage returned %v status", err)
 	}
 
-	_, err = CheckContainersWithStatus(man.ManifestUniqueID, len(man.Modules), manifest.Paused, cli)
+	_, err = CheckContainersExistWithStatus(man.ManifestUniqueID, len(man.Modules), manifest.Paused)
 	if err != nil {
-		t.Error(err)
+		return err
 	}
 
+	return nil
+}
+
+func StartEdgeApplication(man manifest.Manifest) error {
 	// Process start edge application
 	manCmd.Command = dataservice.CMDStartService
-	jsonB, err = json.Marshal(manCmd)
+	jsonB, err := json.Marshal(manCmd)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	err = handler.ProcessMessage(jsonB)
 	if err != nil {
-		t.Errorf("ProcessMessage returned %v status", err)
+		return fmt.Errorf("ProcessMessage returned %v status", err)
 	}
 
-	_, err = CheckContainersWithStatus(man.ManifestUniqueID, len(man.Modules), manifest.Running, cli)
+	_, err = CheckContainersExistWithStatus(man.ManifestUniqueID, len(man.Modules), manifest.Running)
 	if err != nil {
-		t.Error(err)
+		return err
 	}
 
+	return nil
+}
+
+func UndeployEdgeApplication(man manifest.Manifest) error {
 	// Process undeploy edge application
 	manCmd.Command = dataservice.CMDUndeploy
-	jsonB, err = json.Marshal(manCmd)
+	jsonB, err := json.Marshal(manCmd)
 	if err != nil {
 		panic(err)
 	}
 
 	err = handler.ProcessMessage(jsonB)
 	if err != nil {
-		t.Errorf("ProcessMessage returned %v status", err)
+		return fmt.Errorf("ProcessMessage returned %v status", err)
 	}
 
-	exist, err = CheckNetworkExist(man.ManifestUniqueID, cli)
+	exist, err := CheckNetworkExist(man.ManifestUniqueID)
 	if err != nil {
-		t.Error(err)
+		return err
 	}
 
 	if !exist {
 		dsContainers, _ := docker.ReadDataServiceContainers(man.ManifestUniqueID)
 		if len(dsContainers) > 0 {
-			t.Error("Edge application undeployment failed")
+			return errors.New("Edge application undeployment failed")
 		}
 	}
+
+	exist, err = CheckImagesExist(man)
+	if err != nil {
+		return err
+	}
+
+	if !exist {
+		return errors.New("Undeploy should not delete images")
+	}
+
+	return nil
 }
 
 func TestReadDeployManifestLocalPass(t *testing.T) {
@@ -181,12 +230,12 @@ func ParseManifest(jsonParsed *gabs.Container) (manifest.Manifest, error) {
 	return manifest, nil
 }
 
-func CheckNetworkExist(manID model.ManifestUniqueID, cli *client.Client) (bool, error) {
+func CheckNetworkExist(manID model.ManifestUniqueID) (bool, error) {
 	filter := filters.NewArgs()
 	filter.Add("label", "manifestName="+manID.ManifestName)
 	filter.Add("label", "versionNumber="+manID.VersionNumber)
 	options := types.NetworkListOptions{Filters: filter}
-	networks, err := cli.NetworkList(context.Background(), options)
+	networks, err := dockerCli.NetworkList(context.Background(), options)
 	if err != nil {
 		return false, err
 	}
@@ -194,14 +243,43 @@ func CheckNetworkExist(manID model.ManifestUniqueID, cli *client.Client) (bool, 
 	return len(networks) > 0, nil
 }
 
-func CheckContainersWithStatus(manID model.ManifestUniqueID, containerCount int, status string, cli *client.Client) (bool, error) {
-	dsContainers, _ := docker.ReadDataServiceContainers(manID)
+func GetEdgeApplicationContainers(manifestUniqueID model.ManifestUniqueID) ([]types.Container, error) {
+	filter := filters.NewArgs()
+	filter.Add("label", "manifestName="+manifestUniqueID.ManifestName)
+	filter.Add("label", "versionNumber="+manifestUniqueID.VersionNumber)
+	options := types.ContainerListOptions{All: true, Filters: filter}
+	containers, err := dockerCli.ContainerList(context.Background(), options)
+	if err != nil {
+		return nil, err
+	}
+
+	return containers, nil
+}
+
+func CheckContainersExistWithStatus(manID model.ManifestUniqueID, containerCount int, status string) (bool, error) {
+	dsContainers, _ := GetEdgeApplicationContainers(manID)
 	if containerCount > len(dsContainers) {
 		return false, fmt.Errorf("Expected number of containers %v, number of available containers %v", containerCount, len(dsContainers))
 	}
 	for _, dsContainer := range dsContainers {
 		if dsContainer.State != status {
 			return false, fmt.Errorf("Container expected status %s, but current status %s", status, dsContainer.State)
+		}
+	}
+
+	return true, nil
+}
+
+func CheckImagesExist(man manifest.Manifest) (bool, error) {
+	for _, module := range man.Modules {
+		imgDetails := module.Registry
+		_, _, err := dockerCli.ImageInspectWithRaw(ctx, imgDetails.ImageName)
+		if err != nil {
+			if client.IsErrNotFound(err) {
+				return false, nil
+			} else {
+				return false, err
+			}
 		}
 	}
 
