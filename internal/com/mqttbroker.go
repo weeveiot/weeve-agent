@@ -135,7 +135,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 	}
 	log.Debugln("Received message on topic:", msg.Topic(), "JSON:", *jsonParsed)
 
-	if msg.Topic() == "weeve"+"/"+config.GetNodeId()+"/"+topicOrchestration {
+	if msg.Topic() == config.GetNodeId()+"/"+topicOrchestration {
 		err = handler.ProcessMessage(msg.Payload())
 		if err != nil {
 			log.Error(err)
@@ -147,7 +147,7 @@ var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
 	log.Info("ON connect >> connected >> registered : ", config.GetRegistered())
 
 	if config.GetRegistered() {
-		topicName := "weeve" + "/" + config.GetNodeId() + "/" + topicOrchestration
+		topicName := config.GetNodeId() + "/" + topicOrchestration
 
 		log.Debug("ON connect >> subscribes >> topicName : ", topicName)
 		if token := c.Subscribe(topicName, 0, messagePubHandler); token.Wait() && token.Error() != nil {
