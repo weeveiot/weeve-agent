@@ -10,26 +10,27 @@ Please make sure there is a file in the local machine containing the Github Pers
 ## Installation
 
 ```bash
-curl -s https://raw.githubusercontent.com/weeveiot/weeve-agent/<BRANCH>/weeve-agent-installer.sh > weeve-agent-installer.sh
+wget http://weeve-agent-dev.s3.amazonaws.com/weeve-agent-installer.sh
 ```
 
 ```bash
-sudo sh weeve-agent-installer.sh tokenpath=<path to the file containing the token>
+sh weeve-agent-installer.sh
 ```
 | Parameter   | Required | Description                                                 | Possible Values            | Default   |
 | ----------- | -------- | ------------------------------------------------------------| ---------------------------|-----------|
-| tokenpath   | true     | takes the path of the file containing the access token      |                            |           |
 | configpath  | false    | takes the path of the JSON file with node configuration     |                            |           |
 | environment | false    | name of the environment where the agent is to be registered | dev, demo, sandbox, wohnio |           |
-| release     | false    | to select which release of agent is to be installed         | stable, dev                |           |
 | nodename    | false    | takes the name of the node                                  |                            |           |
 | test        | false    | set to 'true' to build agent from local and run             |                            | false     |
 
 ## Un-installation
 
 ```bash
-curl -s https://raw.githubusercontent.com/weeveiot/weeve-agent/<BRANCH>/weeve-agent-uninstaller.sh | sudo sh
+wget http://weeve-agent-dev.s3.amazonaws.com/weeve-agent-uninstaller.sh
+```
 
+```bash
+sh weeve-agent-uninstaller.sh
 ```
 
 ## Architecture
