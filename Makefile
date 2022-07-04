@@ -1,9 +1,7 @@
 NODE_ID=7ced3826-7738-4c9f-84b8-9302cb436e89
 
 
-SERVER_CERTIFICATE=./AmazonRootCA1.pem
-CLIENT_CERTIFICATE=./${NODE_ID}-certificate.pem.crt
-CLIENT_PRIVATE_KEY=./${NODE_ID}-private.pem.key
+SERVER_CERTIFICATE=./ca.crt
 
 .DEFAULT_GOAL := build
 
@@ -23,13 +21,11 @@ build-darwin:
 
 
 cross:
-	rm -rf build
-	GOOS=linux   GOARCH=amd64 go build -o build/weeve-agent-linux-x86_64 ./cmd/agent/agent.go
-	GOOS=linux   GOARCH=arm64 go build -o build/weeve-agent-linux-aarch64 ./cmd/agent/agent.go
-	GOOS=linux   GOARM=6 GOARCH=arm go build -o build/weeve-agent-linux-armv6 ./cmd/agent/agent.go
-	GOOS=linux   GOARM=7 GOARCH=arm go build -o build/weeve-agent-linux-armv7 ./cmd/agent/agent.go
-	GOOS=darwin  GOARCH=amd64 go build -o build/weeve-agent-darwin ./cmd/agent/agent.go
-	GOOS=windows GOARCH=amd64 go build -o build/weeve-agent-windows-x86_64.exe ./cmd/agent/agent.go
+	rm -rf installer-contents
+	GOOS=linux   GOARCH=amd64 go build -o installer-contents/weeve-agent-amd64 ./cmd/agent/agent.go
+	GOOS=linux   GOARCH=arm64 go build -o installer-contents/weeve-agent-arm64 ./cmd/agent/agent.go
+	GOOS=linux   GOARCH=arm go build -o installer-contents/weeve-agent-arm ./cmd/agent/agent.go
+	GOOS=windows GOARCH=amd64 go build -o installer-contents/weeve-agent-windows-amd64.exe ./cmd/agent/agent.go
 .PHONY: cross
 
 secunet:

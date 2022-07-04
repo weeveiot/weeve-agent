@@ -8,43 +8,50 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
+	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
-const CMDDeploy = "deploy"
-const CMDReDeploy = "redeploy"
-const CMDDeployLocal = "local_deploy"
-const CMDStopService = "stopservice"
-const CMDStartService = "startservice"
-const CMDUndeploy = "undeploy"
+const CMDDeploy = "DEPLOY"
+const CMDReDeploy = "REDEPLOY"
+const CMDDeployLocal = "LOCAL_DEPLOY"
+const CMDStopService = "STOP"
+const CMDStartService = "START"
+const CMDUndeploy = "UNDEPLOY"
+const CMDRemove = "REMOVE"
 
 func DeployDataService(man manifest.Manifest, command string) error {
 	//******** STEP 1 - Check if Data Service is already deployed *************//
-	deploymentID := man.ID + "-" + man.Version + " | "
+	containerCount := len(man.Modules)
+
+	deploymentID := man.ManifestUniqueID.ManifestName + "-" + man.ManifestUniqueID.VersionNumber + " | "
 
 	log.Info(deploymentID, fmt.Sprintf("%ving data service ...", command))
 
-	dataServiceExists, err := DataServiceExist(man.ID, man.Version)
+	dataServiceExists, err := DataServiceExist(man.ManifestUniqueID)
 	if err != nil {
 		log.Error(deploymentID, err)
-		manifest.SetStatus(man.ID, man.Version, strings.ToUpper(command)+"_FAILED")
+		manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, model.EdgeAppError, false)
 		return err
 	}
 
 	if dataServiceExists {
 		if command == CMDDeploy {
-			log.Info(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", man.ID, man.Version))
+			log.Info(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", man.ManifestUniqueID.ManifestName, man.ManifestUniqueID.VersionNumber))
 			return errors.New("data service already exists")
 
 		} else if command == CMDReDeploy || command == CMDDeployLocal {
 			// Clean old data service resources
-			err := UndeployDataService(man.ID, man.Version)
+			err := UndeployDataService(man.ManifestUniqueID, CMDUndeploy)
 			if err != nil {
 				log.Error(deploymentID, "Error while cleaning old data service -> ", err)
-				manifest.SetStatus(man.ID, man.Version, strings.ToUpper(command)+"_FAILED")
+				manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, model.EdgeAppError, false)
 				return errors.New("redeployment failed")
 			}
 		}
 	}
+
+	manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, model.EdgeAppIninted, false)
+	//TODO: We need to publish status back to MAPI here, to show client that this Node received the DEPLOY
 
 	//******** STEP 2 - Pull all images *************//
 	log.Info(deploymentID, "Iterating modules, pulling image into host if missing ...")
@@ -66,7 +73,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 			if err != nil {
 				msg := "Unable to pull image/s, " + err.Error()
 				log.Error(deploymentID, msg)
-				manifest.SetStatus(man.ID, man.Version, strings.ToUpper(command))
+				manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, model.EdgeAppError, false)
 				return errors.New("unable to pull image/s")
 
 			}
@@ -76,10 +83,10 @@ func DeployDataService(man manifest.Manifest, command string) error {
 	//******** STEP 3 - Create the network *************//
 	log.Info(deploymentID, "Creating network ...")
 
-	networkName, err := docker.CreateNetwork(man.Name, man.Labels)
+	networkName, err := docker.CreateNetwork(man.ManifestUniqueID.ManifestName, man.Labels)
 	if err != nil {
 		log.Error(err)
-		manifest.SetStatus(man.ID, man.Version, strings.ToUpper(command)+"_FAILED")
+		manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, model.EdgeAppError, false)
 		return err
 	}
 
@@ -93,9 +100,9 @@ func DeployDataService(man manifest.Manifest, command string) error {
 
 	if len(containerConfigs) == 0 {
 		log.Error(deploymentID, "No valid contianers in Manifest")
-		manifest.SetStatus(man.ID, man.Version, strings.ToUpper(command)+"_FAILED")
+		manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, model.EdgeAppError, false)
 		log.Info(deploymentID, "Initiating rollback ...")
-		UndeployDataService(man.ID, man.Version)
+		UndeployDataService(man.ManifestUniqueID, CMDRemove)
 		return errors.New("no valid contianers in manifest")
 	}
 
@@ -103,32 +110,34 @@ func DeployDataService(man manifest.Manifest, command string) error {
 		log.Info(deploymentID, "Creating ", containerConfig.ContainerName, " from ", containerConfig.ImageName, ":", containerConfig.ImageTag)
 		containerID, err := docker.CreateAndStartContainer(containerConfig)
 		if err != nil {
-			log.Error(deploymentID, "Failed to create and start container", containerConfig.ContainerName)
-			manifest.SetStatus(man.ID, man.Version, strings.ToUpper(command)+"_FAILED")
+			log.Error(deploymentID, "Failed to create and start container ", containerConfig.ContainerName)
+			manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, model.EdgeAppError, false)
 			log.Info(deploymentID, "Initiating rollback ...")
-			UndeployDataService(man.ID, man.Version)
+			UndeployDataService(man.ManifestUniqueID, CMDRemove)
 			return err
 		}
 		log.Info(deploymentID, "Successfully created container ", containerID, " with args: ", containerConfig.EntryPointArgs)
 		log.Info(deploymentID, "Started!")
 	}
 
-	manifest.SetStatus(man.ID, man.Version, strings.ToUpper(command)+"ED")
+	manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, model.EdgeAppRunning, false)
 
 	return nil
 }
 
-func StopDataService(manifestID string, version string) error {
+func StopDataService(manifestUniqueID model.ManifestUniqueID) error {
 	const stateRunning = "running"
 
-	log.Info("Stopping data service:", manifestID, version)
+	log.Infoln("Stopping data service:", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
 
-	containers, err := docker.ReadDataServiceContainers(manifestID, version)
+	containers, err := docker.ReadDataServiceContainers(manifestUniqueID)
 	if err != nil {
 		log.Error("Failed to read data service containers.")
-		manifest.SetStatus(manifestID, version, "STOP_SERVICE_FAILED")
+		manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
 		return err
 	}
+
+	manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppPaused, true)
 
 	for _, container := range containers {
 		if container.State == stateRunning {
@@ -136,7 +145,7 @@ func StopDataService(manifestID string, version string) error {
 			err := docker.StopContainer(container.ID)
 			if err != nil {
 				log.Error("Could not stop a container")
-				manifest.SetStatus(manifestID, version, "STOP_CONTAINER_FAILED")
+				manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
 				return err
 
 			}
@@ -146,29 +155,31 @@ func StopDataService(manifestID string, version string) error {
 		}
 	}
 
-	manifest.SetStatus(manifestID, version, "STOPPED")
+	manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppPaused, false)
 
 	return nil
 }
 
-func StartDataService(manifestID string, version string) error {
-	log.Infoln("Starting data service:", manifestID, version)
+func StartDataService(manifestUniqueID model.ManifestUniqueID) error {
+	log.Infoln("Starting data service:", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
 
 	const stateExited = "exited"
 	const stateCreated = "created"
 	const statePaused = "paused"
 
-	containers, err := docker.ReadDataServiceContainers(manifestID, version)
+	containers, err := docker.ReadDataServiceContainers(manifestUniqueID)
 	if err != nil {
 		log.Error("Failed to read data service containers.")
-		manifest.SetStatus(manifestID, version, "UNDEPLOY_FAILED")
+		manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
 		return err
 	}
 
 	if len(containers) == 0 {
-		manifest.SetStatus(manifestID, version, "START_FAILED")
+		manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
 		return errors.New("no data service containers found")
 	}
+
+	manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppRunning, true)
 
 	for _, container := range containers {
 		if container.State == stateExited || container.State == stateCreated || container.State == statePaused {
@@ -176,46 +187,48 @@ func StartDataService(manifestID string, version string) error {
 			err := docker.StartContainer(container.ID)
 			if err != nil {
 				log.Errorln("Could not start a container", err)
-				manifest.SetStatus(manifestID, version, "START_FAILED")
+				manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
 				return err
 			}
 			log.Info(strings.Join(container.Names[:], ","), ": ", container.State, "--> running")
 		}
 	}
 
-	manifest.SetStatus(manifestID, version, "STARTED")
+	manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppRunning, false)
 
 	return nil
 }
 
-func UndeployDataService(manifestID string, version string) error {
-	log.Info("Undeploying data service ...", manifestID, version)
+func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string) error {
+	log.Infoln("Undeploying data service:", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
 
-	deploymentID := manifestID + "-" + version + " | "
+	deploymentID := manifestUniqueID.ManifestName + "-" + manifestUniqueID.VersionNumber + " | "
 
 	// Check if data service already exist
-	dataServiceExists, err := DataServiceExist(manifestID, version)
+	dataServiceExists, err := DataServiceExist(manifestUniqueID)
 	if err != nil {
 		log.Error(deploymentID, err)
-		manifest.SetStatus(manifestID, version, "UNDEPLOY_FAILED")
+		manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
 		return err
 	}
 
 	if !dataServiceExists {
-		log.Errorln(deploymentID, "Data service", manifestID, version, "does not exist")
-		manifest.SetStatus(manifestID, version, "UNDEPLOY_FAILED")
+		log.Errorln(deploymentID, "Data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber, "does not exist")
+		manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
 		return nil
 	}
+
+	manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppUndeployed, false)
 
 	//******** STEP 1 - Stop and Remove Containers *************//
 
 	// map { imageID: number_of_allocated_containers }, needed for removing images as not supported by Go-Docker SDK
 	numContainersPerImage := make(map[string]int)
 
-	dsContainers, err := docker.ReadDataServiceContainers(manifestID, version)
+	dsContainers, err := docker.ReadDataServiceContainers(manifestUniqueID)
 	if err != nil {
 		log.Error(deploymentID, "Failed to read data service containers.")
-		manifest.SetStatus(manifestID, version, "UNDEPLOY_FAILED")
+		manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
 		return err
 	}
 
@@ -226,33 +239,35 @@ func UndeployDataService(manifestID string, version string) error {
 		err := docker.StopAndRemoveContainer(dsContainer.ID)
 		if err != nil {
 			log.Error(deploymentID, err)
-			manifest.SetStatus(manifestID, version, "UNDEPLOY_FAILED")
+			manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
 			errorlist = fmt.Sprintf("%v,%v", errorlist, err)
 		}
 	}
 
-	//******** STEP 2 - Remove Images WITHOUT Containers *************//
-	containers, err := docker.ReadAllContainers()
-	if err != nil {
-		log.Error(deploymentID, "Failed to read all containers.")
-		manifest.SetStatus(manifestID, version, "UNDEPLOY_FAILED")
-		return err
-	}
-
-	for imageID := range numContainersPerImage {
-		for _, container := range containers {
-			if container.ImageID == imageID {
-				numContainersPerImage[imageID]++
-			}
+	if command == CMDRemove {
+		//******** STEP 2 - Remove Images WITHOUT Containers *************//
+		containers, err := docker.ReadAllContainers()
+		if err != nil {
+			log.Error(deploymentID, "Failed to read all containers.")
+			manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
+			return err
 		}
 
-		if numContainersPerImage[imageID] == 0 {
-			log.Info(deploymentID, "Remove Image - ", imageID)
-			err := docker.ImageRemove(imageID)
-			if err != nil {
-				log.Error(deploymentID, err)
-				manifest.SetStatus(manifestID, version, "UNDEPLOY_FAILED")
-				errorlist = fmt.Sprintf("%v,%v", errorlist, err)
+		for imageID := range numContainersPerImage {
+			for _, container := range containers {
+				if container.ImageID == imageID {
+					numContainersPerImage[imageID]++
+				}
+			}
+
+			if numContainersPerImage[imageID] == 0 {
+				log.Info(deploymentID, "Remove Image - ", imageID)
+				err := docker.ImageRemove(imageID)
+				if err != nil {
+					log.Error(deploymentID, err)
+					manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
+					errorlist = fmt.Sprintf("%v,%v", errorlist, err)
+				}
 			}
 		}
 	}
@@ -260,14 +275,12 @@ func UndeployDataService(manifestID string, version string) error {
 	//******** STEP 3 - Remove Network *************//
 	log.Info(deploymentID, "Pruning networks ...")
 
-	err = docker.NetworkPrune(manifestID, version)
+	err = docker.NetworkPrune(manifestUniqueID)
 	if err != nil {
 		log.Error(deploymentID, err)
-		manifest.SetStatus(manifestID, version, "UNDEPLOY_FAILED")
+		manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
 		errorlist = fmt.Sprintf("%v,%v", errorlist, err)
 	}
-
-	manifest.SetStatus(manifestID, version, "UNDEPLOYED")
 
 	if errorlist != "" {
 		log.Error(deploymentID, err)
@@ -277,8 +290,8 @@ func UndeployDataService(manifestID string, version string) error {
 	}
 }
 
-func DataServiceExist(manifestID string, version string) (bool, error) {
-	networks, err := docker.ReadDataServiceNetworks(manifestID, version)
+func DataServiceExist(manifestUniqueID model.ManifestUniqueID) (bool, error) {
+	networks, err := docker.ReadDataServiceNetworks(manifestUniqueID)
 	if err != nil {
 		return false, err
 	}

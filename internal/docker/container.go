@@ -12,6 +12,7 @@ import (
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
+	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 var ctx = context.Background()
@@ -49,7 +50,8 @@ func createContainer(containerConfig manifest.ContainerConfig) (string, error) {
 			Name:              "on-failure",
 			MaximumRetryCount: 100,
 		},
-		Mounts: containerConfig.MountConfigs,
+		Mounts:    containerConfig.MountConfigs,
+		Resources: containerConfig.Resources,
 	}
 
 	networkConfig := &network.NetworkingConfig{
@@ -134,18 +136,15 @@ func ReadAllContainers() ([]types.Container, error) {
 	return containers, nil
 }
 
-func ReadDataServiceContainers(manifestID string, version string) ([]types.Container, error) {
-	log.Debug("Docker_container -> ReadDataServiceContainers")
-
+func ReadDataServiceContainers(manifestUniqueID model.ManifestUniqueID) ([]types.Container, error) {
 	filter := filters.NewArgs()
-	filter.Add("label", "manifestID="+manifestID)
-	filter.Add("label", "version="+version)
+	filter.Add("label", "manifestName="+manifestUniqueID.ManifestName)
+	filter.Add("label", "versionNumber="+manifestUniqueID.VersionNumber)
 	options := types.ContainerListOptions{All: true, Filters: filter}
 	containers, err := dockerClient.ContainerList(context.Background(), options)
 	if err != nil {
 		return nil, err
 	}
-	log.Debug("Docker_container -> ReadAllContainers response", containers)
 
 	return containers, nil
 }

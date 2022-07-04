@@ -1,6 +1,38 @@
 # weeve agent
 The weeve agent is a lightweight service to orchestrate data pipelines. A data pipeline is defined in a manifest file and consists of several interconnected docker containers. The data pipeline is instantiated by subscription to an MQTT topic for the stage and node. The logic of the service then pulls images from docker hub if they do not exist on the machine. The weeve agent creates and starts containers based on a specified manifest. A bridge network is instantiated to facilitate container communication. The agent publishes status messages over MQTT on a defined interval to monitor the state of the IOT edge comprised of multiple edge nodes running weeve agents.
 
+# Installing weeve agent using installer script
+## Requirements
+
+The Github personal access key is required to download the contents for the agents.
+Please make sure there is a file in the local machine containing the Github Personal Access Token.
+
+## Installation
+
+```bash
+wget http://weeve-agent-dev.s3.amazonaws.com/weeve-agent-installer.sh
+```
+
+```bash
+sh weeve-agent-installer.sh
+```
+| Parameter   | Required | Description                                                 | Possible Values            | Default   |
+| ----------- | -------- | ------------------------------------------------------------| ---------------------------|-----------|
+| configpath  | false    | takes the path of the JSON file with node configuration     |                            |           |
+| environment | false    | name of the environment where the agent is to be registered | dev, demo, sandbox, wohnio |           |
+| nodename    | false    | takes the name of the node                                  |                            |           |
+| test        | false    | set to 'true' to build agent from local and run             |                            | false     |
+
+## Un-installation
+
+```bash
+wget http://weeve-agent-dev.s3.amazonaws.com/weeve-agent-uninstaller.sh
+```
+
+```bash
+sh weeve-agent-uninstaller.sh
+```
+
 ## Architecture
 The weeve agent can be considered as a Docker orchestration layer with a purpose built business logic for a data service - multiple containers in communication with each other. As such, the project relies on the [Golang Docker SDK](https://godoc.org/github.com/docker/docker).
 
@@ -14,12 +46,9 @@ A data model for the manifest object and supporting structures is found in the i
 
 | Parameter   | Short | Required | Description                                            | Default  |
 | ----------- | ----- | -------- | ------------------------------------------------------ | -------- |
-| verbose     | v     | false    | Show verbose debug information                         |          |
+| out         |       | false    | Print logs to stdout                                   | false    |
 | broker      | b     | true     | Broker to connect                                      |          |
-| pubClientId | c     | true     | Publisher ClientId                                     |          |
-| subClientId | s     | true     | Subscriber ClientId                                    |          |
-| publish     | t     | true     | Topic Name                                             |          |
-| heartbeat   | h     | false    | Heartbeat time in seconds                              | 30       |
+| heartbeat   | t     | false    | Heartbeat time in seconds                              | 30       |
 | mqttlogs    | m     | false    | For developer - Display detailed MQTT logging messages |          |
 | notls       |       | false    | For developer - disable TLS for MQTT                   |          |
 | loglevel    | l     | false    | Set the logging level                                  | info     |
@@ -31,8 +60,6 @@ A data model for the manifest object and supporting structures is found in the i
 | nodeId      | i     | false    | ID of this node                                        | register |
 | name        | n     | false    | Name of this node to be registered                     |          |
 | rootcert    | r     | false    | Path to MQTT broker (server) certificate               |          |
-| cert        | f     | false    | Path to certificate to authenticate to Broker          |          |
-| key         | k     | false    | Path to private key to authenticate to Broker          |          |
 | config      |       | false    | Path to the .json config file                          |<exe dir> |
 
 ## Getting started
@@ -56,17 +83,14 @@ In a new terminal instance, subscribe to all topics for that broker; `mosquitto_
 #### Terminal: Weeve agent
 In a final terminal, run the weeve agent and connect to the broker to publish status messages;
 ```bash
-go run <path-to-agent>/agent.go -v --notls \
+go run <path-to-agent>/agent.go --out --notls \
 	--broker tcp://localhost:8080 \ # Broker to connect to \
-	--subClientId nodes/localtest \ # Subscriber ClientId \
-	--pubClientId manager/localtest \ # Publisher ClientId \
-	--publish CheckVersion  \ # Topic Name \
 	--heartbeat 3 # Status message publishing interval
 	--nodeId local-test-node-1 \ # ID of this node optional \
 	--config <path-to-config>
 ```
 
-The `-v` flag enables logs in terminal, and the `--notls` flag disables TLS configuation. Further logs from the `paho` MQTT client can be enabled with the `--mqttlogs` flag, and the `--loglevel` flag enables to set desired logging level.
+The `--out` flag enables logs in terminal, and the `--notls` flag disables TLS configuation. Further logs from the `paho` MQTT client can be enabled with the `--mqttlogs` flag, and the `--loglevel` flag enables to set desired logging level.
 
 ### With TLS
 
@@ -75,16 +99,11 @@ Start with registering a new Node with GraphQL or with weeve UI. Then download c
 Since TLS configuration requires the full path to all secrets and certificates, execute the following code:
 
 ```bash
-SERVER_CERTIFICATE=<path-to-root-cert>/AmazonRootCA1.pem
-CLIENT_CERTIFICATE=<path-to-cert>/<nodeid>-certificate.pem.crt
-CLIENT_PRIVATE_KEY=<path-to-private-key>/<nodeid>-private.pem.key
-go run <path-to-agent>/agent.go -v \
+SERVER_CERTIFICATE=<path-to-root-cert>/ca.crt
+go run <path-to-agent>/agent.go --out \
 	--nodeId awsdev-test-node-1 \ # ID of this node (optional here)\
 	--name awsdev-test-node-1 \ # Name of this node (optional here)\
 	--broker tls://<broker host url>:8883 \ # Broker to connect to \
-	--subClientId nodes/awsdev \ # Subscriber ClientId \
-	--pubClientId manager/awsdev \ # Publisher ClientId \
-	--publish status \ # Topic bame for publishing status messages \
 	--heartbeat 10   # Status message publishing interval \
 	--config <path-to-config>
 	# --mqttlogs # Enable detailed debug logs for the MQTT connection
@@ -109,11 +128,8 @@ Download AmazonRootCA1.pem from Google. Then, follow the steps:
 
 1) Run command:
 ```bash
-go run <path-to-agent>/agent.go -v \
+go run <path-to-agent>/agent.go --out \
 	--broker tls://<broker host url>:8883 \ # Broker to connect to \
-	--subClientId nodes/awsdev \ # Subscriber ClientId \
-	--pubClientId manager/awsdev \  # Publisher ClientId \
-	--publish CheckVersion \ # Topic bame for publishing status messages \
 	--heartbeat 60 # Status message publishing interval \
 	--config <path-to-config>
 ```
@@ -125,7 +141,7 @@ All the below params can be updated into json instead of arguments as above
 	"AWSRootCert": "/path/to/AmazonRootCA1.pem",
 	"PrivateKey": "/path/to/<node private key/bootstrap private key file name>",
 	"Certificate": "/path/to/<node certificate/bootstrap certificate file name>",
-	"NodeId": "<node id>" //Empty initially for auto registration
+	"NodeId": "<node id>", //Empty initially for auto registration
 	"NodeName": "<node name>" //Node name for auto registration
 }
 ```
@@ -134,14 +150,6 @@ All the below params can be updated into json instead of arguments as above
 Weeve agent can also run in a container given the right environment. Currently we support container orchestration in the secunet container environment. To create a container run `make secunet` in the top project directory. This will create a container `secunet-test` ready to be deployed on a secunet gateway. It can then be deployed using the repository [secunet deployment](https://github.com/weeveiot/secunet-deployment).
 
 # [BELOW IS WIP]
-
-The latest binary can be downloaded from S3 bucket :
-https://weeve-binaries-release.s3.eu-central-1.amazonaws.com/node-service/node-service-0-1-1
-
-The compiled binary found as a release can be executed by specifying the port to be exposed;
-
-`./node-service -v -p 8030`
-The `-v` verbose flag is optional and will present the Debug level logging messages.
 
 ### Docker container
 Currently, running the project with Docker is not supported. Since the main function of the Weeve Node Service is to orchestrate a set of docker containers, running the project inside docker presents additional complexities due to the interaction with the host machine. A docker file is present to facilitate unit testing only.
@@ -158,13 +166,6 @@ Build Node API Service mode
 
 Build Node MQTT listener mode
 `go build ./cmd/node_listener.go`
-
-### Run the Golang project
-`go run ./cmd/service/node-service.go -v -p 8030`
-
-The root of the command is the project root directory.
-
-The `-v` verbose flag is optional and will present the Debug level logging messages.
 
 ### Unit-test the Golang project
 
@@ -184,6 +185,47 @@ Currently, unit testing does not cover the project.
 ## Developer environment
 
 Several developer features are supported in the project.
+
+### Manually running the weeve agent as systemd service on a edge-node
+
+1. Install docker [docker installation](https://docs.docker.com/engine/install/)
+2. Create a new directory and copy the following to the directory
+	1. weeve agent binary (AWS: s3 bucket)
+	2. nodeconfig.json and bootstrap certificates (Github repository: weeve-agent-dependencies)
+3. Make the binary executable `chmod u+x weeve-agent/<agent-binary-name>`
+4. Create weeve-agent.service file which will define the service
+```bash
+[Unit]
+Description=Weeve Agent
+[Install]
+WantedBy=multi-user.target
+[Service]
+Type=simple
+Restart=always
+RestartSec=60s
+WorkingDirectory=<path to the directory containing weeve agent contents>
+ExecStart=<weeve agent binary path> $ARG_STDOUT $ARG_BROKER $ARG_PUBLISH $ARG_HEARTBEAT <add more arguments as required >
+```
+1. Move .service file to `/lib/systemd/system/`
+2. Enable the service to start at start-up `sudo systemctl enable weeve-agent`
+3. Start the service `sudo systemctl start weeve-agent`
+
+Upon first execution;
+1. The weeve agent bootstraps.
+2. The thing name will be the environment followed by the ID, for example; `awsdev_f5adbd1a-d4b7-4485-b5f4-2b901a92c80f`.
+3. The certificate is created and uploaded to S3
+
+NOTE:
+It is possible to run multiple instances of the weeve agent in a single host. Each process would be running independently and be bootstrapped with as a dedicated IoT thing.
+
+### Deleting a node
+
+To delete the IoT thing, call the API - deleteNode.
+This will remove the following:
+
+- Things from IoT core
+- Node and deployments from DB
+- Certificate from s3 bucket
 
 ### Dependencies
 

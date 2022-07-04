@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/model"
@@ -14,34 +13,37 @@ import (
 
 var ConfigPath string
 
-const defaultId = "4be43aa6f1"
-
 var params struct {
 	RootCertPath string
-	CertPath     string
 	NodeId       string
+	Password     string
+	APIkey       string
 	NodeName     string
-	KeyPath      string
+	Registered   bool
 }
 
 func GetRootCertPath() string {
 	return params.RootCertPath
 }
 
-func GetCertPath() string {
-	return params.CertPath
-}
-
 func GetNodeId() string {
 	return params.NodeId
+}
+
+func GetPassword() string {
+	return params.Password
+}
+
+func GetAPIkey() string {
+	return params.APIkey
 }
 
 func GetNodeName() string {
 	return params.NodeName
 }
 
-func GetKeyPath() string {
-	return params.KeyPath
+func GetRegistered() bool {
+	return params.Registered
 }
 
 func writeNodeConfigToFile() {
@@ -88,16 +90,6 @@ func UpdateNodeConfig(opt model.Params) {
 		configChanged = true
 	}
 
-	if len(opt.CertPath) > 0 {
-		params.CertPath = opt.CertPath
-		configChanged = true
-	}
-
-	if len(opt.KeyPath) > 0 {
-		params.KeyPath = opt.KeyPath
-		configChanged = true
-	}
-
 	if len(opt.NodeName) > 0 {
 		params.NodeName = opt.NodeName
 		configChanged = true
@@ -121,14 +113,8 @@ func SetNodeId(nodeId string) {
 	writeNodeConfigToFile()
 }
 
-func SetCertPath(certificatePath, keyPath string) {
-	params.CertPath = certificatePath
-	params.KeyPath = keyPath
+func SetRegistered(registered bool) {
+	params.Registered = registered
 
 	writeNodeConfigToFile()
-}
-
-func IsNodeRegistered() bool {
-	// TODO: change this workaround to check if the node is registered
-	return !(strings.Contains(params.CertPath, defaultId) || strings.Contains(params.KeyPath, defaultId))
 }

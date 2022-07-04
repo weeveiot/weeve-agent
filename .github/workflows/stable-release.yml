@@ -1,0 +1,59 @@
+name: Releaser
+on:
+  push:
+    tags:
+      - "*"
+jobs:
+  build-and-push:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Setup golang
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Manage cache
+        uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Create build directory
+        run: mkdir -p installer-contents
+
+      - name: Build cross compilation binary
+        run: make cross
+
+      - name: Compute checksums
+        run: cd installer-contents; for f in *; do shasum --binary --algorithm 256 $f | tee -a checksums.txt > $f.sha256; done
+
+      - name: copy License
+        run: mv LICENSE installer-contents/LICENSE
+
+      - name: Copy contents to be ported to s3 
+        run: mv ca.crt weeve-agent.service weeve-agent-installer.sh weeve-agent-uninstaller.sh ./installer-contents
+
+      - name: Directory to installer-contents
+        run: ls -la ./installer-contents
+
+      - name: Release artifacts
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "installer-contents/*"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.event.inputs.tag }}
+          bodyFile: RELEASE_NOTES.md
+
+      - name: Release Binary to S3
+        uses: jakejarvis/s3-sync-action@master
+        env:
+          AWS_S3_BUCKET: weeve-agent
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: eu-central-1
+          SOURCE_DIR: ./installer-contents

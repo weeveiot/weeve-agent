@@ -1,16 +1,15 @@
 package ioutility
 
 import (
-	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
 
 func GetExeDir() string {
-	exePath, err := os.Executable()
+	exePath, err := os.Getwd()
 	if err != nil {
 		log.Fatal("Could not get the path to the executable.")
 	}
@@ -18,12 +17,9 @@ func GetExeDir() string {
 	return dir
 }
 
-func LoadJsonBytes(manifestFileName string) []byte {
-	manifestPath := path.Join(GetExeDir(), manifestFileName)
-
-	manifestBytes, err := ioutil.ReadFile(manifestPath)
-	if err != nil {
-		log.Fatal(err)
+func FirstToUpper(str string) string {
+	if len(str) == 0 {
+		return str
 	}
-	return manifestBytes
+	return strings.ToUpper(string(str[0])) + str[1:]
 }
