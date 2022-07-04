@@ -38,11 +38,11 @@ const (
 )
 
 const (
-	EdgeAppRunning = "Running"
-	EdgeAppPaused  = "Paused"
-	EdgeAppError   = "Error"
-	EdgeAppIninted = "Initiated"
-	EdgeAppDeleted = "Deleted"
+	EdgeAppRunning    = "Running"
+	EdgeAppPaused     = "Paused"
+	EdgeAppError      = "Error"
+	EdgeAppIninted    = "Initiated"
+	EdgeAppUndeployed = "Undeployed"
 )
 
 const (

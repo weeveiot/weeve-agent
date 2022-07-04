@@ -218,7 +218,7 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string
 		return nil
 	}
 
-	manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppDeleted, false)
+	manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppUndeployed, false)
 
 	//******** STEP 1 - Stop and Remove Containers *************//
 
