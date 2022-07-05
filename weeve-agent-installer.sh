@@ -109,9 +109,6 @@ download_binary(){
     ;;
   esac
 
-  log Detecting the OS of the machine ...
-  OS=$(uname -s)
-  log OS: "$OS"
   case "$OS" in
     "Linux") BINARY_OS="linux"
     ;;
@@ -217,19 +214,21 @@ cleanup() {
 
     log cleaning up the contents ...
 
-    if RESULT=$(systemctl is-active weeve-agent 2>&1); then
-      sudo systemctl stop weeve-agent
-      sudo systemctl daemon-reload
-      log weeve-agent service stopped
-    else
-      log weeve-agent service not running
-    fi
+    if [ "$OS" = "Linux" ]; then
+      if RESULT=$(systemctl is-active weeve-agent 2>&1); then
+        sudo systemctl stop weeve-agent
+        sudo systemctl daemon-reload
+        log weeve-agent service stopped
+      else
+        log weeve-agent service not running
+      fi
 
-    if [ -f "$SERVICE_FILE" ]; then
-      sudo rm "$SERVICE_FILE"
-      log "$SERVICE_FILE" removed
-    else
-      log "$SERVICE_FILE" doesnt exists
+      if [ -f "$SERVICE_FILE" ]; then
+        sudo rm "$SERVICE_FILE"
+        log "$SERVICE_FILE" removed
+      else
+        log "$SERVICE_FILE" doesnt exists
+      fi
     fi
 
     if [ -d "$WEEVE_AGENT_DIR" ] ; then
@@ -242,8 +241,14 @@ cleanup() {
   fi
 }
 
-# if in case the user have deleted the weeve-agent.service and did not reload the systemd daemon
-sudo systemctl daemon-reload
+log Detecting the OS of the machine ...
+OS=$(uname -s)
+log Detected OS: "$OS"
+
+if [ "$OS" = "Linux" ]; then
+  # if in case the user have deleted the weeve-agent.service and did not reload the systemd daemon
+  sudo systemctl daemon-reload
+fi
 
 # Delcaring and defining variables
 LOG_FILE=installer.log
