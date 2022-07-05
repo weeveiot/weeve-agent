@@ -123,7 +123,7 @@ func DeployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
 	}
 
 	if len(net) > 0 {
-		_, err := CheckContainersExistsWithStatus(man.ManifestUniqueID, len(man.Modules), manifest.Running)
+		_, err := CheckContainersExistsWithStatus(man.ManifestUniqueID, len(man.Modules), model.EdgeAppRunning)
 		if err != nil {
 			return err
 		}
@@ -149,7 +149,7 @@ func ReDeployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
 
 	if len(net) > 0 {
 		if net[0].Created.After(currentTime) {
-			_, err := CheckContainersExistsWithStatus(man.ManifestUniqueID, len(man.Modules), manifest.Running)
+			_, err := CheckContainersExistsWithStatus(man.ManifestUniqueID, len(man.Modules), model.EdgeAppRunning)
 			if err != nil {
 				return err
 			}
@@ -176,7 +176,7 @@ func StopEdgeApplication(man manifest.Manifest) error {
 		return fmt.Errorf("ProcessMessage returned %v status", err)
 	}
 
-	_, err = CheckContainersExistsWithStatus(man.ManifestUniqueID, len(man.Modules), manifest.Paused)
+	_, err = CheckContainersExistsWithStatus(man.ManifestUniqueID, len(man.Modules), model.EdgeAppPaused)
 	if err != nil {
 		return err
 	}
@@ -197,7 +197,7 @@ func StartEdgeApplication(man manifest.Manifest) error {
 		return fmt.Errorf("ProcessMessage returned %v status", err)
 	}
 
-	_, err = CheckContainersExistsWithStatus(man.ManifestUniqueID, len(man.Modules), manifest.Running)
+	_, err = CheckContainersExistsWithStatus(man.ManifestUniqueID, len(man.Modules), model.EdgeAppRunning)
 	if err != nil {
 		return err
 	}
