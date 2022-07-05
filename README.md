@@ -149,6 +149,11 @@ All the below params can be updated into json instead of arguments as above
 # Containerization
 Weeve agent can also run in a container given the right environment. Currently we support container orchestration in the secunet container environment. To create a container run `make secunet` in the top project directory. This will create a container `secunet-test` ready to be deployed on a secunet gateway. It can then be deployed using the repository [secunet deployment](https://github.com/weeveiot/secunet-deployment).
 
+# Developer guide
+```
+go build -o ./build/agent ./cmd/agent/agent.go
+```
+
 # [BELOW IS WIP]
 
 ### Docker container
