@@ -119,7 +119,7 @@ download_binary(){
   # downloading the respective weeve-agent binary
   BINARY_NAME="weeve-agent-$BINARY_OS-$BINARY_ARCH"
 
-  if RESULT=$(mkdir weeve-agent \
+  if RESULT=$(mkdir "$WEEVE_AGENT_DIR" \
   && cd "$WEEVE_AGENT_DIR" \
   && wget http://"$S3_BUCKET".s3.amazonaws.com/"$BINARY_NAME" 2>&1); then
     log Weeve-agent binary downloaded
@@ -170,7 +170,7 @@ write_to_service(){
 
 execute_binary(){
   log Starting the agent binary ...
-  cd $WEEVE_AGENT_DIR || exit
+  cd $WEEVE_AGENT_DIR
   eval $EXECUTE_BINARY
 }
 
