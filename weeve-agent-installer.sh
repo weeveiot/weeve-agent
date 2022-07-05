@@ -177,6 +177,12 @@ write_to_service(){
   } >> "$WEEVE_AGENT_DIR"/weeve-agent.service
 }
 
+execute_binary(){
+  log Starting the agent binary ...
+  cd $WEEVE_AGENT_DIR
+  eval $EXECUTE_BINARY
+}
+
 start_service(){
   log Starting the service ...
 
@@ -308,6 +314,9 @@ download_dependencies
 
 write_to_service
 
-start_service
-
-tail_agent_log
+if [ "$OS" = "Linux" ]; then
+  start_service
+  tail_agent_log
+else
+  execute_binary
+fi
