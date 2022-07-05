@@ -151,7 +151,7 @@ Weeve agent can also run in a container given the right environment. Currently w
 
 # Developer guide
 
-This section is a guide for developers intending to test the agent locally.
+This section is a guide for developers intending to testing and developing the agent locally.
 
 ## MQTT broker
 
@@ -163,6 +163,10 @@ docker run --rm --name mosquitto -p $MQTT_PORT:1883 eclipse-mosquitto:2.0.14 mos
 ```
 
 And view the
+
+
+
+##
 
 ## weeve agent
 Build the agent binary
