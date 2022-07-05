@@ -97,18 +97,33 @@ download_binary(){
   ARCH=$(uname -m)
   log Architecture: "$ARCH"
 
-  # detecting the architecture and downloading the respective weeve-agent binary
   case "$ARCH" in
-    "x86_64") BINARY_NAME="weeve-agent-amd64"
+    "x86_64") BINARY_ARCH="weeve-agent-amd64"
     ;;
-    "arm" | "armv7l") BINARY_NAME="weeve-agent-arm"
+    "arm" | "armv7l") BINARY_ARCH="weeve-agent-arm"
     ;;
-    "aarch64" | "aarch64_be" | "armv8b" | "armv8l") BINARY_NAME="weeve-agent-arm64"
+    "aarch64" | "aarch64_be" | "armv8b" | "armv8l") BINARY_ARCH="weeve-agent-arm64"
     ;;
     *) log Unsupported architecture: "$ARCH"
     exit 1
     ;;
   esac
+
+  log Detecting the OS of the machine ...
+  OS=$(uname -s)
+  log OS: "$OS"
+  case "$OS" in
+    "Linux") BINARY_OS="linux"
+    ;;
+    "Darwin") BINARY_OS="macos"
+    ;;
+    *) log Unsupported OS: "$OS"
+    exit 1
+    ;;
+  esac
+
+  # downloading the respective weeve-agent binary
+  BINARY_NAME="weeve-agent-$BINARY_OS-$BINARY_ARCH"
 
   if RESULT=$(mkdir weeve-agent \
   && cd "$WEEVE_AGENT_DIR" \
