@@ -148,7 +148,6 @@ download_dependencies(){
     CLEANUP="true"
     exit 1
   fi
-  log Dependencies downloaded.
 }
 
 write_to_service(){
