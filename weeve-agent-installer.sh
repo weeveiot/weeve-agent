@@ -15,7 +15,7 @@ validate_config(){
   CONFIG_FILE="`eval echo $CONFIG_FILE`"
   if [ -f "$CONFIG_FILE" ]; then
     log The node configuration JSON file exists
-    CONFIG_FILE="$(cd "$(dirname "$CONFIG_FILE")"; pwd)/$(basename "$CONFIG_FILE")"
+    CONFIG_FILE="$(cd "$(dirname "$CONFIG_FILE")" || exit; pwd)/$(basename "$CONFIG_FILE")"
   else
     log The required file containing the node configurations not found in the path: "$CONFIG_FILE"
     exit 1
@@ -170,7 +170,7 @@ write_to_service(){
 
 execute_binary(){
   log Starting the agent binary ...
-  cd $WEEVE_AGENT_DIR
+  cd $WEEVE_AGENT_DIR || exit
   eval $EXECUTE_BINARY
 }
 
@@ -280,8 +280,6 @@ done
 get_config
 
 validate_config
-
-get_environment
 
 get_test
 
