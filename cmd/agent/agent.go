@@ -37,7 +37,8 @@ func (f *PlainFormatter) Format(entry *log.Entry) ([]byte, error) {
 	return []byte(fmt.Sprintf("%s %s : %s\n", timestamp, entry.Level, entry.Message)), nil
 }
 
-// logging into the terminal and files
+// The init function in the main package is called before anything else
+// Setup the logging here
 func init() {
 	const dateTimeFormat = "2006-01-02 15:04:05"
 
@@ -46,6 +47,8 @@ func init() {
 	log.SetFormatter(plainFormatter)
 }
 
+// The main package is a special package which is used with the programs that are executable and this package contains main() function
+// The entrypoint for this binary
 func main() {
 	localManifest := parseCLIoptions()
 
@@ -92,6 +95,8 @@ func main() {
 }
 
 func parseCLIoptions() string {
+	// The config file is used to store the agent configuration
+	// If the agent binary restarts, this file will be used to start the agent again
 	const configFileName = "nodeconfig.json"
 	var opt model.Params
 
@@ -130,8 +135,8 @@ func parseCLIoptions() string {
 		mqtt.DEBUG = golog.New(logger, "[DEBUG] ", 0)
 	}
 
-	log.Info("Started logging!")
-	log.Info("Logging level set to ", log.GetLevel(), "!")
+	log.Info("Started logging")
+	log.Info("Logging level set to ", log.GetLevel())
 
 	// FLAG: ConfigPath
 	if len(opt.ConfigPath) > 0 {
@@ -140,6 +145,9 @@ func parseCLIoptions() string {
 		// use the default path and filename
 		config.ConfigPath = path.Join(ioutility.GetExeDir(), configFileName)
 	}
+	log.Debug("Loading config file from ", config.ConfigPath)
+	// config.PrintConfig()
+
 	config.UpdateNodeConfig(opt)
 
 	// FLAG: Broker
