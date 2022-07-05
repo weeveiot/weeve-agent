@@ -22,13 +22,6 @@ validate_config(){
   fi
 }
 
-get_environment(){
-  # reading values from the user
-  if [ -z "$ENV" ]; then
-    read -r -p "Enter the environment in which the node is to be registered: " ENV
-  fi
-}
-
 get_test(){
   if [ -z "$BUILD_LOCAL" ]; then
     BUILD_LOCAL="false"
@@ -72,13 +65,15 @@ check_for_agent(){
 
 validating_docker(){
   log Validating if docker is installed and running ...
-  if RESULT=$(systemctl is-active docker 2>&1); then
-    log Docker is running.
-  else
-    log Docker is not running, is docker installed?
-    log Error while validating docker: "$RESULT"
-    log To install docker, visit https://docs.docker.com/engine/install/
-    exit 1
+  if [ "$OS" = "Linux" ]; then
+    if RESULT=$(systemctl is-active docker 2>&1); then
+      log Docker is running.
+    else
+      log Docker is not running, is docker installed?
+      log Error while validating docker: "$RESULT"
+      log To install docker, visit https://docs.docker.com/engine/install/
+      exit 1
+    fi
   fi
 }
 
@@ -274,7 +269,6 @@ do
 
   case "$KEY" in
     "configpath") CONFIG_FILE="$VALUE" ;;
-    "environment") ENV="$VALUE" ;;
     "test") BUILD_LOCAL="$VALUE" ;;
     "broker") BROKER="$VALUE" ;;
     "loglevel") LOG_LEVEL="$VALUE" ;;
@@ -298,7 +292,6 @@ get_loglevel
 get_heartbeat
 
 log All arguments are set
-log Environment is set to "$ENV"
 log Test mode is set to "$BUILD_LOCAL"
 log Broker is set to "$BROKER"
 log Log level is set to "$LOG_LEVEL"
