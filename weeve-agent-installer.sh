@@ -99,7 +99,7 @@ download_binary(){
     ;;
     "arm" | "armv7l") BINARY_ARCH="arm"
     ;;
-    "aarch64" | "aarch64_be" | "armv8b" | "armv8l") BINARY_ARCH="arm64"
+    "arm64" | "aarch64" | "aarch64_be" | "armv8b" | "armv8l") BINARY_ARCH="arm64"
     ;;
     *) log Unsupported architecture: "$ARCH"
     exit 1
