@@ -29,8 +29,8 @@ jobs:
       - name: Build cross compilation binary
         run: make cross
 
-      - name: Copy contents to be ported to s3 
-        run: mv ca.crt weeve-agent.service weeve-agent-installer.sh weeve-agent-uninstaller.sh ./installer-contents
+      - name: Copy contents to be ported to s3
+        run: mv weeve-agent.service weeve-agent-installer.sh weeve-agent-uninstaller.sh ./installer-contents
 
       - name: Directory to installer-contents
         run: ls -la ./installer-contents
