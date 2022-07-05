@@ -14,6 +14,7 @@ get_config(){
 validate_config(){
   if [ -f "$CONFIG_FILE" ];then
     log The node configuration JSON file exists
+    CONFIG_FILE="$(cd "$(dirname "$CONFIG_FILE")"; pwd)/$(basename "$CONFIG_FILE")"
   else
     log The required file containing the node configurations not found in the path: "$CONFIG_FILE"
     exit 1
@@ -98,11 +99,11 @@ download_binary(){
   log Architecture: "$ARCH"
 
   case "$ARCH" in
-    "x86_64") BINARY_ARCH="weeve-agent-amd64"
+    "x86_64") BINARY_ARCH="amd64"
     ;;
-    "arm" | "armv7l") BINARY_ARCH="weeve-agent-arm"
+    "arm" | "armv7l") BINARY_ARCH="arm"
     ;;
-    "aarch64" | "aarch64_be" | "armv8b" | "armv8l") BINARY_ARCH="weeve-agent-arm64"
+    "aarch64" | "aarch64_be" | "armv8b" | "armv8l") BINARY_ARCH="arm64"
     ;;
     *) log Unsupported architecture: "$ARCH"
     exit 1
@@ -241,6 +242,9 @@ cleanup() {
   fi
 }
 
+# Delcaring and defining variables
+LOG_FILE=installer.log
+
 log Detecting the OS of the machine ...
 OS=$(uname -s)
 log Detected OS: "$OS"
@@ -249,9 +253,6 @@ if [ "$OS" = "Linux" ]; then
   # if in case the user have deleted the weeve-agent.service and did not reload the systemd daemon
   sudo systemctl daemon-reload
 fi
-
-# Delcaring and defining variables
-LOG_FILE=installer.log
 
 WEEVE_AGENT_DIR="$PWD/weeve-agent"
 
