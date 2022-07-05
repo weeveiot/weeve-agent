@@ -7,12 +7,13 @@ log() {
 
 get_config(){
   if [ -z "$CONFIG_FILE" ]; then
-    read -r -p "Enter the path to the node configuration JSON file: " CONFIG_FILE
+    read -r -p "Enter the path to the node configuration JSON file: " -e CONFIG_FILE
   fi
 }
 
 validate_config(){
-  if [ -f "$CONFIG_FILE" ];then
+  CONFIG_FILE="`eval echo $CONFIG_FILE`"
+  if [ -f "$CONFIG_FILE" ]; then
     log The node configuration JSON file exists
     CONFIG_FILE="$(cd "$(dirname "$CONFIG_FILE")"; pwd)/$(basename "$CONFIG_FILE")"
   else
