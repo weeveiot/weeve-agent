@@ -24,19 +24,22 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Create build directory
-        run: mkdir -p build
+        run: mkdir -p installer-contents
 
       - name: Build cross compilation binary
         run: make cross
 
-      - name: Directory to build
-        run: ls -la ./build
+      - name: Copy contents to be ported to s3 
+        run: mv ca.crt weeve-agent.service weeve-agent-installer.sh weeve-agent-uninstaller.sh ./installer-contents
+
+      - name: Directory to installer-contents
+        run: ls -la ./installer-contents
 
       - name: Release Binary to S3
         uses: jakejarvis/s3-sync-action@master
         env:
-          AWS_S3_BUCKET: weeve-agent-dev-binaries
+          AWS_S3_BUCKET: weeve-agent-dev
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: eu-central-1
-          SOURCE_DIR: ./build
+          SOURCE_DIR: ./installer-contents

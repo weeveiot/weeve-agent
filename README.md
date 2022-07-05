@@ -10,26 +10,27 @@ Please make sure there is a file in the local machine containing the Github Pers
 ## Installation
 
 ```bash
-curl -s https://raw.githubusercontent.com/weeveiot/weeve-agent/<BRANCH>/weeve-agent-installer.sh > weeve-agent-installer.sh
+wget http://weeve-agent-dev.s3.amazonaws.com/weeve-agent-installer.sh
 ```
 
 ```bash
-sudo sh weeve-agent-installer.sh tokenpath=<path to the file containing the token>
+sh weeve-agent-installer.sh
 ```
 | Parameter   | Required | Description                                                 | Possible Values            | Default   |
 | ----------- | -------- | ------------------------------------------------------------| ---------------------------|-----------|
-| tokenpath   | true     | takes the path of the file containing the access token      |                            |           |
 | configpath  | false    | takes the path of the JSON file with node configuration     |                            |           |
 | environment | false    | name of the environment where the agent is to be registered | dev, demo, sandbox, wohnio |           |
-| release     | false    | to select which release of agent is to be installed         | stable, dev                |           |
 | nodename    | false    | takes the name of the node                                  |                            |           |
 | test        | false    | set to 'true' to build agent from local and run             |                            | false     |
 
 ## Un-installation
 
 ```bash
-curl -s https://raw.githubusercontent.com/weeveiot/weeve-agent/<BRANCH>/weeve-agent-uninstaller.sh | sudo sh
+wget http://weeve-agent-dev.s3.amazonaws.com/weeve-agent-uninstaller.sh
+```
 
+```bash
+sh weeve-agent-uninstaller.sh
 ```
 
 ## Architecture
@@ -147,6 +148,11 @@ All the below params can be updated into json instead of arguments as above
 
 # Containerization
 Weeve agent can also run in a container given the right environment. Currently we support container orchestration in the secunet container environment. To create a container run `make secunet` in the top project directory. This will create a container `secunet-test` ready to be deployed on a secunet gateway. It can then be deployed using the repository [secunet deployment](https://github.com/weeveiot/secunet-deployment).
+
+# Developer guide
+```
+go build -o ./build/agent ./cmd/agent/agent.go
+```
 
 # [BELOW IS WIP]
 

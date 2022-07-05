@@ -5,6 +5,8 @@ import (
 
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
+	"github.com/weeveiot/weeve-agent/internal/model"
+	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
 )
 
 type edgeApplications struct {
@@ -31,20 +33,21 @@ func GetDataServiceStatus() ([]edgeApplications, error) {
 			return edgeApps, err
 		}
 
-		if !manif.InTransition && (manif.Status == manifest.Running || manif.Status == manifest.Paused) && len(appContainers) != manif.ContainerCount {
-			edgeApplication.Status = manifest.Error
+		if !manif.InTransition && (manif.Status == model.EdgeAppRunning || manif.Status == model.EdgeAppPaused) && len(appContainers) != manif.ContainerCount {
+			edgeApplication.Status = model.EdgeAppError
 		}
 
 		for _, con := range appContainers {
-			container := container{Name: strings.Join(con.Names, ", "), Status: con.State}
+			// The Status of each container is (assumed to be): Running, Paused, Restarting, Created, Exited
+			container := container{Name: strings.Join(con.Names, ", "), Status: ioutility.FirstToUpper(con.State)}
 			containersStat = append(containersStat, container)
 
-			if !manif.InTransition && edgeApplication.Status != manifest.Error {
-				if manif.Status == manifest.Running && con.State != manifest.Running {
-					edgeApplication.Status = manifest.Error
+			if !manif.InTransition && edgeApplication.Status != model.EdgeAppError {
+				if manif.Status == model.EdgeAppRunning && ioutility.FirstToUpper(con.State) != model.ModuleRunning {
+					edgeApplication.Status = model.EdgeAppError
 				}
-				if manif.Status == manifest.Paused && con.State != manifest.Paused {
-					edgeApplication.Status = manifest.Error
+				if manif.Status == model.EdgeAppPaused && ioutility.FirstToUpper(con.State) != model.ModulePaused {
+					edgeApplication.Status = model.EdgeAppError
 				}
 			}
 		}

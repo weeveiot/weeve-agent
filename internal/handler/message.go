@@ -14,6 +14,7 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/config"
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
+	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 type statusMessage struct {
@@ -182,9 +183,9 @@ func GetStatusMessage() (statusMessage, error) {
 	deviceParams.RamFree = verMem.Free
 
 	// TODO: Do proper check for node status
-	nodeStatus := manifest.Alarm
+	nodeStatus := model.NodeAlarm
 	if config.GetRegistered() {
-		nodeStatus = manifest.Connected
+		nodeStatus = model.NodeConnected
 	}
 
 	msg := statusMessage{

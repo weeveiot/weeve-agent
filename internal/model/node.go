@@ -31,3 +31,24 @@ type ManifestUniqueID struct {
 	VersionNumber string
 	ManifestName  string
 }
+
+const (
+	NodeConnected = "Connected"
+	NodeAlarm     = "Alarm"
+)
+
+const (
+	EdgeAppRunning    = "Running"
+	EdgeAppPaused     = "Paused"
+	EdgeAppError      = "Error"
+	EdgeAppIninted    = "Initiated"
+	EdgeAppUndeployed = "Undeployed"
+)
+
+const (
+	ModuleRunning    = "Running"
+	ModulePaused     = "Paused"
+	ModuleRestarting = "Restarting"
+	ModuleCreated    = "Created"
+	ModuleExited     = "Exited"
+)
