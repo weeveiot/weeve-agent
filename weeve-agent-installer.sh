@@ -139,17 +139,15 @@ download_binary(){
 
 download_dependencies(){
   log Downloading the dependencies ...
-  for DEPENDENCIES in ca.crt weeve-agent.service
-  do
   if RESULT=$(cd "$WEEVE_AGENT_DIR" \
-  && wget http://"$S3_BUCKET".s3.amazonaws.com/"$DEPENDENCIES" 2>&1); then
-    log "$DEPENDENCIES" downloaded
+  && wget http://"$S3_BUCKET".s3.amazonaws.com/weeve-agent.service 2>&1 \
+  && wget https://mapi-dev.weeve.engineering/public/mqtt-ca -O ca.crt 2>&1); then
+    log Dependencies downloaded
   else
     log Error while downloading the dependencies: "$RESULT"
     CLEANUP="true"
     exit 1
   fi
-  done
   log Dependencies downloaded.
 }
 
