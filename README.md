@@ -150,8 +150,30 @@ All the below params can be updated into json instead of arguments as above
 Weeve agent can also run in a container given the right environment. Currently we support container orchestration in the secunet container environment. To create a container run `make secunet` in the top project directory. This will create a container `secunet-test` ready to be deployed on a secunet gateway. It can then be deployed using the repository [secunet deployment](https://github.com/weeveiot/secunet-deployment).
 
 # Developer guide
+
+This section is a guide for developers intending to test the agent locally.
+
+## MQTT broker
+
+Run a MQTT broker on your local machine, for example;
+
+```bash
+MQTT_PORT=8083
+docker run --rm --name mosquitto -p $MQTT_PORT:1883 eclipse-mosquitto:2.0.14 mosquitto -v -c /mosquitto-no-auth.conf
+```
+
+And view the
+
+## weeve agent
+Build the agent binary
+
 ```
 go build -o ./build/agent ./cmd/agent/agent.go
+```
+
+```
+/bin/agent --out --broker=tls://mapi-dev.weeve.engineering:8883 --heartbeat=300 --loglevel=debug --config nodeconfig.json --rootcert ca.crt
+./agent -b tls://mapi-dev.weeve.engineering:8883 --heartbeat 10 -l debug --config ./agent-conf.json
 ```
 
 # [BELOW IS WIP]
