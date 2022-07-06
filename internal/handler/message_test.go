@@ -123,7 +123,7 @@ func DeployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
 	}
 
 	if len(net) > 0 {
-		_, err := CheckContainersExistsWithStatus(man.ManifestUniqueID, len(man.Modules), model.EdgeAppRunning)
+		_, err := CheckContainersExistsWithStatus(man.ManifestUniqueID, len(man.Modules), "running")
 		if err != nil {
 			return err
 		}
@@ -135,9 +135,17 @@ func DeployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
 }
 
 func ReDeployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
+	jsonParsed, err := gabs.ParseJSON(jsonBytes)
+	if err != nil {
+		return err
+	}
+
+	jsonParsed.Set("REDEPLOY", "command")
+	jsonBytes = jsonParsed.Bytes()
+
 	currentTime := time.Now()
 	// Process deploy edge application
-	err := handler.ProcessMessage(jsonBytes)
+	err = handler.ProcessMessage(jsonBytes)
 	if err != nil {
 		return fmt.Errorf("ProcessMessage returned %v status", err)
 	}
@@ -149,7 +157,7 @@ func ReDeployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
 
 	if len(net) > 0 {
 		if net[0].Created.After(currentTime) {
-			_, err := CheckContainersExistsWithStatus(man.ManifestUniqueID, len(man.Modules), model.EdgeAppRunning)
+			_, err := CheckContainersExistsWithStatus(man.ManifestUniqueID, len(man.Modules), "running")
 			if err != nil {
 				return err
 			}
@@ -176,7 +184,7 @@ func StopEdgeApplication(man manifest.Manifest) error {
 		return fmt.Errorf("ProcessMessage returned %v status", err)
 	}
 
-	_, err = CheckContainersExistsWithStatus(man.ManifestUniqueID, len(man.Modules), model.EdgeAppPaused)
+	_, err = CheckContainersExistsWithStatus(man.ManifestUniqueID, len(man.Modules), "exited")
 	if err != nil {
 		return err
 	}
@@ -197,7 +205,7 @@ func StartEdgeApplication(man manifest.Manifest) error {
 		return fmt.Errorf("ProcessMessage returned %v status", err)
 	}
 
-	_, err = CheckContainersExistsWithStatus(man.ManifestUniqueID, len(man.Modules), model.EdgeAppRunning)
+	_, err = CheckContainersExistsWithStatus(man.ManifestUniqueID, len(man.Modules), "running")
 	if err != nil {
 		return err
 	}
@@ -247,12 +255,12 @@ func UndeployEdgeApplication(man manifest.Manifest, operation string) error {
 			return errors.New("Edge application undeploy should not delete images")
 		}
 	} else {
-		noExist, err := CheckImages(man, false)
+		deleted, err := CheckImages(man, false)
 		if err != nil {
 			return err
 		}
 
-		if !noExist {
+		if !deleted {
 			return errors.New("Edge application removal should delete images")
 		}
 	}
@@ -321,7 +329,7 @@ func GetEdgeApplicationContainers(manifestUniqueID model.ManifestUniqueID) ([]ty
 
 func CheckContainersExistsWithStatus(manID model.ManifestUniqueID, containerCount int, status string) (bool, error) {
 	dsContainers, _ := GetEdgeApplicationContainers(manID)
-	if containerCount > len(dsContainers) {
+	if containerCount != len(dsContainers) {
 		return false, fmt.Errorf("Expected number of containers %v, number of available containers %v", containerCount, len(dsContainers))
 	}
 	for _, dsContainer := range dsContainers {
@@ -339,8 +347,10 @@ func CheckImages(man manifest.Manifest, exist bool) (bool, error) {
 		imgDetails := module.Registry
 		_, _, err := dockerCli.ImageInspectWithRaw(ctx, imgDetails.ImageName)
 		if err != nil {
-			if client.IsErrNotFound(err) && exist {
-				return false, nil
+			if client.IsErrNotFound(err) {
+				if exist {
+					return false, nil
+				}
 			} else {
 				return false, err
 			}
