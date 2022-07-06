@@ -20,7 +20,7 @@ If the node is already registered, please fill the fields `nodeId` and `nodeName
 ### Installation
 Execute this one-line installer with the path to your node configuration file:
 ```bash
-curl -s0 http://weeve-agent-dev.s3.amazonaws.com/weeve-agent-installer.sh | sh -s configpath=<path-to-config-file>
+curl -sO http://weeve-agent-dev.s3.amazonaws.com/weeve-agent-installer.sh && sh weeve-agent-installer.sh configpath=<path-to-config-file>
 ```
 
 The installer script can take the following optional parameters:
@@ -34,7 +34,7 @@ The installer script can take the following optional parameters:
 
 ### Uninstallation
 ```bash
-curl -s0 http://weeve-agent-dev.s3.amazonaws.com/weeve-agent-uninstaller.sh | sh -s
+curl -sO http://weeve-agent-dev.s3.amazonaws.com/weeve-agent-uninstaller.sh && sh weeve-agent-uninstaller.sh
 ```
 
 ## CLI parameters for weeve agent
