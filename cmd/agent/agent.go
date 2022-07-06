@@ -77,17 +77,9 @@ func main() {
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
 
-	// MAIN LOOP
+	// Start threads to send status messages
 	go monitorDataServiceStatus()
-	go func() {
-		for {
-			err = com.SendHeartbeat()
-			if err != nil {
-				log.Error(err)
-			}
-			time.Sleep(time.Second * time.Duration(com.GetHeartbeat()))
-		}
-	}()
+	go sendHeartbeat()
 
 	// Cleanup on ending the process
 	<-done
@@ -203,5 +195,15 @@ func monitorDataServiceStatus() {
 		edgeApps = latestEdgeApps
 		log.Debug("Latest edge app status: ", edgeApps)
 		time.Sleep(time.Second * time.Duration(5))
+	}
+}
+
+func sendHeartbeat() {
+	for {
+		err := com.SendHeartbeat()
+		if err != nil {
+			log.Error(err)
+		}
+		time.Sleep(time.Second * time.Duration(com.GetHeartbeat()))
 	}
 }
