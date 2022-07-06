@@ -7,23 +7,18 @@ log() {
 
 get_config(){
   if [ -z "$CONFIG_FILE" ]; then
-    read -r -p "Enter the path to the node configuration JSON file: " CONFIG_FILE
+    read -r -p "Enter the path to the node configuration JSON file: " -e CONFIG_FILE
   fi
 }
 
 validate_config(){
-  if [ -f "$CONFIG_FILE" ];then
+  CONFIG_FILE="`eval echo $CONFIG_FILE`"
+  if [ -f "$CONFIG_FILE" ]; then
     log The node configuration JSON file exists
+    CONFIG_FILE="$(cd "$(dirname "$CONFIG_FILE")" || exit; pwd)/$(basename "$CONFIG_FILE")"
   else
     log The required file containing the node configurations not found in the path: "$CONFIG_FILE"
     exit 1
-  fi
-}
-
-get_environment(){
-  # reading values from the user
-  if [ -z "$ENV" ]; then
-    read -r -p "Enter the environment in which the node is to be registered: " ENV
   fi
 }
 
@@ -70,13 +65,15 @@ check_for_agent(){
 
 validating_docker(){
   log Validating if docker is installed and running ...
-  if RESULT=$(systemctl is-active docker 2>&1); then
-    log Docker is running.
-  else
-    log Docker is not running, is docker installed?
-    log Error while validating docker: "$RESULT"
-    log To install docker, visit https://docs.docker.com/engine/install/
-    exit 1
+  if [ "$OS" = "Linux" ]; then
+    if RESULT=$(systemctl is-active docker 2>&1); then
+      log Docker is running.
+    else
+      log Docker is not running, is docker installed?
+      log Error while validating docker: "$RESULT"
+      log To install docker, visit https://docs.docker.com/engine/install/
+      exit 1
+    fi
   fi
 }
 
@@ -97,20 +94,32 @@ download_binary(){
   ARCH=$(uname -m)
   log Architecture: "$ARCH"
 
-  # detecting the architecture and downloading the respective weeve-agent binary
   case "$ARCH" in
-    "x86_64") BINARY_NAME="weeve-agent-amd64"
+    "x86_64") BINARY_ARCH="amd64"
     ;;
-    "arm" | "armv7l") BINARY_NAME="weeve-agent-arm"
+    "arm" | "armv7l") BINARY_ARCH="arm"
     ;;
-    "aarch64" | "aarch64_be" | "armv8b" | "armv8l") BINARY_NAME="weeve-agent-arm64"
+    "arm64" | "aarch64" | "aarch64_be" | "armv8b" | "armv8l") BINARY_ARCH="arm64"
     ;;
     *) log Unsupported architecture: "$ARCH"
     exit 1
     ;;
   esac
 
-  if RESULT=$(mkdir weeve-agent \
+  case "$OS" in
+    "Linux") BINARY_OS="linux"
+    ;;
+    "Darwin") BINARY_OS="macos"
+    ;;
+    *) log Unsupported OS: "$OS"
+    exit 1
+    ;;
+  esac
+
+  # downloading the respective weeve-agent binary
+  BINARY_NAME="weeve-agent-$BINARY_OS-$BINARY_ARCH"
+
+  if RESULT=$(mkdir "$WEEVE_AGENT_DIR" \
   && cd "$WEEVE_AGENT_DIR" \
   && wget http://"$S3_BUCKET".s3.amazonaws.com/"$BINARY_NAME" 2>&1); then
     log Weeve-agent binary downloaded
@@ -125,18 +134,15 @@ download_binary(){
 
 download_dependencies(){
   log Downloading the dependencies ...
-  for DEPENDENCIES in ca.crt weeve-agent.service
-  do
   if RESULT=$(cd "$WEEVE_AGENT_DIR" \
-  && wget http://"$S3_BUCKET".s3.amazonaws.com/"$DEPENDENCIES" 2>&1); then
-    log "$DEPENDENCIES" downloaded
+  && wget http://"$S3_BUCKET".s3.amazonaws.com/weeve-agent.service 2>&1 \
+  && wget https://mapi-dev.weeve.engineering/public/mqtt-ca -O ca.crt 2>&1); then
+    log Dependencies downloaded
   else
     log Error while downloading the dependencies: "$RESULT"
     CLEANUP="true"
     exit 1
   fi
-  done
-  log Dependencies downloaded.
 }
 
 write_to_service(){
@@ -160,6 +166,12 @@ write_to_service(){
     printf "WorkingDirectory=%s\n" "$WEEVE_AGENT_DIR"
     printf "ExecStart=%s\n" "$EXECUTE_BINARY"
   } >> "$WEEVE_AGENT_DIR"/weeve-agent.service
+}
+
+execute_binary(){
+  log Starting the agent binary ...
+  cd $WEEVE_AGENT_DIR
+  eval $EXECUTE_BINARY
 }
 
 start_service(){
@@ -196,19 +208,21 @@ cleanup() {
 
     log cleaning up the contents ...
 
-    if RESULT=$(systemctl is-active weeve-agent 2>&1); then
-      sudo systemctl stop weeve-agent
-      sudo systemctl daemon-reload
-      log weeve-agent service stopped
-    else
-      log weeve-agent service not running
-    fi
+    if [ "$OS" = "Linux" ]; then
+      if RESULT=$(systemctl is-active weeve-agent 2>&1); then
+        sudo systemctl stop weeve-agent
+        sudo systemctl daemon-reload
+        log weeve-agent service stopped
+      else
+        log weeve-agent service not running
+      fi
 
-    if [ -f "$SERVICE_FILE" ]; then
-      sudo rm "$SERVICE_FILE"
-      log "$SERVICE_FILE" removed
-    else
-      log "$SERVICE_FILE" doesnt exists
+      if [ -f "$SERVICE_FILE" ]; then
+        sudo rm "$SERVICE_FILE"
+        log "$SERVICE_FILE" removed
+      else
+        log "$SERVICE_FILE" doesnt exists
+      fi
     fi
 
     if [ -d "$WEEVE_AGENT_DIR" ] ; then
@@ -221,11 +235,17 @@ cleanup() {
   fi
 }
 
-# if in case the user have deleted the weeve-agent.service and did not reload the systemd daemon
-sudo systemctl daemon-reload
-
 # Delcaring and defining variables
 LOG_FILE=installer.log
+
+log Detecting the OS of the machine ...
+OS=$(uname -s)
+log Detected OS: "$OS"
+
+if [ "$OS" = "Linux" ]; then
+  # if in case the user have deleted the weeve-agent.service and did not reload the systemd daemon
+  sudo systemctl daemon-reload
+fi
 
 WEEVE_AGENT_DIR="$PWD/weeve-agent"
 
@@ -249,7 +269,6 @@ do
 
   case "$KEY" in
     "configpath") CONFIG_FILE="$VALUE" ;;
-    "environment") ENV="$VALUE" ;;
     "test") BUILD_LOCAL="$VALUE" ;;
     "broker") BROKER="$VALUE" ;;
     "loglevel") LOG_LEVEL="$VALUE" ;;
@@ -262,8 +281,6 @@ get_config
 
 validate_config
 
-get_environment
-
 get_test
 
 get_broker
@@ -273,7 +290,6 @@ get_loglevel
 get_heartbeat
 
 log All arguments are set
-log Environment is set to "$ENV"
 log Test mode is set to "$BUILD_LOCAL"
 log Broker is set to "$BROKER"
 log Log level is set to "$LOG_LEVEL"
@@ -293,6 +309,9 @@ download_dependencies
 
 write_to_service
 
-start_service
-
-tail_agent_log
+if [ "$OS" = "Linux" ]; then
+  start_service
+  tail_agent_log
+else
+  execute_binary
+fi

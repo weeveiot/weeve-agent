@@ -35,8 +35,8 @@ jobs:
       - name: copy License
         run: mv LICENSE installer-contents/LICENSE
 
-      - name: Copy contents to be ported to s3 
-        run: mv ca.crt weeve-agent.service weeve-agent-installer.sh weeve-agent-uninstaller.sh ./installer-contents
+      - name: Copy contents to be ported to s3
+        run: mv weeve-agent.service weeve-agent-installer.sh weeve-agent-uninstaller.sh ./installer-contents
 
       - name: Directory to installer-contents
         run: ls -la ./installer-contents
