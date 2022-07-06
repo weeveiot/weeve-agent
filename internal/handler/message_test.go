@@ -105,7 +105,6 @@ func TestReadDeployManifestLocalPass(t *testing.T) {
 		t.Error("Expected status message, but got error! CAUSE --> ", err)
 	}
 
-	assert.Nil(t, msg)
 	assert.NotEqual(t, nil, msg)
 }
 
