@@ -66,6 +66,11 @@ func TestProcessMessagePass(t *testing.T) {
 	err = DeployEdgeApplication(jsonBytes, man)
 	if err != nil {
 		t.Error(err)
+		err = UndeployEdgeApplication(man, dataservice.CMDRemove)
+		if err != nil {
+			t.Error(err)
+		}
+		return
 	}
 
 	err = StopEdgeApplication(man)
@@ -86,6 +91,11 @@ func TestProcessMessagePass(t *testing.T) {
 	err = DeployEdgeApplication(jsonBytes, man)
 	if err != nil {
 		t.Error(err)
+		err = UndeployEdgeApplication(man, dataservice.CMDRemove)
+		if err != nil {
+			t.Error(err)
+		}
+		return
 	}
 
 	err = ReDeployEdgeApplication(jsonBytes, man)
@@ -213,9 +223,7 @@ func StartEdgeApplication(man manifest.Manifest) error {
 }
 
 func UndeployEdgeApplication(man manifest.Manifest, operation string) error {
-
 	if operation == dataservice.CMDUndeploy || operation == dataservice.CMDRemove {
-		// Process undeploy edge application
 		manCmd.Command = operation
 	} else {
 		return errors.New("Invalid operation: " + operation)
