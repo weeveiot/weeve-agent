@@ -38,6 +38,7 @@ curl -s0 http://weeve-agent-dev.s3.amazonaws.com/weeve-agent-uninstaller.sh | sh
 ```
 
 ## CLI parameters for weeve agent
+Also use `agent -h` or `agent --help` for help.
 
 | Parameter   | Short | Required | Description                                            | Default         |
 | ----------- | ----- | -------- | ------------------------------------------------------ | --------------- |
@@ -104,7 +105,7 @@ go build -o ./bin/agent ./cmd/agent/agent.go
 ```
 and run it as
 ```bash
-./bin/agent --out --notls --broker=tls://localhost:$MQTT_PORT --heartbeat=300 --loglevel=debug --config nodeconfig.json
+./bin/agent --out --notls --broker=mqtt://localhost:$MQTT_PORT --heartbeat=300 --loglevel=debug --config nodeconfig.json
 ```
 After that use e.g. a mosquitto client to publish the messages to the broker.
 Example messages can be found in `testdata`.

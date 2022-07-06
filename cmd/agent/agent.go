@@ -90,12 +90,18 @@ func parseCLIoptions() string {
 	// The config file is used to store the agent configuration
 	// If the agent binary restarts, this file will be used to start the agent again
 	const configFileName = "nodeconfig.json"
+
 	var opt model.Params
 
 	parser := flags.NewParser(&opt, flags.Default)
-
-	if _, err := parser.Parse(); err != nil {
-		log.Fatal("Error on command line parser ", err)
+	_, err := parser.Parse()
+	if err != nil {
+		e, ok := err.(*flags.Error)
+		if ok && e.Type == flags.ErrHelp {
+			os.Exit(0)
+		}
+		parser.WriteHelp(os.Stderr)
+		os.Exit(1)
 	}
 
 	// FLAG: LogLevel
