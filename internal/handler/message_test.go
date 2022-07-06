@@ -271,7 +271,6 @@ func UndeployEdgeApplication(man manifest.Manifest, operation string) error {
 func ParseManifest(jsonParsed *gabs.Container) (manifest.Manifest, error) {
 	manifestName := jsonParsed.Search("manifestName").Data().(string)
 	versionNumber := jsonParsed.Search("versionNumber").Data().(float64)
-	command := jsonParsed.Search("command").Data().(string)
 
 	var containerConfigs []manifest.ContainerConfig
 
@@ -295,7 +294,6 @@ func ParseManifest(jsonParsed *gabs.Container) (manifest.Manifest, error) {
 		ManifestUniqueID: model.ManifestUniqueID{ManifestName: manifestName, VersionNumber: fmt.Sprint(versionNumber)},
 		VersionNumber:    versionNumber,
 		Modules:          containerConfigs,
-		Command:          command,
 	}
 
 	return manifest, nil
