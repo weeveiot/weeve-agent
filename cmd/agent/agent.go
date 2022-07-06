@@ -144,7 +144,6 @@ func parseCLIoptions() string {
 		config.ConfigPath = path.Join(ioutility.GetExeDir(), configFileName)
 	}
 	log.Debug("Loading config file from ", config.ConfigPath)
-	// config.PrintConfig()
 
 	config.UpdateNodeConfig(opt)
 

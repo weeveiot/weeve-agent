@@ -46,10 +46,6 @@ func GetRegistered() bool {
 	return params.Registered
 }
 
-func PrintConfig() {
-	fmt.Printf("%+v \n", params)
-}
-
 func writeNodeConfigToFile() {
 	encodedJson, err := json.MarshalIndent(params, "", " ")
 	if err != nil {
