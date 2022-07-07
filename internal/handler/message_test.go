@@ -13,8 +13,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
-	log "github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/handler"
@@ -36,8 +34,6 @@ var ctx = context.Background()
 var dockerCli *client.Client
 
 func TestProcessMessagePass(t *testing.T) {
-	log.Info("TESTING DEPLOYMENT...")
-
 	// Prepare test data
 	manifestPath := "../../testdata/test_manifest.json"
 	jsonBytes, err := ioutil.ReadFile(manifestPath)
@@ -63,62 +59,59 @@ func TestProcessMessagePass(t *testing.T) {
 		t.Error(err)
 	}
 
-	err = DeployEdgeApplication(jsonBytes, man)
+	fmt.Print("TESTING EDGE APPLICATION DEPLOYMENT...")
+	err = deployEdgeApplication(jsonBytes, man)
 	if err != nil {
 		t.Error(err)
-		err = UndeployEdgeApplication(man, dataservice.CMDRemove)
+		err = undeployEdgeApplication(man, dataservice.CMDRemove)
 		if err != nil {
 			t.Error(err)
 		}
 		return
 	}
 
-	err = StopEdgeApplication(man)
+	fmt.Print("TESTING STOP EDGE APPLICATION...")
+	err = stopEdgeApplication(man)
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = StartEdgeApplication(man)
+	fmt.Print("TESTING START EDGE APPLICATION...")
+	err = startEdgeApplication(man)
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = UndeployEdgeApplication(man, dataservice.CMDUndeploy)
+	fmt.Print("TESTING UNDEPLOY EDGE APPLICATION...")
+	err = undeployEdgeApplication(man, dataservice.CMDUndeploy)
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = DeployEdgeApplication(jsonBytes, man)
+	fmt.Print("TESTING REDEPLOY EDGE APPLICATION...")
+	err = deployEdgeApplication(jsonBytes, man)
 	if err != nil {
 		t.Error(err)
-		err = UndeployEdgeApplication(man, dataservice.CMDRemove)
+		err = undeployEdgeApplication(man, dataservice.CMDRemove)
 		if err != nil {
 			t.Error(err)
 		}
 		return
 	}
 
-	err = ReDeployEdgeApplication(jsonBytes, man)
+	err = reDeployEdgeApplication(jsonBytes, man)
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = UndeployEdgeApplication(man, dataservice.CMDRemove)
+	fmt.Print("TESTING REMOVE EDGE APPLICATION...")
+	err = undeployEdgeApplication(man, dataservice.CMDRemove)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
-func TestGetStatusMessagePass(t *testing.T) {
-	msg, err := handler.GetStatusMessage()
-	if err != nil {
-		t.Error("Expected status message, but got error! CAUSE --> ", err)
-	}
-
-	assert.NotEqual(t, nil, msg)
-}
-
-func DeployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
+func deployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
 	// Process deploy edge application
 	err := handler.ProcessMessage(jsonBytes)
 	if err != nil {
@@ -143,7 +136,7 @@ func DeployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
 	return nil
 }
 
-func ReDeployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
+func reDeployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
 	jsonParsed, err := gabs.ParseJSON(jsonBytes)
 	if err != nil {
 		return err
@@ -180,7 +173,7 @@ func ReDeployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
 	return nil
 }
 
-func StopEdgeApplication(man manifest.Manifest) error {
+func stopEdgeApplication(man manifest.Manifest) error {
 	// Process stop edge application
 	manCmd.Command = dataservice.CMDStopService
 	jsonB, err := json.Marshal(manCmd)
@@ -201,7 +194,7 @@ func StopEdgeApplication(man manifest.Manifest) error {
 	return nil
 }
 
-func StartEdgeApplication(man manifest.Manifest) error {
+func startEdgeApplication(man manifest.Manifest) error {
 	// Process start edge application
 	manCmd.Command = dataservice.CMDStartService
 	jsonB, err := json.Marshal(manCmd)
@@ -222,7 +215,7 @@ func StartEdgeApplication(man manifest.Manifest) error {
 	return nil
 }
 
-func UndeployEdgeApplication(man manifest.Manifest, operation string) error {
+func undeployEdgeApplication(man manifest.Manifest, operation string) error {
 	if operation == dataservice.CMDUndeploy || operation == dataservice.CMDRemove {
 		manCmd.Command = operation
 	} else {
