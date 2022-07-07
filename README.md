@@ -99,20 +99,28 @@ Edit `nodeconfig.json` and fill the fields `NodeId` and `NodeName` with unique v
 }
 ```
 
-Build the agent binary from the project root folder
+Build the agent binary from the project root folder;
+
 ```bash
-go build -o ./bin/agent ./cmd/agent/agent.go
+go build -o ./build/agent ./cmd/agent/agent.go
 ```
-and run it as
+
+And run it locally with your preffered configuration, for example;
+
 ```bash
-./bin/agent --out --notls --broker=mqtt://localhost:$MQTT_PORT --heartbeat=300 --loglevel=debug --config nodeconfig.json
+./build/agent --out --notls --broker=mqtt://localhost:$MQTT_PORT --heartbeat=300 --loglevel=debug --config nodeconfig.json
 ```
-After that use e.g. a mosquitto client to publish the messages to the broker.
+
+The mosquitto client can be used to publish the messages to the agent.
+
 Example messages can be found in `testdata`.
+
 ```bash
 mosquitto_pub -L mqtt://localhost:$MQTT_PORT/<nodeId>/orchestration -f test_manifest.json
 ```
+
 You can observe the agent's status messages by subscribing to the corresponding topic:
+
 ```bash
 mosquitto_sub -L mqtt://localhost:$MQTT_PORT/<nodeId>/nodestatus
 ```
