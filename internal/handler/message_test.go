@@ -109,7 +109,7 @@ func TestProcessMessagePass(t *testing.T) {
 	}
 }
 
-func TestReadDeployManifestLocalPass(t *testing.T) {
+func TestGetStatusMessagePass(t *testing.T) {
 	msg, err := handler.GetStatusMessage()
 	if err != nil {
 		t.Error("Expected status message, but got error! CAUSE --> ", err)
@@ -244,7 +244,7 @@ func UndeployEdgeApplication(man manifest.Manifest, operation string) error {
 	}
 
 	if len(net) <= 0 {
-		dsContainers, _ := docker.ReadDataServiceContainers(man.ManifestUniqueID)
+		dsContainers, _ := GetEdgeApplicationContainers(man.ManifestUniqueID)
 		if len(dsContainers) > 0 {
 			return errors.New("Edge application undeployment failed, containers not deleted")
 		}
