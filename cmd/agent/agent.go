@@ -37,7 +37,8 @@ func (f *PlainFormatter) Format(entry *log.Entry) ([]byte, error) {
 	return []byte(fmt.Sprintf("%s %s : %s\n", timestamp, entry.Level, entry.Message)), nil
 }
 
-// logging into the terminal and files
+// The init function in the main package is called before anything else
+// Setup the logging here
 func init() {
 	const dateTimeFormat = "2006-01-02 15:04:05"
 
@@ -46,6 +47,8 @@ func init() {
 	log.SetFormatter(plainFormatter)
 }
 
+// The main package is a special package which is used with the programs that are executable and this package contains main() function
+// The entrypoint for this binary
 func main() {
 	localManifest := parseCLIoptions()
 
@@ -74,17 +77,9 @@ func main() {
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
 
-	// MAIN LOOP
+	// Start threads to send status messages
 	go monitorDataServiceStatus()
-	go func() {
-		for {
-			err = com.SendHeartbeat()
-			if err != nil {
-				log.Error(err)
-			}
-			time.Sleep(time.Second * time.Duration(com.GetHeartbeat()))
-		}
-	}()
+	go sendHeartbeat()
 
 	// Cleanup on ending the process
 	<-done
@@ -92,13 +87,21 @@ func main() {
 }
 
 func parseCLIoptions() string {
+	// The config file is used to store the agent configuration
+	// If the agent binary restarts, this file will be used to start the agent again
 	const configFileName = "nodeconfig.json"
+
 	var opt model.Params
 
 	parser := flags.NewParser(&opt, flags.Default)
-
-	if _, err := parser.Parse(); err != nil {
-		log.Fatal("Error on command line parser ", err)
+	_, err := parser.Parse()
+	if err != nil {
+		e, ok := err.(*flags.Error)
+		if ok && e.Type == flags.ErrHelp {
+			os.Exit(0)
+		}
+		parser.WriteHelp(os.Stderr)
+		os.Exit(1)
 	}
 
 	// FLAG: LogLevel
@@ -130,8 +133,8 @@ func parseCLIoptions() string {
 		mqtt.DEBUG = golog.New(logger, "[DEBUG] ", 0)
 	}
 
-	log.Info("Started logging!")
-	log.Info("Logging level set to ", log.GetLevel(), "!")
+	log.Info("Started logging")
+	log.Info("Logging level set to ", log.GetLevel())
 
 	// FLAG: ConfigPath
 	if len(opt.ConfigPath) > 0 {
@@ -140,6 +143,8 @@ func parseCLIoptions() string {
 		// use the default path and filename
 		config.ConfigPath = path.Join(ioutility.GetExeDir(), configFileName)
 	}
+	log.Debug("Loading config file from ", config.ConfigPath)
+
 	config.UpdateNodeConfig(opt)
 
 	// FLAG: Broker
@@ -195,5 +200,15 @@ func monitorDataServiceStatus() {
 		edgeApps = latestEdgeApps
 		log.Debug("Latest edge app status: ", edgeApps)
 		time.Sleep(time.Second * time.Duration(5))
+	}
+}
+
+func sendHeartbeat() {
+	for {
+		err := com.SendHeartbeat()
+		if err != nil {
+			log.Error(err)
+		}
+		time.Sleep(time.Second * time.Duration(com.GetHeartbeat()))
 	}
 }

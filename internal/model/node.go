@@ -1,7 +1,7 @@
 package model
 
 type Params struct {
-	Stdout       bool   `long:"out" description:"Print logs to stdout"`
+	Stdout       bool   `long:"out" description:"Print logs to stdout" required:"false"`
 	Broker       string `long:"broker" short:"b" description:"Broker to connect" required:"true"`
 	Heartbeat    int    `long:"heartbeat" short:"t" description:"Heartbeat time in seconds" required:"false" default:"30"`
 	MqttLogs     bool   `long:"mqttlogs" short:"m" description:"For developer - Display detailed MQTT logging messages" required:"false"`
