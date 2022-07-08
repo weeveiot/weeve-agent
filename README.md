@@ -2,7 +2,7 @@
 The weeve agent is a lightweight service to orchestrate edge applications.
 An edge application is defined in a manifest file and consists of several interconnected docker containers (modules), building a data pipeline.
 The edge applications are orchestrated by the Manager API (MAPI) over MQTT.
-With the orchestration messages MAPI is able to deploy, undeploy, start, stop and remove edge applications on a node.
+With the orchestration messages MAPI is able to deploy, pause, resume, undeploy and remove edge applications on a node.
 The agent periodically publishes status messages over MQTT back to MAPI to monitor the state of the edge apps running on the node.
 
 ## Quick-start

@@ -14,8 +14,8 @@ import (
 const CMDDeploy = "DEPLOY"
 const CMDReDeploy = "REDEPLOY"
 const CMDDeployLocal = "LOCAL_DEPLOY"
-const CMDStopService = "STOP"
-const CMDStartService = "START"
+const CMDStopService = "PAUSE"
+const CMDStartService = "RESUME"
 const CMDUndeploy = "UNDEPLOY"
 const CMDRemove = "REMOVE"
 
