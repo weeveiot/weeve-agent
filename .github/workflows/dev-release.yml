@@ -1,0 +1,45 @@
+name: dev-release
+on:
+  push:
+    branches:
+    - dev
+jobs:
+  push-to-s3:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Setup golang
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Manage cache
+        uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Create build directory
+        run: mkdir -p installer-contents
+
+      - name: Build cross compilation binary
+        run: make cross
+
+      - name: Copy contents to be ported to s3
+        run: mv weeve-agent.service weeve-agent-installer.sh weeve-agent-uninstaller.sh ./installer-contents
+
+      - name: Directory to installer-contents
+        run: ls -la ./installer-contents
+
+      - name: Release Binary to S3
+        uses: jakejarvis/s3-sync-action@master
+        env:
+          AWS_S3_BUCKET: weeve-agent-dev
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: eu-central-1
+          SOURCE_DIR: ./installer-contents

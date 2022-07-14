@@ -1,66 +1,33 @@
-package docker
+package docker_test
 
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
-	"os"
-	"path"
-	"path/filepath"
-	"runtime"
 	"testing"
 
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
-	// _ "gitlab.com/weeve/edge-server/edge-pipeline-service/testing"
+	"github.com/Jeffail/gabs/v2"
+	"github.com/weeveiot/weeve-agent/internal/manifest"
 )
-
-var manifestBytesMVP []byte
-
-func TestMain(m *testing.M) {
-
-	fullManifestPath := "/testdata/pipeline_integration_public/workingMVP.json"
-	manifestBytesMVP = LoadJsonBytes(fullManifestPath)
-	// manifestBytesMVP = LoadJsonBytes("./testdata/pipeline_integration_public/workingMVP.json")
-	code := m.Run()
-
-	os.Exit(code)
-
-	// manifest := ParseJSONManifest(manifestBytes)
-	// fmt.Println(manifest
-}
-
-func LoadJsonBytes(filePath string) []byte {
-	var (
-		_, b, _, _ = runtime.Caller(0)
-	)
-	root := filepath.Join(filepath.Dir(b), "../..")
-
-	manifestPath := path.Join(root, filePath)
-	//fmt.Println("Loading manifest from ", manifestPath)
-
-	var err error = nil
-	manifestBytes, err := ioutil.ReadFile(manifestPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return manifestBytes
-}
 
 // Unit function to validate negative tests
 func TestImageExists(t *testing.T) {
-	thisFilePath := "/testdata/pipeline_integration_public/failEmptyServices.json"
-	json := LoadJsonBytes(thisFilePath)
-	m, err := model.ParseJSONManifest(json)
+	thisFilePath := "../../testdata/pipeline_integration_public/failEmptyServices.json"
+	json, err := ioutil.ReadFile(thisFilePath)
+	if err != nil {
+		t.Error(err)
+	}
+
+	jsonParsed, err := gabs.ParseJSON(json)
+	if err != nil {
+		t.Error(err.Error())
+	}
+
+	m, err := manifest.GetManifest(jsonParsed)
 	if err != nil {
 		t.Error("Json parsing failed")
 	}
 
-	for _, srv := range m.Manifest.Search("services").Children() {
-		moduleID := srv.Search("moduelId").Data()
-		serviceName := srv.Search("name").Data()
-		imageName := srv.Search("image").Search("name").Data()
-		imageTag := srv.Search("image").Search("tag").Data()
-
-		fmt.Println("Service:", moduleID, serviceName, imageName, imageTag)
+	for _, module := range m.Modules {
+		fmt.Println("Service:", module.ImageName, module.ImageTag)
 	}
 }

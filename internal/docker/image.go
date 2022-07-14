@@ -1,8 +1,8 @@
-// data_access
+//go:build !secunet
+
 package docker
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -10,44 +10,30 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/client"
-	"gitlab.com/weeve/edge-server/edge-pipeline-service/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/manifest"
 
 	log "github.com/sirupsen/logrus"
 )
 
-func PullImage(imgDetails model.RegistryDetails) error {
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-
+func PullImage(imgDetails manifest.RegistryDetails) error {
 	authConfig := types.AuthConfig{
-		Username: imgDetails.UserName,
-		Password: imgDetails.Password,
+		Username:      imgDetails.UserName,
+		Password:      imgDetails.Password,
+		ServerAddress: imgDetails.Url,
 	}
 
 	encodedJSON, err := json.Marshal(authConfig)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
 
-	events, err := cli.ImagePull(ctx, imgDetails.ImageName, types.ImagePullOptions{RegistryAuth: authStr})
+	events, err := dockerClient.ImagePull(ctx, imgDetails.ImageName, types.ImagePullOptions{RegistryAuth: authStr})
 	if err != nil {
-		log.Error(err)
 		return err
 	}
-	// defer out.Close()
-
-	// To write all
-	//io.Copy(os.Stdout, out)
 
 	d := json.NewDecoder(events)
 
@@ -67,7 +53,6 @@ func PullImage(imgDetails model.RegistryDetails) error {
 			if err == io.EOF {
 				break
 			}
-			log.Error(err)
 			return err
 		}
 	}
@@ -89,82 +74,23 @@ func PullImage(imgDetails model.RegistryDetails) error {
 }
 
 // Check if the image exists in the local context
-// Return bool
-func ImageExists(id string) (bool, error) {
-	image, err := ReadImage(id)
-
+// Return an error only if something went wrong, if the image is not found the error is nil
+func ImageExists(imageName string) (bool, error) {
+	_, _, err := dockerClient.ImageInspectWithRaw(ctx, imageName)
 	if err != nil {
-		return false, err
-	}
-
-	if image.ID != "" {
-		return true, nil
-	} else {
-		return false, nil
-	}
-}
-
-// To be listed for selection of images in management app
-func ReadAllImages() []types.ImageSummary {
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-
-	images, err := cli.ImageList(ctx, types.ImageListOptions{})
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-
-	if false {
-		for _, image := range images {
-			fmt.Println(image.ID)
+		if client.IsErrNotFound(err) {
+			return false, nil
+		} else {
+			return false, err
 		}
 	}
-
-	return images
+	return true, nil
 }
 
-// ReadImage by ImageId
-func ReadImage(id string) (types.ImageInspect, error) {
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+func ImageRemove(imageID string) error {
+	_, err := dockerClient.ImageRemove(ctx, imageID, types.ImageRemoveOptions{})
 	if err != nil {
-		log.Error(err)
-		return types.ImageInspect{}, err
+		return err
 	}
-
-	images, bytes, err := cli.ImageInspectWithRaw(ctx, id)
-	if err != nil && bytes != nil {
-		log.Error(err)
-		return types.ImageInspect{}, err
-	}
-
-	return images, nil
-}
-
-// SearchImages returns images based on filter (Currently working without filters)
-func SearchImages(term string, id string, tag string) []registry.SearchResult {
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-
-	var searchFilter filters.Args
-	options := types.ImageSearchOptions{Filters: searchFilter, Limit: 5}
-	images, err := cli.ImageSearch(ctx, term, options)
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-
-	for k, image := range images {
-		fmt.Println(k, image)
-	}
-	return images
+	return nil
 }

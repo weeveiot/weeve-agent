@@ -1,34 +1,21 @@
-#########################################
-### BUILDER
-#########################################
-FROM golang:1.15-alpine3.12 as builder
+FROM --platform=${BUILDPLATFORM} golang:latest AS build
+WORKDIR /
+ENV CGO_ENABLED=0
+COPY . .
+ARG TARGETOS
+ARG TARGETARCH
 
-RUN apk add --no-cache git tree
-#\
-#  && mkdir -p /opt/node-service
 
-# RUN mkdir /app
-# COPY ./cmd ./internal /app/
-# COPY go.mod go.sum /app/
-COPY . /app/
-WORKDIR /app/
-
+# ADD / /app
+# WORKDIR /
+# go env -w GO111MODULE=auto
+COPY go.mod ./
+COPY go.sum ./
+COPY cmd/ ./
+COPY go.mod go.sum cmd/ internal/ ./
 # RUN go get -d -v
-RUN go build ./cmd/node-service.go
+RUN go mod download
 
-#########################################
-### DIST IMAGE
-#########################################
-FROM alpine
-
-LABEL service="node-service"
-
-# install deps
-# RUN apk add --no-cache --no-progress curl tini ca-certificates
-
-# copy node-service binary
-COPY --from=builder /app/node-service /usr/bin/node-service
-
-# ENTRYPOINT ["/sbin/tini", "--"]
-ENTRYPOINT [ "node-service" ]
-# CMD ["node-service"]
+# RUN go build -o weeve_agent cmd/agent/agent.go
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o weeve_agent cmd/agent/agent.go
+ENTRYPOINT ["cmd/agent/agent.go"]
