@@ -20,13 +20,14 @@ If the node is already registered, please fill the fields `nodeId` and `nodeName
 ### Installation
 Execute this one-line installer with the path to your node configuration file:
 ```bash
-curl -sO http://weeve-agent-dev.s3.amazonaws.com/weeve-agent-installer.sh && sh weeve-agent-installer.sh configpath=<path-to-config-file>
+curl -sO http://weeve-agent-dev.s3.amazonaws.com/weeve-agent-installer.sh && sh weeve-agent-installer.sh configpath=<path-to-config-file> release=prod
 ```
 
 The installer script can take the following optional parameters:
 | Parameter   | Required | Description                                                  | Possible Values                       | Default   |
 | ----------- | -------- | ------------------------------------------------------------ | ------------------------------------- | --------- |
-| configpath  | false    | path of the JSON file with node configuration                |                                       |           |
+| configpath  | true     | path of the JSON file with node configuration                |                                       |           |
+| release     | true     | path of the JSON file with node configuration                | prod, dev                             |           |
 | test        | false    | set to 'true' to build agent from local and run              | false, true                           | false     |
 | broker      | false    | URL of the MQTT broker to connect                            |                                       |           |
 | loglevel    | false    | level of log verbosity                                       | debug, info, warning, error           | info      |

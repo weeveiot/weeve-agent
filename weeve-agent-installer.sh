@@ -7,7 +7,7 @@ log() {
 
 get_config(){
   if [ -z "$CONFIG_FILE" ]; then
-    read -r -p "Enter the path to the node configuration JSON file: " -e CONFIG_FILE
+    read -r -p "Enter the path to the node configuration JSON file: " CONFIG_FILE
   fi
 }
 
@@ -22,6 +22,12 @@ validate_config(){
   fi
 }
 
+get_release(){
+  while [ "$RELEASE" != "prod" -a "$RELEASE" != "dev" ]; do
+    read -r -p "Enter the release type (prod or dev) or specify the test flag: " RELEASE
+  done
+}
+
 get_test(){
   if [ -z "$BUILD_LOCAL" ]; then
     BUILD_LOCAL="false"
@@ -30,7 +36,7 @@ get_test(){
 
 get_broker(){
   if [ -z "$BROKER" ]; then
-    BROKER="tls://mapi-dev.weeve.engineering:8883"
+    BROKER="tls://mapi-$RELEASE.weeve.engineering:8883"
   fi
 }
 
@@ -42,7 +48,7 @@ get_loglevel(){
 
 get_heartbeat(){
   if [ -z "$HEARTBEAT" ]; then
-    HEARTBEAT="300"
+    HEARTBEAT="10"
   fi
 }
 
@@ -75,6 +81,14 @@ validating_docker(){
       exit 1
     fi
   fi
+}
+
+get_bucket_name(){
+    if [ "$RELEASE" = "prod" ]; then
+      S3_BUCKET="weeve-agent"
+    elif [ "$RELEASE" = "dev" ]; then
+      S3_BUCKET="weeve-agent-dev"
+    fi
 }
 
 build_test_binary(){
@@ -136,7 +150,7 @@ download_dependencies(){
   log Downloading the dependencies ...
   if RESULT=$(cd "$WEEVE_AGENT_DIR" \
   && wget http://"$S3_BUCKET".s3.amazonaws.com/weeve-agent.service 2>&1 \
-  && wget https://mapi-dev.weeve.engineering/public/mqtt-ca -O ca.crt 2>&1); then
+  && wget https://mapi-"$RELEASE".weeve.engineering/public/mqtt-ca -O ca.crt 2>&1); then
     log Dependencies downloaded
   else
     log Error while downloading the dependencies: "$RESULT"
@@ -251,12 +265,6 @@ WEEVE_AGENT_DIR="$PWD/weeve-agent"
 
 SERVICE_FILE=/lib/systemd/system/weeve-agent.service
 
-BUILD_LOCAL=""
-
-S3_BUCKET="weeve-agent-dev"
-
-BINARY_NAME=""
-
 CLEANUP="false"
 
 trap cleanup EXIT
@@ -269,6 +277,7 @@ do
 
   case "$KEY" in
     "configpath") CONFIG_FILE="$VALUE" ;;
+    "release") RELEASE="$VALUE" ;;
     "test") BUILD_LOCAL="$VALUE" ;;
     "broker") BROKER="$VALUE" ;;
     "loglevel") LOG_LEVEL="$VALUE" ;;
@@ -282,6 +291,12 @@ get_config
 validate_config
 
 get_test
+
+if [ "$BUILD_LOCAL" = "false" ]; then
+  get_release
+
+  get_bucket_name
+fi
 
 get_broker
 
