@@ -23,7 +23,7 @@ validate_config(){
 }
 
 get_release(){
-  while [ "$RELEASE" != "prod" ] && [ "$RELEASE" != "dev" ]; do
+  while [ "$RELEASE" != "prod" -a "$RELEASE" != "dev" ]; do
     read -r -p "Enter the release type (prod or dev) or specify the test flag: " RELEASE
   done
 }
