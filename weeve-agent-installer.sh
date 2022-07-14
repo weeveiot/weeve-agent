@@ -42,7 +42,7 @@ get_loglevel(){
 
 get_heartbeat(){
   if [ -z "$HEARTBEAT" ]; then
-    HEARTBEAT="300"
+    HEARTBEAT="10"
   fi
 }
 
