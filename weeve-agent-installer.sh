@@ -115,6 +115,10 @@ build_test_binary(){
   fi
 }
 
+copy_dependencies(){
+  cp weeve-agent.service ca.crt "$WEEVE_AGENT_DIR"
+}
+
 download_binary(){
   log Detecting the architecture of the machine ...
   ARCH=$(uname -m)
@@ -309,7 +313,7 @@ if [ "$BUILD_LOCAL" = "false" ]; then
 
   get_bucket_name
 else
-  RELEASE = "dev"
+  RELEASE="dev"
 fi
 
 set_weeve_url
@@ -332,11 +336,13 @@ validating_docker
 
 if [ "$BUILD_LOCAL" = "true" ]; then
   build_test_binary
+
+  copy_dependencies
 else
   download_binary
-fi
 
-download_dependencies
+  download_dependencies
+fi
 
 write_to_service
 
