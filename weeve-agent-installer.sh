@@ -32,11 +32,15 @@ get_test(){
   if [ -z "$BUILD_LOCAL" ]; then
     BUILD_LOCAL="false"
   fi
+
+  while [ "$BUILD_LOCAL" != "true" -a "$BUILD_LOCAL" != "false" ]; do
+    read -r -p "Should weeve agent be built from local sources [true, false]?: " BUILD_LOCAL
+  done
 }
 
 get_broker(){
   if [ -z "$BROKER" ]; then
-    BROKER="tls://mapi-$RELEASE.weeve.engineering:8883"
+    BROKER="tls://$WEEVE_URL:8883"
   fi
 }
 
@@ -91,6 +95,14 @@ get_bucket_name(){
     fi
 }
 
+set_weeve_url(){
+    if [ "$RELEASE" = "prod" ]; then
+      WEEVE_URL="mapi-"$RELEASE".weeve.network"
+    elif [ "$RELEASE" = "dev" ]; then
+      WEEVE_URL="mapi-"$RELEASE".weeve.engineering"
+    fi
+}
+
 build_test_binary(){
   if RESULT=$(go build -o "$WEEVE_AGENT_DIR"/test-agent cmd/agent/agent.go 2>&1); then
     log built weeve-agent binary for testing
@@ -101,6 +113,10 @@ build_test_binary(){
     log Error occured while building binary for testing: "$RESULT"
     exit 1
   fi
+}
+
+copy_dependencies(){
+  cp weeve-agent.service ca.crt "$WEEVE_AGENT_DIR"
 }
 
 download_binary(){
@@ -150,7 +166,7 @@ download_dependencies(){
   log Downloading the dependencies ...
   if RESULT=$(cd "$WEEVE_AGENT_DIR" \
   && wget http://"$S3_BUCKET".s3.amazonaws.com/weeve-agent.service 2>&1 \
-  && wget https://mapi-"$RELEASE".weeve.engineering/public/mqtt-ca -O ca.crt 2>&1); then
+  && wget https://"$WEEVE_URL"/public/mqtt-ca -O ca.crt 2>&1); then
     log Dependencies downloaded
   else
     log Error while downloading the dependencies: "$RESULT"
@@ -296,7 +312,11 @@ if [ "$BUILD_LOCAL" = "false" ]; then
   get_release
 
   get_bucket_name
+else
+  RELEASE="dev"
 fi
+
+set_weeve_url
 
 get_broker
 
@@ -316,11 +336,13 @@ validating_docker
 
 if [ "$BUILD_LOCAL" = "true" ]; then
   build_test_binary
+
+  copy_dependencies
 else
   download_binary
-fi
 
-download_dependencies
+  download_dependencies
+fi
 
 write_to_service
 
