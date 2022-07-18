@@ -20,15 +20,17 @@ const topicOrchestration = "orchestration"
 const topicNodeStatus = "nodestatus"
 
 var params struct {
-	Broker    string
-	NoTLS     bool
-	Heartbeat int
+	Broker     string
+	NoTLS      bool
+	Heartbeat  int
+	Disconnect bool
 }
 
 func SetParams(opt model.Params) {
 	params.Broker = opt.Broker
 	params.NoTLS = opt.NoTLS
 	params.Heartbeat = opt.Heartbeat
+	params.Disconnect = opt.Disconnect
 
 	log.Debugf("Set the following MQTT params: %+v", params)
 }
@@ -50,7 +52,7 @@ func SendHeartbeat() error {
 	}
 
 	nodeStatusTopic := topicNodeStatus + "/" + config.GetNodeId()
-	msg, err := handler.GetStatusMessage()
+	msg, err := handler.GetStatusMessage(params.Disconnect)
 	if err != nil {
 		return err
 	}

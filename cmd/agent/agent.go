@@ -50,7 +50,7 @@ func init() {
 // The main package is a special package which is used with the programs that are executable and this package contains main() function
 // The entrypoint for this binary
 func main() {
-	localManifest := parseCLIoptions()
+	localManifest, undeploy, disconnect := parseCLIoptions()
 
 	manifest.InitKnownManifests()
 
@@ -73,6 +73,19 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if undeploy == true {
+		undeployAll()
+	}
+
+	if disconnect == true {
+		undeployAll()
+		err = com.SendHeartbeat()
+		if err != nil {
+			log.Error(err)
+		}
+		os.Exit(0)
+	}
+
 	// Kill the agent on a keyboard interrupt
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
@@ -86,7 +99,7 @@ func main() {
 	com.DisconnectNode()
 }
 
-func parseCLIoptions() string {
+func parseCLIoptions() (string, bool, bool) {
 	// The config file is used to store the agent configuration
 	// If the agent binary restarts, this file will be used to start the agent again
 	const configFileName = "nodeconfig.json"
@@ -166,7 +179,7 @@ func parseCLIoptions() string {
 	// FLAG: Broker, NoTLS, Heartbeat, TopicName
 	com.SetParams(opt)
 
-	return opt.ManifestPath
+	return opt.ManifestPath, opt.UndeployAll, opt.Disconnect
 }
 
 func validateBrokerUrl(u *url.URL) {
@@ -210,5 +223,13 @@ func sendHeartbeat() {
 			log.Error(err)
 		}
 		time.Sleep(time.Second * time.Duration(com.GetHeartbeat()))
+	}
+}
+
+func undeployAll() {
+	log.Info("Undeploying all the edge applications ...")
+	err := handler.UndeployAll()
+	if err != nil {
+		log.Fatal(err)
 	}
 }

@@ -146,7 +146,7 @@ func ProcessMessage(payload []byte) error {
 	return nil
 }
 
-func GetStatusMessage() (statusMessage, error) {
+func GetStatusMessage(Disconnect bool) (statusMessage, error) {
 	edgeApps, err := GetDataServiceStatus()
 
 	deviceParams := deviceParams{}
@@ -186,6 +186,10 @@ func GetStatusMessage() (statusMessage, error) {
 	nodeStatus := model.NodeAlarm
 	if config.GetRegistered() {
 		nodeStatus = model.NodeConnected
+	}
+
+	if Disconnect {
+		nodeStatus = model.NodeDisconnected
 	}
 
 	msg := statusMessage{
