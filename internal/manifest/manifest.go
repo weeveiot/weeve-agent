@@ -309,7 +309,7 @@ func ValidateManifest(jsonParsed *gabs.Container) error {
 	modules := jsonParsed.Search("modules").Children()
 	// Check if manifest contains modules
 	if modules == nil || len(modules) < 1 {
-		errorList = append(errorList, "Modules should not be empty")
+		errorList = append(errorList, "Please provide manifest module/s")
 	} else {
 		for _, module := range modules {
 			imageName := module.Search("image").Search("name").Data()
