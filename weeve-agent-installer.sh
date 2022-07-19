@@ -12,7 +12,7 @@ get_config(){
 }
 
 validate_config(){
-  CONFIG_FILE="`eval echo $CONFIG_FILE`"
+  CONFIG_FILE="$(eval echo "$CONFIG_FILE")"
   if [ -f "$CONFIG_FILE" ]; then
     log The node configuration JSON file exists
     CONFIG_FILE="$(cd "$(dirname "$CONFIG_FILE")" || exit; pwd)/$(basename "$CONFIG_FILE")"
@@ -23,7 +23,7 @@ validate_config(){
 }
 
 get_release(){
-  while [ "$RELEASE" != "prod" -a "$RELEASE" != "dev" ]; do
+  while [ "$RELEASE" != "prod" ] && [ "$RELEASE" != "dev" ]; do
     read -r -p "Enter the release type (prod or dev) or specify the test flag: " RELEASE
   done
 }
@@ -33,7 +33,7 @@ get_test(){
     BUILD_LOCAL="false"
   fi
 
-  while [ "$BUILD_LOCAL" != "true" -a "$BUILD_LOCAL" != "false" ]; do
+  while [ "$BUILD_LOCAL" != "true" ] && [ "$BUILD_LOCAL" != "false" ]; do
     read -r -p "Should weeve agent be built from local sources [true, false]?: " BUILD_LOCAL
   done
 }
@@ -97,9 +97,9 @@ get_bucket_name(){
 
 set_weeve_url(){
     if [ "$RELEASE" = "prod" ]; then
-      WEEVE_URL="mapi-"$RELEASE".weeve.network"
+      WEEVE_URL="mapi-$RELEASE.weeve.network"
     elif [ "$RELEASE" = "dev" ]; then
-      WEEVE_URL="mapi-"$RELEASE".weeve.engineering"
+      WEEVE_URL="mapi-$RELEASE.weeve.engineering"
     fi
 }
 
@@ -194,14 +194,14 @@ write_to_service(){
   log Adding the binary path to service file ...
   {
     printf "WorkingDirectory=%s\n" "$WEEVE_AGENT_DIR"
-    printf "ExecStart=%s\n" "$EXECUTE_BINARY"
+    printf "ExecStart=%s" "$EXECUTE_BINARY"
   } >> "$WEEVE_AGENT_DIR"/weeve-agent.service
 }
 
 execute_binary(){
   log Starting the agent binary ...
-  cd $WEEVE_AGENT_DIR
-  eval $EXECUTE_BINARY
+  cd "$WEEVE_AGENT_DIR"
+  eval "$EXECUTE_BINARY"
 }
 
 start_service(){
@@ -214,9 +214,6 @@ start_service(){
     log Weeve-agent is initiated ...
   else
     log Error while starting the weeve-agent service: "$RESULT"
-    log For good measure please check:
-    log   1. if the file contains the access token
-    log   2. if the access token in github is not expired
     CLEANUP="true"
     exit 1
   fi

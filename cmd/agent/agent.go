@@ -73,16 +73,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if undeploy == true {
+	if undeploy {
 		undeployAll()
 	}
 
-	if disconnect == true {
+	if disconnect {
 		undeployAll()
 		err = com.SendHeartbeat()
 		if err != nil {
 			log.Error(err)
 		}
+		log.Info("weeve agent disconnected")
 		os.Exit(0)
 	}
 
