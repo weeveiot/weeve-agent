@@ -3,6 +3,7 @@ package manifest_test
 import (
 	"fmt"
 	"io/ioutil"
+	"strings"
 	"testing"
 
 	"github.com/Jeffail/gabs/v2"
@@ -11,114 +12,96 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 )
 
-var filePath string
-var errMsg string
-
-const invalidJSON = "../../testdata/pipeline_unit/failInvalidJSON.json"
 const mvpManifest = "../../testdata/manifest/mvp-manifest.json"
 const sampleManifestBytesMVP = "../../testdata/manifest/test_manifest_3broker.json"
 
-// Unit function to validate negative tests
-func ExecuteFailTest(t *testing.T) {
+// Utility function to run ValidateManifest tests
+func utilTestValidateManifest(filePath string, errMsg error, pass bool) error {
 	json, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		t.Error(err)
+		return err
 	}
 
 	jsonParsed, err := gabs.ParseJSON(json)
 	if err != nil {
-		t.Error(err.Error())
+		return err
 	}
 
 	err = manifest.ValidateManifest(jsonParsed)
-	if err == nil {
-		t.Error(errMsg)
+	if (err == nil && !pass) ||
+		(err != nil && pass) ||
+		(!strings.Contains(err.Error(), errMsg.Error()) && !pass) {
+		return fmt.Errorf("Expected error %s, but recieved %s", errMsg, err.Error())
 	}
+
+	return nil
 }
 
-// Unit function to validate positive tests
-func ExecutePassTest(t *testing.T) {
-	json, err := ioutil.ReadFile(filePath)
+func TestValidateManifest_EmptyManifestID(t *testing.T) {
+	errMsg := "Please provide manifest id"
+	filePath := "../../testdata/unittests/failEmptyManifestID.json"
+	err := utilTestValidateManifest(filePath, fmt.Errorf(errMsg), false)
 	if err != nil {
 		t.Error(err)
 	}
-
-	jsonParsed, err := gabs.ParseJSON(json)
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	err = manifest.ValidateManifest(jsonParsed)
-	if err != nil {
-		t.Error(err.Error())
-	}
 }
 
-func TestInvalidJson(t *testing.T) {
-	json, err := ioutil.ReadFile(invalidJSON)
-	if err != nil {
-		t.Error(err)
-	}
+// func TestValidateManifest_MissingModules(t *testing.T) {
+// 	errMsg := "Modules should not be empty"
+// 	jsonParsed, err := parseJson("../../testdata/unittests/failMissingModules.json")
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
 
-	_, err = gabs.ParseJSON(json)
-	if err == nil {
-		t.Error(err.Error())
-	}
-}
+// 	err = manifest.ValidateManifest(jsonParsed)
+// 	if err == nil {
+// 		t.Errorf("Expected error %s, but recieved %s", errMsg, "nil")
+// 	} else if !strings.Contains(err.Error(), errMsg) {
+// 		t.Errorf("Expected error %s, but recieved %s", errMsg, err.Error())
+// 	}
+// }
 
-func TestMissingCompose(t *testing.T) {
-	filePath = "testdata/pipeline_unit/failMissingCompose.json"
-	errMsg = "Should throw validation error: Please provide compose"
-	ExecuteFailTest(t)
-}
+// func TestValidateManifest_EmptyModules(t *testing.T) {
+// 	filePath = "../../testdata/unittests/failEmptyModules.json"
+// 	errMsg = "Should throw validation error: Please provide at least one service"
+// 	ExecuteFailTest(t)
+// }
 
-func TestMissingNetwork(t *testing.T) {
-	filePath = "testdata/pipeline_unit/failMissingNetwork.json"
-	errMsg = "Should throw validation error: Please provide network details"
-	ExecuteFailTest(t)
-}
+// func TestValidateManifest_MissingModuleId(t *testing.T) {
+// 	filePath = "../../testdata/unittests/failMissingModuleId.json"
+// 	errMsg = "Should throw validation error: Please provide module id for service"
+// 	ExecuteFailTest(t)
+// }
 
-func TestMissingNetworkName(t *testing.T) {
-	filePath = "testdata/pipeline_unit/failMissingNetworkName.json"
-	errMsg = "Should throw validation error: Please provide network name"
-	ExecuteFailTest(t)
-}
+// func TestValidateManifest_EmptyModuleId(t *testing.T) {
+// 	filePath = "../../testdata/unittests/failEmptyModuleID.json"
+// 	errMsg = "Should throw validation error: Please provide module id for service"
+// 	ExecuteFailTest(t)
+// }
 
-func TestEmptyServices(t *testing.T) {
-	filePath = "testdata/pipeline_unit/failEmptyServices.json"
-	errMsg = "Should throw validation error: Please provide at least one service"
-	ExecuteFailTest(t)
-}
+// func TestEmptyServiceName(t *testing.T) {
+// 	filePath = "testdata/pipeline_unit/failMissingServiceName.json"
+// 	errMsg = "Should throw validation error: Please provide name for service"
+// 	ExecuteFailTest(t)
+// }
 
-func TestEmptyServiceModuleId(t *testing.T) {
-	filePath = "testdata/pipeline_unit/failMissingModuleId.json"
-	errMsg = "Should throw validation error: Please provide module id for service"
-	ExecuteFailTest(t)
-}
+// func TestMissingImage(t *testing.T) {
+// 	filePath = "testdata/pipeline_unit/failMissingImage.json"
+// 	errMsg = "Should throw validation error: Please provide image details"
+// 	ExecuteFailTest(t)
+// }
 
-func TestEmptyServiceName(t *testing.T) {
-	filePath = "testdata/pipeline_unit/failMissingServiceName.json"
-	errMsg = "Should throw validation error: Please provide name for service"
-	ExecuteFailTest(t)
-}
+// func TestMissingImageName(t *testing.T) {
+// 	filePath = "testdata/pipeline_unit/failMissingImageName.json"
+// 	errMsg = "Should throw validation error: Please provide image name"
+// 	ExecuteFailTest(t)
+// }
 
-func TestMissingImage(t *testing.T) {
-	filePath = "testdata/pipeline_unit/failMissingImage.json"
-	errMsg = "Should throw validation error: Please provide image details"
-	ExecuteFailTest(t)
-}
-
-func TestMissingImageName(t *testing.T) {
-	filePath = "testdata/pipeline_unit/failMissingImageName.json"
-	errMsg = "Should throw validation error: Please provide image name"
-	ExecuteFailTest(t)
-}
-
-func TestWorkingManifest(t *testing.T) {
-	filePath = "testdata/pipeline_unit/workingMVP.json"
-	errMsg = "Should not throw any error"
-	ExecutePassTest(t)
-}
+// func TestWorkingManifest(t *testing.T) {
+// 	filePath = "testdata/pipeline_unit/workingMVP.json"
+// 	errMsg = "Should not throw any error"
+// 	ExecutePassTest(t)
+// }
 
 func TestLoad(t *testing.T) {
 	fmt.Println("Load the sample manifest")
