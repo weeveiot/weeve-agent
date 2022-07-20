@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/Jeffail/gabs/v2"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/go-connections/nat"
 	"github.com/stretchr/testify/assert"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
@@ -55,6 +57,29 @@ func TestGetManifest(t *testing.T) {
 
 		assert.Equal(t, struct{}{}, manifest.Modules[0].ExposedPorts[nat.Port("1883")])
 		assert.Equal(t, []nat.PortBinding{{HostPort: "1883"}}, manifest.Modules[0].PortBinding[nat.Port("1883")])
+
+		assert.Equal(t, 1, len(manifest.Modules[0].MountConfigs))
+		if (len(manifest.Modules[0].MountConfigs)) == 1 {
+			assert.Equal(t,
+				mount.Mount{Type: "bind",
+					Source:      "/data/host",
+					Target:      "/data",
+					ReadOnly:    false,
+					Consistency: "default",
+					BindOptions: &mount.BindOptions{Propagation: "rprivate", NonRecursive: true}},
+				manifest.Modules[0].MountConfigs[0])
+		}
+
+		assert.Equal(t, 1, len(manifest.Modules[0].Resources.Devices))
+		if (len(manifest.Modules[0].MountConfigs)) == 1 {
+			assert.Equal(t,
+				container.DeviceMapping{
+					PathOnHost:        "/dev/ttyUSB0/host",
+					PathInContainer:   "/dev/ttyUSB0",
+					CgroupPermissions: "r",
+				},
+				manifest.Modules[0].Resources.Devices[0])
+		}
 	}
 }
 
