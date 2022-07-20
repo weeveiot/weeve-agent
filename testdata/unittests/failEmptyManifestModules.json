@@ -12,5 +12,6 @@
 			"1"
 		]
 	},
-    "modules":[]
+    "modules":[],
+    "command": "DEPLOY"
 }
