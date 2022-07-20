@@ -144,7 +144,7 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 
 func GetCommand(jsonParsed *gabs.Container) (string, error) {
 	if !jsonParsed.Exists("command") {
-		return "", errors.New("command not found in manifest")
+		return "", fmt.Errorf("command not found in manifest")
 	}
 
 	command := jsonParsed.Search("command").Data().(string)
@@ -292,7 +292,7 @@ func ValidateManifest(jsonParsed *gabs.Container) error {
 	}
 	manifestName := jsonParsed.Search("manifestName").Data()
 	if manifestName == nil || (strings.TrimSpace(manifestName.(string)) == "") {
-		errorList = append(errorList, "Please provide manifest manifestName")
+		errorList = append(errorList, "Please provide manifestName")
 	}
 	versionName := jsonParsed.Search("versionName").Data()
 	if versionName == nil || (strings.TrimSpace(versionName.(string)) == "") {
@@ -327,17 +327,15 @@ func ValidateManifest(jsonParsed *gabs.Container) error {
 }
 
 func ValidateUniqueIDExist(jsonParsed *gabs.Container) error {
-
 	// Expected JSON: {"manifestName": "Manifest name", "versionNumber": "Manifest version number"}
-
 	var errorList []string
 	manifestName := jsonParsed.Search("manifestName").Data()
 	if manifestName == nil || (strings.TrimSpace(manifestName.(string)) == "") {
-		errorList = append(errorList, "Expected manifest name in JSON, but not found.")
+		errorList = append(errorList, "Please provide manifestName")
 	}
 	versionNumber := jsonParsed.Search("versionNumber").Data()
 	if versionNumber == nil {
-		errorList = append(errorList, "Expected manifest version number in JSON, but not found.")
+		errorList = append(errorList, "Please provide manifest versionNumber")
 	}
 
 	if len(errorList) > 0 {
