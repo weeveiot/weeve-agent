@@ -180,6 +180,7 @@ func parseCLIoptions() (string, bool) {
 
 	// FLAG: Broker, NoTLS, Heartbeat, TopicName
 	com.SetParams(opt)
+	handler.SetDisconnected(opt.Disconnect)
 
 	return opt.ManifestPath, opt.Disconnect
 }

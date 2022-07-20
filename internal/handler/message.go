@@ -17,6 +17,8 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
+var disconnect bool
+
 type statusMessage struct {
 	Status           string             `json:"status"`
 	EdgeApplications []edgeApplications `json:"edgeApplications"`
@@ -36,6 +38,10 @@ type registrationMessage struct {
 	Operation string `json:"operation"`
 	Status    string `json:"status"`
 	Name      string `json:"name"`
+}
+
+func SetDisconnected(Disconnect bool) {
+	disconnect = Disconnect
 }
 
 func ProcessMessage(payload []byte) error {
@@ -146,7 +152,7 @@ func ProcessMessage(payload []byte) error {
 	return nil
 }
 
-func GetStatusMessage(Disconnect bool) (statusMessage, error) {
+func GetStatusMessage() (statusMessage, error) {
 	edgeApps, err := GetDataServiceStatus()
 
 	deviceParams := deviceParams{}
@@ -188,7 +194,7 @@ func GetStatusMessage(Disconnect bool) (statusMessage, error) {
 		nodeStatus = model.NodeConnected
 	}
 
-	if Disconnect {
+	if disconnect {
 		nodeStatus = model.NodeDisconnected
 	}
 
