@@ -290,6 +290,24 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string
 	}
 }
 
+func UndeployAll() error {
+	knownManifests := manifest.GetKnownManifests()
+	log.Info(knownManifests)
+
+	if len(knownManifests) > 0 {
+		for _, manif := range knownManifests {
+			err := UndeployDataService(manif.ManifestUniqueID, CMDRemove)
+			if err != nil {
+				return err
+			}
+		}
+		log.Info("All the edge applications have been undeployed")
+	} else {
+		log.Info("No edge application to undeploy")
+	}
+	return nil
+}
+
 func DataServiceExist(manifestUniqueID model.ManifestUniqueID) (bool, error) {
 	networks, err := docker.ReadDataServiceNetworks(manifestUniqueID)
 	if err != nil {

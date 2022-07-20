@@ -17,7 +17,6 @@ type Params struct {
 	RootCertPath string `long:"rootcert" short:"r" description:"Path to MQTT broker (server) certificate" required:"false"`
 	ConfigPath   string `long:"config" description:"Path to the .json config file" required:"false"`
 	ManifestPath string `long:"manifest" description:"Path to the .json manifest file" required:"false"`
-	UndeployAll  bool   `long:"undeployall" description:"Undeploy all the deployed edge applications" required:"false"`
 	Disconnect   bool   `long:"disconnect" description:"Disconnect/remove node from weeve manager" required:"false"`
 }
 
