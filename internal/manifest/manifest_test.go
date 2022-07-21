@@ -80,6 +80,13 @@ func TestGetManifest(t *testing.T) {
 				},
 				manifest.Modules[0].Resources.Devices[0])
 		}
+
+		manifest.UpdateManifest("kunbus-demo-manifest_1d")
+		assert.Equal(t, 12, len(manifest.Modules[0].EnvArgs))
+		if (len(manifest.Modules[0].EnvArgs)) == 12 {
+			assert.Equal(t, "INGRESS_HOST=kunbus-demo-manifest_1d.weevenetwork_mqtt-ingress_V1.0", manifest.Modules[0].EnvArgs[10])
+			assert.Equal(t, "EGRESS_URLS=http://kunbus-demo-manifest_1d.weevenetwork_fluctuation-filter_V1.1:80/", manifest.Modules[0].EnvArgs[11])
+		}
 	}
 }
 
