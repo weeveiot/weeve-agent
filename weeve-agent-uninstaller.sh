@@ -16,23 +16,24 @@ fi
 
 WEEVE_AGENT_DIR="$PWD/weeve-agent"
 
+AGENT_DISCONNECT_SCRIPT="$WEEVE_AGENT_DIR/disconnect.sh"
+
 SERVICE_FILE=/lib/systemd/system/weeve-agent.service
 
-#* NOTE: tailing will be much faster than the appearing of the lastest weeve-agent logs
-if RESULT=$(sudo systemctl stop weeve-agent \
-  && printf " --disconnect" >> "$SERVICE_FILE" \
-  && sudo systemctl daemon-reload \
-  && sudo systemctl start weeve-agent \
-  && tail -f "$WEEVE_AGENT_DIR"/Weeve_Agent.log | sed '/weeve agent disconnected/ q' 2>&1); then
-  log weeve-agent disconnected
-else
-  log Error while restarting weeve-agent for disconnection: "$RESULT"
-fi
+# Exctrating the command to run weeve-agent and building a script with it
+LINE=$(grep "ExecStart" "$SERVICE_FILE")
+COMMAND="${LINE#ExecStart=} --disconnect"
+printf "#!/bin/sh \n" >> "$AGENT_DISCONNECT_SCRIPT"
+printf "%s" "$COMMAND" >> "$AGENT_DISCONNECT_SCRIPT"
 
 if [ "$OS" = "Linux" ]; then
-  if RESULT=$(sudo systemctl stop weeve-agent \
-    && sudo systemctl daemon-reload 2>&1); then
-    log weeve-agent service stopped
+  if RESULT=$(systemctl is-active weeve-agent 2>&1); then
+    if RESULT=$(sudo systemctl stop weeve-agent \
+      && sudo systemctl daemon-reload 2>&1); then
+      log weeve-agent service stopped
+    else
+      log Error while stopping the weeve-agent service
+    fi
   else
     log weeve-agent service not running
   fi
@@ -43,6 +44,22 @@ if [ "$OS" = "Linux" ]; then
   else
     log "$SERVICE_FILE" doesnt exists
   fi
+fi
+
+#* NOTE: tailing will be much faster than the appearing of the lastest weeve-agent logs
+if RESULT=$(sh "$AGENT_DISCONNECT_SCRIPT" \
+  && tail -f Weeve_Agent.log | sed '/weeve agent disconnected/ q' 2>&1); then
+  sudo rm Weeve_Agent.log
+  log weeve-agent disconnected
+else
+  log Error while restarting weeve-agent for disconnection: "$RESULT"
+fi
+
+if [ -f "$AGENT_DISCONNECT_SCRIPT" ] ; then
+  sudo rm "$AGENT_DISCONNECT_SCRIPT"
+  log "$AGENT_DISCONNECT_SCRIPT" removed
+else
+  log "$AGENT_DISCONNECT_SCRIPT" doesnt exists
 fi
 
 if [ -d "$WEEVE_AGENT_DIR" ] ; then
