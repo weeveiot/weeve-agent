@@ -40,8 +40,8 @@ type registrationMessage struct {
 	Name      string `json:"name"`
 }
 
-func SetDisconnected(Disconnect bool) {
-	disconnect = Disconnect
+func SetDisconnected(disconnectParam bool) {
+	disconnect = disconnectParam
 }
 
 func ProcessMessage(payload []byte) error {
