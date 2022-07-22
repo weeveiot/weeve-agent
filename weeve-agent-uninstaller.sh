@@ -14,15 +14,17 @@ if [ "$OS" = "Linux" ]; then
   sudo systemctl daemon-reload
 fi
 
-WEEVE_AGENT_DIR="$PWD/weeve-agent"
+WEEVE_AGENT_DIR="$PWD/weeve-agent"  
 
 SERVICE_FILE=/lib/systemd/system/weeve-agent.service
+
+# Exctrating the command to run weeve-agent
+LINE=$(grep "ExecStart" "$SERVICE_FILE")
+COMMAND="${LINE#ExecStart=} --disconnect"
 
 if [ "$OS" = "Linux" ]; then
   if RESULT=$(systemctl is-active weeve-agent 2>&1); then
     sudo systemctl stop weeve-agent
-    sudo systemctl daemon-reload
-    log weeve-agent service stopped
   else
     log weeve-agent service not running
   fi
@@ -35,6 +37,13 @@ if [ "$OS" = "Linux" ]; then
   fi
 fi
 
+if RESULT=$(eval "$COMMAND" 2>&1); then
+  sudo rm Weeve_Agent.log
+  log weeve-agent disconnected
+else
+  log Error while restarting weeve-agent for disconnection: "$RESULT"
+fi
+
 if [ -d "$WEEVE_AGENT_DIR" ] ; then
   sudo rm -r "$WEEVE_AGENT_DIR"
   log "$WEEVE_AGENT_DIR" removed
@@ -42,4 +51,4 @@ else
   log "$WEEVE_AGENT_DIR" doesnt exists
 fi
 
-log done
+log weeve-agent uninstalled

@@ -17,6 +17,7 @@ type Params struct {
 	RootCertPath string `long:"rootcert" short:"r" description:"Path to MQTT broker (server) certificate" required:"false"`
 	ConfigPath   string `long:"config" description:"Path to the .json config file" required:"false"`
 	ManifestPath string `long:"manifest" description:"Path to the .json manifest file" required:"false"`
+	Disconnect   bool   `long:"disconnect" description:"Disconnect/remove node from weeve manager" required:"false"`
 }
 
 type ManifestStatus struct {
@@ -33,8 +34,9 @@ type ManifestUniqueID struct {
 }
 
 const (
-	NodeConnected = "Connected"
-	NodeAlarm     = "Alarm"
+	NodeConnected    = "Connected"
+	NodeAlarm        = "Alarm"
+	NodeDisconnected = "Disconnected"
 )
 
 const (

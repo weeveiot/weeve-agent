@@ -21,6 +21,7 @@ import (
 
 	"github.com/weeveiot/weeve-agent/internal/com"
 	"github.com/weeveiot/weeve-agent/internal/config"
+	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/handler"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
@@ -50,7 +51,7 @@ func init() {
 // The main package is a special package which is used with the programs that are executable and this package contains main() function
 // The entrypoint for this binary
 func main() {
-	localManifest := parseCLIoptions()
+	localManifest, disconnect := parseCLIoptions()
 
 	manifest.InitKnownManifests()
 
@@ -73,6 +74,20 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if disconnect {
+		log.Info("Undeploying all the edge applications ...")
+		err := dataservice.UndeployAll()
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = com.SendHeartbeat()
+		if err != nil {
+			log.Error(err)
+		}
+		log.Info("weeve agent disconnected")
+		os.Exit(0)
+	}
+
 	// Kill the agent on a keyboard interrupt
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGTERM)
@@ -86,7 +101,7 @@ func main() {
 	com.DisconnectNode()
 }
 
-func parseCLIoptions() string {
+func parseCLIoptions() (string, bool) {
 	// The config file is used to store the agent configuration
 	// If the agent binary restarts, this file will be used to start the agent again
 	const configFileName = "nodeconfig.json"
@@ -165,8 +180,9 @@ func parseCLIoptions() string {
 
 	// FLAG: Broker, NoTLS, Heartbeat, TopicName
 	com.SetParams(opt)
+	handler.SetDisconnected(opt.Disconnect)
 
-	return opt.ManifestPath
+	return opt.ManifestPath, opt.Disconnect
 }
 
 func validateBrokerUrl(u *url.URL) {
