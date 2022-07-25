@@ -1,0 +1,7 @@
+{
+    "_id": "62c2c675b3646e94a216ef17",
+    "command": "UNDEPLOY",
+    "manifestName": "FanInFanOut",
+    "versionName": "v1",
+    "versionNumber": 1
+}

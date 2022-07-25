@@ -316,6 +316,11 @@ func ValidateManifest(jsonParsed *gabs.Container) error {
 			if imageName == nil || (strings.TrimSpace(imageName.(string)) == "") {
 				errorList = append(errorList, "Please provide image name for all modules")
 			}
+
+			imageTag := module.Search("image").Search("tag").Data()
+			if imageTag == nil {
+				errorList = append(errorList, "Please provide image tag for all modules")
+			}
 		}
 	}
 
