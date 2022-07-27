@@ -20,7 +20,7 @@
             "moduleName": "mqtt-ingress",
             "image": {
                 "name": "weevenetwork/mqtt-ingress",
-                "tag": "V1",
+                "tag": "v1.0.0",
                 "registry": {
                     "url": "https://hub.docker.com",
                     "userName": "",
@@ -64,7 +64,7 @@
             "moduleName": "fluctuation-filter",
             "image": {
                 "name": "weevenetwork/fluctuation-filter",
-                "tag": "V1",
+                "tag": "v1.0.0",
                 "registry": {
                     "url": "https://hub.docker.com",
                     "userName": "",
@@ -95,7 +95,7 @@
             "moduleName": "comparison-filter",
             "image": {
                 "name": "weevenetwork/comparison-filter",
-                "tag": "V1",
+                "tag": "v1.0.0",
                 "registry": {
                     "url": "https://hub.docker.com",
                     "userName": "",
@@ -126,7 +126,7 @@
             "moduleName": "slack-alert",
             "image": {
                 "name": "weevenetwork/slack-alert",
-                "tag": "V1",
+                "tag": "v1.0.0",
                 "registry": {
                     "url": "https://hub.docker.com",
                     "userName": "",

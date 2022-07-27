@@ -140,7 +140,7 @@ func ProcessMessage(payload []byte) error {
 		}
 		log.Info("Full removal done!")
 	default:
-		return errors.New("Received message with unknown command")
+		return errors.New("received message with unknown command")
 	}
 
 	return nil
@@ -148,6 +148,9 @@ func ProcessMessage(payload []byte) error {
 
 func GetStatusMessage() (statusMessage, error) {
 	edgeApps, err := GetDataServiceStatus()
+	if err != nil {
+		return statusMessage{}, err
+	}
 
 	deviceParams := deviceParams{}
 	uptime, err := host.Uptime()
