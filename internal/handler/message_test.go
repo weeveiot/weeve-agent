@@ -69,6 +69,7 @@ func TestProcessMessagePass(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		return
 	}
 
 	fmt.Println("TESTING STOP EDGE APPLICATION...")
@@ -79,6 +80,7 @@ func TestProcessMessagePass(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		return
 	}
 
 	fmt.Println("TESTING START EDGE APPLICATION...")
@@ -89,6 +91,7 @@ func TestProcessMessagePass(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		return
 	}
 
 	fmt.Println("TESTING REDEPLOY EDGE APPLICATION...")
@@ -99,6 +102,7 @@ func TestProcessMessagePass(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		return
 	}
 
 	fmt.Println("TESTING UNDEPLOY EDGE APPLICATION...")
@@ -109,6 +113,7 @@ func TestProcessMessagePass(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		return
 	}
 
 	fmt.Println("DEPLOYING EDGE APPLICATION FOR TESTING REMOVE EDGE APPLICATION...")
@@ -119,6 +124,7 @@ func TestProcessMessagePass(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		return
 	}
 
 	fmt.Println("TESTING REMOVE EDGE APPLICATION...")
