@@ -63,68 +63,62 @@ func TestProcessMessagePass(t *testing.T) {
 
 	fmt.Println("TESTING EDGE APPLICATION DEPLOYMENT...")
 	err = deployEdgeApplication(jsonBytes, man)
-	assert.Nil(err)
 	if err != nil {
 		err = undeployEdgeApplication(man, dataservice.CMDRemove)
 		if err != nil {
 			t.Fatal(err)
 		}
-		return
+		t.FailNow()
 	}
 
 	fmt.Println("TESTING STOP EDGE APPLICATION...")
 	err = stopEdgeApplication(man)
-	assert.Nil(err)
 	if err != nil {
 		err = undeployEdgeApplication(man, dataservice.CMDRemove)
 		if err != nil {
 			t.Fatal(err)
 		}
-		return
+		t.FailNow()
 	}
 
 	fmt.Println("TESTING START EDGE APPLICATION...")
 	err = startEdgeApplication(man)
-	assert.Nil(err)
 	if err != nil {
 		err = undeployEdgeApplication(man, dataservice.CMDRemove)
 		if err != nil {
 			t.Fatal(err)
 		}
-		return
+		t.FailNow()
 	}
 
 	fmt.Println("TESTING REDEPLOY EDGE APPLICATION...")
 	err = reDeployEdgeApplication(jsonBytes, man)
-	assert.Nil(err)
 	if err != nil {
 		err = undeployEdgeApplication(man, dataservice.CMDRemove)
 		if err != nil {
 			t.Fatal(err)
 		}
-		return
+		t.FailNow()
 	}
 
 	fmt.Println("TESTING UNDEPLOY EDGE APPLICATION...")
 	err = undeployEdgeApplication(man, dataservice.CMDUndeploy)
-	assert.Nil(err)
 	if err != nil {
 		err = undeployEdgeApplication(man, dataservice.CMDRemove)
 		if err != nil {
 			t.Fatal(err)
 		}
-		return
+		t.FailNow()
 	}
 
 	fmt.Println("DEPLOYING EDGE APPLICATION FOR TESTING REMOVE EDGE APPLICATION...")
 	err = deployEdgeApplication(jsonBytes, man)
-	assert.Nil(err)
 	if err != nil {
 		err = undeployEdgeApplication(man, dataservice.CMDRemove)
 		if err != nil {
 			t.Fatal(err)
 		}
-		return
+		t.FailNow()
 	}
 
 	fmt.Println("TESTING REMOVE EDGE APPLICATION...")

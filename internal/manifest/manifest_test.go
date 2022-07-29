@@ -173,7 +173,7 @@ func utilFailTestValidateManifest(filePath string, errMsg string) error {
 	if err == nil {
 		return fmt.Errorf("Expected %s, but got: %s", errMsg, err)
 	} else if err.Error() != errMsg {
-		return fmt.Errorf("Expected %s, but got: %s", errMsg, err.Error())
+		return fmt.Errorf("Expected %s, but got: %s", errMsg, err)
 	}
 
 	return nil
