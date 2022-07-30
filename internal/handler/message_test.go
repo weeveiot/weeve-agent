@@ -13,6 +13,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+	"github.com/stretchr/testify/assert"
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/handler"
@@ -34,21 +35,22 @@ var ctx = context.Background()
 var dockerCli *client.Client
 
 func TestProcessMessagePass(t *testing.T) {
+	assert := assert.New(t)
 	// Prepare test data
 	manifestPath := "../../testdata/test_manifest.json"
 	jsonBytes, err := ioutil.ReadFile(manifestPath)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	jsonParsed, err := gabs.ParseJSON(jsonBytes)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	man, err := parseManifest(jsonParsed)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	manCmd.ManifestName = man.ManifestUniqueID.ManifestName
@@ -56,59 +58,72 @@ func TestProcessMessagePass(t *testing.T) {
 
 	dockerCli, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	fmt.Println("TESTING EDGE APPLICATION DEPLOYMENT...")
 	err = deployEdgeApplication(jsonBytes, man)
 	if err != nil {
-		t.Error(err)
 		err = undeployEdgeApplication(man, dataservice.CMDRemove)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
-		return
+		t.FailNow()
 	}
 
 	fmt.Println("TESTING STOP EDGE APPLICATION...")
 	err = stopEdgeApplication(man)
 	if err != nil {
-		t.Error(err)
+		err = undeployEdgeApplication(man, dataservice.CMDRemove)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.FailNow()
 	}
 
 	fmt.Println("TESTING START EDGE APPLICATION...")
 	err = startEdgeApplication(man)
 	if err != nil {
-		t.Error(err)
+		err = undeployEdgeApplication(man, dataservice.CMDRemove)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.FailNow()
+	}
+
+	fmt.Println("TESTING REDEPLOY EDGE APPLICATION...")
+	err = reDeployEdgeApplication(jsonBytes, man)
+	if err != nil {
+		err = undeployEdgeApplication(man, dataservice.CMDRemove)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.FailNow()
 	}
 
 	fmt.Println("TESTING UNDEPLOY EDGE APPLICATION...")
 	err = undeployEdgeApplication(man, dataservice.CMDUndeploy)
 	if err != nil {
-		t.Error(err)
-	}
-
-	fmt.Println("TESTING REDEPLOY EDGE APPLICATION...")
-	err = deployEdgeApplication(jsonBytes, man)
-	if err != nil {
-		t.Error(err)
 		err = undeployEdgeApplication(man, dataservice.CMDRemove)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
-		return
+		t.FailNow()
 	}
 
-	err = reDeployEdgeApplication(jsonBytes, man)
+	fmt.Println("DEPLOYING EDGE APPLICATION FOR TESTING REMOVE EDGE APPLICATION...")
+	err = deployEdgeApplication(jsonBytes, man)
 	if err != nil {
-		t.Error(err)
+		err = undeployEdgeApplication(man, dataservice.CMDRemove)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.FailNow()
 	}
 
 	fmt.Println("TESTING REMOVE EDGE APPLICATION...")
 	err = undeployEdgeApplication(man, dataservice.CMDRemove)
-	if err != nil {
-		t.Error(err)
-	}
+	assert.Nil(err)
 }
 
 func deployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {

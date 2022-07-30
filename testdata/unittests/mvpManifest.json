@@ -20,7 +20,7 @@
             "moduleName": "mqtt-ingress",
             "image": {
                 "name": "weevenetwork/mqtt-ingress",
-                "tag": "v1.0.0",
+                "tag": "V1",
                 "registry": {
                     "url": "https://hub.docker.com",
                     "userName": "",
@@ -55,8 +55,18 @@
                     "host": "1883"
                 }
             ],
-            "mounts": [],
-            "devices": [],
+            "mounts": [
+                {
+                    "container": "/data",
+                    "host": "/data/host"
+                }
+            ],
+            "devices": [
+                {
+                    "container": "/dev/ttyUSB0",
+                    "host": "/dev/ttyUSB0/host"
+                }
+            ],
             "type": "Input"
         },
         {
@@ -64,7 +74,7 @@
             "moduleName": "fluctuation-filter",
             "image": {
                 "name": "weevenetwork/fluctuation-filter",
-                "tag": "v1.0.0",
+                "tag": "V1",
                 "registry": {
                     "url": "https://hub.docker.com",
                     "userName": "",
@@ -95,7 +105,7 @@
             "moduleName": "comparison-filter",
             "image": {
                 "name": "weevenetwork/comparison-filter",
-                "tag": "v1.0.0",
+                "tag": "V1",
                 "registry": {
                     "url": "https://hub.docker.com",
                     "userName": "",
@@ -126,7 +136,7 @@
             "moduleName": "slack-alert",
             "image": {
                 "name": "weevenetwork/slack-alert",
-                "tag": "v1.0.0",
+                "tag": "V1",
                 "registry": {
                     "url": "https://hub.docker.com",
                     "userName": "",

@@ -79,7 +79,10 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 		var containerConfig ContainerConfig
 
 		containerConfig.ImageName = module.Search("image").Search("name").Data().(string)
-		containerConfig.ImageTag = module.Search("image").Search("tag").Data().(string)
+		imageTag := module.Search("image").Search("tag").Data()
+		if imageTag != nil {
+			containerConfig.ImageTag = imageTag.(string)
+		}
 		containerConfig.Labels = labels
 
 		imageName := containerConfig.ImageName
@@ -141,7 +144,7 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 
 func GetCommand(jsonParsed *gabs.Container) (string, error) {
 	if !jsonParsed.Exists("command") {
-		return "", errors.New("command not found in manifest")
+		return "", fmt.Errorf("command not found in manifest")
 	}
 
 	command := jsonParsed.Search("command").Data().(string)
@@ -284,15 +287,15 @@ func ValidateManifest(jsonParsed *gabs.Container) error {
 	var errorList []string
 
 	id := jsonParsed.Search("_id").Data()
-	if id == nil {
+	if id == nil || (strings.TrimSpace(id.(string)) == "") {
 		errorList = append(errorList, "Please provide manifest id")
 	}
 	manifestName := jsonParsed.Search("manifestName").Data()
-	if manifestName == nil {
-		errorList = append(errorList, "Please provide manifest manifestName")
+	if manifestName == nil || (strings.TrimSpace(manifestName.(string)) == "") {
+		errorList = append(errorList, "Please provide manifestName")
 	}
 	versionName := jsonParsed.Search("versionName").Data()
-	if versionName == nil {
+	if versionName == nil || (strings.TrimSpace(versionName.(string)) == "") {
 		errorList = append(errorList, "Please provide manifest versionName")
 	}
 	versionNumber := jsonParsed.Search("versionNumber").Data()
@@ -300,31 +303,23 @@ func ValidateManifest(jsonParsed *gabs.Container) error {
 		errorList = append(errorList, "Please provide manifest versionNumber")
 	}
 	command := jsonParsed.Search("command").Data()
-	if command == nil {
+	if command == nil || (strings.TrimSpace(command.(string)) == "") {
 		errorList = append(errorList, "Please provide manifest command")
 	}
 	modules := jsonParsed.Search("modules").Children()
-	// Check if manifest contains services
+	// Check if manifest contains modules
 	if modules == nil || len(modules) < 1 {
-		errorList = append(errorList, "Please provide at least one service")
+		errorList = append(errorList, "Please provide manifest module/s")
 	} else {
 		for _, module := range modules {
-			moduleID := module.Search("moduleID").Data()
-			if moduleID == nil {
-				errorList = append(errorList, "Please provide moduleId for all services")
+			imageName := module.Search("image").Search("name").Data()
+			if imageName == nil || (strings.TrimSpace(imageName.(string)) == "") {
+				errorList = append(errorList, "Please provide image name for all modules")
 			}
-			moduleName := module.Search("moduleName").Data()
-			if moduleName == nil {
-				errorList = append(errorList, "Please provide module name for all services")
-			} else {
-				imageName := module.Search("image").Search("name").Data()
-				if imageName == nil {
-					errorList = append(errorList, "Please provide image name for all services")
-				}
-				imageTag := module.Search("image").Search("tag").Data()
-				if imageTag == nil {
-					errorList = append(errorList, "Please provide image tags for all services")
-				}
+
+			imageTag := module.Search("image").Search("tag").Data()
+			if imageTag == nil {
+				errorList = append(errorList, "Please provide image tag for all modules")
 			}
 		}
 	}
@@ -337,17 +332,15 @@ func ValidateManifest(jsonParsed *gabs.Container) error {
 }
 
 func ValidateUniqueIDExist(jsonParsed *gabs.Container) error {
-
 	// Expected JSON: {"manifestName": "Manifest name", "versionNumber": "Manifest version number"}
-
 	var errorList []string
 	manifestName := jsonParsed.Search("manifestName").Data()
-	if manifestName == nil {
-		errorList = append(errorList, "Expected manifest name in JSON, but not found.")
+	if manifestName == nil || (strings.TrimSpace(manifestName.(string)) == "") {
+		errorList = append(errorList, "Please provide manifestName")
 	}
 	versionNumber := jsonParsed.Search("versionNumber").Data()
 	if versionNumber == nil {
-		errorList = append(errorList, "Expected manifest version number in JSON, but not found.")
+		errorList = append(errorList, "Please provide manifest versionNumber")
 	}
 
 	if len(errorList) > 0 {
