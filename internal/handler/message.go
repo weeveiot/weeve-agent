@@ -72,7 +72,7 @@ func ProcessMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		log.Info("Deployment done!")
+		log.Info("Edge application deployment done!")
 
 	case dataservice.CMDReDeploy:
 		var err = manifest.ValidateManifest(jsonParsed)
@@ -88,7 +88,7 @@ func ProcessMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		log.Info("Redeployment done!")
+		log.Info("Edge application redeployment done!")
 
 	case dataservice.CMDStopService:
 
@@ -103,7 +103,7 @@ func ProcessMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		log.Info("Service stopped!")
+		log.Info("Edge application stopped!")
 
 	case dataservice.CMDStartService:
 
@@ -116,7 +116,7 @@ func ProcessMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		log.Info("Service started!")
+		log.Info("Edge application started!")
 
 	case dataservice.CMDUndeploy:
 
@@ -130,7 +130,7 @@ func ProcessMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		log.Info("Undeployment done!")
+		log.Info("Edge application undeployment done!")
 
 	case dataservice.CMDRemove:
 
@@ -144,9 +144,16 @@ func ProcessMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		log.Info("Full removal done!")
+		log.Info("Edge application removal done!")
+	case dataservice.CMDRemoveAll:
+
+		err = dataservice.UndeployAll()
+		if err != nil {
+			return err
+		}
+		log.Info("All edge applications removal done!")
 	default:
-		return errors.New("received message with unknown command")
+		return errors.New("unknown command")
 	}
 
 	return nil

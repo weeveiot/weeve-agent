@@ -18,6 +18,7 @@ const CMDStopService = "STOP"
 const CMDStartService = "START"
 const CMDUndeploy = "UNDEPLOY"
 const CMDRemove = "REMOVE"
+const CMDRemoveAll = "DELETE"
 
 func DeployDataService(man manifest.Manifest, command string) error {
 	//******** STEP 1 - Check if Data Service is already deployed *************//
