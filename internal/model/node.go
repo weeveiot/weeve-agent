@@ -45,6 +45,7 @@ const (
 	EdgeAppError      = "Error"
 	EdgeAppIninted    = "Initiated"
 	EdgeAppUndeployed = "Undeployed"
+	EdgeAppDeleted    = "Deleted"
 )
 
 const (

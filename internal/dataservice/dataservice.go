@@ -287,6 +287,7 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string
 		log.Error(deploymentID, err)
 		return errors.New("Data Service could not be undeployed completely. Cause(s): " + errorlist)
 	} else {
+		manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppDeleted, false)
 		return nil
 	}
 }
