@@ -3,7 +3,6 @@
 	"displayName": "Kunbus Demo App",
 	"manifestName": "kunbus-demo-manifest",
 	"description": "Sample manifest for Kunbus Demo App",
-	"versionName": "v1",
 	"versionNumber": 1,
 	"isPublished": true,
 	"isPublic": false,

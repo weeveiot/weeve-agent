@@ -58,12 +58,10 @@ type connectionsString map[string][]string
 func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 	manifestID := jsonParsed.Search("_id").Data().(string)
 	manifestName := jsonParsed.Search("manifestName").Data().(string)
-	versionName := jsonParsed.Search("versionName").Data().(string)
 	versionNumber := jsonParsed.Search("versionNumber").Data().(float64)
 	labels := map[string]string{
 		"manifestID":    manifestID,
 		"manifestName":  manifestName,
-		"versionName":   versionName,
 		"versionNumber": fmt.Sprint(versionNumber),
 	}
 
@@ -293,10 +291,6 @@ func ValidateManifest(jsonParsed *gabs.Container) error {
 	manifestName := jsonParsed.Search("manifestName").Data()
 	if manifestName == nil || (strings.TrimSpace(manifestName.(string)) == "") {
 		errorList = append(errorList, "Please provide manifestName")
-	}
-	versionName := jsonParsed.Search("versionName").Data()
-	if versionName == nil || (strings.TrimSpace(versionName.(string)) == "") {
-		errorList = append(errorList, "Please provide manifest versionName")
 	}
 	versionNumber := jsonParsed.Search("versionNumber").Data()
 	if versionNumber == nil {

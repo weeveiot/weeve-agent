@@ -1,7 +1,6 @@
 {
     "_id": "62bef68d664ed72f8ecdd690",
     "manifestName": "kunbus-demo-manifest",
-    "versionName": "v1",
     "connections": {
         "0": [
             "1"
