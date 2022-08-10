@@ -207,20 +207,6 @@ func TestValidateManifest_EmptyManifestName(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestValidateManifest_MissingManifestVersionName(t *testing.T) {
-	errMsg := "Please provide manifest versionName"
-	filePath := "../../testdata/unittests/failMissingManifestVersionName.json"
-	err := utilFailTestValidateManifest(filePath, errMsg)
-	assert.Nil(t, err)
-}
-
-func TestValidateManifest_EmptyManifestVersionName(t *testing.T) {
-	errMsg := "Please provide manifest versionName"
-	filePath := "../../testdata/unittests/failEmptyManifestVersionName.json"
-	err := utilFailTestValidateManifest(filePath, errMsg)
-	assert.Nil(t, err)
-}
-
 func TestValidateManifest_MissingManifestVersionNumber(t *testing.T) {
 	errMsg := "Please provide manifest versionNumber"
 	filePath := "../../testdata/unittests/failMissingManifestVersionNumber.json"

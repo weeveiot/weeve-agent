@@ -9,18 +9,23 @@ log Detecting the OS of the machine ...
 OS=$(uname -s)
 log Detected OS: "$OS"
 
-if [ "$OS" = "Linux" ]; then
-  # if in case the user have deleted the weeve-agent.service and did not reload the systemd daemon
-  sudo systemctl daemon-reload
-fi
-
-WEEVE_AGENT_DIR="$PWD/weeve-agent"  
-
 SERVICE_FILE=/lib/systemd/system/weeve-agent.service
 
 # Exctrating the command to run weeve-agent
 LINE=$(grep "ExecStart" "$SERVICE_FILE")
-COMMAND="${LINE#ExecStart=} --disconnect"
+COMMAND="sudo ${LINE#ExecStart=} --disconnect"
+
+WEEVE_AGENT_DIR="$PWD/weeve-agent"  
+if [ ! -d "$WEEVE_AGENT_DIR" ]; then
+  log weeve-agent directory does not exists in the current path
+  log please run the script in the path where weeve-agent directory exists
+  exit 1
+fi
+
+if [ "$OS" = "Linux" ]; then
+  # if in case the user have deleted the weeve-agent.service and did not reload the systemd daemon
+  sudo systemctl daemon-reload
+fi
 
 if [ "$OS" = "Linux" ]; then
   if RESULT=$(systemctl is-active weeve-agent 2>&1); then
@@ -37,8 +42,8 @@ if [ "$OS" = "Linux" ]; then
   fi
 fi
 
-if RESULT=$(eval "$COMMAND" 2>&1); then
-  sudo rm Weeve_Agent.log
+log weeve-agent disconnecting ...
+if RESULT=$(cd "$WEEVE_AGENT_DIR" && eval "$COMMAND" 2>&1); then
   log weeve-agent disconnected
 else
   log Error while restarting weeve-agent for disconnection: "$RESULT"
