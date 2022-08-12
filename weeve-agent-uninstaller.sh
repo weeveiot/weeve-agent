@@ -56,4 +56,4 @@ else
   log "$WEEVE_AGENT_DIR" doesnt exists
 fi
 
-log weeve-agent uninstalled
+log Removed weeve-agent contents if any. 
