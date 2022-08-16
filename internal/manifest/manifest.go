@@ -231,7 +231,7 @@ func getDevices(parsedJson *gabs.Container) ([]container.DeviceMapping, error) {
 		device := container.DeviceMapping{
 			PathOnHost:        mnt.Search("host").Data().(string),
 			PathInContainer:   mnt.Search("container").Data().(string),
-			CgroupPermissions: "r",
+			CgroupPermissions: "rw",
 		}
 
 		devices = append(devices, device)

@@ -76,7 +76,7 @@ func TestGetManifest(t *testing.T) {
 			assert.Equal(container.DeviceMapping{
 				PathOnHost:        "/dev/ttyUSB0/host",
 				PathInContainer:   "/dev/ttyUSB0",
-				CgroupPermissions: "r",
+				CgroupPermissions: "rw",
 			},
 				manifest.Modules[0].Resources.Devices[0])
 		}
