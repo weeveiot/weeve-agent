@@ -24,18 +24,18 @@ validate_config(){
 }
 
 get_release(){
-  if [ -z "$RELEASE" ]; then
+  while [ "$RELEASE" != "prod" ] && [ "$RELEASE" != "dev" ]; do
     read -r -p "Enter the release type (prod or dev) or specify the test flag: " RELEASE
-  fi
+  done
 }
 
 validate_release(){
-  while [ "$RELEASE" != "prod" ] && [ "$RELEASE" != "dev" ]; do
+  if [ "$RELEASE" != "prod" ] && [ "$RELEASE" != "dev" ]; then
     log "Invalid release entered: $RELEASE"
     log "Valid releases: [prod, dev]"
     log "exiting ..."
     exit 1
-  done
+  fi
 }
 
 get_test(){
