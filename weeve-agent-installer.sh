@@ -29,15 +29,6 @@ get_release(){
   done
 }
 
-validate_release(){
-  if [ "$RELEASE" != "prod" ] && [ "$RELEASE" != "dev" ]; then
-    log "Invalid release entered: $RELEASE"
-    log "Valid releases: [prod, dev]"
-    log "exiting ..."
-    exit 1
-  fi
-}
-
 get_test(){
   if [ -z "$BUILD_LOCAL" ]; then
     BUILD_LOCAL="false"
@@ -324,8 +315,6 @@ get_test
 
 if [ "$BUILD_LOCAL" = "false" ]; then
   get_release
-
-  validate_release
 
   get_bucket_name
 else
