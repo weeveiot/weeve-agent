@@ -2,7 +2,7 @@
 
 log() {
   # logger
-  echo '[' "$(date +"%Y-%m-%d %T")" ']:' INFO "$@" | tee -a "$LOG_FILE"
+  echo '[' "$(date +"%Y-%m-%d %T")" ']:' INFO "$@" | sudo tee -a "$LOG_FILE"
 }
 
 get_config(){
@@ -18,6 +18,7 @@ validate_config(){
     CONFIG_FILE="$(cd "$(dirname "$CONFIG_FILE")" || exit; pwd)/$(basename "$CONFIG_FILE")"
   else
     log The required file containing the node configurations not found in the path: "$CONFIG_FILE"
+    log "exiting ..."
     exit 1
   fi
 }
@@ -82,6 +83,7 @@ validating_docker(){
       log Docker is not running, is docker installed?
       log Error while validating docker: "$RESULT"
       log To install docker, visit https://docs.docker.com/engine/install/
+    log "exiting ..."
       exit 1
     fi
   fi
@@ -111,6 +113,7 @@ build_test_binary(){
     BINARY_NAME="test-agent"
   else
     log Error occured while building binary for testing: "$RESULT"
+    log "exiting ..."
     exit 1
   fi
 }
@@ -132,6 +135,7 @@ download_binary(){
     "arm64" | "aarch64" | "aarch64_be" | "armv8b" | "armv8l") BINARY_ARCH="arm64"
     ;;
     *) log Unsupported architecture: "$ARCH"
+    log "exiting ..."
     exit 1
     ;;
   esac
@@ -142,6 +146,7 @@ download_binary(){
     "Darwin") BINARY_OS="macos"
     ;;
     *) log Unsupported OS: "$OS"
+    log "exiting ..."
     exit 1
     ;;
   esac
@@ -158,6 +163,7 @@ download_binary(){
   else
     log Error while downloading the executable: "$RESULT"
     CLEANUP="true"
+    log "exiting ..."
     exit 1
   fi
 }
@@ -171,6 +177,7 @@ download_dependencies(){
   else
     log Error while downloading the dependencies: "$RESULT"
     CLEANUP="true"
+    log "exiting ..."
     exit 1
   fi
 }
@@ -215,6 +222,7 @@ start_service(){
   else
     log Error while starting the weeve-agent service: "$RESULT"
     CLEANUP="true"
+    log "exiting ..."
     exit 1
   fi
 
