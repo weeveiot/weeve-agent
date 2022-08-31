@@ -4,8 +4,6 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/Jeffail/gabs/v2"
-	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 )
@@ -23,13 +21,7 @@ func ReadDeployManifestLocal(manifestPath string) error {
 		return err
 	}
 
-	jsonParsed, err := gabs.ParseJSON(byteValue)
-	if err != nil {
-		return err
-	}
-	log.Debug("Parsed JSON >> ", jsonParsed)
-
-	thisManifest, err := manifest.GetManifest(jsonParsed)
+	thisManifest, err := manifest.Parse(byteValue)
 	if err != nil {
 		return err
 	}

@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Jeffail/gabs/v2"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/config"
@@ -125,15 +124,10 @@ func initBrokerChannel(pubsubClientId string) (mqtt.Client, error) {
 }
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	jsonParsed, err := gabs.ParseJSON(msg.Payload())
-	if err != nil {
-		log.Error("Error on parsing message: ", err)
-		return
-	}
-	log.Debugln("Received message on topic:", msg.Topic(), "JSON:", *jsonParsed)
+	log.Debugln("Received message on topic:", msg.Topic(), "Payload:", string(msg.Payload()))
 
 	if msg.Topic() == config.GetNodeId()+"/"+topicOrchestration {
-		err = handler.ProcessMessage(msg.Payload())
+		err := handler.ProcessMessage(msg.Payload())
 		if err != nil {
 			log.Error(err)
 		}
