@@ -3,7 +3,6 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"os"
 
@@ -52,7 +51,7 @@ func writeNodeConfigToFile() {
 		log.Fatal(err)
 	}
 
-	err = ioutil.WriteFile(ConfigPath, encodedJson, 0644)
+	err = os.WriteFile(ConfigPath, encodedJson, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}

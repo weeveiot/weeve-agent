@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
@@ -16,7 +16,7 @@ func ReadDeployManifestLocal(manifestPath string) error {
 	}
 	defer jsonFile.Close()
 	// read our opened jsonFile as a byte array.
-	byteValue, err := ioutil.ReadAll(jsonFile)
+	byteValue, err := io.ReadAll(jsonFile)
 	if err != nil {
 		return err
 	}

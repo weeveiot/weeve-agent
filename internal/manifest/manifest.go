@@ -13,6 +13,8 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
+	"github.com/go-playground/validator/v10"
+	"github.com/go-playground/validator/v10/non-standard/validators"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -53,6 +55,13 @@ type RegistryDetails struct {
 type connectionsInt map[int][]int
 type connectionsString map[string][]string
 
+var validate *validator.Validate
+
+func init() {
+	validate = validator.New()
+	validate.RegisterValidation("notblank", validators.NotBlank)
+}
+
 func Parse(payload []byte) (Manifest, error) {
 	var man manifestMsg
 	err := json.Unmarshal(payload, &man)
@@ -61,6 +70,11 @@ func Parse(payload []byte) (Manifest, error) {
 	}
 
 	log.Debug("Parsed manifest json >> ", man)
+
+	err = validate.Struct(man)
+	if err != nil {
+		return Manifest{}, err
+	}
 
 	labels := map[string]string{
 		"manifestID":    man.ID,
@@ -71,6 +85,11 @@ func Parse(payload []byte) (Manifest, error) {
 	var containerConfigs []ContainerConfig
 
 	for _, module := range man.Modules {
+		err = validate.Struct(module)
+		if err != nil {
+			return Manifest{}, err
+		}
+
 		var containerConfig ContainerConfig
 
 		containerConfig.ImageName = module.Image.Name
@@ -127,17 +146,28 @@ func Parse(payload []byte) (Manifest, error) {
 }
 
 func GetCommand(payload []byte) (string, error) {
-	var man manifestMsg
-	err := json.Unmarshal(payload, &man)
+	var msg commandMsg
+	err := json.Unmarshal(payload, &msg)
 	if err != nil {
 		return "", err
 	}
-	return man.Command, nil
+
+	err = validate.Struct(msg)
+	if err != nil {
+		return "", err
+	}
+
+	return msg.Command, nil
 }
 
 func GetEdgeAppUniqueID(payload []byte) (model.ManifestUniqueID, error) {
 	var uniqueID uniqueIDmsg
 	err := json.Unmarshal(payload, &uniqueID)
+	if err != nil {
+		return model.ManifestUniqueID{}, err
+	}
+
+	err = validate.Struct(uniqueID)
 	if err != nil {
 		return model.ManifestUniqueID{}, err
 	}

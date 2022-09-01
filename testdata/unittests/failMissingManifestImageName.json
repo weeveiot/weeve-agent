@@ -13,7 +13,9 @@
             "moduleName": "mqtt-ingress",
             "image": {
                 "tag": "V1",
-                "registry": {}
+                "registry": {
+                    "url": "https://hub.docker.com"
+                }
             },
             "envs": [],
             "ports": [],

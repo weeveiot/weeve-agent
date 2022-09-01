@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
@@ -155,7 +155,7 @@ func newTLSConfig() (*tls.Config, error) {
 	log.Debug("MQTT root cert path >> ", config.GetRootCertPath())
 
 	certpool := x509.NewCertPool()
-	rootCert, err := ioutil.ReadFile(config.GetRootCertPath())
+	rootCert, err := os.ReadFile(config.GetRootCertPath())
 	if err != nil {
 		return nil, err
 	}
