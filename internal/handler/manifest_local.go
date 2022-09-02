@@ -1,11 +1,9 @@
 package handler
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 
-	"github.com/Jeffail/gabs/v2"
-	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 )
@@ -18,18 +16,12 @@ func ReadDeployManifestLocal(manifestPath string) error {
 	}
 	defer jsonFile.Close()
 	// read our opened jsonFile as a byte array.
-	byteValue, err := ioutil.ReadAll(jsonFile)
+	byteValue, err := io.ReadAll(jsonFile)
 	if err != nil {
 		return err
 	}
 
-	jsonParsed, err := gabs.ParseJSON(byteValue)
-	if err != nil {
-		return err
-	}
-	log.Debug("Parsed JSON >> ", jsonParsed)
-
-	thisManifest, err := manifest.GetManifest(jsonParsed)
+	thisManifest, err := manifest.Parse(byteValue)
 	if err != nil {
 		return err
 	}

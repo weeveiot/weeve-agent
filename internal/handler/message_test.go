@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
@@ -38,7 +38,7 @@ func TestProcessMessagePass(t *testing.T) {
 	assert := assert.New(t)
 	// Prepare test data
 	manifestPath := "../../testdata/test_manifest.json"
-	jsonBytes, err := ioutil.ReadFile(manifestPath)
+	jsonBytes, err := os.ReadFile(manifestPath)
 	if err != nil {
 		t.Fatal(err)
 	}

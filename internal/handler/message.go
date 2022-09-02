@@ -4,7 +4,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Jeffail/gabs/v2"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/shirou/gopsutil/cpu"
@@ -45,26 +44,15 @@ func SetDisconnected(disconnectParam bool) {
 }
 
 func ProcessMessage(payload []byte) error {
-	jsonParsed, err := gabs.ParseJSON(payload)
+	operation, err := manifest.GetCommand(payload)
 	if err != nil {
 		return err
 	}
-	log.Debug("Parsed JSON >> ", jsonParsed)
-
-	operation, err := manifest.GetCommand(jsonParsed)
-	if err != nil {
-		return err
-	}
-	log.Info("Processing the message >> ", operation)
+	log.Infoln("Processing the", operation, "message")
 
 	switch operation {
 	case dataservice.CMDDeploy:
-		var err = manifest.ValidateManifest(jsonParsed)
-		if err != nil {
-			return err
-		}
-
-		manifest, err := manifest.GetManifest(jsonParsed)
+		manifest, err := manifest.Parse(payload)
 		if err != nil {
 			return err
 		}
@@ -75,12 +63,7 @@ func ProcessMessage(payload []byte) error {
 		log.Info("Deployment done!")
 
 	case dataservice.CMDReDeploy:
-		var err = manifest.ValidateManifest(jsonParsed)
-		if err != nil {
-			return err
-		}
-
-		manifest, err := manifest.GetManifest(jsonParsed)
+		manifest, err := manifest.Parse(payload)
 		if err != nil {
 			return err
 		}
@@ -91,14 +74,10 @@ func ProcessMessage(payload []byte) error {
 		log.Info("Redeployment done!")
 
 	case dataservice.CMDStopService:
-
-		err := manifest.ValidateUniqueIDExist(jsonParsed)
+		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(payload)
 		if err != nil {
 			return err
-
 		}
-
-		manifestUniqueID := manifest.GetEdgeAppUniqueID(jsonParsed)
 		err = dataservice.StopDataService(manifestUniqueID)
 		if err != nil {
 			return err
@@ -106,12 +85,10 @@ func ProcessMessage(payload []byte) error {
 		log.Info("Service stopped!")
 
 	case dataservice.CMDStartService:
-
-		err := manifest.ValidateUniqueIDExist(jsonParsed)
+		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(payload)
 		if err != nil {
 			return err
 		}
-		manifestUniqueID := manifest.GetEdgeAppUniqueID(jsonParsed)
 		err = dataservice.StartDataService(manifestUniqueID)
 		if err != nil {
 			return err
@@ -119,13 +96,10 @@ func ProcessMessage(payload []byte) error {
 		log.Info("Service started!")
 
 	case dataservice.CMDUndeploy:
-
-		err := manifest.ValidateUniqueIDExist(jsonParsed)
+		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(payload)
 		if err != nil {
 			return err
 		}
-
-		manifestUniqueID := manifest.GetEdgeAppUniqueID(jsonParsed)
 		err = dataservice.UndeployDataService(manifestUniqueID, operation)
 		if err != nil {
 			return err
@@ -133,13 +107,10 @@ func ProcessMessage(payload []byte) error {
 		log.Info("Undeployment done!")
 
 	case dataservice.CMDRemove:
-
-		err := manifest.ValidateUniqueIDExist(jsonParsed)
+		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(payload)
 		if err != nil {
 			return err
 		}
-
-		manifestUniqueID := manifest.GetEdgeAppUniqueID(jsonParsed)
 		err = dataservice.UndeployDataService(manifestUniqueID, operation)
 		if err != nil {
 			return err

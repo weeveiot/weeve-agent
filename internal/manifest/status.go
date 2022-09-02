@@ -2,7 +2,7 @@ package manifest
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"os"
 
 	log "github.com/sirupsen/logrus"
@@ -43,7 +43,7 @@ func SetStatus(manifestID string, containerCount int, manifestUniqueID model.Man
 		log.Fatal(err)
 	}
 
-	err = ioutil.WriteFile(ManifestFile, encodedJson, 0644)
+	err = os.WriteFile(ManifestFile, encodedJson, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func InitKnownManifests() {
 	}
 	defer jsonFile.Close()
 
-	byteValue, err := ioutil.ReadAll(jsonFile)
+	byteValue, err := io.ReadAll(jsonFile)
 	if err != nil {
 		log.Fatal(err)
 	}

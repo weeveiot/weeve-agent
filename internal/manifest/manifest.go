@@ -2,19 +2,19 @@ package manifest
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/Jeffail/gabs/v2"
 	"github.com/docker/go-connections/nat"
 	"github.com/weeveiot/weeve-agent/internal/model"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
+	"github.com/go-playground/validator/v10"
+	"github.com/go-playground/validator/v10/non-standard/validators"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -55,32 +55,45 @@ type RegistryDetails struct {
 type connectionsInt map[int][]int
 type connectionsString map[string][]string
 
-func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
-	manifestID := jsonParsed.Search("_id").Data().(string)
-	manifestName := jsonParsed.Search("manifestName").Data().(string)
-	versionNumber := jsonParsed.Search("versionNumber").Data().(float64)
-	labels := map[string]string{
-		"manifestID":    manifestID,
-		"manifestName":  manifestName,
-		"versionNumber": fmt.Sprint(versionNumber),
-	}
+var validate *validator.Validate
 
-	connections, err := getConnections(jsonParsed)
+func init() {
+	validate = validator.New()
+	validate.RegisterValidation("notblank", validators.NotBlank)
+}
+
+func Parse(payload []byte) (Manifest, error) {
+	var man manifestMsg
+	err := json.Unmarshal(payload, &man)
 	if err != nil {
 		return Manifest{}, err
 	}
 
+	log.Debug("Parsed manifest json >> ", man)
+
+	err = validate.Struct(man)
+	if err != nil {
+		return Manifest{}, err
+	}
+
+	labels := map[string]string{
+		"manifestID":    man.ID,
+		"manifestName":  man.ManifestName,
+		"versionNumber": fmt.Sprint(man.VersionNumber),
+	}
+
 	var containerConfigs []ContainerConfig
 
-	modules := jsonParsed.Search("modules").Children()
-	for _, module := range modules {
+	for _, module := range man.Modules {
+		err = validate.Struct(module)
+		if err != nil {
+			return Manifest{}, err
+		}
+
 		var containerConfig ContainerConfig
 
-		containerConfig.ImageName = module.Search("image").Search("name").Data().(string)
-		imageTag := module.Search("image").Search("tag").Data()
-		if imageTag != nil {
-			containerConfig.ImageTag = imageTag.(string)
-		}
+		containerConfig.ImageName = module.Image.Name
+		containerConfig.ImageTag = module.Image.Tag
 		containerConfig.Labels = labels
 
 		imageName := containerConfig.ImageName
@@ -88,50 +101,42 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 			imageName = imageName + ":" + containerConfig.ImageTag
 		}
 
-		moduleType := module.Search("type").Data().(string)
+		containerConfig.Registry = RegistryDetails{module.Image.Registry.Url, imageName, module.Image.Registry.UserName, module.Image.Registry.Password}
 
-		var url string
-		var userName string
-		var password string
-		if data := module.Search("image").Search("registry").Search("url").Data(); data != nil {
-			url = data.(string)
-		}
-		if data := module.Search("image").Search("registry").Search("userName").Data(); data != nil {
-			userName = data.(string)
-		}
-		if data := module.Search("image").Search("registry").Search("password").Data(); data != nil {
-			password = data.(string)
-		}
-		containerConfig.Registry = RegistryDetails{url, imageName, userName, password}
+		envArgs := parseArguments(module.Envs)
 
-		envArgs := parseArguments(module.Search("envs").Children())
-
-		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "SERVICE_ID", manifestID))
+		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "SERVICE_ID", man.ID))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_NAME", containerConfig.ImageName))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PORT", 80))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PATH", "/"))
-		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_TYPE", moduleType))
+		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_TYPE", module.Type))
+		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "LOG_LEVEL", strings.ToUpper(log.GetLevel().String())))
 
 		containerConfig.EnvArgs = envArgs
-		containerConfig.MountConfigs, err = getMounts(module)
+		containerConfig.MountConfigs, err = parseMounts(module.Mounts)
 		if err != nil {
 			return Manifest{}, err
 		}
 
-		devices, err := getDevices(module)
+		devices, err := parseDevices(module.Devices)
 		if err != nil {
 			return Manifest{}, err
 		}
 		containerConfig.Resources = container.Resources{Devices: devices}
 
-		containerConfig.ExposedPorts, containerConfig.PortBinding = getPorts(module)
+		containerConfig.ExposedPorts, containerConfig.PortBinding = parsePorts(module.Ports)
 		containerConfigs = append(containerConfigs, containerConfig)
 	}
 
+	connections, err := parseConnections(man.Connections)
+	if err != nil {
+		return Manifest{}, err
+	}
+
 	manifest := Manifest{
-		ID:               manifestID,
-		ManifestUniqueID: model.ManifestUniqueID{ManifestName: manifestName, VersionNumber: fmt.Sprint(versionNumber)},
-		VersionNumber:    versionNumber,
+		ID:               man.ID,
+		ManifestUniqueID: model.ManifestUniqueID{ManifestName: man.ManifestName, VersionNumber: fmt.Sprint(man.VersionNumber)},
+		VersionNumber:    man.VersionNumber,
 		Modules:          containerConfigs,
 		Labels:           labels,
 		Connections:      connections,
@@ -140,20 +145,34 @@ func GetManifest(jsonParsed *gabs.Container) (Manifest, error) {
 	return manifest, nil
 }
 
-func GetCommand(jsonParsed *gabs.Container) (string, error) {
-	if !jsonParsed.Exists("command") {
-		return "", fmt.Errorf("command not found in manifest")
+func GetCommand(payload []byte) (string, error) {
+	var msg commandMsg
+	err := json.Unmarshal(payload, &msg)
+	if err != nil {
+		return "", err
 	}
 
-	command := jsonParsed.Search("command").Data().(string)
-	return command, nil
+	err = validate.Struct(msg)
+	if err != nil {
+		return "", err
+	}
+
+	return msg.Command, nil
 }
 
-func GetEdgeAppUniqueID(parsedJson *gabs.Container) model.ManifestUniqueID {
-	manifestName := parsedJson.Search("manifestName").Data().(string)
-	versionNumber := parsedJson.Search("versionNumber").Data().(float64)
+func GetEdgeAppUniqueID(payload []byte) (model.ManifestUniqueID, error) {
+	var uniqueID uniqueIDmsg
+	err := json.Unmarshal(payload, &uniqueID)
+	if err != nil {
+		return model.ManifestUniqueID{}, err
+	}
 
-	return model.ManifestUniqueID{ManifestName: manifestName, VersionNumber: fmt.Sprint(versionNumber)}
+	err = validate.Struct(uniqueID)
+	if err != nil {
+		return model.ManifestUniqueID{}, err
+	}
+
+	return model.ManifestUniqueID{ManifestName: uniqueID.ManifestName, VersionNumber: fmt.Sprint(uniqueID.VersionNumber)}, nil
 }
 
 func (m Manifest) UpdateManifest(networkName string) {
@@ -190,29 +209,26 @@ func makeContainerName(networkName string, imageName string, tag string, index i
 	return containerName
 }
 
-func parseArguments(options []*gabs.Container) []string {
-	log.Debug("Processing environments arguments")
+func parseArguments(options []envMsg) []string {
+	log.Debug("Parsing environments arguments")
 
 	var args []string
-	for _, arg := range options {
-		key := arg.Search("key").Data().(string)
-		val := arg.Search("value").Data()
-
-		if key != "" {
-			args = append(args, fmt.Sprintf("%v=%v", key, val))
-		}
+	for _, env := range options {
+		args = append(args, fmt.Sprintf("%v=%v", env.Key, env.Value))
 	}
 	return args
 }
 
-func getMounts(parsedJson *gabs.Container) ([]mount.Mount, error) {
+func parseMounts(mnts []mountMsg) ([]mount.Mount, error) {
+	log.Debug("Parsing mount points")
+
 	mounts := []mount.Mount{}
 
-	for _, mnt := range parsedJson.Search("mounts").Children() {
+	for _, mnt := range mnts {
 		mount := mount.Mount{
 			Type:        "bind",
-			Source:      mnt.Search("host").Data().(string),
-			Target:      mnt.Search("container").Data().(string),
+			Source:      mnt.Host,
+			Target:      mnt.Container,
 			ReadOnly:    false,
 			Consistency: "default",
 			BindOptions: &mount.BindOptions{Propagation: "rprivate", NonRecursive: true},
@@ -224,13 +240,15 @@ func getMounts(parsedJson *gabs.Container) ([]mount.Mount, error) {
 	return mounts, nil
 }
 
-func getDevices(parsedJson *gabs.Container) ([]container.DeviceMapping, error) {
+func parseDevices(devs []deviceMsg) ([]container.DeviceMapping, error) {
+	log.Debug("Parsing devices to attach")
+
 	devices := []container.DeviceMapping{}
 
-	for _, mnt := range parsedJson.Search("devices").Children() {
+	for _, dev := range devs {
 		device := container.DeviceMapping{
-			PathOnHost:        mnt.Search("host").Data().(string),
-			PathInContainer:   mnt.Search("container").Data().(string),
+			PathOnHost:        dev.Host,
+			PathInContainer:   dev.Container,
 			CgroupPermissions: "rw",
 		}
 
@@ -240,12 +258,14 @@ func getDevices(parsedJson *gabs.Container) ([]container.DeviceMapping, error) {
 	return devices, nil
 }
 
-func getPorts(parsedJson *gabs.Container) (nat.PortSet, nat.PortMap) {
+func parsePorts(ports []portMsg) (nat.PortSet, nat.PortMap) {
+	log.Debug("Parsing ports to bind")
+
 	exposedPorts := nat.PortSet{}
 	portBinding := nat.PortMap{}
-	for _, port := range parsedJson.Search("ports").Children() {
-		hostPort := port.Search("host").Data().(string)
-		containerPort := port.Search("container").Data().(string)
+	for _, port := range ports {
+		hostPort := port.Host
+		containerPort := port.Container
 		exposedPorts[nat.Port(containerPort)] = struct{}{}
 		portBinding[nat.Port(containerPort)] = []nat.PortBinding{{HostPort: hostPort}}
 	}
@@ -253,14 +273,10 @@ func getPorts(parsedJson *gabs.Container) (nat.PortSet, nat.PortMap) {
 	return exposedPorts, portBinding
 }
 
-func getConnections(parsedJson *gabs.Container) (map[int][]int, error) {
-	var connectionsStringMap connectionsString
-	connectionsIntMap := make(connectionsInt)
+func parseConnections(connectionsStringMap connectionsString) (connectionsInt, error) {
+	log.Debug("Parsing modules' connections")
 
-	err := json.Unmarshal(parsedJson.Search("connections").Bytes(), &connectionsStringMap)
-	if err != nil {
-		return nil, err
-	}
+	connectionsIntMap := make(connectionsInt)
 
 	for key, values := range connectionsStringMap {
 		var valuesInt []int
@@ -279,67 +295,4 @@ func getConnections(parsedJson *gabs.Container) (map[int][]int, error) {
 	}
 
 	return connectionsIntMap, nil
-}
-
-func ValidateManifest(jsonParsed *gabs.Container) error {
-	var errorList []string
-
-	id := jsonParsed.Search("_id").Data()
-	if id == nil || (strings.TrimSpace(id.(string)) == "") {
-		errorList = append(errorList, "Please provide manifest id")
-	}
-	manifestName := jsonParsed.Search("manifestName").Data()
-	if manifestName == nil || (strings.TrimSpace(manifestName.(string)) == "") {
-		errorList = append(errorList, "Please provide manifestName")
-	}
-	versionNumber := jsonParsed.Search("versionNumber").Data()
-	if versionNumber == nil {
-		errorList = append(errorList, "Please provide manifest versionNumber")
-	}
-	command := jsonParsed.Search("command").Data()
-	if command == nil || (strings.TrimSpace(command.(string)) == "") {
-		errorList = append(errorList, "Please provide manifest command")
-	}
-	modules := jsonParsed.Search("modules").Children()
-	// Check if manifest contains modules
-	if modules == nil || len(modules) < 1 {
-		errorList = append(errorList, "Please provide manifest module/s")
-	} else {
-		for _, module := range modules {
-			imageName := module.Search("image").Search("name").Data()
-			if imageName == nil || (strings.TrimSpace(imageName.(string)) == "") {
-				errorList = append(errorList, "Please provide image name for all modules")
-			}
-
-			imageTag := module.Search("image").Search("tag").Data()
-			if imageTag == nil {
-				errorList = append(errorList, "Please provide image tag for all modules")
-			}
-		}
-	}
-
-	if len(errorList) > 0 {
-		return errors.New(strings.Join(errorList[:], ","))
-	} else {
-		return nil
-	}
-}
-
-func ValidateUniqueIDExist(jsonParsed *gabs.Container) error {
-	// Expected JSON: {"manifestName": "Manifest name", "versionNumber": "Manifest version number"}
-	var errorList []string
-	manifestName := jsonParsed.Search("manifestName").Data()
-	if manifestName == nil || (strings.TrimSpace(manifestName.(string)) == "") {
-		errorList = append(errorList, "Please provide manifestName")
-	}
-	versionNumber := jsonParsed.Search("versionNumber").Data()
-	if versionNumber == nil {
-		errorList = append(errorList, "Please provide manifest versionNumber")
-	}
-
-	if len(errorList) > 0 {
-		return errors.New(strings.Join(errorList[:], " "))
-	} else {
-		return nil
-	}
 }

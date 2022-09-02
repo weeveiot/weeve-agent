@@ -3,10 +3,9 @@ package manifest_test
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 
-	"github.com/Jeffail/gabs/v2"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/go-connections/nat"
@@ -22,16 +21,12 @@ var manifestUniqueID struct {
 func TestGetManifest(t *testing.T) {
 	assert := assert.New(t)
 
-	json, err := ioutil.ReadFile("../../testdata/unittests/mvpManifest.json")
+	json, err := os.ReadFile("../../testdata/unittests/mvpManifest.json")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	jsonParsed, err := gabs.ParseJSON(json)
-	if err != nil {
-		t.Fatal(err)
-	}
-	manifest, _ := manifest.GetManifest(jsonParsed)
+	manifest, _ := manifest.Parse(json)
 
 	assert.NotNil(manifest)
 	assert.Equal("kunbus-demo-manifest", manifest.ManifestUniqueID.ManifestName)
@@ -40,10 +35,10 @@ func TestGetManifest(t *testing.T) {
 	assert.Equal(4, len(manifest.Modules))
 
 	if len(manifest.Modules) == 4 {
-		assert.Equal(4, len(manifest.Modules[0].Labels))
+		assert.Equal(3, len(manifest.Modules[0].Labels))
 		assert.Equal("weevenetwork/mqtt-ingress", manifest.Modules[0].ImageName)
 		assert.Equal("V1", manifest.Modules[0].ImageTag)
-		assert.Equal(10, len(manifest.Modules[0].EnvArgs))
+		assert.Equal(11, len(manifest.Modules[0].EnvArgs))
 		if (len(manifest.Modules[0].EnvArgs)) == 10 {
 			assert.Equal("MQTT_BROKER=mqtt://mapi-dev.weeve.engineering", manifest.Modules[0].EnvArgs[0])
 			assert.Equal("PORT=1883", manifest.Modules[0].EnvArgs[1])
@@ -82,7 +77,7 @@ func TestGetManifest(t *testing.T) {
 		}
 
 		manifest.UpdateManifest("kunbus-demo-manifest_1d")
-		assert.Equal(12, len(manifest.Modules[0].EnvArgs))
+		assert.Equal(13, len(manifest.Modules[0].EnvArgs))
 		if (len(manifest.Modules[0].EnvArgs)) == 12 {
 			assert.Equal("INGRESS_HOST=kunbus-demo-manifest_1d.weevenetwork_mqtt-ingress_V1.0", manifest.Modules[0].EnvArgs[10])
 			assert.Equal("EGRESS_URLS=http://kunbus-demo-manifest_1d.weevenetwork_fluctuation-filter_V1.1:80/", manifest.Modules[0].EnvArgs[11])
@@ -101,31 +96,25 @@ func TestGetEdgeAppUniqueID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	jsonParsed, err := gabs.ParseJSON(json)
+	man, err := manifest.GetEdgeAppUniqueID(json)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	man := manifest.GetEdgeAppUniqueID(jsonParsed)
 	assert.Equal(manifestUniqueID.ManifestName, man.ManifestName)
 	assert.Equal(fmt.Sprintf("%g", manifestUniqueID.VersionNumber), man.VersionNumber)
 }
 
 func TestGetCommand_MissingCommand(t *testing.T) {
 	assert := assert.New(t)
-	errMsg := "command not found in manifest"
+	errMsg := "Key: 'commandMsg.Command' Error:Field validation for 'Command' failed on the 'required' tag"
 
 	json, err := json.Marshal(manifestUniqueID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	jsonParsed, err := gabs.ParseJSON(json)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	cmd, err := manifest.GetCommand(jsonParsed)
+	cmd, err := manifest.GetCommand(json)
 	assert.NotNil(err)
 	if err != nil {
 		assert.Equal(errMsg, err.Error())
@@ -145,12 +134,7 @@ func TestGetCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	jsonParsed, err := gabs.ParseJSON(json)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	cmd, err := manifest.GetCommand(jsonParsed)
+	cmd, err := manifest.GetCommand(json)
 	assert.Nil(err)
 	if err == nil {
 		assert.Equal(commandJson.Command, cmd)
@@ -158,122 +142,94 @@ func TestGetCommand(t *testing.T) {
 }
 
 // Utility function to run ValidateManifest fail tests
-func utilFailTestValidateManifest(filePath string, errMsg string) error {
-	json, err := ioutil.ReadFile(filePath)
+func utilFailTestValidateManifest(t *testing.T, filePath string, errMsg string) {
+	assert := assert.New(t)
+
+	json, err := os.ReadFile(filePath)
 	if err != nil {
-		return err
+		t.Fatal(err)
 	}
 
-	jsonParsed, err := gabs.ParseJSON(json)
+	_, err = manifest.Parse(json)
+	assert.NotNil(err)
 	if err != nil {
-		return err
+		assert.Contains(err.Error(), errMsg)
 	}
-
-	err = manifest.ValidateManifest(jsonParsed)
-	if err == nil {
-		return fmt.Errorf("Expected %s, but got: %s", errMsg, err)
-	} else if err.Error() != errMsg {
-		return fmt.Errorf("Expected %s, but got: %s", errMsg, err)
-	}
-
-	return nil
 }
 
 func TestValidateManifest_MissingManifestID(t *testing.T) {
-	errMsg := "Please provide manifest id"
+	errMsg := "Key: 'manifestMsg.ID' Error:Field validation for 'ID' failed on the 'required' tag"
 	filePath := "../../testdata/unittests/failMissingManifestID.json"
-	err := utilFailTestValidateManifest(filePath, errMsg)
-	assert.Nil(t, err)
+	utilFailTestValidateManifest(t, filePath, errMsg)
 }
 
 func TestValidateManifest_EmptyManifestID(t *testing.T) {
-	errMsg := "Please provide manifest id"
+	errMsg := "Key: 'manifestMsg.ID' Error:Field validation for 'ID' failed on the 'notblank' tag"
 	filePath := "../../testdata/unittests/failEmptyManifestID.json"
-	err := utilFailTestValidateManifest(filePath, errMsg)
-	assert.Nil(t, err)
+	utilFailTestValidateManifest(t, filePath, errMsg)
 }
 
 func TestValidateManifest_MissingManifestName(t *testing.T) {
-	errMsg := "Please provide manifestName"
+	errMsg := "Key: 'manifestMsg.ManifestName' Error:Field validation for 'ManifestName' failed on the 'required' tag"
 	filePath := "../../testdata/unittests/failMissingManifestName.json"
-	err := utilFailTestValidateManifest(filePath, errMsg)
-	assert.Nil(t, err)
+	utilFailTestValidateManifest(t, filePath, errMsg)
 }
 
 func TestValidateManifest_EmptyManifestName(t *testing.T) {
-	errMsg := "Please provide manifestName"
+	errMsg := "Key: 'manifestMsg.ManifestName' Error:Field validation for 'ManifestName' failed on the 'notblank' tag"
 	filePath := "../../testdata/unittests/failEmptyManifestName.json"
-	err := utilFailTestValidateManifest(filePath, errMsg)
-	assert.Nil(t, err)
+	utilFailTestValidateManifest(t, filePath, errMsg)
 }
 
 func TestValidateManifest_MissingManifestVersionNumber(t *testing.T) {
-	errMsg := "Please provide manifest versionNumber"
+	errMsg := "Key: 'manifestMsg.VersionNumber' Error:Field validation for 'VersionNumber' failed on the 'required' tag"
 	filePath := "../../testdata/unittests/failMissingManifestVersionNumber.json"
-	err := utilFailTestValidateManifest(filePath, errMsg)
-	assert.Nil(t, err)
+	utilFailTestValidateManifest(t, filePath, errMsg)
 }
 
 func TestValidateManifest_MissingManifestCommand(t *testing.T) {
-	errMsg := "Please provide manifest command"
+	errMsg := "Key: 'manifestMsg.Command' Error:Field validation for 'Command' failed on the 'required' tag"
 	filePath := "../../testdata/unittests/failMissingManifestCommand.json"
-	err := utilFailTestValidateManifest(filePath, errMsg)
-	assert.Nil(t, err)
+	utilFailTestValidateManifest(t, filePath, errMsg)
 }
 
 func TestValidateManifest_EmptyManifestCommand(t *testing.T) {
-	errMsg := "Please provide manifest command"
+	errMsg := "Key: 'manifestMsg.Command' Error:Field validation for 'Command' failed on the 'notblank' tag"
 	filePath := "../../testdata/unittests/failEmptyManifestCommand.json"
-	err := utilFailTestValidateManifest(filePath, errMsg)
-	assert.Nil(t, err)
+	utilFailTestValidateManifest(t, filePath, errMsg)
 }
 
 func TestValidateManifest_MissingManifestModules(t *testing.T) {
-	errMsg := "Please provide manifest module/s"
+	errMsg := "Key: 'manifestMsg.Modules' Error:Field validation for 'Modules' failed on the 'required' tag"
 	filePath := "../../testdata/unittests/failMissingManifestModules.json"
-	err := utilFailTestValidateManifest(filePath, errMsg)
-	assert.Nil(t, err)
+	utilFailTestValidateManifest(t, filePath, errMsg)
 }
 
 func TestValidateManifest_EmptyManifestModules(t *testing.T) {
-	errMsg := "Please provide manifest module/s"
+	errMsg := "Key: 'manifestMsg.Modules' Error:Field validation for 'Modules' failed on the 'notblank' tag"
 	filePath := "../../testdata/unittests/failEmptyManifestModules.json"
-	err := utilFailTestValidateManifest(filePath, errMsg)
-	assert.Nil(t, err)
+	utilFailTestValidateManifest(t, filePath, errMsg)
 }
 
 func TestValidateManifest_MissingManifestImageName(t *testing.T) {
-	errMsg := "Please provide image name for all modules"
+	errMsg := "Key: 'moduleMsg.Image.Name' Error:Field validation for 'Name' failed on the 'required' tag"
 	filePath := "../../testdata/unittests/failMissingManifestImageName.json"
-	err := utilFailTestValidateManifest(filePath, errMsg)
-	assert.Nil(t, err)
-}
-
-func TestValidateManifest_MissingManifestImageTag(t *testing.T) {
-	errMsg := "Please provide image tag for all modules"
-	filePath := "../../testdata/unittests/failMissingManifestImageTag.json"
-	err := utilFailTestValidateManifest(filePath, errMsg)
-	assert.Nil(t, err)
+	utilFailTestValidateManifest(t, filePath, errMsg)
 }
 
 func TestValidateManifest_EmptyManifestImageName(t *testing.T) {
-	errMsg := "Please provide image name for all modules"
+	errMsg := "Key: 'moduleMsg.Image.Name' Error:Field validation for 'Name' failed on the 'notblank' tag"
 	filePath := "../../testdata/unittests/failEmptyManifestImageName.json"
-	err := utilFailTestValidateManifest(filePath, errMsg)
-	assert.Nil(t, err)
+	utilFailTestValidateManifest(t, filePath, errMsg)
 }
 
 func TestValidateManifest(t *testing.T) {
-	json, err := ioutil.ReadFile("../../testdata/unittests/mvpManifest.json")
+	json, err := os.ReadFile("../../testdata/unittests/mvpManifest.json")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	jsonParsed, err := gabs.ParseJSON(json)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = manifest.ValidateManifest(jsonParsed)
+	_, err = manifest.Parse(json)
 	assert.Nil(t, err)
 }
 
@@ -281,19 +237,14 @@ func TestValidateUniqueIDExist_EmptyManifestName(t *testing.T) {
 	assert := assert.New(t)
 	manifestUniqueID.ManifestName = " "
 	manifestUniqueID.VersionNumber = 1
-	errMsg := "Please provide manifestName"
+	errMsg := "Key: 'uniqueIDmsg.ManifestName' Error:Field validation for 'ManifestName' failed on the 'notblank' tag"
 
 	json, err := json.Marshal(manifestUniqueID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	jsonParsed, err := gabs.ParseJSON(json)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = manifest.ValidateUniqueIDExist(jsonParsed)
+	_, err = manifest.GetEdgeAppUniqueID(json)
 	assert.NotNil(err)
 	if err != nil {
 		assert.Equal(errMsg, err.Error())
@@ -309,11 +260,6 @@ func TestValidateUniqueIDExist(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	jsonParsed, err := gabs.ParseJSON(json)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = manifest.ValidateUniqueIDExist(jsonParsed)
+	_, err = manifest.GetEdgeAppUniqueID(json)
 	assert.Nil(t, err)
 }
