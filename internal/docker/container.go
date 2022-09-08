@@ -4,6 +4,8 @@ package docker
 
 import (
 	"context"
+	"io"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -147,4 +149,35 @@ func ReadDataServiceContainers(manifestUniqueID model.ManifestUniqueID) ([]types
 	}
 
 	return containers, nil
+}
+
+func ReadContainerLogs(containerID string, since string, until string) (string, error) {
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		return "", err
+	}
+
+	options := types.ContainerLogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Since:      since,
+		Until:      until,
+		Timestamps: true,
+		Follow:     true,
+		Tail:       "",
+		Details:    true,
+	}
+
+	out, err := dockerClient.ContainerLogs(context.Background(), containerID, options)
+	if err != nil {
+		return "", err
+	}
+
+	buf := new(strings.Builder)
+	_, err = io.Copy(buf, out)
+	if err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
 }

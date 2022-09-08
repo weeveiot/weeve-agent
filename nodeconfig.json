@@ -4,5 +4,6 @@
  "Password": "",
  "APIkey": "",
  "NodeName": "New Node8081",
- "Registered": false
+ "Registered": false,
+ "EdgeAppLogInvlSec": 60
 }

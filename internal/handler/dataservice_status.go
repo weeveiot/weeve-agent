@@ -75,3 +75,12 @@ func CompareDataServiceStatus(edgeApps []edgeApplications) ([]edgeApplications, 
 	}
 	return latestEdgeApps, statusChange, nil
 }
+
+func GetDataServiceLogs(edgeApps []edgeApplications) (string, error) {
+	logs, err := docker.ReadContainerLogs(edgeApps[0].Containers[0].Name, "", "")
+	if err != nil {
+		return "", err
+	}
+
+	return logs, nil
+}
