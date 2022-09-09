@@ -4,6 +4,7 @@ package docker
 
 import (
 	"context"
+	"encoding/binary"
 	"io"
 	"strings"
 
@@ -19,6 +20,17 @@ import (
 
 var ctx = context.Background()
 var dockerClient *client.Client
+
+type ContainerLog struct {
+	ContainerID string      `json:"containerID"`
+	DockerLogs  []DockerLog `json:"dockerLogs"`
+}
+
+type DockerLog struct {
+	Time   string `json:"time"`
+	Stream string `json:"stream"`
+	Log    string `json:"log"`
+}
 
 func SetupDockerClient() {
 	var err error
@@ -151,11 +163,8 @@ func ReadDataServiceContainers(manifestUniqueID model.ManifestUniqueID) ([]types
 	return containers, nil
 }
 
-func ReadContainerLogs(containerID string, since string, until string) (string, error) {
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	if err != nil {
-		return "", err
-	}
+func ReadContainerLogs(containerID string, since string, until string) (ContainerLog, error) {
+	dockerLogs := ContainerLog{ContainerID: containerID}
 
 	options := types.ContainerLogsOptions{
 		ShowStdout: true,
@@ -165,19 +174,46 @@ func ReadContainerLogs(containerID string, since string, until string) (string, 
 		Timestamps: true,
 		Follow:     true,
 		Tail:       "",
-		Details:    true,
+		Details:    false,
 	}
 
-	out, err := dockerClient.ContainerLogs(context.Background(), containerID, options)
+	reader, err := dockerClient.ContainerLogs(context.Background(), containerID, options)
 	if err != nil {
-		return "", err
+		return dockerLogs, err
 	}
+	defer reader.Close()
 
-	buf := new(strings.Builder)
-	_, err = io.Copy(buf, out)
-	if err != nil {
-		return "", err
+	hdr := make([]byte, 8)
+	for {
+		var docLog DockerLog
+		_, err := reader.Read(hdr)
+		if err != nil {
+			if err == io.EOF {
+				return dockerLogs, nil
+			}
+
+			return dockerLogs, err
+		}
+
+		count := binary.BigEndian.Uint32(hdr[4:])
+		dat := make([]byte, count)
+		_, err = reader.Read(dat)
+		if err != nil && err != io.EOF {
+			return dockerLogs, err
+		}
+
+		time, log, found := strings.Cut(string(dat), " ")
+		if found {
+			docLog.Time = time
+			docLog.Log = log
+			switch hdr[0] {
+			case 1:
+				docLog.Stream = "Stdout"
+			default:
+				docLog.Stream = "Stderr"
+			}
+
+			dockerLogs.DockerLogs = append(dockerLogs.DockerLogs, docLog)
+		}
 	}
-
-	return buf.String(), nil
 }
