@@ -28,7 +28,6 @@ var params struct {
 	NoTLS     bool
 	Heartbeat int
 }
-var lastLogPulledTime time.Time
 
 func SetParams(opt model.Params) {
 	params.Broker = opt.Broker
@@ -62,29 +61,29 @@ func SendHeartbeat() error {
 	return nil
 }
 
-func SendEdgeAppLogs() error {
-	since := ""
-	if !lastLogPulledTime.IsZero() {
-		since = lastLogPulledTime.String()
+func SendEdgeAppLogs() {
+	since := config.GetEdgeAppLastLogTime()
+	if since == "" {
+		since = time.Now().String()
 	}
+	until := time.Now().String()
 
 	knownManifests := manifest.GetKnownManifests()
 	for _, manif := range knownManifests {
-
 		edgeAppLogsTopic := config.GetNodeId() + "/" + manif.ManifestID + "/" + topicEdgeAppLogs
-		msg, err := handler.GetDataServiceLogs(manif, since, "")
+		msg, err := handler.GetDataServiceLogs(manif, since, until)
 		if err != nil {
-			return err
+			log.Errorf("GetDataServiceLogs failed >>", "ManifestID:", manif.ManifestID, " >> Error:", err)
 		}
 
 		log.Debugln("Sending edge app logs >>", "Topic:", edgeAppLogsTopic, ">> Body:", msg)
 		err = publishMessage(edgeAppLogsTopic, msg)
 		if err != nil {
-			return err
+			log.Errorf("Failed to publish logs >>", "Topic:", edgeAppLogsTopic, " >> Error:", err)
 		}
 	}
 
-	return nil
+	config.SetEdgeAppLastLogTime(until)
 }
 
 func ConnectNode() error {

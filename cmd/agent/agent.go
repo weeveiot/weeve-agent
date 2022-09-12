@@ -232,10 +232,7 @@ func sendHeartbeat() {
 
 func sendEdgeAppLogs() {
 	for {
-		err := com.SendEdgeAppLogs()
-		if err != nil {
-			log.Error(err)
-		}
+		com.SendEdgeAppLogs()
 		time.Sleep(time.Second * time.Duration(config.GetEdgeAppLogIntervalSec()))
 	}
 }
