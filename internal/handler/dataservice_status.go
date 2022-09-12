@@ -82,22 +82,23 @@ func CompareDataServiceStatus(edgeApps []edgeApplications) ([]edgeApplications, 
 	return latestEdgeApps, statusChange, nil
 }
 
-func GetDataServiceLogs(edgeApps []edgeApplications) ([]edgeApplicationLog, error) {
-	var edgeAppLogs []edgeApplicationLog
-	for _, edgeApp := range edgeApps {
-		edgeAppLog := edgeApplicationLog{ManifestID: edgeApp.ManifestID}
+func GetDataServiceLogs(manif model.ManifestStatus, since string, until string) (edgeApplicationLog, error) {
 
-		for _, container := range edgeApp.Containers {
-			logs, err := docker.ReadContainerLogs(container.Name, "", "")
-			if err != nil {
-				return []edgeApplicationLog{}, err
-			}
+	edgeAppLog := edgeApplicationLog{ManifestID: manif.ManifestID}
 
-			edgeAppLog.ContainerLogs = append(edgeAppLog.ContainerLogs, logs)
-		}
-
-		edgeAppLogs = append(edgeAppLogs, edgeAppLog)
+	appContainers, err := docker.ReadDataServiceContainers(manif.ManifestUniqueID)
+	if err != nil {
+		return edgeApplicationLog{}, err
 	}
 
-	return edgeAppLogs, nil
+	for _, container := range appContainers {
+		logs, err := docker.ReadContainerLogs(container.ID, since, until)
+		if err != nil {
+			return edgeApplicationLog{}, err
+		}
+
+		edgeAppLog.ContainerLogs = append(edgeAppLog.ContainerLogs, logs)
+	}
+
+	return edgeAppLog, nil
 }

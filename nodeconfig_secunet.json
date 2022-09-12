@@ -4,5 +4,6 @@
  "Password": "",
  "APIkey": "",
  "NodeName": "secunet extended",
- "Registered": false
+ "Registered": false,
+ "EdgeAppLogInvlSec": 60
 }

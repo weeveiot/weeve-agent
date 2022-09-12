@@ -95,6 +95,7 @@ func main() {
 	// Start threads to send status messages
 	go monitorDataServiceStatus()
 	go sendHeartbeat()
+	go sendEdgeAppLogs()
 
 	// Cleanup on ending the process
 	<-done
@@ -207,7 +208,7 @@ func monitorDataServiceStatus() {
 		if err != nil {
 			log.Error(err)
 		}
-		if statusChange == true {
+		if statusChange {
 			err = com.SendHeartbeat()
 			if err != nil {
 				log.Error(err)
@@ -226,5 +227,15 @@ func sendHeartbeat() {
 			log.Error(err)
 		}
 		time.Sleep(time.Second * time.Duration(com.GetHeartbeat()))
+	}
+}
+
+func sendEdgeAppLogs() {
+	for {
+		err := com.SendEdgeAppLogs()
+		if err != nil {
+			log.Error(err)
+		}
+		time.Sleep(time.Second * time.Duration(config.GetEdgeAppLogIntervalSec()))
 	}
 }

@@ -12,11 +12,13 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/config"
 	"github.com/weeveiot/weeve-agent/internal/handler"
+	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 const topicOrchestration = "orchestration"
 const topicNodeStatus = "nodestatus"
+const topicEdgeAppLogs = "debug"
 
 var connected = false
 var publisher mqtt.Client
@@ -26,6 +28,7 @@ var params struct {
 	NoTLS     bool
 	Heartbeat int
 }
+var lastLogPulledTime time.Time
 
 func SetParams(opt model.Params) {
 	params.Broker = opt.Broker
@@ -54,6 +57,31 @@ func SendHeartbeat() error {
 	err = publishMessage(nodeStatusTopic, msg)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func SendEdgeAppLogs() error {
+	since := ""
+	if !lastLogPulledTime.IsZero() {
+		since = lastLogPulledTime.String()
+	}
+
+	knownManifests := manifest.GetKnownManifests()
+	for _, manif := range knownManifests {
+
+		edgeAppLogsTopic := config.GetNodeId() + "/" + manif.ManifestID + "/" + topicEdgeAppLogs
+		msg, err := handler.GetDataServiceLogs(manif, since, "")
+		if err != nil {
+			return err
+		}
+
+		log.Debugln("Sending edge app logs >>", "Topic:", edgeAppLogsTopic, ">> Body:", msg)
+		err = publishMessage(edgeAppLogsTopic, msg)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
