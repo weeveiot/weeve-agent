@@ -63,10 +63,7 @@ func SendHeartbeat() error {
 
 func SendEdgeAppLogs() {
 	since := config.GetEdgeAppLastLogTime()
-	if since == "" {
-		since = time.Now().String()
-	}
-	until := time.Now().String()
+	until := time.Now().UTC().Format(time.RFC3339Nano)
 
 	knownManifests := manifest.GetKnownManifests()
 	for _, manif := range knownManifests {
