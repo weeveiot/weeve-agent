@@ -5,6 +5,5 @@
  "APIkey": "",
  "NodeName": "secunet extended",
  "Registered": false,
- "EdgeAppLogInvlSec": 60,
- "EdgeAppLastLogTime": ""
+ "EdgeAppLogInvlSec": 60
 }
