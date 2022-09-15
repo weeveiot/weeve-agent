@@ -62,12 +62,13 @@ func SendHeartbeat() error {
 }
 
 func SendEdgeAppLogs() {
-	since := config.GetEdgeAppLastLogTime()
-	until := time.Now().UTC().Format(time.RFC3339Nano)
-
 	knownManifests := manifest.GetKnownManifests()
+
 	for _, manif := range knownManifests {
 		edgeAppLogsTopic := config.GetNodeId() + "/" + manif.ManifestID + "/" + topicEdgeAppLogs
+		since := manif.LastLogReadTime
+		until := time.Now().UTC().Format(time.RFC3339Nano)
+
 		msg, err := handler.GetDataServiceLogs(manif, since, until)
 		if err != nil {
 			log.Errorf("GetDataServiceLogs failed >>", "ManifestID:", manif.ManifestID, " >> Error:", err)
@@ -78,9 +79,9 @@ func SendEdgeAppLogs() {
 		if err != nil {
 			log.Errorf("Failed to publish logs >>", "Topic:", edgeAppLogsTopic, " >> Error:", err)
 		}
-	}
 
-	config.SetEdgeAppLastLogTime(until)
+		manifest.SetStatus(manif.ManifestID, manif.ContainerCount, manif.ManifestUniqueID, manif.Status, manif.InTransition, until)
+	}
 }
 
 func ConnectNode() error {

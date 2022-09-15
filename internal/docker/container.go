@@ -172,7 +172,7 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 		Since:      since,
 		Until:      until,
 		Timestamps: true,
-		Follow:     true,
+		Follow:     false,
 		Tail:       "",
 		Details:    false,
 	}
@@ -183,30 +183,29 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 	}
 	defer reader.Close()
 
-	hdr := make([]byte, 8)
+	header := make([]byte, 8)
 	for {
 		var docLog DockerLog
-		_, err := reader.Read(hdr)
+		_, err := reader.Read(header)
 		if err != nil {
 			if err == io.EOF {
 				return dockerLogs, nil
 			}
-
 			return dockerLogs, err
 		}
 
-		count := binary.BigEndian.Uint32(hdr[4:])
-		dat := make([]byte, count)
-		_, err = reader.Read(dat)
+		count := binary.BigEndian.Uint32(header[4:])
+		data := make([]byte, count)
+		_, err = reader.Read(data)
 		if err != nil && err != io.EOF {
 			return dockerLogs, err
 		}
 
-		time, log, found := strings.Cut(string(dat), " ")
+		time, log, found := strings.Cut(string(data), " ")
 		if found {
 			docLog.Time = time
 			docLog.Log = log
-			switch hdr[0] {
+			switch header[0] {
 			case 1:
 				docLog.Stream = "Stdout"
 			default:
