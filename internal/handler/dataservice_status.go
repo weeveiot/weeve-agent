@@ -97,7 +97,9 @@ func GetDataServiceLogs(manif model.ManifestStatus, since string, until string) 
 			return edgeApplicationLog{}, err
 		}
 
-		edgeAppLog.ContainerLogs = append(edgeAppLog.ContainerLogs, logs)
+		if len(logs.DockerLogs) > 0 {
+			edgeAppLog.ContainerLogs = append(edgeAppLog.ContainerLogs, logs)
+		}
 	}
 
 	return edgeAppLog, nil

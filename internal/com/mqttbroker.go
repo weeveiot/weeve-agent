@@ -62,6 +62,7 @@ func SendHeartbeat() error {
 }
 
 func SendEdgeAppLogs() {
+	log.Debugln("Checking edge app logs")
 	knownManifests := manifest.GetKnownManifests()
 
 	for _, manif := range knownManifests {
@@ -74,10 +75,12 @@ func SendEdgeAppLogs() {
 			log.Errorf("GetDataServiceLogs failed >>", "ManifestID:", manif.ManifestID, " >> Error:", err)
 		}
 
-		log.Debugln("Sending edge app logs >>", "Topic:", edgeAppLogsTopic, ">> Body:", msg)
-		err = publishMessage(edgeAppLogsTopic, msg)
-		if err != nil {
-			log.Errorf("Failed to publish logs >>", "Topic:", edgeAppLogsTopic, " >> Error:", err)
+		if len(msg.ContainerLogs) > 0 {
+			log.Debugln("Sending edge app logs >>", "Topic:", edgeAppLogsTopic, ">> Body:", msg)
+			err = publishMessage(edgeAppLogsTopic, msg)
+			if err != nil {
+				log.Errorf("Failed to publish logs >>", "Topic:", edgeAppLogsTopic, " >> Error:", err)
+			}
 		}
 
 		manifest.SetStatus(manif.ManifestID, manif.ContainerCount, manif.ManifestUniqueID, manif.Status, manif.InTransition, until)
