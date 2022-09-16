@@ -62,7 +62,7 @@ func SendHeartbeat() error {
 }
 
 func SendEdgeAppLogs() {
-	log.Debugln("Checking edge app logs")
+	log.Debugln("Check if new logs available for edge apps")
 	knownManifests := manifest.GetKnownManifests()
 
 	for _, manif := range knownManifests {

@@ -22,14 +22,14 @@ var ctx = context.Background()
 var dockerClient *client.Client
 
 type ContainerLog struct {
-	ContainerID string      `json:"containerID"`
-	DockerLogs  []DockerLog `json:"dockerLogs"`
+	ContainerID string `json:"containerID"`
+	Log         []Log  `json:"log"`
 }
 
-type DockerLog struct {
-	Time   string `json:"time"`
-	Stream string `json:"stream"`
-	Log    string `json:"log"`
+type Log struct {
+	Time  string `json:"time"`
+	Level string `json:"level"`
+	Msg   string `json:"msg"`
 }
 
 func SetupDockerClient() {
@@ -185,7 +185,7 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 
 	header := make([]byte, 8)
 	for {
-		var docLog DockerLog
+		var docLog Log
 		_, err := reader.Read(header)
 		if err != nil {
 			if err == io.EOF {
@@ -204,15 +204,15 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 		time, log, found := strings.Cut(string(data), " ")
 		if found {
 			docLog.Time = time
-			docLog.Log = log
+			docLog.Msg = log
 			switch header[0] {
 			case 1:
-				docLog.Stream = "Stdout"
+				docLog.Level = "Stdout"
 			default:
-				docLog.Stream = "Stderr"
+				docLog.Level = "Stderr"
 			}
 
-			dockerLogs.DockerLogs = append(dockerLogs.DockerLogs, docLog)
+			dockerLogs.Log = append(dockerLogs.Log, docLog)
 		}
 	}
 }
