@@ -74,7 +74,7 @@ func SendEdgeAppLogs() {
 
 			msg, err := dataservice.GetDataServiceLogs(manif, since, until)
 			if err != nil {
-				log.Errorf("GetDataServiceLogs failed >>", "ManifestID:", manif.ManifestID, " >> Error:", err)
+				log.Errorln("GetDataServiceLogs failed", ">> ManifestID:", manif.ManifestID, ">> Error:", err)
 			}
 
 			if len(msg.ContainerLogs) > 0 {
