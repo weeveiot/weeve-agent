@@ -49,6 +49,29 @@ func SetStatus(manifestID string, containerCount int, manifestUniqueID model.Man
 	}
 }
 
+func SetLastLogRead(manifestUniqueID model.ManifestUniqueID, lastLogReadTime string) {
+	log.Debugln("Setting last log read time", lastLogReadTime, "to data service", manifestUniqueID)
+
+	for i, manifest := range knownManifests {
+		if manifest.ManifestUniqueID == manifestUniqueID {
+			if lastLogReadTime != "" {
+				knownManifests[i].LastLogReadTime = lastLogReadTime
+			}
+			break
+		}
+	}
+
+	encodedJson, err := json.MarshalIndent(knownManifests, "", " ")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = os.WriteFile(ManifestFile, encodedJson, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 func InitKnownManifests() {
 	jsonFile, err := os.Open(ManifestFile)
 	if os.IsNotExist(err) {

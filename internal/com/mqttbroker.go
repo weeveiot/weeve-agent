@@ -11,12 +11,15 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/config"
+	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/handler"
+	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 const topicOrchestration = "orchestration"
 const topicNodeStatus = "nodestatus"
+const topicEdgeAppLogs = "debug"
 
 var connected = false
 var publisher mqtt.Client
@@ -57,6 +60,34 @@ func SendHeartbeat() error {
 	}
 
 	return nil
+}
+
+func SendEdgeAppLogs() {
+	log.Debugln("Check if new logs available for edge apps")
+	knownManifests := manifest.GetKnownManifests()
+
+	for _, manif := range knownManifests {
+		if manif.Status != model.EdgeAppUndeployed {
+			edgeAppLogsTopic := config.GetNodeId() + "/" + manif.ManifestID + "/" + topicEdgeAppLogs
+			since := manif.LastLogReadTime
+			until := time.Now().UTC().Format(time.RFC3339Nano)
+
+			msg, err := dataservice.GetDataServiceLogs(manif, since, until)
+			if err != nil {
+				log.Errorln("GetDataServiceLogs failed", ">> ManifestID:", manif.ManifestID, ">> Error:", err)
+			}
+
+			if len(msg.ContainerLogs) > 0 {
+				log.Debugln("Sending edge app logs >>", "Topic:", edgeAppLogsTopic, ">> Body:", msg)
+				err = publishMessage(edgeAppLogsTopic, msg)
+				if err != nil {
+					log.Errorln("Failed to publish logs", ">> Topic:", edgeAppLogsTopic, ">> Error:", err)
+				}
+			}
+
+			manifest.SetLastLogRead(manif.ManifestUniqueID, until)
+		}
+	}
 }
 
 func ConnectNode() error {

@@ -12,6 +12,7 @@ type Params struct {
 	LogAge       int    `long:"logage" default:"1" description:"Set the time period to retain the log files (days)" required:"false"`
 	LogBackup    int    `long:"logbackup" default:"5" description:"Set the max number of log files to retain" required:"false"`
 	LogCompress  bool   `long:"logcompress" description:"To compress the log files" required:"false"`
+	LogSendInvl  int    `long:"logsendinvl" description:"Time interval in sec to send edge app logs" required:"false" default:"60"`
 	NodeId       string `long:"nodeId" short:"i" description:"ID of this node" required:"false" default:""`
 	NodeName     string `long:"name" short:"n" description:"Name of this node to be registered" required:"false"`
 	RootCertPath string `long:"rootcert" short:"r" description:"Path to MQTT broker (server) certificate" required:"false"`
@@ -26,6 +27,7 @@ type ManifestStatus struct {
 	Status           string           `json:"status"`
 	ContainerCount   int              `json:"containerCount"`
 	InTransition     bool             `json:"inTransition"`
+	LastLogReadTime  string           `json:"lastLogReadTime"`
 }
 
 type ManifestUniqueID struct {

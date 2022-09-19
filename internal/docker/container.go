@@ -4,6 +4,9 @@ package docker
 
 import (
 	"context"
+	"encoding/binary"
+	"io"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -17,6 +20,17 @@ import (
 
 var ctx = context.Background()
 var dockerClient *client.Client
+
+type ContainerLog struct {
+	ContainerID string `json:"containerID"`
+	Log         []Log  `json:"log"`
+}
+
+type Log struct {
+	Time   string `json:"time"`
+	Stream string `json:"stream"`
+	Log    string `json:"log"`
+}
 
 func SetupDockerClient() {
 	var err error
@@ -147,4 +161,61 @@ func ReadDataServiceContainers(manifestUniqueID model.ManifestUniqueID) ([]types
 	}
 
 	return containers, nil
+}
+
+func ReadContainerLogs(containerID string, since string, until string) (ContainerLog, error) {
+	dockerLogs := ContainerLog{ContainerID: containerID}
+
+	options := types.ContainerLogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Since:      since,
+		Until:      until,
+		Timestamps: true,
+		Follow:     false,
+		Tail:       "",
+		Details:    false,
+	}
+
+	reader, err := dockerClient.ContainerLogs(context.Background(), containerID, options)
+	if err != nil {
+		return dockerLogs, err
+	}
+	defer reader.Close()
+
+	header := make([]byte, 8)
+	for {
+		var docLog Log
+		_, err := reader.Read(header)
+		if err != nil {
+			if err == io.EOF {
+				return dockerLogs, nil
+			}
+			return dockerLogs, err
+		}
+
+		count := binary.BigEndian.Uint32(header[4:])
+		data := make([]byte, count)
+		_, err = reader.Read(data)
+		if err != nil {
+			if err == io.EOF {
+				return dockerLogs, nil
+			}
+			return dockerLogs, err
+		}
+
+		time, log, found := strings.Cut(string(data), " ")
+		if found {
+			docLog.Time = time
+			docLog.Log = log
+			switch header[0] {
+			case 1:
+				docLog.Stream = "Stdout"
+			default:
+				docLog.Stream = "Stderr"
+			}
+
+			dockerLogs.Log = append(dockerLogs.Log, docLog)
+		}
+	}
 }

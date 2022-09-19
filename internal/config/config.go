@@ -13,12 +13,13 @@ import (
 var ConfigPath string
 
 var params struct {
-	RootCertPath string
-	NodeId       string
-	Password     string
-	APIkey       string
-	NodeName     string
-	Registered   bool
+	RootCertPath      string
+	NodeId            string
+	Password          string
+	APIkey            string
+	NodeName          string
+	Registered        bool
+	EdgeAppLogInvlSec int
 }
 
 func GetRootCertPath() string {
@@ -43,6 +44,10 @@ func GetNodeName() string {
 
 func GetRegistered() bool {
 	return params.Registered
+}
+
+func GetEdgeAppLogIntervalSec() int {
+	return params.EdgeAppLogInvlSec
 }
 
 func writeNodeConfigToFile() {
@@ -86,6 +91,11 @@ func UpdateNodeConfig(opt model.Params) {
 
 	if len(opt.RootCertPath) > 0 {
 		params.RootCertPath = opt.RootCertPath
+		configChanged = true
+	}
+
+	if opt.LogSendInvl > 0 {
+		params.EdgeAppLogInvlSec = opt.LogSendInvl
 		configChanged = true
 	}
 

@@ -19,6 +19,12 @@ const CMDStartService = "START"
 const CMDUndeploy = "UNDEPLOY"
 const CMDRemove = "REMOVE"
 
+type edgeApplicationLog struct {
+	ManifestID    string                `json:"manifestID"`
+	Status        string                `json:"status"`
+	ContainerLogs []docker.ContainerLog `json:"containerLog"`
+}
+
 func DeployDataService(man manifest.Manifest, command string) error {
 	//******** STEP 1 - Check if Data Service is already deployed *************//
 	containerCount := len(man.Modules)
@@ -318,4 +324,27 @@ func DataServiceExist(manifestUniqueID model.ManifestUniqueID) (bool, error) {
 	} else {
 		return false, nil
 	}
+}
+
+func GetDataServiceLogs(manif model.ManifestStatus, since string, until string) (edgeApplicationLog, error) {
+
+	edgeAppLog := edgeApplicationLog{ManifestID: manif.ManifestID}
+
+	appContainers, err := docker.ReadDataServiceContainers(manif.ManifestUniqueID)
+	if err != nil {
+		return edgeApplicationLog{}, err
+	}
+
+	for _, container := range appContainers {
+		logs, err := docker.ReadContainerLogs(container.ID, since, until)
+		if err != nil {
+			return edgeApplicationLog{}, err
+		}
+
+		if len(logs.Log) > 0 {
+			edgeAppLog.ContainerLogs = append(edgeAppLog.ContainerLogs, logs)
+		}
+	}
+
+	return edgeAppLog, nil
 }
