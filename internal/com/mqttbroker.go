@@ -81,7 +81,7 @@ func SendEdgeAppLogs() {
 				log.Debugln("Sending edge app logs >>", "Topic:", edgeAppLogsTopic, ">> Body:", msg)
 				err = publishMessage(edgeAppLogsTopic, msg)
 				if err != nil {
-					log.Errorf("Failed to publish logs >>", "Topic:", edgeAppLogsTopic, " >> Error:", err)
+					log.Errorln("Failed to publish logs", ">> Topic:", edgeAppLogsTopic, ">> Error:", err)
 				}
 			}
 
