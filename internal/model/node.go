@@ -18,7 +18,7 @@ type Params struct {
 	ConfigPath        string `long:"config" description:"Path to the .json config file" required:"false"`
 	ManifestPath      string `long:"manifest" description:"Path to the .json manifest file" required:"false"`
 	Disconnect        bool   `long:"disconnect" description:"Disconnect/remove node from weeve manager" required:"false"`
-	EdgeAppLogInvlSec int    `long:"edgeapploginvlsec" description:"Time interval in cec to send edge app logs" required:"false" default:"60"`
+	LogSendInvl int    `long:"logsendinvl" description:"Time interval in sec to send edge app logs" required:"false" default:"60"`
 }
 
 type ManifestStatus struct {
