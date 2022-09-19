@@ -9,12 +9,6 @@ import (
 	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
 )
 
-type edgeApplicationLog struct {
-	ManifestID    string                `json:"manifestID"`
-	Status        string                `json:"status"`
-	ContainerLogs []docker.ContainerLog `json:"containerLog"`
-}
-
 type edgeApplications struct {
 	ManifestID string      `json:"manifestID"`
 	Status     string      `json:"status"`
@@ -80,27 +74,4 @@ func CompareDataServiceStatus(edgeApps []edgeApplications) ([]edgeApplications, 
 		statusChange = true
 	}
 	return latestEdgeApps, statusChange, nil
-}
-
-func GetDataServiceLogs(manif model.ManifestStatus, since string, until string) (edgeApplicationLog, error) {
-
-	edgeAppLog := edgeApplicationLog{ManifestID: manif.ManifestID}
-
-	appContainers, err := docker.ReadDataServiceContainers(manif.ManifestUniqueID)
-	if err != nil {
-		return edgeApplicationLog{}, err
-	}
-
-	for _, container := range appContainers {
-		logs, err := docker.ReadContainerLogs(container.ID, since, until)
-		if err != nil {
-			return edgeApplicationLog{}, err
-		}
-
-		if len(logs.Log) > 0 {
-			edgeAppLog.ContainerLogs = append(edgeAppLog.ContainerLogs, logs)
-		}
-	}
-
-	return edgeAppLog, nil
 }

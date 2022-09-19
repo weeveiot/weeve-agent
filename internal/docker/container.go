@@ -27,9 +27,9 @@ type ContainerLog struct {
 }
 
 type Log struct {
-	Time  string `json:"time"`
-	Level string `json:"level"`
-	Msg   string `json:"msg"`
+	Time   string `json:"time"`
+	Stream string `json:"stream"`
+	Log    string `json:"log"`
 }
 
 func SetupDockerClient() {
@@ -197,19 +197,22 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 		count := binary.BigEndian.Uint32(header[4:])
 		data := make([]byte, count)
 		_, err = reader.Read(data)
-		if err != nil && err != io.EOF {
+		if err != nil {
+			if err == io.EOF {
+				return dockerLogs, nil
+			}
 			return dockerLogs, err
 		}
 
 		time, log, found := strings.Cut(string(data), " ")
 		if found {
 			docLog.Time = time
-			docLog.Msg = log
+			docLog.Log = log
 			switch header[0] {
 			case 1:
-				docLog.Level = "Stdout"
+				docLog.Stream = "Stdout"
 			default:
-				docLog.Level = "Stderr"
+				docLog.Stream = "Stderr"
 			}
 
 			dockerLogs.Log = append(dockerLogs.Log, docLog)

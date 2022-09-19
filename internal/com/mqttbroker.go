@@ -11,6 +11,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/config"
+	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/handler"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
@@ -66,24 +67,26 @@ func SendEdgeAppLogs() {
 	knownManifests := manifest.GetKnownManifests()
 
 	for _, manif := range knownManifests {
-		edgeAppLogsTopic := config.GetNodeId() + "/" + manif.ManifestID + "/" + topicEdgeAppLogs
-		since := manif.LastLogReadTime
-		until := time.Now().UTC().Format(time.RFC3339Nano)
+		if manif.Status != model.EdgeAppUndeployed {
+			edgeAppLogsTopic := config.GetNodeId() + "/" + manif.ManifestID + "/" + topicEdgeAppLogs
+			since := manif.LastLogReadTime
+			until := time.Now().UTC().Format(time.RFC3339Nano)
 
-		msg, err := handler.GetDataServiceLogs(manif, since, until)
-		if err != nil {
-			log.Errorf("GetDataServiceLogs failed >>", "ManifestID:", manif.ManifestID, " >> Error:", err)
-		}
-
-		if len(msg.ContainerLogs) > 0 {
-			log.Debugln("Sending edge app logs >>", "Topic:", edgeAppLogsTopic, ">> Body:", msg)
-			err = publishMessage(edgeAppLogsTopic, msg)
+			msg, err := dataservice.GetDataServiceLogs(manif, since, until)
 			if err != nil {
-				log.Errorf("Failed to publish logs >>", "Topic:", edgeAppLogsTopic, " >> Error:", err)
+				log.Errorf("GetDataServiceLogs failed >>", "ManifestID:", manif.ManifestID, " >> Error:", err)
 			}
-		}
 
-		manifest.SetStatus(manif.ManifestID, manif.ContainerCount, manif.ManifestUniqueID, manif.Status, manif.InTransition, until)
+			if len(msg.ContainerLogs) > 0 {
+				log.Debugln("Sending edge app logs >>", "Topic:", edgeAppLogsTopic, ">> Body:", msg)
+				err = publishMessage(edgeAppLogsTopic, msg)
+				if err != nil {
+					log.Errorf("Failed to publish logs >>", "Topic:", edgeAppLogsTopic, " >> Error:", err)
+				}
+			}
+
+			manifest.SetLastLogRead(manif.ManifestUniqueID, until)
+		}
 	}
 }
 

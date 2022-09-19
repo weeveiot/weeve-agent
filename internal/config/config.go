@@ -94,8 +94,8 @@ func UpdateNodeConfig(opt model.Params) {
 		configChanged = true
 	}
 
-	if opt.EdgeAppLogInvlSec > 0 {
-		params.EdgeAppLogInvlSec = opt.EdgeAppLogInvlSec
+	if opt.LogSendInvl > 0 {
+		params.EdgeAppLogInvlSec = opt.LogSendInvl
 		configChanged = true
 	}
 

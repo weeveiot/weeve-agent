@@ -17,16 +17,13 @@ func GetKnownManifests() []model.ManifestStatus {
 	return knownManifests
 }
 
-func SetStatus(manifestID string, containerCount int, manifestUniqueID model.ManifestUniqueID, status string, inTransition bool, lastLogReadTime string) {
+func SetStatus(manifestID string, containerCount int, manifestUniqueID model.ManifestUniqueID, status string, inTransition bool) {
 	log.Debugln("Setting status", status, "to data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
 	manifestKnown := false
 	for i, manifest := range knownManifests {
 		if manifest.ManifestUniqueID == manifestUniqueID {
 			knownManifests[i].Status = status
 			knownManifests[i].InTransition = inTransition
-			if lastLogReadTime != "" {
-				knownManifests[i].LastLogReadTime = lastLogReadTime
-			}
 			manifestKnown = true
 			break
 		}
@@ -38,8 +35,30 @@ func SetStatus(manifestID string, containerCount int, manifestUniqueID model.Man
 			Status:           status,
 			ContainerCount:   containerCount,
 			InTransition:     inTransition,
-			LastLogReadTime:  lastLogReadTime,
 		})
+	}
+
+	encodedJson, err := json.MarshalIndent(knownManifests, "", " ")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = os.WriteFile(ManifestFile, encodedJson, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func SetLastLogRead(manifestUniqueID model.ManifestUniqueID, lastLogReadTime string) {
+	log.Debugln("Setting last log read time", lastLogReadTime, "to data service", manifestUniqueID)
+
+	for i, manifest := range knownManifests {
+		if manifest.ManifestUniqueID == manifestUniqueID {
+			if lastLogReadTime != "" {
+				knownManifests[i].LastLogReadTime = lastLogReadTime
+			}
+			break
+		}
 	}
 
 	encodedJson, err := json.MarshalIndent(knownManifests, "", " ")
