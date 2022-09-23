@@ -13,7 +13,6 @@ import (
 	"os/exec"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 )
 
@@ -170,7 +169,7 @@ func PullImage(imgDetails manifest.RegistryDetails) error {
 }
 
 func ImageExists(imageName string) (bool, error) {
-	log.Debug("Checking if the image ", imageName, " exists")
+	logger.Log.Debug("Checking if the image ", imageName, " exists")
 	nameWithoutTag, tag := getNameAndTag(imageName)
 
 	// first make a lookup in the local database
@@ -202,7 +201,7 @@ func ImageExists(imageName string) (bool, error) {
 		images := resp_json["images"]
 		for _, image := range images {
 			currentImageName, currentImageTag := getNameAndTag(image["tags"].([]interface{})[0].(string))
-			log.Debug("Looking at image ", currentImageName+":"+currentImageTag)
+			logger.Log.Debug("Looking at image ", currentImageName+":"+currentImageTag)
 			if currentImageName == nameWithoutTag {
 				if tag != "" {
 					if currentImageTag == tag {
@@ -252,6 +251,6 @@ func ImageRemove(imageID string) error {
 		}
 	}
 
-	log.Debug("Removed image ID ", imageID)
+	logger.Log.Debug("Removed image ID ", imageID)
 	return nil
 }

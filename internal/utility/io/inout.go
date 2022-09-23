@@ -5,13 +5,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/weeveiot/weeve-agent/internal/logger"
 )
 
 func GetExeDir() string {
 	exePath, err := os.Getwd()
 	if err != nil {
-		log.Fatal("Could not get the path to the executable.")
+		logger.Log.Fatal("Could not get the path to the executable.")
 	}
 	dir := filepath.Dir(exePath)
 	return dir

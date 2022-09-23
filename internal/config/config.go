@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"os"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/weeveiot/weeve-agent/internal/logger"
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
@@ -53,19 +53,19 @@ func GetEdgeAppLogIntervalSec() int {
 func writeNodeConfigToFile() {
 	encodedJson, err := json.MarshalIndent(params, "", " ")
 	if err != nil {
-		log.Fatal(err)
+		logger.Log.Fatal(err)
 	}
 
 	err = os.WriteFile(ConfigPath, encodedJson, 0644)
 	if err != nil {
-		log.Fatal(err)
+		logger.Log.Fatal(err)
 	}
 }
 
 func readNodeConfigFromFile() {
 	jsonFile, err := os.Open(ConfigPath)
 	if err != nil {
-		log.Fatal(err)
+		logger.Log.Fatal(err)
 	}
 	defer jsonFile.Close()
 
@@ -73,7 +73,7 @@ func readNodeConfigFromFile() {
 	decoder.DisallowUnknownFields()
 	err = decoder.Decode(&params)
 	if err != nil {
-		log.Fatal(err)
+		logger.Log.Fatal(err)
 	}
 }
 
@@ -110,7 +110,7 @@ func UpdateNodeConfig(opt model.Params) {
 		}
 	}
 
-	log.Debugf("Set node config to following params: %+v", params)
+	logger.Log.Debugf("Set node config to following params: %+v", params)
 	if configChanged {
 		writeNodeConfigToFile()
 	}

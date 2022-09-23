@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
-	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 )
 
@@ -34,13 +33,13 @@ func SetupDockerClient() {
 	const keyFile = certDir + "/" + "key.pem"
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		log.Fatal(err)
+		logger.Log.Fatal(err)
 	}
 
 	// // Save TLS keys to decrypt communication with Wireshark
 	// w, err := os.OpenFile("/home/paul/.ssl-key.log", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0600)
 	// if err != nil {
-	// 	log.Fatal(err)
+	// 	logger.Log.Fatal(err)
 	// }
 
 	t := &http.Transport{
@@ -77,7 +76,7 @@ func StartContainer(containerID string) error {
 		return err
 	}
 
-	log.Debug("Started container ID ", containerID)
+	logger.Log.Debug("Started container ID ", containerID)
 	return nil
 }
 
@@ -101,7 +100,7 @@ func CreateAndStartContainer(containerConfig manifest.ContainerConfig) (string, 
 		"params_network": containerConfig.NetworkName,
 	}
 
-	log.Debug("Creating container with following params: ", req_body)
+	logger.Log.Debug("Creating container with following params: ", req_body)
 
 	req_json, err := json.Marshal(req_body)
 	if err != nil {
@@ -131,7 +130,7 @@ func CreateAndStartContainer(containerConfig manifest.ContainerConfig) (string, 
 	json.Unmarshal(body, &resp_json)
 	containerID := resp_json["id"]
 
-	log.Debugln("Created container", containerConfig.ContainerName, "with ID", containerID)
+	logger.Log.Debugln("Created container", containerConfig.ContainerName, "with ID", containerID)
 
 	existingContainers[containerID] = containerConfig.Labels["manifestName"] + containerConfig.Labels["versionNumber"]
 
@@ -161,7 +160,7 @@ func StopContainer(containerID string) error {
 		return err
 	}
 
-	log.Debug("Stopped container ID ", containerID)
+	logger.Log.Debug("Stopped container ID ", containerID)
 	return nil
 }
 
@@ -188,7 +187,7 @@ func StopAndRemoveContainer(containerID string) error {
 		return err
 	}
 
-	log.Debug("Killed container ID ", containerID)
+	logger.Log.Debug("Killed container ID ", containerID)
 	delete(existingContainers, containerID)
 	return nil
 }

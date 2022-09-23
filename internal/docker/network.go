@@ -12,7 +12,7 @@ import (
 	linq "github.com/ahmetb/go-linq/v3"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
-	log "github.com/sirupsen/logrus"
+	"github.com/weeveiot/weeve-agent/internal/logger"
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
@@ -22,7 +22,7 @@ const indexLength = 3
 const maxNetworkIndex = 999
 
 func readAllNetworks() ([]types.NetworkResource, error) {
-	log.Debug("Docker_container -> readAllNetworks")
+	logger.Log.Debug("Docker_container -> readAllNetworks")
 
 	networks, err := dockerClient.NetworkList(ctx, types.NetworkListOptions{})
 	if err != nil {
@@ -33,7 +33,7 @@ func readAllNetworks() ([]types.NetworkResource, error) {
 }
 
 func ReadDataServiceNetworks(manifestUniqueID model.ManifestUniqueID) ([]types.NetworkResource, error) {
-	log.Debug("Docker_container -> ReadDataServiceNetworks")
+	logger.Log.Debug("Docker_container -> ReadDataServiceNetworks")
 
 	filter := filters.NewArgs()
 	filter.Add("label", "manifestName="+manifestUniqueID.ManifestName)
@@ -72,7 +72,7 @@ func makeNetworkName(name string) (string, error) {
 			return "", err
 		}
 		if newCount < 0 { // no available network count found
-			log.Warning("Number of data services limit is exceeded")
+			logger.Log.Warning("Number of data services limit is exceeded")
 			return "", nil
 		}
 	}
@@ -114,7 +114,7 @@ func NetworkPrune(manifestUniqueID model.ManifestUniqueID) error {
 	if err != nil {
 		return err
 	}
-	log.Info("Pruned networks: ", pruneReport.NetworksDeleted)
+	logger.Log.Info("Pruned networks: ", pruneReport.NetworksDeleted)
 	return nil
 }
 

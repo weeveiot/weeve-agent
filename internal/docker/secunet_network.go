@@ -10,7 +10,6 @@ import (
 
 	"github.com/ahmetb/go-linq/v3"
 	"github.com/docker/docker/api/types"
-	log "github.com/sirupsen/logrus"
 )
 
 var existingNetworks = make(map[string]string)
@@ -38,7 +37,7 @@ func makeNetworkName(name string) string {
 	} else {
 		newCount = getLowestAvailableNetworkCount()
 		if newCount < 0 { // no available network count found
-			log.Warning("Number of data services limit is exceeded")
+			logger.Log.Warning("Number of data services limit is exceeded")
 			return ""
 		}
 	}
@@ -50,7 +49,7 @@ func makeNetworkName(name string) string {
 }
 
 func readAllNetworks() []types.NetworkResource {
-	log.Debug("Docker_container -> readAllNetworks")
+	logger.Log.Debug("Docker_container -> readAllNetworks")
 
 	var networks []types.NetworkResource
 

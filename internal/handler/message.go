@@ -4,14 +4,13 @@ import (
 	"errors"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/disk"
 	"github.com/shirou/gopsutil/host"
 	"github.com/shirou/gopsutil/mem"
 	"github.com/weeveiot/weeve-agent/internal/config"
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
+	"github.com/weeveiot/weeve-agent/internal/logger"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
@@ -48,7 +47,7 @@ func ProcessMessage(payload []byte) error {
 	if err != nil {
 		return err
 	}
-	log.Infoln("Processing the", operation, "message")
+	logger.Log.Infoln("Processing the", operation, "message")
 
 	switch operation {
 	case dataservice.CMDDeploy:
@@ -60,7 +59,7 @@ func ProcessMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		log.Info("Deployment done!")
+		logger.Log.Info("Deployment done!")
 
 	case dataservice.CMDReDeploy:
 		manifest, err := manifest.Parse(payload)
@@ -71,7 +70,7 @@ func ProcessMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		log.Info("Redeployment done!")
+		logger.Log.Info("Redeployment done!")
 
 	case dataservice.CMDStopService:
 		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(payload)
@@ -82,7 +81,7 @@ func ProcessMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		log.Info("Service stopped!")
+		logger.Log.Info("Service stopped!")
 
 	case dataservice.CMDStartService:
 		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(payload)
@@ -93,7 +92,7 @@ func ProcessMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		log.Info("Service started!")
+		logger.Log.Info("Service started!")
 
 	case dataservice.CMDUndeploy:
 		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(payload)
@@ -104,7 +103,7 @@ func ProcessMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		log.Info("Undeployment done!")
+		logger.Log.Info("Undeployment done!")
 
 	case dataservice.CMDRemove:
 		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(payload)
@@ -115,7 +114,7 @@ func ProcessMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		log.Info("Full removal done!")
+		logger.Log.Info("Full removal done!")
 	default:
 		return errors.New("received message with unknown command")
 	}

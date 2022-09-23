@@ -11,9 +11,8 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
+	"github.com/weeveiot/weeve-agent/internal/logger"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
-
-	log "github.com/sirupsen/logrus"
 )
 
 func PullImage(imgDetails manifest.RegistryDetails) error {
@@ -63,10 +62,10 @@ func PullImage(imgDetails manifest.RegistryDetails) error {
 	// EVENT: {Status:Status: Image is up to date for busybox:latest Error: Progress: ProgressDetail:{Current:0 Total:0}}
 	if event != nil {
 		if strings.Contains(event.Status, fmt.Sprintf("Downloaded newer image for %s", imgDetails.ImageName)) {
-			log.Info("Pulled image " + imgDetails.ImageName + " into host")
+			logger.Log.Info("Pulled image " + imgDetails.ImageName + " into host")
 		}
 		if strings.Contains(event.Status, fmt.Sprintf("Image is up to date for %s", imgDetails.ImageName)) {
-			log.Info("Updated image " + imgDetails.ImageName + " into host")
+			logger.Log.Info("Updated image " + imgDetails.ImageName + " into host")
 		}
 	}
 

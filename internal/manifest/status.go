@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/weeveiot/weeve-agent/internal/logger"
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
@@ -18,7 +18,7 @@ func GetKnownManifests() []model.ManifestStatus {
 }
 
 func SetStatus(manifestID string, containerCount int, manifestUniqueID model.ManifestUniqueID, status string, inTransition bool) {
-	log.Debugln("Setting status", status, "to data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
+	logger.Log.Debugln("Setting status", status, "to data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
 	manifestKnown := false
 	for i, manifest := range knownManifests {
 		if manifest.ManifestUniqueID == manifestUniqueID {
@@ -40,17 +40,17 @@ func SetStatus(manifestID string, containerCount int, manifestUniqueID model.Man
 
 	encodedJson, err := json.MarshalIndent(knownManifests, "", " ")
 	if err != nil {
-		log.Fatal(err)
+		logger.Log.Fatal(err)
 	}
 
 	err = os.WriteFile(ManifestFile, encodedJson, 0644)
 	if err != nil {
-		log.Fatal(err)
+		logger.Log.Fatal(err)
 	}
 }
 
 func SetLastLogRead(manifestUniqueID model.ManifestUniqueID, lastLogReadTime string) {
-	log.Debugln("Setting last log read time", lastLogReadTime, "to data service", manifestUniqueID)
+	logger.Log.Debugln("Setting last log read time", lastLogReadTime, "to data service", manifestUniqueID)
 
 	for i, manifest := range knownManifests {
 		if manifest.ManifestUniqueID == manifestUniqueID {
@@ -63,12 +63,12 @@ func SetLastLogRead(manifestUniqueID model.ManifestUniqueID, lastLogReadTime str
 
 	encodedJson, err := json.MarshalIndent(knownManifests, "", " ")
 	if err != nil {
-		log.Fatal(err)
+		logger.Log.Fatal(err)
 	}
 
 	err = os.WriteFile(ManifestFile, encodedJson, 0644)
 	if err != nil {
-		log.Fatal(err)
+		logger.Log.Fatal(err)
 	}
 }
 
@@ -78,17 +78,17 @@ func InitKnownManifests() {
 		return
 	}
 	if err != nil {
-		log.Fatal(err)
+		logger.Log.Fatal(err)
 	}
 	defer jsonFile.Close()
 
 	byteValue, err := io.ReadAll(jsonFile)
 	if err != nil {
-		log.Fatal(err)
+		logger.Log.Fatal(err)
 	}
 
 	err = json.Unmarshal(byteValue, &knownManifests)
 	if err != nil {
-		log.Fatal(err)
+		logger.Log.Fatal(err)
 	}
 }

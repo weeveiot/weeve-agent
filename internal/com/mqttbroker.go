@@ -9,10 +9,10 @@ import (
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/config"
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/handler"
+	"github.com/weeveiot/weeve-agent/internal/logger"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
@@ -34,7 +34,7 @@ func SetParams(opt model.Params) {
 	params.Broker = opt.Broker
 	params.NoTLS = opt.NoTLS
 	params.Heartbeat = opt.Heartbeat
-	log.Debugf("Set the following MQTT params: %+v", params)
+	logger.Log.Debugf("Set the following MQTT params: %+v", params)
 }
 
 func GetHeartbeat() int {
@@ -42,7 +42,7 @@ func GetHeartbeat() int {
 }
 
 func SendHeartbeat() error {
-	log.Debug("Node registered >> ", config.GetRegistered(), " | connected >> ", connected)
+	logger.Log.Debug("Node registered >> ", config.GetRegistered(), " | connected >> ", connected)
 	err := reconnectIfNecessary()
 	if err != nil {
 		return err
@@ -53,7 +53,7 @@ func SendHeartbeat() error {
 	if err != nil {
 		return err
 	}
-	log.Debugln("Sending update >>", "Topic:", nodeStatusTopic, ">> Body:", msg)
+	logger.Log.Debugln("Sending update >>", "Topic:", nodeStatusTopic, ">> Body:", msg)
 	err = publishMessage(nodeStatusTopic, msg)
 	if err != nil {
 		return err
@@ -63,7 +63,7 @@ func SendHeartbeat() error {
 }
 
 func SendEdgeAppLogs() {
-	log.Debugln("Check if new logs available for edge apps")
+	logger.Log.Debugln("Check if new logs available for edge apps")
 	knownManifests := manifest.GetKnownManifests()
 
 	for _, manif := range knownManifests {
@@ -74,14 +74,14 @@ func SendEdgeAppLogs() {
 
 			msg, err := dataservice.GetDataServiceLogs(manif, since, until)
 			if err != nil {
-				log.Errorln("GetDataServiceLogs failed", ">> ManifestID:", manif.ManifestID, ">> Error:", err)
+				logger.Log.Errorln("GetDataServiceLogs failed", ">> ManifestID:", manif.ManifestID, ">> Error:", err)
 			}
 
 			if len(msg.ContainerLogs) > 0 {
-				log.Debugln("Sending edge app logs >>", "Topic:", edgeAppLogsTopic, ">> Body:", msg)
+				logger.Log.Debugln("Sending edge app logs >>", "Topic:", edgeAppLogsTopic, ">> Body:", msg)
 				err = publishMessage(edgeAppLogsTopic, msg)
 				if err != nil {
-					log.Errorln("Failed to publish logs", ">> Topic:", edgeAppLogsTopic, ">> Error:", err)
+					logger.Log.Errorln("Failed to publish logs", ">> Topic:", edgeAppLogsTopic, ">> Error:", err)
 				}
 			}
 
@@ -106,20 +106,20 @@ func ConnectNode() error {
 }
 
 func DisconnectNode() {
-	log.Info("Disconnecting.....")
+	logger.Log.Info("Disconnecting.....")
 	if publisher != nil && publisher.IsConnected() {
 		publisher.Disconnect(250)
-		log.Debug("Publisher disconnected")
+		logger.Log.Debug("Publisher disconnected")
 	}
 
 	if subscriber != nil && subscriber.IsConnected() {
 		subscriber.Disconnect(250)
-		log.Debug("Subscriber disconnected")
+		logger.Log.Debug("Subscriber disconnected")
 	}
 }
 
 func initBrokerChannel(pubsubClientId string) (mqtt.Client, error) {
-	log.Debug("Client id >> ", pubsubClientId)
+	logger.Log.Debug("Client id >> ", pubsubClientId)
 
 	// Build the options for the mqtt client
 	channelOptions := mqtt.NewClientOptions()
@@ -141,49 +141,49 @@ func initBrokerChannel(pubsubClientId string) (mqtt.Client, error) {
 		channelOptions.SetTLSConfig(tlsconfig)
 	}
 
-	log.Debug("options >> ", channelOptions)
-	log.Debug("Parsing done! | MQTT configuration done!")
+	logger.Log.Debug("options >> ", channelOptions)
+	logger.Log.Debug("Parsing done! | MQTT configuration done!")
 
 	pubsubClient := mqtt.NewClient(channelOptions)
 	if token := pubsubClient.Connect(); token.Wait() && token.Error() != nil {
 		return nil, token.Error()
 	} else {
-		log.Debug(pubsubClientId, " connected!")
+		logger.Log.Debug(pubsubClientId, " connected!")
 	}
 
 	return pubsubClient, nil
 }
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	log.Debugln("Received message on topic:", msg.Topic(), "Payload:", string(msg.Payload()))
+	logger.Log.Debugln("Received message on topic:", msg.Topic(), "Payload:", string(msg.Payload()))
 
 	if msg.Topic() == config.GetNodeId()+"/"+topicOrchestration {
 		err := handler.ProcessMessage(msg.Payload())
 		if err != nil {
-			log.Error(err)
+			logger.Log.Error(err)
 		}
 	}
 }
 
 var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
-	log.Info("ON connect >> connected >> registered : ", config.GetRegistered())
+	logger.Log.Info("ON connect >> connected >> registered : ", config.GetRegistered())
 
 	if config.GetRegistered() {
 		topicName := config.GetNodeId() + "/" + topicOrchestration
 
-		log.Debug("ON connect >> subscribes >> topicName : ", topicName)
+		logger.Log.Debug("ON connect >> subscribes >> topicName : ", topicName)
 		if token := c.Subscribe(topicName, 0, messagePubHandler); token.Wait() && token.Error() != nil {
-			log.Error("Error on subscribe connection: ", token.Error())
+			logger.Log.Error("Error on subscribe connection: ", token.Error())
 		}
 	}
 }
 
 var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
-	log.Info("Connection lost ", err)
+	logger.Log.Info("Connection lost ", err)
 }
 
 func newTLSConfig() (*tls.Config, error) {
-	log.Debug("MQTT root cert path >> ", config.GetRootCertPath())
+	logger.Log.Debug("MQTT root cert path >> ", config.GetRootCertPath())
 
 	certpool := x509.NewCertPool()
 	rootCert, err := os.ReadFile(config.GetRootCertPath())
@@ -203,7 +203,7 @@ func newTLSConfig() (*tls.Config, error) {
 func publishMessage(topic string, message interface{}) error {
 
 	if !publisher.IsConnected() {
-		log.Infoln("Connecting.....")
+		logger.Log.Infoln("Connecting.....")
 
 		if token := publisher.Connect(); token.Wait() && token.Error() != nil {
 			return token.Error()
@@ -212,10 +212,10 @@ func publishMessage(topic string, message interface{}) error {
 
 	payload, err := json.Marshal(message)
 	if err != nil {
-		log.Fatal(err)
+		logger.Log.Fatal(err)
 	}
 
-	log.Debugln("Publishing message >> Topic:", topic, ">> Payload:", string(payload))
+	logger.Log.Debugln("Publishing message >> Topic:", topic, ">> Payload:", string(payload))
 	if token := publisher.Publish(topic, 0, false, payload); token.Wait() && token.Error() != nil {
 		return token.Error()
 	}
@@ -226,7 +226,7 @@ func publishMessage(topic string, message interface{}) error {
 func reconnectIfNecessary() error {
 	// Attempt reconnect
 	if !publisher.IsConnected() {
-		log.Infoln("Connecting.....", time.Now().String(), time.Now().UnixNano())
+		logger.Log.Infoln("Connecting.....", time.Now().String(), time.Now().UnixNano())
 
 		if token := publisher.Connect(); token.Wait() && token.Error() != nil {
 			return token.Error()
@@ -234,7 +234,7 @@ func reconnectIfNecessary() error {
 	}
 
 	if !subscriber.IsConnected() {
-		log.Infoln("Connecting.....", time.Now().String(), time.Now().UnixNano())
+		logger.Log.Infoln("Connecting.....", time.Now().String(), time.Now().UnixNano())
 
 		if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
 			return token.Error()

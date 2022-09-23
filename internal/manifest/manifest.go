@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/docker/go-connections/nat"
+	"github.com/weeveiot/weeve-agent/internal/logger"
 	"github.com/weeveiot/weeve-agent/internal/model"
 
 	"github.com/docker/docker/api/types/container"
@@ -15,7 +16,6 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/go-playground/validator/v10"
 	"github.com/go-playground/validator/v10/non-standard/validators"
-	log "github.com/sirupsen/logrus"
 )
 
 type Manifest struct {
@@ -69,7 +69,7 @@ func Parse(payload []byte) (Manifest, error) {
 		return Manifest{}, err
 	}
 
-	log.Debug("Parsed manifest json >> ", man)
+	logger.Log.Debug("Parsed manifest json >> ", man)
 
 	err = validate.Struct(man)
 	if err != nil {
@@ -110,7 +110,7 @@ func Parse(payload []byte) (Manifest, error) {
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PORT", 80))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PATH", "/"))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_TYPE", module.Type))
-		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "LOG_LEVEL", strings.ToUpper(log.GetLevel().String())))
+		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "LOG_LEVEL", strings.ToUpper(logger.Log.GetLevel().String())))
 
 		containerConfig.EnvArgs = envArgs
 		containerConfig.MountConfigs, err = parseMounts(module.Mounts)
@@ -200,7 +200,7 @@ func makeContainerName(networkName string, imageName string, tag string, index i
 	// create regular expression for all alphanumeric characters and _ . -
 	reg, err := regexp.Compile("[^A-Za-z0-9_.-]+")
 	if err != nil {
-		log.Fatal(err)
+		logger.Log.Fatal(err)
 	}
 
 	containerName = strings.ReplaceAll(containerName, " ", "")
@@ -210,7 +210,7 @@ func makeContainerName(networkName string, imageName string, tag string, index i
 }
 
 func parseArguments(options []envMsg) []string {
-	log.Debug("Parsing environments arguments")
+	logger.Log.Debug("Parsing environments arguments")
 
 	var args []string
 	for _, env := range options {
@@ -220,7 +220,7 @@ func parseArguments(options []envMsg) []string {
 }
 
 func parseMounts(mnts []mountMsg) ([]mount.Mount, error) {
-	log.Debug("Parsing mount points")
+	logger.Log.Debug("Parsing mount points")
 
 	mounts := []mount.Mount{}
 
@@ -241,7 +241,7 @@ func parseMounts(mnts []mountMsg) ([]mount.Mount, error) {
 }
 
 func parseDevices(devs []deviceMsg) ([]container.DeviceMapping, error) {
-	log.Debug("Parsing devices to attach")
+	logger.Log.Debug("Parsing devices to attach")
 
 	devices := []container.DeviceMapping{}
 
@@ -259,7 +259,7 @@ func parseDevices(devs []deviceMsg) ([]container.DeviceMapping, error) {
 }
 
 func parsePorts(ports []portMsg) (nat.PortSet, nat.PortMap) {
-	log.Debug("Parsing ports to bind")
+	logger.Log.Debug("Parsing ports to bind")
 
 	exposedPorts := nat.PortSet{}
 	portBinding := nat.PortMap{}
@@ -274,7 +274,7 @@ func parsePorts(ports []portMsg) (nat.PortSet, nat.PortMap) {
 }
 
 func parseConnections(connectionsStringMap connectionsString) (connectionsInt, error) {
-	log.Debug("Parsing modules' connections")
+	logger.Log.Debug("Parsing modules' connections")
 
 	connectionsIntMap := make(connectionsInt)
 
