@@ -11,6 +11,7 @@ require (
 	github.com/go-playground/validator/v10 v10.11.0
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
+	github.com/shirou/logrusmqtt v0.0.0-20220923031704-5f8c1b6dc724
 	github.com/sirupsen/logrus v1.7.0
 	github.com/stretchr/testify v1.7.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0

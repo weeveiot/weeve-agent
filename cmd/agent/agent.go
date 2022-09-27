@@ -10,12 +10,14 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/jessevdk/go-flags"
+	"github.com/shirou/logrusmqtt"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
 
@@ -38,18 +40,12 @@ func (f *PlainFormatter) Format(entry *log.Entry) ([]byte, error) {
 	return []byte(fmt.Sprintf("%s %s : %s\n", timestamp, entry.Level, entry.Message)), nil
 }
 
-// The init function in the main package is called before anything else
-// Setup the logging here
 func init() {
-	const dateTimeFormat = "2006-01-02 15:04:05"
-
-	plainFormatter := new(PlainFormatter)
-	plainFormatter.TimestampFormat = dateTimeFormat
-	log.SetFormatter(plainFormatter)
+	log.SetFormatter(&PlainFormatter{
+		TimestampFormat: "2006-01-02 15:04:05",
+	})
 }
 
-// The main package is a special package which is used with the programs that are executable and this package contains main() function
-// The entrypoint for this binary
 func main() {
 	localManifest, disconnect := parseCLIoptions()
 
@@ -180,6 +176,7 @@ func parseCLIoptions() (string, bool) {
 	}
 
 	// FLAG: Broker, NoTLS, Heartbeat, TopicName
+	addHook(brokerUrl, opt.NoTLS)
 	com.SetParams(opt)
 	handler.SetDisconnected(opt.Disconnect)
 
@@ -187,7 +184,10 @@ func parseCLIoptions() (string, bool) {
 }
 
 func validateBrokerUrl(u *url.URL) {
-	host, port, _ := net.SplitHostPort(u.Host)
+	host, port, err := net.SplitHostPort(u.Host)
+	if err != nil {
+		log.Fatal("Error on spliting host port ", err)
+	}
 
 	// Strictly require protocol and host in Broker specification
 	if (len(strings.TrimSpace(host)) == 0) || (len(strings.TrimSpace(u.Scheme)) == 0) {
@@ -235,4 +235,32 @@ func sendEdgeAppLogs() {
 		com.SendEdgeAppLogs()
 		time.Sleep(time.Second * time.Duration(config.GetEdgeAppLogIntervalSec()))
 	}
+}
+
+func addHook(brokerUrl *url.URL, insecure bool) {
+	host, port, _ := net.SplitHostPort(brokerUrl.Host)
+
+	prt, err := strconv.Atoi(port)
+	if err != nil {
+		log.Fatal("Error on converting port string into int ", err)
+	}
+
+	params := logrusmqtt.MQTTHookParams{
+		Hostname: host,
+		Port:     prt,
+		Topic:    config.GetNodeId() + "/debug", // logrusmqtt will additionally append /<loglevel> to this topic
+		Insecure: insecure,
+	}
+
+	if !insecure {
+		params.CAFilepath = config.GetRootCertPath()
+	}
+
+	hook, err := logrusmqtt.NewMQTTHook(params, log.DebugLevel)
+	if err != nil {
+		log.Fatal("Error on adding log hook ", err)
+	}
+
+	log.Debugf("Sending agent's logs to %+v", params)
+	log.AddHook(hook)
 }
