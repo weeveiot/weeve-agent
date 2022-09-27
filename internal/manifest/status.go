@@ -18,11 +18,16 @@ func GetKnownManifests() []model.ManifestStatus {
 }
 
 func SetStatus(manifestID string, containerCount int, manifestUniqueID model.ManifestUniqueID, status string, inTransition bool) {
-	log.Debugln("Setting status", status, "to data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
+	if status != "" {
+		log.Debugln("Setting status", status, "to data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
+	}
+
 	manifestKnown := false
 	for i, manifest := range knownManifests {
 		if manifest.ManifestUniqueID == manifestUniqueID {
-			knownManifests[i].Status = status
+			if status != "" {
+				knownManifests[i].Status = status
+			}
 			knownManifests[i].InTransition = inTransition
 			manifestKnown = true
 			break

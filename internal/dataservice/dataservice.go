@@ -117,9 +117,9 @@ func DeployDataService(man manifest.Manifest, command string) error {
 		containerID, err := docker.CreateAndStartContainer(containerConfig)
 		if err != nil {
 			log.Error(deploymentID, "Failed to create and start container ", containerConfig.ContainerName)
-			manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, model.EdgeAppError, false)
 			log.Info(deploymentID, "Initiating rollback ...")
 			UndeployDataService(man.ManifestUniqueID, CMDRemove)
+			manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, model.EdgeAppError, false)
 			return err
 		}
 		log.Info(deploymentID, "Successfully created container ", containerID, " with args: ", containerConfig.EntryPointArgs)
@@ -219,12 +219,12 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string
 	}
 
 	if !dataServiceExists {
-		log.Errorln(deploymentID, "Data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber, "does not exist")
-		manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
+		log.Infoln(deploymentID, "Data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber, "does not exist. Nothing to undeploy.")
+		manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppUndeployed, false)
 		return nil
 	}
 
-	manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppUndeployed, false)
+	manifest.SetStatus("", 0, manifestUniqueID, "", true)
 
 	//******** STEP 1 - Stop and Remove Containers *************//
 
@@ -292,6 +292,7 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string
 		log.Error(deploymentID, err)
 		return errors.New("Data Service could not be undeployed completely. Cause(s): " + errorlist)
 	} else {
+		manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppUndeployed, false)
 		return nil
 	}
 }
