@@ -176,7 +176,7 @@ func parseCLIoptions() (string, bool) {
 	}
 
 	// FLAG: Broker, NoTLS, Heartbeat, TopicName
-	addHook(brokerUrl, opt.NoTLS)
+	addMqttHookToLog(brokerUrl, opt.NoTLS)
 	com.SetParams(opt)
 	handler.SetDisconnected(opt.Disconnect)
 
@@ -237,7 +237,7 @@ func sendEdgeAppLogs() {
 	}
 }
 
-func addHook(brokerUrl *url.URL, insecure bool) {
+func addMqttHookToLog(brokerUrl *url.URL, insecure bool) {
 	host, port, _ := net.SplitHostPort(brokerUrl.Host)
 
 	prt, err := strconv.Atoi(port)
