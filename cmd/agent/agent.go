@@ -64,7 +64,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	com.DisconnectNode()
 	err = com.ConnectNode()
 	if err != nil {
 		log.Fatal(err)

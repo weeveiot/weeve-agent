@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"os"
-	"strings"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -17,13 +16,13 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
-const topicOrchestration = "orchestration"
-const topicNodeStatus = "nodestatus"
-const topicEdgeAppLogs = "debug"
+const (
+	topicOrchestration = "orchestration"
+	topicNodeStatus    = "nodestatus"
+	topicEdgeAppLogs   = "debug"
+)
 
-var connected = false
-var publisher mqtt.Client
-var subscriber mqtt.Client
+var client mqtt.Client
 var params struct {
 	Broker    string
 	NoTLS     bool
@@ -42,12 +41,6 @@ func GetHeartbeat() int {
 }
 
 func SendHeartbeat() error {
-	log.Debug("Node registered >> ", config.GetRegistered(), " | connected >> ", connected)
-	err := reconnectIfNecessary()
-	if err != nil {
-		return err
-	}
-
 	nodeStatusTopic := topicNodeStatus + "/" + config.GetNodeId()
 	msg, err := handler.GetStatusMessage()
 	if err != nil {
@@ -63,7 +56,7 @@ func SendHeartbeat() error {
 }
 
 func SendEdgeAppLogs() {
-	log.Debugln("Check if new logs available for edge apps")
+	log.Debug("Check if new logs available for edge apps")
 	knownManifests := manifest.GetKnownManifests()
 
 	for _, manif := range knownManifests {
@@ -91,95 +84,77 @@ func SendEdgeAppLogs() {
 }
 
 func ConnectNode() error {
-	var err error
-	publisher, err = initBrokerChannel(config.GetNodeId() + "_pub")
-	if err != nil {
-		return err
-	}
-	subscriber, err = initBrokerChannel(config.GetNodeId() + "_sub")
+	err := createMqttClient()
 	if err != nil {
 		return err
 	}
 
-	connected = true
+	err = subscribeAndSetHandler(topicOrchestration, orchestrationHandler)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func DisconnectNode() {
 	log.Info("Disconnecting.....")
-	if publisher != nil && publisher.IsConnected() {
-		publisher.Disconnect(250)
-		log.Debug("Publisher disconnected")
-	}
-
-	if subscriber != nil && subscriber.IsConnected() {
-		subscriber.Disconnect(250)
-		log.Debug("Subscriber disconnected")
+	if client.IsConnected() {
+		client.Disconnect(250)
+		log.Debug("MQTT client disconnected")
 	}
 }
 
-func initBrokerChannel(pubsubClientId string) (mqtt.Client, error) {
-	log.Debug("Client id >> ", pubsubClientId)
-
+func createMqttClient() error {
 	// Build the options for the mqtt client
 	channelOptions := mqtt.NewClientOptions()
 	channelOptions.AddBroker(params.Broker)
-	channelOptions.SetClientID(pubsubClientId)
-	channelOptions.SetDefaultPublishHandler(messagePubHandler)
-	channelOptions.OnConnectionLost = connectLostHandler
-	if strings.Contains(pubsubClientId, "sub") {
-		channelOptions.OnConnect = connectHandler
-	}
+	channelOptions.SetClientID(config.GetNodeId())
+	channelOptions.SetConnectionLostHandler(connectLostHandler)
 
 	if !params.NoTLS {
 		channelOptions.SetUsername(config.GetNodeId())
 		channelOptions.SetPassword(config.GetPassword())
 		tlsconfig, err := newTLSConfig()
 		if err != nil {
-			return nil, err
+			return err
 		}
 		channelOptions.SetTLSConfig(tlsconfig)
 	}
 
-	log.Debug("options >> ", channelOptions)
-	log.Debug("Parsing done! | MQTT configuration done!")
+	log.Debug("Starting MQTT client with options >> ", channelOptions)
 
-	pubsubClient := mqtt.NewClient(channelOptions)
-	if token := pubsubClient.Connect(); token.Wait() && token.Error() != nil {
-		return nil, token.Error()
-	} else {
-		log.Debug(pubsubClientId, " connected!")
+	client = mqtt.NewClient(channelOptions)
+	if token := client.Connect(); token.Wait() && token.Error() != nil {
+		return token.Error()
 	}
+	log.Debug("MQTT client is connected")
 
-	return pubsubClient, nil
+	return nil
 }
 
-var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
+func subscribeAndSetHandler(topic string, handler mqtt.MessageHandler) error {
+	fullTopic := config.GetNodeId() + "/" + topic
+
+	log.Debug("Subscribing to topic ", fullTopic)
+	if token := client.Subscribe(fullTopic, 1, handler); token.Wait() && token.Error() != nil {
+		log.Error("Error on subscribe connection: ", token.Error())
+	}
+
+	return nil
+}
+
+var orchestrationHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	log.Debugln("Received message on topic:", msg.Topic(), "Payload:", string(msg.Payload()))
 
-	if msg.Topic() == config.GetNodeId()+"/"+topicOrchestration {
-		err := handler.ProcessMessage(msg.Payload())
-		if err != nil {
-			log.Error(err)
-		}
-	}
-}
-
-var connectHandler mqtt.OnConnectHandler = func(c mqtt.Client) {
-	log.Info("ON connect >> connected >> registered : ", config.GetRegistered())
-
-	if config.GetRegistered() {
-		topicName := config.GetNodeId() + "/" + topicOrchestration
-
-		log.Debug("ON connect >> subscribes >> topicName : ", topicName)
-		if token := c.Subscribe(topicName, 0, messagePubHandler); token.Wait() && token.Error() != nil {
-			log.Error("Error on subscribe connection: ", token.Error())
-		}
+	err := handler.ProcessMessage(msg.Payload())
+	if err != nil {
+		log.Error(err)
 	}
 }
 
 var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
-	log.Info("Connection lost ", err)
+	log.Warning("Connection lost ", err)
 }
 
 func newTLSConfig() (*tls.Config, error) {
@@ -201,44 +176,15 @@ func newTLSConfig() (*tls.Config, error) {
 }
 
 func publishMessage(topic string, message interface{}) error {
-
-	if !publisher.IsConnected() {
-		log.Infoln("Connecting.....")
-
-		if token := publisher.Connect(); token.Wait() && token.Error() != nil {
-			return token.Error()
-		}
-	}
-
 	payload, err := json.Marshal(message)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	log.Debugln("Publishing message >> Topic:", topic, ">> Payload:", string(payload))
-	if token := publisher.Publish(topic, 0, false, payload); token.Wait() && token.Error() != nil {
+	// sending with QoS of 1 to ensure that the message gets delivered
+	if token := client.Publish(topic, 1, false, payload); token.Wait() && token.Error() != nil {
 		return token.Error()
-	}
-
-	return nil
-}
-
-func reconnectIfNecessary() error {
-	// Attempt reconnect
-	if !publisher.IsConnected() {
-		log.Infoln("Connecting.....", time.Now().String(), time.Now().UnixNano())
-
-		if token := publisher.Connect(); token.Wait() && token.Error() != nil {
-			return token.Error()
-		}
-	}
-
-	if !subscriber.IsConnected() {
-		log.Infoln("Connecting.....", time.Now().String(), time.Now().UnixNano())
-
-		if token := subscriber.Connect(); token.Wait() && token.Error() != nil {
-			return token.Error()
-		}
 	}
 
 	return nil
