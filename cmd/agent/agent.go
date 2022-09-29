@@ -120,7 +120,7 @@ func parseCLIoptions() (string, bool) {
 	log.SetLevel(l)
 
 	// LOG CONFIGS
-	logger := &lumberjack.Logger{
+	logFile := &lumberjack.Logger{
 		Filename:   filepath.ToSlash(opt.LogFileName),
 		MaxSize:    opt.LogSize,
 		MaxAge:     opt.LogAge,
@@ -128,20 +128,22 @@ func parseCLIoptions() (string, bool) {
 		Compress:   opt.LogCompress,
 	}
 
+	var logOutput io.Writer
+
 	// FLAG: Stdout
 	if opt.Stdout {
-		multiWriter := io.MultiWriter(os.Stdout, logger)
-		log.SetOutput(multiWriter)
+		logOutput = io.MultiWriter(os.Stdout, logFile)
 	} else {
-		log.SetOutput(logger)
+		logOutput = logFile
 	}
+	log.SetOutput(logOutput)
 
-	// FLAG: Show the logs from the Paho package at STDOUT
+	// FLAG: Include the logs from the Paho package
 	if opt.MqttLogs {
-		mqtt.ERROR = golog.New(logger, "[ERROR] ", 0)
-		mqtt.CRITICAL = golog.New(logger, "[CRIT] ", 0)
-		mqtt.WARN = golog.New(logger, "[WARN]  ", 0)
-		mqtt.DEBUG = golog.New(logger, "[DEBUG] ", 0)
+		mqtt.ERROR = golog.New(logOutput, "[ERROR] ", 0)
+		mqtt.CRITICAL = golog.New(logOutput, "[CRIT] ", 0)
+		mqtt.WARN = golog.New(logOutput, "[WARN]  ", 0)
+		mqtt.DEBUG = golog.New(logOutput, "[DEBUG] ", 0)
 	}
 
 	log.Info("Started logging")
