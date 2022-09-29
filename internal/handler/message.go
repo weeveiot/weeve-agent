@@ -6,10 +6,10 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/shirou/gopsutil/cpu"
-	"github.com/shirou/gopsutil/disk"
-	"github.com/shirou/gopsutil/host"
-	"github.com/shirou/gopsutil/mem"
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/disk"
+	"github.com/shirou/gopsutil/v3/host"
+	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/weeveiot/weeve-agent/internal/config"
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
@@ -19,16 +19,16 @@ import (
 var disconnect bool
 
 type statusMessage struct {
-	Status           string             `json:"status"`
-	EdgeApplications []edgeApplications `json:"edgeApplications"`
-	DeviceParams     deviceParams       `json:"deviceParams"`
+	Status           string              `json:"status"`
+	EdgeApplications []edgeApplications  `json:"edgeApplications"`
+	DeviceParams     deviceParamsMessage `json:"deviceParams"`
 }
 
-type deviceParams struct {
-	SystemUpTime float64 `json:"systemUpTime"`
+type deviceParamsMessage struct {
+	SystemUpTime uint64  `json:"systemUpTime"`
 	SystemLoad   float64 `json:"systemLoad"`
-	StorageFree  uint64  `json:"storageFree"`
-	RamFree      uint64  `json:"ramFree"`
+	StorageFree  float64 `json:"storageFree"`
+	RamFree      float64 `json:"ramFree"`
 }
 
 type registrationMessage struct {
@@ -129,38 +129,10 @@ func GetStatusMessage() (statusMessage, error) {
 		return statusMessage{}, err
 	}
 
-	deviceParams := deviceParams{}
-	uptime, err := host.Uptime()
+	deviceParams, err := getDeviceParams()
 	if err != nil {
 		return statusMessage{}, err
 	}
-	if uptime > 0 {
-		deviceParams.SystemUpTime = float64((uptime / 60) / 24)
-	}
-
-	deviceParams.SystemLoad = 0
-	cpu, err := cpu.Percent(0, false)
-	if err != nil {
-		return statusMessage{}, err
-	}
-	if len(cpu) > 0 {
-		for _, c := range cpu {
-			deviceParams.SystemLoad = deviceParams.SystemLoad + c
-		}
-		deviceParams.SystemLoad = deviceParams.SystemLoad / float64(len(cpu))
-	}
-
-	diskStat, err := disk.Usage("/")
-	if err != nil {
-		return statusMessage{}, err
-	}
-	deviceParams.StorageFree = diskStat.Free
-
-	verMem, err := mem.VirtualMemory()
-	if err != nil {
-		return statusMessage{}, err
-	}
-	deviceParams.RamFree = verMem.Free
 
 	// TODO: Do proper check for node status
 	nodeStatus := model.NodeAlarm
@@ -179,6 +151,36 @@ func GetStatusMessage() (statusMessage, error) {
 	}
 
 	return msg, nil
+}
+
+func getDeviceParams() (deviceParamsMessage, error) {
+	uptime, err := host.Uptime()
+	if err != nil {
+		return deviceParamsMessage{}, err
+	}
+
+	cpu, err := cpu.Percent(0, false)
+	if err != nil {
+		return deviceParamsMessage{}, err
+	}
+
+	diskStat, err := disk.Usage("/")
+	if err != nil {
+		return deviceParamsMessage{}, err
+	}
+
+	verMem, err := mem.VirtualMemory()
+	if err != nil {
+		return deviceParamsMessage{}, err
+	}
+
+	params := deviceParamsMessage{
+		SystemUpTime: uptime,
+		SystemLoad:   cpu[0],
+		StorageFree:  100.0 - diskStat.UsedPercent,
+		RamFree:      float64(verMem.Available) / float64(verMem.Total),
+	}
+	return params, nil
 }
 
 func GetRegistrationMessage(nodeId string, nodeName string) registrationMessage {
