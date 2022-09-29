@@ -43,7 +43,7 @@ func SetDisconnected(disconnectParam bool) {
 	disconnect = disconnectParam
 }
 
-func ProcessMessage(payload []byte) error {
+func ProcessOrchestrationMessage(payload []byte) error {
 	operation, err := manifest.GetCommand(payload)
 	if err != nil {
 		return err

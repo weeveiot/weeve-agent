@@ -14,12 +14,15 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/handler"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/secret"
 )
 
 const (
 	topicOrchestration = "orchestration"
 	topicNodeStatus    = "nodestatus"
 	topicEdgeAppLogs   = "debug"
+	topicNodePublicKey = "nodePublicKey"
+	topicOrgPrivateKey = "orgPrivateKey"
 )
 
 var client mqtt.Client
@@ -27,6 +30,10 @@ var params struct {
 	Broker    string
 	NoTLS     bool
 	Heartbeat int
+}
+
+type nodePublicKeyMsg struct {
+	nodePublicKey string
 }
 
 func SetParams(opt model.Params) {
@@ -83,6 +90,14 @@ func SendEdgeAppLogs() {
 	}
 }
 
+func SendNodePublicKey(nodePublicKey []byte) error {
+	topic := config.GetNodeId() + "/" + topicNodePublicKey
+	msg := nodePublicKeyMsg{
+		nodePublicKey: string(nodePublicKey),
+	}
+	return publishMessage(topic, msg)
+}
+
 func ConnectNode() error {
 	err := createMqttClient()
 	if err != nil {
@@ -90,6 +105,11 @@ func ConnectNode() error {
 	}
 
 	err = subscribeAndSetHandler(topicOrchestration, orchestrationHandler)
+	if err != nil {
+		return err
+	}
+
+	err = subscribeAndSetHandler(topicOrgPrivateKey, orgPrivKeyHandler)
 	if err != nil {
 		return err
 	}
@@ -147,7 +167,16 @@ func subscribeAndSetHandler(topic string, handler mqtt.MessageHandler) error {
 var orchestrationHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	log.Debugln("Received message on topic:", msg.Topic(), "Payload:", string(msg.Payload()))
 
-	err := handler.ProcessMessage(msg.Payload())
+	err := handler.ProcessOrchestrationMessage(msg.Payload())
+	if err != nil {
+		log.Error(err)
+	}
+}
+
+var orgPrivKeyHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
+	log.Debugln("Received message on topic:", msg.Topic(), "Payload:", string(msg.Payload()))
+
+	err := secret.ProcessOrgPrivKeyMessage(msg.Payload())
 	if err != nil {
 		log.Error(err)
 	}
