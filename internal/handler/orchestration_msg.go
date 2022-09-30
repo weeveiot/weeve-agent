@@ -38,17 +38,6 @@ func ProcessOrchestrationMessage(payload []byte) error {
 		}
 		log.Info("Deployment done!")
 
-	case dataservice.CMDReDeploy:
-		manifest, err := manifest.Parse(payload)
-		if err != nil {
-			return err
-		}
-		err = dataservice.DeployDataService(manifest, operation)
-		if err != nil {
-			return err
-		}
-		log.Info("Redeployment done!")
-
 	case dataservice.CMDStopService:
 		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(payload)
 		if err != nil {

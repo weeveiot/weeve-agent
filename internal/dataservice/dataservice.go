@@ -12,7 +12,6 @@ import (
 )
 
 const CMDDeploy = "DEPLOY"
-const CMDReDeploy = "REDEPLOY"
 const CMDDeployLocal = "LOCAL_DEPLOY"
 const CMDStopService = "STOP"
 const CMDStartService = "START"
@@ -39,13 +38,13 @@ func DeployDataService(man manifest.Manifest, command string) error {
 			log.Info(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", man.ManifestUniqueID.ManifestName, man.ManifestUniqueID.VersionNumber))
 			return errors.New("data service already exists")
 
-		} else if command == CMDReDeploy || command == CMDDeployLocal {
+		} else if command == CMDDeployLocal {
 			// Clean old data service resources
 			err := UndeployDataService(man.ManifestUniqueID, CMDUndeploy)
 			if err != nil {
 				log.Error(deploymentID, "Error while cleaning old data service -> ", err)
 				manifest.SetStatus(man.ID, containerCount, man.ManifestUniqueID, model.EdgeAppError, false)
-				return errors.New("redeployment failed")
+				return errors.New("local deployment failed")
 			}
 		}
 	}

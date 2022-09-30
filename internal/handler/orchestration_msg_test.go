@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/docker/docker/api/types"
@@ -91,16 +90,6 @@ func TestProcessMessagePass(t *testing.T) {
 		t.FailNow()
 	}
 
-	fmt.Println("TESTING REDEPLOY EDGE APPLICATION...")
-	err = reDeployEdgeApplication(jsonBytes, man)
-	if err != nil {
-		err = undeployEdgeApplication(man, dataservice.CMDRemove)
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.FailNow()
-	}
-
 	fmt.Println("TESTING UNDEPLOY EDGE APPLICATION...")
 	err = undeployEdgeApplication(man, dataservice.CMDUndeploy)
 	if err != nil {
@@ -143,43 +132,6 @@ func deployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
 		_, err := checkContainersExistsWithStatus(man.ManifestUniqueID, len(man.Modules), "running")
 		if err != nil {
 			return err
-		}
-	} else {
-		return errors.New("Network not created")
-	}
-
-	return nil
-}
-
-func reDeployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
-	jsonParsed, err := gabs.ParseJSON(jsonBytes)
-	if err != nil {
-		return err
-	}
-
-	jsonParsed.Set("REDEPLOY", "command")
-	jsonBytes = jsonParsed.Bytes()
-
-	currentTime := time.Now()
-	// Process deploy edge application
-	err = handler.ProcessOrchestrationMessage(jsonBytes)
-	if err != nil {
-		return fmt.Errorf("ProcessMessage returned %v status", err)
-	}
-
-	net, err := getNetwork(man.ManifestUniqueID)
-	if err != nil {
-		return err
-	}
-
-	if len(net) > 0 {
-		if net[0].Created.After(currentTime) {
-			_, err := checkContainersExistsWithStatus(man.ManifestUniqueID, len(man.Modules), "running")
-			if err != nil {
-				return err
-			}
-		} else {
-			return errors.New("Expected new network, found old network")
 		}
 	} else {
 		return errors.New("Network not created")
