@@ -222,7 +222,7 @@ func monitorDataServiceStatus() {
 			log.Error(err)
 			continue
 		}
-		edgeApps = latestEdgeApps
+
 		log.Debug("Latest edge app status: ", edgeApps)
 		if statusChange {
 			msg, err := handler.GetStatusMessage()
@@ -233,6 +233,8 @@ func monitorDataServiceStatus() {
 			err = com.SendHeartbeat(msg)
 			if err != nil {
 				log.Error(err)
+			} else {
+				edgeApps = latestEdgeApps
 			}
 		}
 	}
@@ -255,14 +257,21 @@ func sendHeartbeat() {
 
 func sendEdgeAppLogs() {
 	for {
-		msgs, err := handler.GetEdgeAppLogsMsg()
-		if err != nil {
-			log.Error(err)
-		} else {
-			for _, msg := range msgs {
+		log.Debug("Check if new logs available for edge apps")
+		knownManifests := manifest.GetKnownManifests()
+		until := time.Now().UTC().Format(time.RFC3339Nano)
+
+		for _, manif := range knownManifests {
+			msg, err := handler.GetEdgeAppLogsMsg(manif, until)
+			if err != nil {
+				log.Error(err)
+			} else {
+
 				err = com.SendEdgeAppLogs(msg)
 				if err != nil {
 					log.Error(err)
+				} else {
+					manifest.SetLastLogRead(manif.ManifestUniqueID, until)
 				}
 			}
 		}
