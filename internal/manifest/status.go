@@ -97,3 +97,13 @@ func InitKnownManifests() {
 		log.Fatal(err)
 	}
 }
+
+func GetEdgeAppStatus(manif model.ManifestUniqueID) string {
+	for _, manifest := range knownManifests {
+		if manif.ManifestName == manifest.ManifestUniqueID.ManifestName && manif.VersionNumber == manifest.ManifestUniqueID.VersionNumber {
+			return manifest.Status
+		}
+	}
+
+	return ""
+}

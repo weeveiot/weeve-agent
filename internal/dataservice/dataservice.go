@@ -35,7 +35,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 
 	if dataServiceExists {
 		if command == CMDDeploy {
-			log.Info(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", man.ManifestUniqueID.ManifestName, man.ManifestUniqueID.VersionNumber))
+			log.Warn(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", man.ManifestUniqueID.ManifestName, man.ManifestUniqueID.VersionNumber))
 			return errors.New("data service already exists")
 
 		} else if command == CMDDeployLocal {
@@ -125,15 +125,24 @@ func DeployDataService(man manifest.Manifest, command string) error {
 }
 
 func StopDataService(manifestUniqueID model.ManifestUniqueID) error {
+	log.Infoln("Stopping data service:", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
 	const stateRunning = "running"
 
-	log.Infoln("Stopping data service:", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
+	status := manifest.GetEdgeAppStatus(manifestUniqueID)
+	if status != stateRunning {
+		log.Warn("Can't stop edge application with ManifestName: ", manifestUniqueID.ManifestName, " and VersionNumber: ", manifestUniqueID.VersionNumber, " with status ", status)
+		return fmt.Errorf("can't stop edge application")
+	}
 
 	containers, err := docker.ReadDataServiceContainers(manifestUniqueID)
 	if err != nil {
 		log.Error("Failed to read data service containers.")
-		manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
 		return err
+	}
+
+	if len(containers) == 0 {
+		manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
+		return errors.New("no data service containers found")
 	}
 
 	manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppPaused, true)
@@ -145,12 +154,10 @@ func StopDataService(manifestUniqueID model.ManifestUniqueID) error {
 			if err != nil {
 				log.Error("Could not stop a container")
 				manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
-				return err
 
+				return err
 			}
 			log.Info(strings.Join(container.Names[:], ","), ": ", container.Status, " --> exited")
-		} else {
-			log.Debugln("Container", container.ID, "is", container.State, "and", container.Status)
 		}
 	}
 
@@ -165,6 +172,12 @@ func StartDataService(manifestUniqueID model.ManifestUniqueID) error {
 	const stateExited = "exited"
 	const stateCreated = "created"
 	const statePaused = "paused"
+
+	status := manifest.GetEdgeAppStatus(manifestUniqueID)
+	if status == stateExited || status == stateCreated || status == statePaused {
+		log.Warn("Can't start edge application with ManifestName: ", manifestUniqueID.ManifestName, " and VersionNumber: ", manifestUniqueID.VersionNumber, " with status ", status)
+		return fmt.Errorf("can't start edge application")
+	}
 
 	containers, err := docker.ReadDataServiceContainers(manifestUniqueID)
 	if err != nil {
@@ -207,12 +220,11 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string
 	dataServiceExists, err := DataServiceExist(manifestUniqueID)
 	if err != nil {
 		log.Error(deploymentID, err)
-		manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
 		return err
 	}
 
 	if !dataServiceExists {
-		log.Infoln(deploymentID, "Data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber, "does not exist. Nothing to undeploy.")
+		log.Warn(deploymentID, "Data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber, "does not exist. Nothing to undeploy.")
 		manifest.SetStatus("", 0, manifestUniqueID, model.EdgeAppUndeployed, false)
 		return nil
 	}
