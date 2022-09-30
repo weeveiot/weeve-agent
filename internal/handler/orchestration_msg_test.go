@@ -128,7 +128,7 @@ func TestProcessMessagePass(t *testing.T) {
 
 func deployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
 	// Process deploy edge application
-	err := handler.ProcessMessage(jsonBytes)
+	err := handler.ProcessOrchestrationMessage(jsonBytes)
 	if err != nil {
 		return fmt.Errorf("ProcessMessage returned %v status", err)
 	}
@@ -162,7 +162,7 @@ func reDeployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
 
 	currentTime := time.Now()
 	// Process deploy edge application
-	err = handler.ProcessMessage(jsonBytes)
+	err = handler.ProcessOrchestrationMessage(jsonBytes)
 	if err != nil {
 		return fmt.Errorf("ProcessMessage returned %v status", err)
 	}
@@ -196,7 +196,7 @@ func stopEdgeApplication(man manifest.Manifest) error {
 		panic(err)
 	}
 
-	err = handler.ProcessMessage(jsonB)
+	err = handler.ProcessOrchestrationMessage(jsonB)
 	if err != nil {
 		return fmt.Errorf("ProcessMessage returned %v status", err)
 	}
@@ -217,7 +217,7 @@ func startEdgeApplication(man manifest.Manifest) error {
 		return err
 	}
 
-	err = handler.ProcessMessage(jsonB)
+	err = handler.ProcessOrchestrationMessage(jsonB)
 	if err != nil {
 		return fmt.Errorf("ProcessMessage returned %v status", err)
 	}
@@ -241,7 +241,7 @@ func undeployEdgeApplication(man manifest.Manifest, operation string) error {
 		return err
 	}
 
-	err = handler.ProcessMessage(jsonB)
+	err = handler.ProcessOrchestrationMessage(jsonB)
 	if err != nil {
 		return fmt.Errorf("ProcessMessage returned %v status", err)
 	}

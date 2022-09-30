@@ -5,19 +5,15 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"os"
-	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/config"
-	"github.com/weeveiot/weeve-agent/internal/dataservice"
-	"github.com/weeveiot/weeve-agent/internal/handler"
-	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 const (
-	topicOrchestration = "orchestration"
+	TopicOrchestration = "orchestration"
 	topicNodeStatus    = "nodestatus"
 	topicEdgeAppLogs   = "debug"
 )
@@ -40,14 +36,10 @@ func GetHeartbeat() int {
 	return params.Heartbeat
 }
 
-func SendHeartbeat() error {
+func SendHeartbeat(msg StatusMsg) error {
 	nodeStatusTopic := topicNodeStatus + "/" + config.GetNodeId()
-	msg, err := handler.GetStatusMessage()
-	if err != nil {
-		return err
-	}
 	log.Debugln("Sending update >>", "Topic:", nodeStatusTopic, ">> Body:", msg)
-	err = publishMessage(nodeStatusTopic, msg)
+	err := publishMessage(nodeStatusTopic, msg)
 	if err != nil {
 		return err
 	}
@@ -55,43 +47,31 @@ func SendHeartbeat() error {
 	return nil
 }
 
-func SendEdgeAppLogs() {
-	log.Debug("Check if new logs available for edge apps")
-	knownManifests := manifest.GetKnownManifests()
-
-	for _, manif := range knownManifests {
-		if manif.Status != model.EdgeAppUndeployed {
-			edgeAppLogsTopic := config.GetNodeId() + "/" + manif.ManifestID + "/" + topicEdgeAppLogs
-			since := manif.LastLogReadTime
-			until := time.Now().UTC().Format(time.RFC3339Nano)
-
-			msg, err := dataservice.GetDataServiceLogs(manif, since, until)
-			if err != nil {
-				log.Errorln("GetDataServiceLogs failed", ">> ManifestID:", manif.ManifestID, ">> Error:", err)
-			}
-
-			if len(msg.ContainerLogs) > 0 {
-				log.Debugln("Sending edge app logs >>", "Topic:", edgeAppLogsTopic, ">> Body:", msg)
-				err = publishMessage(edgeAppLogsTopic, msg)
-				if err != nil {
-					log.Errorln("Failed to publish logs", ">> Topic:", edgeAppLogsTopic, ">> Error:", err)
-				}
-			}
-
-			manifest.SetLastLogRead(manif.ManifestUniqueID, until)
+func SendEdgeAppLogs(msg EdgeAppLogMsg) error {
+	if len(msg.ContainerLogs) > 0 {
+		edgeAppLogsTopic := config.GetNodeId() + "/" + msg.ManifestID + "/" + topicEdgeAppLogs
+		log.Debugln("Sending edge app logs >>", "Topic:", edgeAppLogsTopic, ">> Body:", msg)
+		err := publishMessage(edgeAppLogsTopic, msg)
+		if err != nil {
+			log.Errorln("Failed to publish logs", ">> Topic:", edgeAppLogsTopic, ">> Error:", err)
+			return err
 		}
 	}
+
+	return nil
 }
 
-func ConnectNode() error {
+func ConnectNode(subscriptions map[string]mqtt.MessageHandler) error {
 	err := createMqttClient()
 	if err != nil {
 		return err
 	}
 
-	err = subscribeAndSetHandler(topicOrchestration, orchestrationHandler)
-	if err != nil {
-		return err
+	for topic, handler := range subscriptions {
+		err = subscribeAndSetHandler(topic, handler)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -142,15 +122,6 @@ func subscribeAndSetHandler(topic string, handler mqtt.MessageHandler) error {
 	}
 
 	return nil
-}
-
-var orchestrationHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	log.Debugln("Received message on topic:", msg.Topic(), "Payload:", string(msg.Payload()))
-
-	err := handler.ProcessMessage(msg.Payload())
-	if err != nil {
-		log.Error(err)
-	}
 }
 
 var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
