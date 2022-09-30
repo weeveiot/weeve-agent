@@ -54,7 +54,7 @@ func main() {
 	docker.SetupDockerClient()
 
 	if localManifest != "" {
-		err := handler.ReadDeployManifestLocal(localManifest)
+		err := dataservice.ReadDeployManifestLocal(localManifest)
 		if err != nil {
 			log.Fatal("Deployment of the local manifest failed! CAUSE --> ", err)
 		}
@@ -64,7 +64,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = com.ConnectNode()
+	err = com.ConnectNode(setSubscriptionHandlers())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -75,7 +75,11 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		err = com.SendHeartbeat()
+		msg, err := handler.GetStatusMessage()
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = com.SendHeartbeat(msg)
 		if err != nil {
 			log.Error(err)
 		}
@@ -198,6 +202,13 @@ func validateBrokerUrl(u *url.URL) {
 	log.Infof("Broker host->%v at port->%v over %v", host, port, u.Scheme)
 }
 
+func setSubscriptionHandlers() map[string]mqtt.MessageHandler {
+	subscriptions := make(map[string]mqtt.MessageHandler)
+	subscriptions[com.TopicOrchestration] = handler.OrchestrationHandler
+
+	return subscriptions
+}
+
 func monitorDataServiceStatus() {
 	edgeApps, err := handler.GetDataServiceStatus()
 	if err != nil {
@@ -205,27 +216,38 @@ func monitorDataServiceStatus() {
 	}
 
 	for {
+		time.Sleep(time.Second * time.Duration(5))
 		latestEdgeApps, statusChange, err := handler.CompareDataServiceStatus(edgeApps)
 		if err != nil {
 			log.Error(err)
+			continue
 		}
+		edgeApps = latestEdgeApps
+		log.Debug("Latest edge app status: ", edgeApps)
 		if statusChange {
-			err = com.SendHeartbeat()
+			msg, err := handler.GetStatusMessage()
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+			err = com.SendHeartbeat(msg)
 			if err != nil {
 				log.Error(err)
 			}
 		}
-		edgeApps = latestEdgeApps
-		log.Debug("Latest edge app status: ", edgeApps)
-		time.Sleep(time.Second * time.Duration(5))
 	}
 }
 
 func sendHeartbeat() {
 	for {
-		err := com.SendHeartbeat()
+		msg, err := handler.GetStatusMessage()
 		if err != nil {
 			log.Error(err)
+		} else {
+			err = com.SendHeartbeat(msg)
+			if err != nil {
+				log.Error(err)
+			}
 		}
 		time.Sleep(time.Second * time.Duration(com.GetHeartbeat()))
 	}
@@ -233,7 +255,18 @@ func sendHeartbeat() {
 
 func sendEdgeAppLogs() {
 	for {
-		com.SendEdgeAppLogs()
+		msgs, err := handler.GetEdgeAppLogsMsg()
+		if err != nil {
+			log.Error(err)
+		} else {
+			for _, msg := range msgs {
+				err = com.SendEdgeAppLogs(msg)
+				if err != nil {
+					log.Error(err)
+				}
+			}
+		}
+
 		time.Sleep(time.Second * time.Duration(config.GetEdgeAppLogIntervalSec()))
 	}
 }

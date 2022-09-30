@@ -1,10 +1,9 @@
-package handler
+package dataservice
 
 import (
 	"io"
 	"os"
 
-	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 )
 
@@ -26,7 +25,7 @@ func ReadDeployManifestLocal(manifestPath string) error {
 		return err
 	}
 
-	err = dataservice.DeployDataService(thisManifest, dataservice.CMDDeployLocal)
+	err = DeployDataService(thisManifest, CMDDeployLocal)
 	if err != nil {
 		return err
 	}
