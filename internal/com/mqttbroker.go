@@ -36,6 +36,18 @@ func GetHeartbeat() int {
 	return params.Heartbeat
 }
 
+func SendHeartbeatMsg() {
+	msg, err := GetStatusMessage()
+	if err != nil {
+		log.Error(err)
+	} else {
+		err = SendHeartbeat(msg)
+		if err != nil {
+			log.Error(err)
+		}
+	}
+}
+
 func SendHeartbeat(msg StatusMsg) error {
 	nodeStatusTopic := topicNodeStatus + "/" + config.GetNodeId()
 	log.Debugln("Sending update >>", "Topic:", nodeStatusTopic, ">> Body:", msg)
