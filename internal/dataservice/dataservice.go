@@ -31,7 +31,6 @@ func DeployDataService(man manifest.Manifest, command string) error {
 	if err != nil {
 		log.Error(deploymentID, err)
 		setAndSendStatus(man.ID, containerCount, man.ManifestUniqueID, model.EdgeAppError, false)
-		com.SendHeartbeatMsg()
 		return err
 	}
 
@@ -357,6 +356,6 @@ func GetDataServiceLogs(manif model.ManifestStatus, since string, until string) 
 }
 
 func setAndSendStatus(manifestID string, containerCount int, manifestUniqueID model.ManifestUniqueID, status string, inTransition bool) {
-	manifest.SetStatus(manifestID, containerCount, manifestUniqueID, model.EdgeAppError, false)
+	manifest.SetStatus(manifestID, containerCount, manifestUniqueID, status, false)
 	com.SendHeartbeatMsg()
 }
