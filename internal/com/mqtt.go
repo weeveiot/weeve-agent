@@ -149,7 +149,7 @@ func newTLSConfig() (*tls.Config, error) {
 func publishMessage(topic string, message interface{}) error {
 	payload, err := json.Marshal(message)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	log.Debugln("Publishing message >> Topic:", topic, ">> Payload:", string(payload))
