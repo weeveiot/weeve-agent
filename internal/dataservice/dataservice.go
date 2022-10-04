@@ -225,7 +225,7 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string
 	}
 
 	if !dataServiceExists {
-		log.Warn(deploymentID, "Data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber, "does not exist. Nothing to undeploy.")
+		log.Warnln(deploymentID, "Data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber, "does not exist. Nothing to undeploy.")
 		setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppUndeployed, false)
 		return nil
 	}
@@ -356,6 +356,13 @@ func GetDataServiceLogs(manif model.ManifestStatus, since string, until string) 
 }
 
 func setAndSendStatus(manifestID string, containerCount int, manifestUniqueID model.ManifestUniqueID, status string, inTransition bool) {
-	manifest.SetStatus(manifestID, containerCount, manifestUniqueID, status, false)
-	com.SendHeartbeatMsg()
+	manifest.SetStatus(manifestID, containerCount, manifestUniqueID, status, inTransition)
+	msg, err := GetStatusMessage()
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = com.SendHeartbeat(msg)
+	if err != nil {
+		log.Error(err)
+	}
 }

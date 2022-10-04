@@ -75,7 +75,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		msg, err := com.GetStatusMessage()
+		msg, err := dataservice.GetStatusMessage()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -183,7 +183,7 @@ func parseCLIoptions() (string, bool) {
 	// FLAG: Broker, NoTLS, Heartbeat, TopicName
 	addMqttHookToLog(brokerUrl, opt.NoTLS)
 	com.SetParams(opt)
-	com.SetDisconnected(opt.Disconnect)
+	dataservice.SetDisconnected(opt.Disconnect)
 
 	return opt.ManifestPath, opt.Disconnect
 }
@@ -210,14 +210,14 @@ func setSubscriptionHandlers() map[string]mqtt.MessageHandler {
 }
 
 func monitorDataServiceStatus() {
-	edgeApps, err := com.GetDataServiceStatus()
+	edgeApps, err := dataservice.GetDataServiceStatus()
 	if err != nil {
 		log.Error(err)
 	}
 
 	for {
 		time.Sleep(time.Second * time.Duration(5))
-		latestEdgeApps, statusChange, err := com.CompareDataServiceStatus(edgeApps)
+		latestEdgeApps, statusChange, err := dataservice.CompareDataServiceStatus(edgeApps)
 		if err != nil {
 			log.Error(err)
 			continue
@@ -225,7 +225,7 @@ func monitorDataServiceStatus() {
 
 		log.Debug("Latest edge app status: ", edgeApps)
 		if statusChange {
-			msg, err := com.GetStatusMessage()
+			msg, err := dataservice.GetStatusMessage()
 			if err != nil {
 				log.Error(err)
 				continue
@@ -242,7 +242,15 @@ func monitorDataServiceStatus() {
 
 func sendHeartbeat() {
 	for {
-		com.SendHeartbeatMsg()
+		msg, err := dataservice.GetStatusMessage()
+		if err != nil {
+			log.Error(err)
+		} else {
+			err = com.SendHeartbeat(msg)
+			if err != nil {
+				log.Error(err)
+			}
+		}
 		time.Sleep(time.Second * time.Duration(com.GetHeartbeat()))
 	}
 }
