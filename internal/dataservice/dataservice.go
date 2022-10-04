@@ -331,28 +331,6 @@ func DataServiceExist(manifestUniqueID model.ManifestUniqueID) (bool, error) {
 	}
 }
 
-func GetDataServiceLogs(manif model.ManifestStatus, since string, until string) ([]docker.ContainerLog, error) {
-	var containerLogs []docker.ContainerLog
-
-	appContainers, err := docker.ReadDataServiceContainers(manif.ManifestUniqueID)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, container := range appContainers {
-		logs, err := docker.ReadContainerLogs(container.ID, since, until)
-		if err != nil {
-			return nil, err
-		}
-
-		if len(logs.Log) > 0 {
-			containerLogs = append(containerLogs, logs)
-		}
-	}
-
-	return containerLogs, nil
-}
-
 func setAndSendStatus(manifestID string, containerCount int, manifestUniqueID model.ManifestUniqueID, status string, inTransition bool) {
 	manifest.SetStatus(manifestID, containerCount, manifestUniqueID, status, inTransition)
 	err := SendStatus()
