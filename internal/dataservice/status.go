@@ -144,7 +144,7 @@ func getDeviceParams() (com.DeviceParamsMsg, error) {
 		SystemUpTime: uptime,
 		SystemLoad:   cpu[0],
 		StorageFree:  100.0 - diskStat.UsedPercent,
-		RamFree:      float64(verMem.Available) / float64(verMem.Total),
+		RamFree:      float64(verMem.Available) / float64(verMem.Total) * 100.0,
 	}
 	return params, nil
 }
