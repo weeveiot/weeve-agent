@@ -45,7 +45,7 @@ const (
 	EdgeAppRunning    = "Running"
 	EdgeAppPaused     = "Paused"
 	EdgeAppError      = "Error"
-	EdgeAppIninted    = "Initiated"
+	EdgeAppInitiated  = "Initiated"
 	EdgeAppUndeployed = "Undeployed"
 )
 

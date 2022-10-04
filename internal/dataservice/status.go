@@ -1,4 +1,4 @@
-package com
+package dataservice
 
 import (
 	"strings"
@@ -7,6 +7,7 @@ import (
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/mem"
+	"github.com/weeveiot/weeve-agent/internal/com"
 	"github.com/weeveiot/weeve-agent/internal/config"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
@@ -20,15 +21,27 @@ func SetDisconnected(disconnectParam bool) {
 	disconnect = disconnectParam
 }
 
-func GetStatusMessage() (StatusMsg, error) {
+func SendStatus() error {
+	msg, err := GetStatusMessage()
+	if err != nil {
+		return err
+	}
+	err = com.SendHeartbeat(msg)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetStatusMessage() (com.StatusMsg, error) {
 	edgeApps, err := GetDataServiceStatus()
 	if err != nil {
-		return StatusMsg{}, err
+		return com.StatusMsg{}, err
 	}
 
 	deviceParams, err := getDeviceParams()
 	if err != nil {
-		return StatusMsg{}, err
+		return com.StatusMsg{}, err
 	}
 
 	// TODO: Do proper check for node status
@@ -41,7 +54,7 @@ func GetStatusMessage() (StatusMsg, error) {
 		nodeStatus = model.NodeDisconnected
 	}
 
-	msg := StatusMsg{
+	msg := com.StatusMsg{
 		Status:           nodeStatus,
 		EdgeApplications: edgeApps,
 		DeviceParams:     deviceParams,
@@ -50,13 +63,13 @@ func GetStatusMessage() (StatusMsg, error) {
 	return msg, nil
 }
 
-func GetDataServiceStatus() ([]EdgeAppMsg, error) {
-	edgeApps := []EdgeAppMsg{}
+func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
+	edgeApps := []com.EdgeAppMsg{}
 	knownManifests := manifest.GetKnownManifests()
 
 	for _, manif := range knownManifests {
-		edgeApplication := EdgeAppMsg{ManifestID: manif.ManifestID, Status: manif.Status}
-		containersStat := []ContainerMsg{}
+		edgeApplication := com.EdgeAppMsg{ManifestID: manif.ManifestID, Status: manif.Status}
+		containersStat := []com.ContainerMsg{}
 
 		appContainers, err := docker.ReadDataServiceContainers(manif.ManifestUniqueID)
 		if err != nil {
@@ -69,7 +82,7 @@ func GetDataServiceStatus() ([]EdgeAppMsg, error) {
 
 		for _, con := range appContainers {
 			// The Status of each container is (assumed to be): Running, Paused, Restarting, Created, Exited
-			container := ContainerMsg{Name: strings.Join(con.Names, ", "), Status: ioutility.FirstToUpper(con.State)}
+			container := com.ContainerMsg{Name: strings.Join(con.Names, ", "), Status: ioutility.FirstToUpper(con.State)}
 			containersStat = append(containersStat, container)
 
 			if !manif.InTransition && edgeApplication.Status != model.EdgeAppError {
@@ -87,7 +100,7 @@ func GetDataServiceStatus() ([]EdgeAppMsg, error) {
 	return edgeApps, nil
 }
 
-func CompareDataServiceStatus(edgeApps []EdgeAppMsg) ([]EdgeAppMsg, bool, error) {
+func CompareDataServiceStatus(edgeApps []com.EdgeAppMsg) ([]com.EdgeAppMsg, bool, error) {
 	statusChange := false
 
 	latestEdgeApps, err := GetDataServiceStatus()
@@ -106,32 +119,32 @@ func CompareDataServiceStatus(edgeApps []EdgeAppMsg) ([]EdgeAppMsg, bool, error)
 	return latestEdgeApps, statusChange, nil
 }
 
-func getDeviceParams() (DeviceParamsMsg, error) {
+func getDeviceParams() (com.DeviceParamsMsg, error) {
 	uptime, err := host.Uptime()
 	if err != nil {
-		return DeviceParamsMsg{}, err
+		return com.DeviceParamsMsg{}, err
 	}
 
 	cpu, err := cpu.Percent(0, false)
 	if err != nil {
-		return DeviceParamsMsg{}, err
+		return com.DeviceParamsMsg{}, err
 	}
 
 	diskStat, err := disk.Usage("/")
 	if err != nil {
-		return DeviceParamsMsg{}, err
+		return com.DeviceParamsMsg{}, err
 	}
 
 	verMem, err := mem.VirtualMemory()
 	if err != nil {
-		return DeviceParamsMsg{}, err
+		return com.DeviceParamsMsg{}, err
 	}
 
-	params := DeviceParamsMsg{
+	params := com.DeviceParamsMsg{
 		SystemUpTime: uptime,
 		SystemLoad:   cpu[0],
 		StorageFree:  100.0 - diskStat.UsedPercent,
-		RamFree:      float64(verMem.Available) / float64(verMem.Total),
+		RamFree:      float64(verMem.Available) / float64(verMem.Total) * 100.0,
 	}
 	return params, nil
 }

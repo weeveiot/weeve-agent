@@ -36,18 +36,6 @@ func GetHeartbeat() int {
 	return params.Heartbeat
 }
 
-func SendHeartbeatMsg() {
-	msg, err := GetStatusMessage()
-	if err != nil {
-		log.Error(err)
-	} else {
-		err = SendHeartbeat(msg)
-		if err != nil {
-			log.Error(err)
-		}
-	}
-}
-
 func SendHeartbeat(msg StatusMsg) error {
 	nodeStatusTopic := topicNodeStatus + "/" + config.GetNodeId()
 	log.Debugln("Sending update >>", "Topic:", nodeStatusTopic, ">> Body:", msg)
@@ -161,7 +149,7 @@ func newTLSConfig() (*tls.Config, error) {
 func publishMessage(topic string, message interface{}) error {
 	payload, err := json.Marshal(message)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	log.Debugln("Publishing message >> Topic:", topic, ">> Payload:", string(payload))

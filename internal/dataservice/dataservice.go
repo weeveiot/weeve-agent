@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/weeveiot/weeve-agent/internal/com"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
@@ -50,8 +49,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 		}
 	}
 
-	setAndSendStatus(man.ID, containerCount, man.ManifestUniqueID, model.EdgeAppIninted, false)
-	//TODO: We need to publish status back to MAPI here, to show client that this Node received the DEPLOY
+	setAndSendStatus(man.ID, containerCount, man.ManifestUniqueID, model.EdgeAppInitiated, false)
 
 	//******** STEP 2 - Pull all images *************//
 	log.Info(deploymentID, "Iterating modules, pulling image into host if missing ...")
@@ -225,7 +223,7 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string
 	}
 
 	if !dataServiceExists {
-		log.Warn(deploymentID, "Data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber, "does not exist. Nothing to undeploy.")
+		log.Warnln(deploymentID, "Data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber, "does not exist. Nothing to undeploy.")
 		setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppUndeployed, false)
 		return nil
 	}
@@ -333,29 +331,10 @@ func DataServiceExist(manifestUniqueID model.ManifestUniqueID) (bool, error) {
 	}
 }
 
-func GetDataServiceLogs(manif model.ManifestStatus, since string, until string) ([]docker.ContainerLog, error) {
-	var containerLogs []docker.ContainerLog
-
-	appContainers, err := docker.ReadDataServiceContainers(manif.ManifestUniqueID)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, container := range appContainers {
-		logs, err := docker.ReadContainerLogs(container.ID, since, until)
-		if err != nil {
-			return nil, err
-		}
-
-		if len(logs.Log) > 0 {
-			containerLogs = append(containerLogs, logs)
-		}
-	}
-
-	return containerLogs, nil
-}
-
 func setAndSendStatus(manifestID string, containerCount int, manifestUniqueID model.ManifestUniqueID, status string, inTransition bool) {
-	manifest.SetStatus(manifestID, containerCount, manifestUniqueID, status, false)
-	com.SendHeartbeatMsg()
+	manifest.SetStatus(manifestID, containerCount, manifestUniqueID, status, inTransition)
+	err := SendStatus()
+	if err != nil {
+		log.Error(err)
+	}
 }
