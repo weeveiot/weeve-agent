@@ -80,8 +80,8 @@ func TestProcessMessagePass(t *testing.T) {
 		t.FailNow()
 	}
 
-	fmt.Println("TESTING START EDGE APPLICATION...")
-	err = startEdgeApplication(man)
+	fmt.Println("TESTING RESUME EDGE APPLICATION...")
+	err = resumeEdgeApplication(man)
 	if err != nil {
 		err = undeployEdgeApplication(man, dataservice.CMDRemove)
 		if err != nil {
@@ -161,9 +161,9 @@ func stopEdgeApplication(man manifest.Manifest) error {
 	return nil
 }
 
-func startEdgeApplication(man manifest.Manifest) error {
-	// Process start edge application
-	manCmd.Command = dataservice.CMDStartService
+func resumeEdgeApplication(man manifest.Manifest) error {
+	// Process resume edge application
+	manCmd.Command = dataservice.CMDResumeService
 	jsonB, err := json.Marshal(manCmd)
 	if err != nil {
 		return err

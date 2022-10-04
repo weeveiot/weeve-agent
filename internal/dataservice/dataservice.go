@@ -14,7 +14,7 @@ import (
 const CMDDeploy = "DEPLOY"
 const CMDDeployLocal = "LOCAL_DEPLOY"
 const CMDStopService = "STOP"
-const CMDStartService = "START"
+const CMDResumeService = "RESUME"
 const CMDUndeploy = "UNDEPLOY"
 const CMDRemove = "REMOVE"
 
@@ -144,7 +144,7 @@ func StopDataService(manifestUniqueID model.ManifestUniqueID) error {
 		return errors.New("no data service containers found")
 	}
 
-	setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppPaused, true)
+	setAndSendStatus("", 0, manifestUniqueID, "", true)
 
 	for _, container := range containers {
 		if container.State == stateRunning {
@@ -157,6 +157,8 @@ func StopDataService(manifestUniqueID model.ManifestUniqueID) error {
 				return err
 			}
 			log.Info(strings.Join(container.Names[:], ","), ": ", container.Status, " --> exited")
+		} else {
+			log.Debugln("Container", container.ID, "is", container.State, "and", container.Status)
 		}
 	}
 
@@ -165,8 +167,8 @@ func StopDataService(manifestUniqueID model.ManifestUniqueID) error {
 	return nil
 }
 
-func StartDataService(manifestUniqueID model.ManifestUniqueID) error {
-	log.Infoln("Starting data service:", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
+func ResumeDataService(manifestUniqueID model.ManifestUniqueID) error {
+	log.Infoln("Resuming data service:", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
 
 	const stateExited = "exited"
 	const stateCreated = "created"
@@ -174,8 +176,8 @@ func StartDataService(manifestUniqueID model.ManifestUniqueID) error {
 
 	status := manifest.GetEdgeAppStatus(manifestUniqueID)
 	if status == stateExited || status == stateCreated || status == statePaused {
-		log.Warn("Can't start edge application with ManifestName: ", manifestUniqueID.ManifestName, " and VersionNumber: ", manifestUniqueID.VersionNumber, " with status ", status)
-		return fmt.Errorf("can't start edge application")
+		log.Warn("Can't resume edge application with ManifestName: ", manifestUniqueID.ManifestName, " and VersionNumber: ", manifestUniqueID.VersionNumber, " with status ", status)
+		return fmt.Errorf("can't resume edge application")
 	}
 
 	containers, err := docker.ReadDataServiceContainers(manifestUniqueID)
@@ -190,7 +192,7 @@ func StartDataService(manifestUniqueID model.ManifestUniqueID) error {
 		return errors.New("no data service containers found")
 	}
 
-	setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppRunning, true)
+	setAndSendStatus("", 0, manifestUniqueID, "", true)
 
 	for _, container := range containers {
 		if container.State == stateExited || container.State == stateCreated || container.State == statePaused {
