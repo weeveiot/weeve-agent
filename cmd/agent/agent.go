@@ -75,13 +75,9 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		msg, err := dataservice.GetStatusMessage()
+		err = dataservice.SendStatus()
 		if err != nil {
 			log.Fatal(err)
-		}
-		err = com.SendHeartbeat(msg)
-		if err != nil {
-			log.Error(err)
 		}
 		log.Info("weeve agent disconnected")
 		os.Exit(0)
@@ -222,35 +218,26 @@ func monitorDataServiceStatus() {
 			log.Error(err)
 			continue
 		}
+		log.Debug("Latest edge app status: ", latestEdgeApps)
 
-		log.Debug("Latest edge app status: ", edgeApps)
 		if statusChange {
-			msg, err := dataservice.GetStatusMessage()
+			err := dataservice.SendStatus()
 			if err != nil {
 				log.Error(err)
 				continue
 			}
-			err = com.SendHeartbeat(msg)
-			if err != nil {
-				log.Error(err)
-			} else {
-				edgeApps = latestEdgeApps
-			}
+			edgeApps = latestEdgeApps
 		}
 	}
 }
 
 func sendHeartbeat() {
 	for {
-		msg, err := dataservice.GetStatusMessage()
+		err := dataservice.SendStatus()
 		if err != nil {
 			log.Error(err)
-		} else {
-			err = com.SendHeartbeat(msg)
-			if err != nil {
-				log.Error(err)
-			}
 		}
+
 		time.Sleep(time.Second * time.Duration(com.GetHeartbeat()))
 	}
 }
@@ -262,18 +249,7 @@ func sendEdgeAppLogs() {
 		until := time.Now().UTC().Format(time.RFC3339Nano)
 
 		for _, manif := range knownManifests {
-			msg, err := handler.GetEdgeAppLogsMsg(manif, until)
-			if err != nil {
-				log.Error(err)
-			} else {
-
-				err = com.SendEdgeAppLogs(msg)
-				if err != nil {
-					log.Error(err)
-				} else {
-					manifest.SetLastLogRead(manif.ManifestUniqueID, until)
-				}
-			}
+			dataservice.SendEdgeAppLogs(manif, until)
 		}
 
 		time.Sleep(time.Second * time.Duration(config.GetEdgeAppLogIntervalSec()))

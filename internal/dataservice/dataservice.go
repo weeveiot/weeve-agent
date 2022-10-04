@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/weeveiot/weeve-agent/internal/com"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
@@ -50,8 +49,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 		}
 	}
 
-	setAndSendStatus(man.ID, containerCount, man.ManifestUniqueID, model.EdgeAppIninted, false)
-	//TODO: We need to publish status back to MAPI here, to show client that this Node received the DEPLOY
+	setAndSendStatus(man.ID, containerCount, man.ManifestUniqueID, model.EdgeAppInitiated, false)
 
 	//******** STEP 2 - Pull all images *************//
 	log.Info(deploymentID, "Iterating modules, pulling image into host if missing ...")
@@ -357,11 +355,7 @@ func GetDataServiceLogs(manif model.ManifestStatus, since string, until string) 
 
 func setAndSendStatus(manifestID string, containerCount int, manifestUniqueID model.ManifestUniqueID, status string, inTransition bool) {
 	manifest.SetStatus(manifestID, containerCount, manifestUniqueID, status, inTransition)
-	msg, err := GetStatusMessage()
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = com.SendHeartbeat(msg)
+	err := SendStatus()
 	if err != nil {
 		log.Error(err)
 	}

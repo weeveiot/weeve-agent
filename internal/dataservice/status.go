@@ -21,6 +21,18 @@ func SetDisconnected(disconnectParam bool) {
 	disconnect = disconnectParam
 }
 
+func SendStatus() error {
+	msg, err := GetStatusMessage()
+	if err != nil {
+		return err
+	}
+	err = com.SendHeartbeat(msg)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func GetStatusMessage() (com.StatusMsg, error) {
 	edgeApps, err := GetDataServiceStatus()
 	if err != nil {
