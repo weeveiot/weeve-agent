@@ -27,10 +27,6 @@ var params struct {
 	Heartbeat int
 }
 
-type nodePublicKeyMsg struct {
-	nodePublicKey string
-}
-
 func SetParams(opt model.Params) {
 	params.Broker = opt.Broker
 	params.NoTLS = opt.NoTLS
@@ -45,7 +41,7 @@ func GetHeartbeat() int {
 func SendHeartbeat(msg StatusMsg) error {
 	nodeStatusTopic := topicNodeStatus + "/" + config.GetNodeId()
 	log.Debugln("Sending update >>", "Topic:", nodeStatusTopic, ">> Body:", msg)
-	err := publishMessage(nodeStatusTopic, msg)
+	err := publishMessage(nodeStatusTopic, msg, false)
 	if err != nil {
 		return err
 	}
@@ -57,7 +53,7 @@ func SendEdgeAppLogs(msg EdgeAppLogMsg) error {
 	if len(msg.ContainerLogs) > 0 {
 		edgeAppLogsTopic := config.GetNodeId() + "/" + msg.ManifestID + "/" + topicEdgeAppLogs
 		log.Debugln("Sending edge app logs >>", "Topic:", edgeAppLogsTopic, ">> Body:", msg)
-		err := publishMessage(edgeAppLogsTopic, msg)
+		err := publishMessage(edgeAppLogsTopic, msg, false)
 		if err != nil {
 			log.Errorln("Failed to publish logs", ">> Topic:", edgeAppLogsTopic, ">> Error:", err)
 			return err
@@ -68,11 +64,12 @@ func SendEdgeAppLogs(msg EdgeAppLogMsg) error {
 }
 
 func SendNodePublicKey(nodePublicKey []byte) error {
-	topic := config.GetNodeId() + "/" + topicNodePublicKey
+	topic := topicNodePublicKey + "/" + config.GetNodeId()
 	msg := nodePublicKeyMsg{
-		nodePublicKey: string(nodePublicKey),
+		NodePublicKey: string(nodePublicKey),
 	}
-	return publishMessage(topic, msg)
+	log.Debugln("Sending nodePublicKey >>", "Topic:", topic, ">> Body:", msg)
+	return publishMessage(topic, msg, true)
 }
 
 func ConnectNode(subscriptions map[string]mqtt.MessageHandler) error {
@@ -160,7 +157,7 @@ func newTLSConfig() (*tls.Config, error) {
 	return configTLS, nil
 }
 
-func publishMessage(topic string, message interface{}) error {
+func publishMessage(topic string, message interface{}, retained bool) error {
 	payload, err := json.Marshal(message)
 	if err != nil {
 		log.Fatal(err)
@@ -168,7 +165,7 @@ func publishMessage(topic string, message interface{}) error {
 
 	log.Debugln("Publishing message >> Topic:", topic, ">> Payload:", string(payload))
 	// sending with QoS of 1 to ensure that the message gets delivered
-	if token := client.Publish(topic, 1, false, payload); token.Wait() && token.Error() != nil {
+	if token := client.Publish(topic, 1, retained, payload); token.Wait() && token.Error() != nil {
 		return token.Error()
 	}
 
