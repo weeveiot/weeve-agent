@@ -9,6 +9,8 @@ import (
 	"errors"
 	"io"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const keySize = 2048
@@ -24,6 +26,7 @@ func InitNodeKeypair() ([]byte, error) {
 	pemFile, err := os.Open(nodePrivateKeyFile)
 	if err != nil {
 		if os.IsNotExist(err) {
+			log.Info("No node private key found. Generating...")
 			err := generateNodeKeypair()
 			if err != nil {
 				return nil, err
@@ -32,6 +35,7 @@ func InitNodeKeypair() ([]byte, error) {
 			return nil, err
 		}
 	} else {
+		log.Info("Node private key found.")
 		defer pemFile.Close()
 
 		byteValue, err := io.ReadAll(pemFile)
@@ -50,6 +54,8 @@ func InitNodeKeypair() ([]byte, error) {
 			return nil, err
 		}
 	}
+	log.Info("Node private key set.")
+	log.Info("Generating node public key...")
 
 	// return public key
 	publicKeyPem := &pem.Block{
@@ -61,6 +67,7 @@ func InitNodeKeypair() ([]byte, error) {
 		return nil, errors.New("failed to encode PEM block containing public key")
 	}
 
+	log.Info("Generated node public key:\n", string(publicKeyPemBytes))
 	return publicKeyPemBytes, nil
 }
 
@@ -90,6 +97,7 @@ func ProcessOrgPrivKeyMessage(payload []byte) error {
 	if err != nil {
 		return err
 	}
+	log.Debug("Received orga's encrypted private key:\n", orgPrivKeyMessage.EncryptedPrivateKey)
 
 	// decrypt org key
 	decryptedOrgPrivateKey, err := rsa.DecryptPKCS1v15(rand.Reader, nodePrivateKey, []byte(orgPrivKeyMessage.EncryptedPrivateKey))
@@ -108,6 +116,7 @@ func ProcessOrgPrivKeyMessage(payload []byte) error {
 		return err
 	}
 
+	log.Info("Orga's private key set.")
 	return nil
 }
 
