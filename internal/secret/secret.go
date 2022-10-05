@@ -7,10 +7,12 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"errors"
+	"io"
 	"os"
 )
 
 const keySize = 2048
+const nodePrivateKeyFile = "nodePrivateKey.pem"
 
 type orgPrivKeyMsg struct {
 	EncryptedPrivateKey string
@@ -18,13 +20,56 @@ type orgPrivKeyMsg struct {
 
 var nodePrivateKey, orgPrivateKey *rsa.PrivateKey
 
-func GenerateNodeKeypair() ([]byte, error) {
+func InitNodeKeypair() ([]byte, error) {
+	pemFile, err := os.Open(nodePrivateKeyFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			err := generateNodeKeypair()
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	} else {
+		defer pemFile.Close()
+
+		byteValue, err := io.ReadAll(pemFile)
+		if err != nil {
+			return nil, err
+		}
+
+		block, _ := pem.Decode(byteValue)
+		if block == nil || block.Type != "RSA PRIVATE KEY" {
+			return nil, errors.New("failed to decode PEM block containing private key")
+		}
+
+		// add org private key to node
+		nodePrivateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// return public key
+	publicKeyPem := &pem.Block{
+		Type:  "RSA PUBLIC KEY",
+		Bytes: x509.MarshalPKCS1PublicKey(&nodePrivateKey.PublicKey),
+	}
+	publicKeyPemBytes := pem.EncodeToMemory(publicKeyPem)
+	if publicKeyPemBytes == nil {
+		return nil, errors.New("failed to encode PEM block containing public key")
+	}
+
+	return publicKeyPemBytes, nil
+}
+
+func generateNodeKeypair() error {
 	var err error
 	nodePrivateKey, err = rsa.GenerateKey(rand.Reader, keySize)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	publicKey := &nodePrivateKey.PublicKey
 
 	// dump private key to file
 	privateKeyPem := &pem.Block{
@@ -32,26 +77,11 @@ func GenerateNodeKeypair() ([]byte, error) {
 		Bytes: x509.MarshalPKCS1PrivateKey(nodePrivateKey),
 	}
 
-	privateKeyFile, err := os.OpenFile("nodePrivateKey.pem", os.O_WRONLY|os.O_CREATE, 0600)
+	privateKeyFile, err := os.OpenFile(nodePrivateKeyFile, os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	err = pem.Encode(privateKeyFile, privateKeyPem)
-	if err != nil {
-		return nil, err
-	}
-
-	// return public key
-	publicKeyPem := &pem.Block{
-		Type:  "RSA PUBLIC KEY",
-		Bytes: x509.MarshalPKCS1PublicKey(publicKey),
-	}
-	publicKeyPemBytes := pem.EncodeToMemory(publicKeyPem)
-	if publicKeyPemBytes == nil {
-		return nil, err
-	}
-
-	return publicKeyPemBytes, nil
+	return pem.Encode(privateKeyFile, privateKeyPem)
 }
 
 func ProcessOrgPrivKeyMessage(payload []byte) error {

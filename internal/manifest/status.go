@@ -77,23 +77,20 @@ func SetLastLogRead(manifestUniqueID model.ManifestUniqueID, lastLogReadTime str
 	}
 }
 
-func InitKnownManifests() {
+func InitKnownManifests() error {
 	jsonFile, err := os.Open(ManifestFile)
 	if os.IsNotExist(err) {
-		return
+		return nil
 	}
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer jsonFile.Close()
 
 	byteValue, err := io.ReadAll(jsonFile)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	err = json.Unmarshal(byteValue, &knownManifests)
-	if err != nil {
-		log.Fatal(err)
-	}
+	return json.Unmarshal(byteValue, &knownManifests)
 }

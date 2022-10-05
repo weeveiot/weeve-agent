@@ -28,6 +28,7 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/handler"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/secret"
 	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
 )
 
@@ -49,7 +50,14 @@ func init() {
 func main() {
 	localManifest, disconnect := parseCLIoptions()
 
-	manifest.InitKnownManifests()
+	err := manifest.InitKnownManifests()
+	if err != nil {
+		log.Fatal(err)
+	}
+	nodePubKey, err := secret.InitNodeKeypair()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	docker.SetupDockerClient()
 
@@ -60,7 +68,7 @@ func main() {
 		}
 	}
 
-	err := com.RegisterNode()
+	err = com.RegisterNode()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -85,6 +93,11 @@ func main() {
 		}
 		log.Info("weeve agent disconnected")
 		os.Exit(0)
+	}
+
+	err = com.SendNodePublicKey(nodePubKey)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	// Kill the agent on a keyboard interrupt
