@@ -9,6 +9,7 @@ import (
 
 	"github.com/docker/go-connections/nat"
 	"github.com/weeveiot/weeve-agent/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/secret"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
@@ -103,7 +104,10 @@ func Parse(payload []byte) (Manifest, error) {
 
 		containerConfig.Registry = RegistryDetails{module.Image.Registry.Url, imageName, module.Image.Registry.UserName, module.Image.Registry.Password}
 
-		envArgs := parseArguments(module.Envs)
+		envArgs, err := parseArguments(module.Envs)
+		if err != nil {
+			return Manifest{}, err
+		}
 
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "SERVICE_ID", man.ID))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_NAME", containerConfig.ImageName))
@@ -209,14 +213,24 @@ func makeContainerName(networkName string, imageName string, tag string, index i
 	return containerName
 }
 
-func parseArguments(options []envMsg) []string {
-	log.Debug("Parsing environments arguments")
+func parseArguments(options []envMsg) ([]string, error) {
+	log.Debug("Parsing environment arguments")
 
 	var args []string
 	for _, env := range options {
-		args = append(args, fmt.Sprintf("%v=%v", env.Key, env.Value))
+		var value string
+		if env.Secret {
+			var err error
+			value, err = secret.DecryptEnv(env.Value)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			value = env.Value
+		}
+		args = append(args, fmt.Sprintf("%v=%v", env.Key, value))
 	}
-	return args
+	return args, nil
 }
 
 func parseMounts(mnts []mountMsg) ([]mount.Mount, error) {

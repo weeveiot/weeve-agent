@@ -80,3 +80,11 @@ func ProcessOrgPrivKeyMessage(payload []byte) error {
 
 	return nil
 }
+
+func DecryptEnv(enc string) (string, error) {
+	decBytes, err := rsa.DecryptPKCS1v15(rand.Reader, orgPrivateKey, []byte(enc))
+	if err != nil {
+		return "", err
+	}
+	return string(decBytes), nil
+}
