@@ -4,7 +4,6 @@
 /bin/
 /pkg/
 *.exe
-build/
 *.pem
 *.pem.crt
 *.pem.key

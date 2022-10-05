@@ -103,13 +103,13 @@ Edit `nodeconfig.json` and fill the fields `NodeId` and `NodeName` with unique v
 Build the agent binary from the project root folder;
 
 ```bash
-go build -o ./build/agent ./cmd/agent/agent.go
+go build -o ./bin/agent ./cmd/agent/agent.go
 ```
 
 And run it locally with your preffered configuration, for example;
 
 ```bash
-./build/agent --out --notls --broker=mqtt://localhost:$MQTT_PORT --heartbeat=300 --loglevel=debug --config nodeconfig.json
+./bin/agent --out --notls --broker=mqtt://localhost:$MQTT_PORT --heartbeat=300 --loglevel=debug --config nodeconfig.json
 ```
 
 The mosquitto client can be used to publish the messages to the agent.
