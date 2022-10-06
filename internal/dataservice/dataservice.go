@@ -296,7 +296,13 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string
 		return errors.New("Data Service could not be undeployed completely. Cause(s): " + errorlist)
 	}
 
-	setAndSendStatus("", 0, manifestUniqueID, "", false)
+	manifest.DeleteKnownManifest(manifestUniqueID)
+	err = SendStatus()
+	if err != nil {
+		log.Error(deploymentID, err)
+		return err
+	}
+
 	return nil
 }
 
