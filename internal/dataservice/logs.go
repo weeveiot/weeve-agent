@@ -22,7 +22,7 @@ func SendEdgeAppLogs(manif model.ManifestStatus, until string) error {
 
 func GetEdgeAppLogsMsg(manif model.ManifestStatus, until string) (com.EdgeAppLogMsg, error) {
 	var msg com.EdgeAppLogMsg
-	if manif.Status != model.EdgeAppUndeployed {
+	if manif.Status != "" {
 		containerLogs, err := GetDataServiceLogs(manif, manif.LastLogReadTime, until)
 		if err != nil {
 			return msg, err

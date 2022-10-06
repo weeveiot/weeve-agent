@@ -42,16 +42,14 @@ const (
 )
 
 const (
-	EdgeAppRunning    = "Running"
-	EdgeAppPaused     = "Paused"
-	EdgeAppError      = "Error"
-	EdgeAppInitiated  = "Initiated"
-	EdgeAppUndeployed = "Undeployed"
+	EdgeAppRunning   = "Running"
+	EdgeAppStopped   = "Stopped"
+	EdgeAppError     = "Error"
+	EdgeAppInitiated = "Initiated"
 )
 
 const (
 	ModuleRunning    = "Running"
-	ModulePaused     = "Paused"
 	ModuleRestarting = "Restarting"
 	ModuleCreated    = "Created"
 	ModuleExited     = "Exited"

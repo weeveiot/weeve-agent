@@ -76,7 +76,7 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 			return edgeApps, err
 		}
 
-		if !manif.InTransition && (manif.Status == model.EdgeAppRunning || manif.Status == model.EdgeAppPaused) && len(appContainers) != manif.ContainerCount {
+		if !manif.InTransition && (manif.Status == model.EdgeAppRunning || manif.Status == model.EdgeAppStopped) && len(appContainers) != manif.ContainerCount {
 			edgeApplication.Status = model.EdgeAppError
 		}
 
@@ -89,7 +89,7 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 				if manif.Status == model.EdgeAppRunning && ioutility.FirstToUpper(con.State) != model.ModuleRunning {
 					edgeApplication.Status = model.EdgeAppError
 				}
-				if manif.Status == model.EdgeAppPaused && ioutility.FirstToUpper(con.State) != model.ModulePaused {
+				if manif.Status == model.EdgeAppStopped && ioutility.FirstToUpper(con.State) != model.ModuleExited {
 					edgeApplication.Status = model.EdgeAppError
 				}
 			}

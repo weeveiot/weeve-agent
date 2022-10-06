@@ -125,10 +125,9 @@ func DeployDataService(man manifest.Manifest, command string) error {
 
 func StopDataService(manifestUniqueID model.ManifestUniqueID) error {
 	log.Infoln("Stopping data service:", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
-	const stateRunning = "running"
 
 	status := manifest.GetEdgeAppStatus(manifestUniqueID)
-	if status != stateRunning {
+	if status != model.EdgeAppRunning {
 		log.Warn("Can't stop edge application with ManifestName: ", manifestUniqueID.ManifestName, " and VersionNumber: ", manifestUniqueID.VersionNumber, " with status ", status)
 		return fmt.Errorf("can't stop edge application")
 	}
@@ -147,22 +146,18 @@ func StopDataService(manifestUniqueID model.ManifestUniqueID) error {
 	setAndSendStatus("", 0, manifestUniqueID, "", true)
 
 	for _, container := range containers {
-		if container.State == stateRunning {
-			log.Info("Stopping container:", strings.Join(container.Names[:], ","))
-			err := docker.StopContainer(container.ID)
-			if err != nil {
-				log.Error("Could not stop a container")
-				setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
+		log.Info("Stopping container:", strings.Join(container.Names[:], ","))
+		err := docker.StopContainer(container.ID)
+		if err != nil {
+			log.Error("Could not stop a container")
+			setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
 
-				return err
-			}
-			log.Info(strings.Join(container.Names[:], ","), ": ", container.Status, " --> exited")
-		} else {
-			log.Debugln("Container", container.ID, "is", container.State, "and", container.Status)
+			return err
 		}
+		log.Info(strings.Join(container.Names[:], ","), ": ", container.Status, " --> exited")
 	}
 
-	setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppPaused, false)
+	setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppStopped, false)
 
 	return nil
 }
@@ -170,12 +165,8 @@ func StopDataService(manifestUniqueID model.ManifestUniqueID) error {
 func ResumeDataService(manifestUniqueID model.ManifestUniqueID) error {
 	log.Infoln("Resuming data service:", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
 
-	const stateExited = "exited"
-	const stateCreated = "created"
-	const statePaused = "paused"
-
 	status := manifest.GetEdgeAppStatus(manifestUniqueID)
-	if status == stateExited || status == stateCreated || status == statePaused {
+	if status != model.EdgeAppStopped {
 		log.Warn("Can't resume edge application with ManifestName: ", manifestUniqueID.ManifestName, " and VersionNumber: ", manifestUniqueID.VersionNumber, " with status ", status)
 		return fmt.Errorf("can't resume edge application")
 	}
@@ -195,16 +186,14 @@ func ResumeDataService(manifestUniqueID model.ManifestUniqueID) error {
 	setAndSendStatus("", 0, manifestUniqueID, "", true)
 
 	for _, container := range containers {
-		if container.State == stateExited || container.State == stateCreated || container.State == statePaused {
-			log.Info("Starting container:", strings.Join(container.Names[:], ","))
-			err := docker.StartContainer(container.ID)
-			if err != nil {
-				log.Errorln("Could not start a container", err)
-				setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
-				return err
-			}
-			log.Info(strings.Join(container.Names[:], ","), ": ", container.State, "--> running")
+		log.Info("Starting container:", strings.Join(container.Names[:], ","))
+		err := docker.StartContainer(container.ID)
+		if err != nil {
+			log.Errorln("Could not start a container", err)
+			setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
+			return err
 		}
+		log.Info(strings.Join(container.Names[:], ","), ": ", container.State, "--> running")
 	}
 
 	setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppRunning, false)
@@ -226,14 +215,13 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string
 
 	if !dataServiceExists {
 		log.Warnln(deploymentID, "Data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber, "does not exist. Nothing to undeploy.")
-		setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppUndeployed, false)
+		setAndSendStatus("", 0, manifestUniqueID, "", false)
 		return nil
 	}
 
 	setAndSendStatus("", 0, manifestUniqueID, "", true)
 
 	//******** STEP 1 - Stop and Remove Containers *************//
-
 	// map { imageID: number_of_allocated_containers }, needed for removing images as not supported by Go-Docker SDK
 	numContainersPerImage := make(map[string]int)
 
@@ -299,7 +287,7 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string
 		return errors.New("Data Service could not be undeployed completely. Cause(s): " + errorlist)
 	}
 
-	setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppUndeployed, false)
+	setAndSendStatus("", 0, manifestUniqueID, "", false)
 	return nil
 }
 
