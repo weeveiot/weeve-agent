@@ -68,35 +68,38 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 	knownManifests := manifest.GetKnownManifests()
 
 	for _, manif := range knownManifests {
-		edgeApplication := com.EdgeAppMsg{ManifestID: manif.ManifestID, Status: manif.Status}
-		containersStat := []com.ContainerMsg{}
+		if manif.Status == "" && !manif.InTransition {
+			edgeApplication := com.EdgeAppMsg{ManifestID: manif.ManifestID, Status: manif.Status}
+			containersStat := []com.ContainerMsg{}
 
-		appContainers, err := docker.ReadDataServiceContainers(manif.ManifestUniqueID)
-		if err != nil {
-			return edgeApps, err
-		}
+			appContainers, err := docker.ReadDataServiceContainers(manif.ManifestUniqueID)
+			if err != nil {
+				return edgeApps, err
+			}
 
-		if !manif.InTransition && (manif.Status == model.EdgeAppRunning || manif.Status == model.EdgeAppStopped) && len(appContainers) != manif.ContainerCount {
-			edgeApplication.Status = model.EdgeAppError
-		}
+			if !manif.InTransition && (manif.Status == model.EdgeAppRunning || manif.Status == model.EdgeAppStopped) && len(appContainers) != manif.ContainerCount {
+				edgeApplication.Status = model.EdgeAppError
+			}
 
-		for _, con := range appContainers {
-			// The Status of each container is (assumed to be): Running, Paused, Restarting, Created, Exited
-			container := com.ContainerMsg{Name: strings.Join(con.Names, ", "), Status: ioutility.FirstToUpper(con.State)}
-			containersStat = append(containersStat, container)
+			for _, con := range appContainers {
+				// The Status of each container is (assumed to be): Running, Restarting, Created, Exited
+				container := com.ContainerMsg{Name: strings.Join(con.Names, ", "), Status: ioutility.FirstToUpper(con.State)}
+				containersStat = append(containersStat, container)
 
-			if !manif.InTransition && edgeApplication.Status != model.EdgeAppError {
-				if manif.Status == model.EdgeAppRunning && ioutility.FirstToUpper(con.State) != model.ModuleRunning {
-					edgeApplication.Status = model.EdgeAppError
-				}
-				if manif.Status == model.EdgeAppStopped && ioutility.FirstToUpper(con.State) != model.ModuleExited {
-					edgeApplication.Status = model.EdgeAppError
+				if !manif.InTransition && edgeApplication.Status != model.EdgeAppError {
+					if manif.Status == model.EdgeAppRunning && ioutility.FirstToUpper(con.State) != model.ModuleRunning {
+						edgeApplication.Status = model.EdgeAppError
+					}
+					if manif.Status == model.EdgeAppStopped && ioutility.FirstToUpper(con.State) != model.ModuleExited {
+						edgeApplication.Status = model.EdgeAppError
+					}
 				}
 			}
+			edgeApplication.Containers = containersStat
+			edgeApps = append(edgeApps, edgeApplication)
 		}
-		edgeApplication.Containers = containersStat
-		edgeApps = append(edgeApps, edgeApplication)
 	}
+
 	return edgeApps, nil
 }
 

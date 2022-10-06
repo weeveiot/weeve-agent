@@ -146,15 +146,20 @@ func StopDataService(manifestUniqueID model.ManifestUniqueID) error {
 	setAndSendStatus("", 0, manifestUniqueID, "", true)
 
 	for _, container := range containers {
-		log.Info("Stopping container:", strings.Join(container.Names[:], ","))
-		err := docker.StopContainer(container.ID)
-		if err != nil {
-			log.Error("Could not stop a container")
-			setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
+		if container.State == model.ModuleRunning {
+			log.Info("Stopping container:", strings.Join(container.Names[:], ","))
+			err := docker.StopContainer(container.ID)
+			if err != nil {
+				log.Error("Could not stop a container")
+				setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
 
-			return err
+				return err
+			}
+
+			log.Info(strings.Join(container.Names[:], ","), ": ", container.Status, " --> exited")
+		} else {
+			log.Debugln("Container", container.ID, "is", container.State, "and", container.Status)
 		}
-		log.Info(strings.Join(container.Names[:], ","), ": ", container.Status, " --> exited")
 	}
 
 	setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppStopped, false)
@@ -186,14 +191,19 @@ func ResumeDataService(manifestUniqueID model.ManifestUniqueID) error {
 	setAndSendStatus("", 0, manifestUniqueID, "", true)
 
 	for _, container := range containers {
-		log.Info("Starting container:", strings.Join(container.Names[:], ","))
-		err := docker.StartContainer(container.ID)
-		if err != nil {
-			log.Errorln("Could not start a container", err)
-			setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
-			return err
+		if container.State == model.ModuleRunning {
+			log.Info("Starting container:", strings.Join(container.Names[:], ","))
+			err := docker.StartContainer(container.ID)
+			if err != nil {
+				log.Errorln("Could not start a container", err)
+				setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppError, false)
+				return err
+			}
+
+			log.Info(strings.Join(container.Names[:], ","), ": ", container.State, "--> running")
+		} else {
+			log.Debugln("Container", container.ID, "is", container.State, "and", container.Status)
 		}
-		log.Info(strings.Join(container.Names[:], ","), ": ", container.State, "--> running")
 	}
 
 	setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppRunning, false)
@@ -215,8 +225,7 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string
 
 	if !dataServiceExists {
 		log.Warnln(deploymentID, "Data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber, "does not exist. Nothing to undeploy.")
-		setAndSendStatus("", 0, manifestUniqueID, "", false)
-		return nil
+		return errors.New("Data service " + manifestUniqueID.ManifestName + ", " + manifestUniqueID.VersionNumber + " does not exist. Nothing to undeploy.")
 	}
 
 	setAndSendStatus("", 0, manifestUniqueID, "", true)
