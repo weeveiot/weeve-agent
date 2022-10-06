@@ -87,10 +87,10 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 				containersStat = append(containersStat, container)
 
 				if !manif.InTransition && edgeApplication.Status != model.EdgeAppError {
-					if manif.Status == model.EdgeAppRunning && ioutility.FirstToUpper(con.State) != model.ModuleRunning {
+					if manif.Status == model.EdgeAppRunning && con.State != strings.ToLower(model.ModuleRunning) {
 						edgeApplication.Status = model.EdgeAppError
 					}
-					if manif.Status == model.EdgeAppStopped && ioutility.FirstToUpper(con.State) != model.ModuleExited {
+					if manif.Status == model.EdgeAppStopped && con.State != strings.ToLower(model.ModuleExited) {
 						edgeApplication.Status = model.EdgeAppError
 					}
 				}

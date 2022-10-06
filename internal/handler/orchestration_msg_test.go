@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/Jeffail/gabs/v2"
@@ -298,7 +299,7 @@ func checkContainersExistsWithStatus(manID model.ManifestUniqueID, containerCoun
 		return false, fmt.Errorf("Expected number of containers %v, number of available containers %v", containerCount, len(dsContainers))
 	}
 	for _, dsContainer := range dsContainers {
-		if dsContainer.State != status {
+		if dsContainer.State != strings.ToLower(status) {
 			return false, fmt.Errorf("Container expected status %s, but current status %s", status, dsContainer.State)
 		}
 	}
