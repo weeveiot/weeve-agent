@@ -17,7 +17,7 @@ const (
 	topicNodeStatus    = "nodestatus"
 	topicEdgeAppLogs   = "debug"
 	topicNodePublicKey = "nodePublicKey"
-	TopicOrgPrivateKey = "orgPrivateKey"
+	TopicOrgPrivateKey = "orgKey"
 )
 
 var client mqtt.Client

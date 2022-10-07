@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"errors"
@@ -19,7 +20,7 @@ const keySize = 2048
 const nodePrivateKeyFile = "nodePrivateKey.pem"
 
 type orgPrivKeyMsg struct {
-	EncryptedPrivateKey string
+	EncryptedOrgKey string
 }
 
 var nodePrivateKey *rsa.PrivateKey
@@ -100,9 +101,14 @@ func ProcessOrgPrivKeyMessage(payload []byte) error {
 	if err != nil {
 		return err
 	}
-	log.Debug("Received orga's encrypted private key:\n", orgPrivKeyMessage.EncryptedPrivateKey)
+	log.Debug("Received orga's encrypted private key:\n", orgPrivKeyMessage.EncryptedOrgKey)
 
-	orgSecretKey, err := rsa.DecryptPKCS1v15(rand.Reader, nodePrivateKey, []byte(orgPrivKeyMessage.EncryptedPrivateKey))
+	encryptedOrgKey, err := base64.StdEncoding.DecodeString(orgPrivKeyMessage.EncryptedOrgKey)
+	if err != nil {
+		return err
+	}
+
+	orgSecretKey, err := rsa.DecryptPKCS1v15(rand.Reader, nodePrivateKey, encryptedOrgKey)
 	if err != nil {
 		return err
 	}
@@ -122,7 +128,10 @@ func ProcessOrgPrivKeyMessage(payload []byte) error {
 }
 
 func DecryptEnv(enc string) (string, error) {
-	encBytes := []byte(enc)
+	encBytes, err := base64.StdEncoding.DecodeString(enc)
+	if err != nil {
+		return "", err
+	}
 	nonce, ciphertext := encBytes[:decryptor.NonceSize()], encBytes[decryptor.NonceSize():]
 
 	plaintext, err := decryptor.Open(nil, nonce, ciphertext, nil)
