@@ -23,7 +23,7 @@ func DeleteKnownManifest(manifestUniqueID model.ManifestUniqueID) {
 		return c.(model.ManifestStatus).ManifestUniqueID != manifestUniqueID
 	}).ToSlice(&knownManifests)
 
-	err := WriteKnownManifestsToFile()
+	err := writeKnownManifestsToFile()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -55,7 +55,7 @@ func SetStatus(manifestID string, containerCount int, manifestUniqueID model.Man
 		})
 	}
 
-	err := WriteKnownManifestsToFile()
+	err := writeKnownManifestsToFile()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -73,7 +73,7 @@ func SetLastLogRead(manifestUniqueID model.ManifestUniqueID, lastLogReadTime str
 		}
 	}
 
-	err := WriteKnownManifestsToFile()
+	err := writeKnownManifestsToFile()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func GetEdgeAppStatus(manif model.ManifestUniqueID) string {
 	return ""
 }
 
-func WriteKnownManifestsToFile() error {
+func writeKnownManifestsToFile() error {
 	encodedJson, err := json.MarshalIndent(knownManifests, "", " ")
 	if err != nil {
 		return err

@@ -39,7 +39,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 	if dataServiceExists {
 		if command == CMDDeploy {
 			log.Warn(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", man.ManifestUniqueID.ManifestName, man.ManifestUniqueID.VersionNumber))
-			return errors.New("data service already exists")
+			return nil
 
 		} else if command == CMDDeployLocal {
 			// Clean old data service resources
@@ -132,7 +132,7 @@ func StopDataService(manifestUniqueID model.ManifestUniqueID) error {
 	status := manifest.GetEdgeAppStatus(manifestUniqueID)
 	if status != model.EdgeAppRunning {
 		log.Warn("Can't stop edge application with ManifestName: ", manifestUniqueID.ManifestName, " and VersionNumber: ", manifestUniqueID.VersionNumber, " with status ", status)
-		return fmt.Errorf("can't stop edge application")
+		return nil
 	}
 
 	containers, err := docker.ReadDataServiceContainers(manifestUniqueID)
@@ -176,7 +176,7 @@ func ResumeDataService(manifestUniqueID model.ManifestUniqueID) error {
 	status := manifest.GetEdgeAppStatus(manifestUniqueID)
 	if status != model.EdgeAppStopped {
 		log.Warn("Can't resume edge application with ManifestName: ", manifestUniqueID.ManifestName, " and VersionNumber: ", manifestUniqueID.VersionNumber, " with status ", status)
-		return fmt.Errorf("can't resume edge application")
+		return nil
 	}
 
 	containers, err := docker.ReadDataServiceContainers(manifestUniqueID)
@@ -227,8 +227,8 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string
 	}
 
 	if !dataServiceExists {
-		log.Warnln(deploymentID, "Data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber, "does not exist. Nothing to undeploy.")
-		return errors.New("Data service " + manifestUniqueID.ManifestName + ", " + manifestUniqueID.VersionNumber + " does not exist. Nothing to undeploy.")
+		log.Warnln(deploymentID, "Trying to undeploy a non-existant edge application with ManifestName: ", manifestUniqueID.ManifestName, " and VersionNumber: ", manifestUniqueID.VersionNumber)
+		return nil
 	}
 
 	setAndSendStatus("", 0, manifestUniqueID, "", true)
@@ -313,12 +313,10 @@ func UndeployAll() error {
 	knownManifests := manifest.GetKnownManifests()
 	log.Info(knownManifests)
 
-	if len(knownManifests) > 0 {
-		for _, manif := range knownManifests {
-			err := UndeployDataService(manif.ManifestUniqueID, CMDRemove)
-			if err != nil {
-				return err
-			}
+	for _, manif := range knownManifests {
+		err := UndeployDataService(manif.ManifestUniqueID, CMDRemove)
+		if err != nil {
+			return err
 		}
 	}
 

@@ -22,16 +22,14 @@ func SendEdgeAppLogs(manif model.ManifestStatus, until string) error {
 
 func GetEdgeAppLogsMsg(manif model.ManifestStatus, until string) (com.EdgeAppLogMsg, error) {
 	var msg com.EdgeAppLogMsg
-	if manif.Status != "" {
-		containerLogs, err := GetDataServiceLogs(manif, manif.LastLogReadTime, until)
-		if err != nil {
-			return msg, err
-		}
+	containerLogs, err := GetDataServiceLogs(manif, manif.LastLogReadTime, until)
+	if err != nil {
+		return msg, err
+	}
 
-		msg = com.EdgeAppLogMsg{
-			ManifestID:    manif.ManifestID,
-			ContainerLogs: containerLogs,
-		}
+	msg = com.EdgeAppLogMsg{
+		ManifestID:    manif.ManifestID,
+		ContainerLogs: containerLogs,
 	}
 
 	return msg, nil
