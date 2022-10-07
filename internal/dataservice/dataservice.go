@@ -11,12 +11,15 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
-const CMDDeploy = "DEPLOY"
-const CMDDeployLocal = "LOCAL_DEPLOY"
-const CMDStopService = "STOP"
-const CMDResumeService = "RESUME"
-const CMDUndeploy = "UNDEPLOY"
-const CMDRemove = "REMOVE"
+const (
+	CMDDeploy        = "DEPLOY"
+	CMDDeployLocal   = "LOCAL_DEPLOY"
+	CMDStopService   = "STOP"
+	CMDResumeService = "RESUME"
+	CMDUndeploy      = "UNDEPLOY"
+	CMDRemove        = "REMOVE"
+	CMDDelete        = "DELETE"
+)
 
 func DeployDataService(man manifest.Manifest, command string) error {
 	//******** STEP 1 - Check if Data Service is already deployed *************//
@@ -297,7 +300,7 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string
 	}
 
 	manifest.DeleteKnownManifest(manifestUniqueID)
-	err = SendStatus()
+	err = SendStatus("")
 	if err != nil {
 		log.Error(deploymentID, err)
 		return err
@@ -317,10 +320,10 @@ func UndeployAll() error {
 				return err
 			}
 		}
-		log.Info("All the edge applications have been undeployed")
-	} else {
-		log.Info("No edge application to undeploy")
 	}
+
+	SendStatus(model.NodeDeleted)
+
 	return nil
 }
 
@@ -338,7 +341,7 @@ func DataServiceExist(manifestUniqueID model.ManifestUniqueID) (bool, error) {
 
 func setAndSendStatus(manifestID string, containerCount int, manifestUniqueID model.ManifestUniqueID, status string, inTransition bool) {
 	manifest.SetStatus(manifestID, containerCount, manifestUniqueID, status, inTransition)
-	err := SendStatus()
+	err := SendStatus("")
 	if err != nil {
 		log.Error(err)
 	}

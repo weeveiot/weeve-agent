@@ -39,6 +39,7 @@ const (
 	NodeConnected    = "Connected"
 	NodeAlarm        = "Alarm"
 	NodeDisconnected = "Disconnected"
+	NodeDeleted      = "Deleted"
 )
 
 const (

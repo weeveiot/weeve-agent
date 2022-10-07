@@ -21,8 +21,8 @@ func SetDisconnected(disconnectParam bool) {
 	disconnect = disconnectParam
 }
 
-func SendStatus() error {
-	msg, err := GetStatusMessage()
+func SendStatus(nodeStatus string) error {
+	msg, err := GetStatusMessage(nodeStatus)
 	if err != nil {
 		return err
 	}
@@ -33,7 +33,7 @@ func SendStatus() error {
 	return nil
 }
 
-func GetStatusMessage() (com.StatusMsg, error) {
+func GetStatusMessage(nodeStatus string) (com.StatusMsg, error) {
 	edgeApps, err := GetDataServiceStatus()
 	if err != nil {
 		return com.StatusMsg{}, err
@@ -44,14 +44,16 @@ func GetStatusMessage() (com.StatusMsg, error) {
 		return com.StatusMsg{}, err
 	}
 
-	// TODO: Do proper check for node status
-	nodeStatus := model.NodeAlarm
-	if config.GetRegistered() {
-		nodeStatus = model.NodeConnected
-	}
+	if nodeStatus == "" {
+		// TODO: Do proper check for node status
+		nodeStatus = model.NodeAlarm
+		if config.GetRegistered() {
+			nodeStatus = model.NodeConnected
+		}
 
-	if disconnect {
-		nodeStatus = model.NodeDisconnected
+		if disconnect {
+			nodeStatus = model.NodeDisconnected
+		}
 	}
 
 	msg := com.StatusMsg{

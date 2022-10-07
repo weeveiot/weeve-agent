@@ -75,7 +75,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		err = dataservice.SendStatus()
+		err = dataservice.SendStatus("")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -221,7 +221,7 @@ func monitorDataServiceStatus() {
 		log.Debug("Latest edge app status: ", latestEdgeApps)
 
 		if statusChange {
-			err := dataservice.SendStatus()
+			err := dataservice.SendStatus("")
 			if err != nil {
 				log.Error(err)
 				continue
@@ -233,7 +233,7 @@ func monitorDataServiceStatus() {
 
 func sendHeartbeat() {
 	for {
-		err := dataservice.SendStatus()
+		err := dataservice.SendStatus("")
 		if err != nil {
 			log.Error(err)
 		}
