@@ -1,6 +1,8 @@
 package secret
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
@@ -20,7 +22,8 @@ type orgPrivKeyMsg struct {
 	EncryptedPrivateKey string
 }
 
-var nodePrivateKey, orgPrivateKey *rsa.PrivateKey
+var nodePrivateKey *rsa.PrivateKey
+var decryptor cipher.AEAD
 
 func InitNodeKeypair() ([]byte, error) {
 	pemFile, err := os.Open(nodePrivateKeyFile)
@@ -99,19 +102,17 @@ func ProcessOrgPrivKeyMessage(payload []byte) error {
 	}
 	log.Debug("Received orga's encrypted private key:\n", orgPrivKeyMessage.EncryptedPrivateKey)
 
-	// decrypt org key
-	decryptedOrgPrivateKey, err := rsa.DecryptPKCS1v15(rand.Reader, nodePrivateKey, []byte(orgPrivKeyMessage.EncryptedPrivateKey))
+	orgSecretKey, err := rsa.DecryptPKCS1v15(rand.Reader, nodePrivateKey, []byte(orgPrivKeyMessage.EncryptedPrivateKey))
 	if err != nil {
 		return err
 	}
 
-	block, _ := pem.Decode(decryptedOrgPrivateKey)
-	if block == nil || block.Type != "RSA PRIVATE KEY" {
-		return errors.New("failed to decode PEM block containing private key")
+	block, err := aes.NewCipher(orgSecretKey)
+	if err != nil {
+		return err
 	}
 
-	// add org private key to node
-	orgPrivateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+	decryptor, err = cipher.NewGCM(block)
 	if err != nil {
 		return err
 	}
@@ -121,9 +122,13 @@ func ProcessOrgPrivKeyMessage(payload []byte) error {
 }
 
 func DecryptEnv(enc string) (string, error) {
-	decBytes, err := rsa.DecryptPKCS1v15(rand.Reader, orgPrivateKey, []byte(enc))
+	encBytes := []byte(enc)
+	nonce, ciphertext := encBytes[:decryptor.NonceSize()], encBytes[decryptor.NonceSize():]
+
+	plaintext, err := decryptor.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
 		return "", err
 	}
-	return string(decBytes), nil
+
+	return string(plaintext), nil
 }
