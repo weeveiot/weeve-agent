@@ -191,7 +191,7 @@ func ResumeDataService(manifestUniqueID model.ManifestUniqueID) error {
 	setAndSendStatus("", 0, manifestUniqueID, "", true)
 
 	for _, container := range containers {
-		if container.State == strings.ToLower(model.ModuleRunning) {
+		if container.State != strings.ToLower(model.ModuleRunning) {
 			log.Info("Starting container:", strings.Join(container.Names[:], ","))
 			err := docker.StartContainer(container.ID)
 			if err != nil {
