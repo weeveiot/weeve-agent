@@ -3,6 +3,8 @@ package dataservice
 import (
 	"strings"
 
+	linq "github.com/ahmetb/go-linq/v3"
+	"github.com/docker/docker/api/types"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/host"
@@ -72,26 +74,43 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 	for _, manif := range knownManifests {
 		edgeApplication := com.EdgeAppMsg{ManifestID: manif.ManifestID, Status: manif.Status}
 		containersStat := []com.ContainerMsg{}
+		edgeAppStatusSet := false
 
 		appContainers, err := docker.ReadDataServiceContainers(manif.ManifestUniqueID)
 		if err != nil {
 			return edgeApps, err
 		}
 
-		if !manif.InTransition && (manif.Status == model.EdgeAppRunning || manif.Status == model.EdgeAppStopped) && len(appContainers) != manif.ContainerCount {
-			edgeApplication.Status = model.EdgeAppError
+		if !manif.InTransition {
+			if len(appContainers) != manif.ContainerCount {
+				edgeApplication.Status = model.EdgeAppError
+				edgeAppStatusSet = true
+			}
+
+			if !edgeAppStatusSet && edgeApplication.Status == model.EdgeAppRunning {
+				runningCount := linq.From(appContainers).Where(func(c interface{}) bool {
+					return c.(types.Container).State == strings.ToLower(model.ModuleRunning)
+				}).Count()
+
+				if runningCount != len(appContainers) {
+					edgeApplication.Status = model.EdgeAppError
+				}
+
+				edgeAppStatusSet = true
+			}
 		}
 
 		for _, con := range appContainers {
+			containerJSON, err := docker.InspectContainer(con.ID)
+			if err != nil {
+				return edgeApps, err
+			}
 			// The Status of each container is (assumed to be): Running, Restarting, Created, Exited
 			container := com.ContainerMsg{Name: strings.Join(con.Names, ", "), Status: ioutility.FirstToUpper(con.State)}
 			containersStat = append(containersStat, container)
 
-			if !manif.InTransition && edgeApplication.Status != model.EdgeAppError {
-				if manif.Status == model.EdgeAppRunning && con.State != strings.ToLower(model.ModuleRunning) {
-					edgeApplication.Status = model.EdgeAppError
-				}
-				if manif.Status == model.EdgeAppStopped && con.State != strings.ToLower(model.ModuleExited) {
+			if !edgeAppStatusSet && !manif.InTransition && edgeApplication.Status == model.EdgeAppStopped {
+				if con.State != strings.ToLower(model.ModuleExited) || containerJSON.State.ExitCode != 0 {
 					edgeApplication.Status = model.EdgeAppError
 				}
 			}
