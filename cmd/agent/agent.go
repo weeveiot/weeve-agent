@@ -200,7 +200,9 @@ func validateBrokerUrl(u *url.URL) {
 
 func setSubscriptionHandlers() map[string]mqtt.MessageHandler {
 	subscriptions := make(map[string]mqtt.MessageHandler)
+
 	subscriptions[com.TopicOrchestration] = handler.OrchestrationHandler
+	subscriptions[com.TopicNodeDelete] = handler.NodeDeleteHandler
 
 	return subscriptions
 }

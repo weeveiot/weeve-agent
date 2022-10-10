@@ -17,6 +17,7 @@ const (
 	TopicOrchestration = "orchestration"
 	topicNodeStatus    = "nodestatus"
 	topicEdgeAppLogs   = "debug"
+	TopicNodeDelete    = "delete"
 )
 
 var client mqtt.Client

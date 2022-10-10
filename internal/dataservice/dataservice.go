@@ -18,7 +18,6 @@ const (
 	CMDResumeService = "RESUME"
 	CMDUndeploy      = "UNDEPLOY"
 	CMDRemove        = "REMOVE"
-	CMDDelete        = "DELETE"
 )
 
 func DeployDataService(man manifest.Manifest, command string) error {
