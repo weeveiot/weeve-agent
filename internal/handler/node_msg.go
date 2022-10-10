@@ -4,6 +4,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
+	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 var NodeDeleteHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
@@ -13,4 +14,6 @@ var NodeDeleteHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 	if err != nil {
 		log.Error(err)
 	}
+
+	dataservice.SendStatus(model.NodeDeleted)
 }

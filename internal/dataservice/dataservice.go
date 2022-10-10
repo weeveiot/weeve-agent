@@ -319,8 +319,6 @@ func UndeployAll() error {
 		}
 	}
 
-	SendStatus(model.NodeDeleted)
-
 	return nil
 }
 
