@@ -95,7 +95,7 @@ func createMqttClient() error {
 	channelOptions.AddBroker(params.Broker)
 	channelOptions.SetClientID(config.GetNodeId())
 	channelOptions.SetConnectionLostHandler(connectLostHandler)
-	channelOptions.SetWill(nodeStatusTopic, willPayload, 1, true)
+	channelOptions.SetWill(nodeStatusTopic, willPayload, 1, false)
 
 	if !params.NoTLS {
 		channelOptions.SetUsername(config.GetNodeId())
