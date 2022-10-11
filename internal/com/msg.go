@@ -32,5 +32,5 @@ type DeviceParamsMsg struct {
 }
 
 type nodePublicKeyMsg struct {
-	NodePublicKey string
+	NodePublicKey string `json:"nodePublicKey"`
 }
