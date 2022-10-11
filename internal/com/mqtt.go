@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"fmt"
 	"os"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -90,12 +89,16 @@ func DisconnectNode() {
 func createMqttClient() error {
 	// Build the options for the mqtt client
 	nodeStatusTopic := topicNodeStatus + "/" + config.GetNodeId()
-	willPayload := fmt.Sprintf("%+v", StatusMsg{Status: model.NodeDisconnected})
+	willPayload, err := json.Marshal(StatusMsg{Status: model.NodeDisconnected})
+	if err != nil {
+		return err
+	}
+
 	channelOptions := mqtt.NewClientOptions()
 	channelOptions.AddBroker(params.Broker)
 	channelOptions.SetClientID(config.GetNodeId())
 	channelOptions.SetConnectionLostHandler(connectLostHandler)
-	channelOptions.SetWill(nodeStatusTopic, willPayload, 1, false)
+	channelOptions.SetWill(nodeStatusTopic, string(willPayload), 1, true)
 
 	if !params.NoTLS {
 		channelOptions.SetUsername(config.GetNodeId())

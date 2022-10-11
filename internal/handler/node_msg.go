@@ -15,5 +15,6 @@ var NodeDeleteHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 		log.Error(err)
 	}
 
-	dataservice.SendStatus(model.NodeDeleted)
+	dataservice.SetNodeStatus(model.NodeDeleted)
+	dataservice.SendStatus()
 }

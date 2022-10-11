@@ -64,6 +64,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	err = com.ConnectNode(setSubscriptionHandlers())
 	if err != nil {
 		log.Fatal(err)
@@ -75,13 +76,15 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		err = dataservice.SendStatus("")
+		err = dataservice.SendStatus()
 		if err != nil {
 			log.Fatal(err)
 		}
 		log.Info("weeve agent disconnected")
 		os.Exit(0)
 	}
+
+	dataservice.SetNodeStatus(model.NodeConnected)
 
 	// Kill the agent on a keyboard interrupt
 	done := make(chan os.Signal, 1)
@@ -179,7 +182,9 @@ func parseCLIoptions() (string, bool) {
 	// FLAG: Broker, NoTLS, Heartbeat, TopicName
 	addMqttHookToLog(brokerUrl, opt.NoTLS)
 	com.SetParams(opt)
-	dataservice.SetDisconnected(opt.Disconnect)
+	if opt.Disconnect {
+		dataservice.SetNodeStatus(model.NodeDisconnected)
+	}
 
 	return opt.ManifestPath, opt.Disconnect
 }
@@ -223,7 +228,7 @@ func monitorDataServiceStatus() {
 		log.Debug("Latest edge app status: ", latestEdgeApps)
 
 		if statusChange {
-			err := dataservice.SendStatus("")
+			err := dataservice.SendStatus()
 			if err != nil {
 				log.Error(err)
 				continue
@@ -235,7 +240,7 @@ func monitorDataServiceStatus() {
 
 func sendHeartbeat() {
 	for {
-		err := dataservice.SendStatus("")
+		err := dataservice.SendStatus()
 		if err != nil {
 			log.Error(err)
 		}

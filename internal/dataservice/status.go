@@ -8,21 +8,20 @@ import (
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/weeveiot/weeve-agent/internal/com"
-	"github.com/weeveiot/weeve-agent/internal/config"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
 	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
 )
 
-var disconnect bool
+var nodeStatus string = model.NodeAlarm
 
-func SetDisconnected(disconnectParam bool) {
-	disconnect = disconnectParam
+func SetNodeStatus(status string) {
+	nodeStatus = status
 }
 
-func SendStatus(nodeStatus string) error {
-	msg, err := GetStatusMessage(nodeStatus)
+func SendStatus() error {
+	msg, err := GetStatusMessage()
 	if err != nil {
 		return err
 	}
@@ -33,7 +32,7 @@ func SendStatus(nodeStatus string) error {
 	return nil
 }
 
-func GetStatusMessage(nodeStatus string) (com.StatusMsg, error) {
+func GetStatusMessage() (com.StatusMsg, error) {
 	edgeApps, err := GetDataServiceStatus()
 	if err != nil {
 		return com.StatusMsg{}, err
@@ -42,18 +41,6 @@ func GetStatusMessage(nodeStatus string) (com.StatusMsg, error) {
 	deviceParams, err := getDeviceParams()
 	if err != nil {
 		return com.StatusMsg{}, err
-	}
-
-	if nodeStatus == "" {
-		// TODO: Do proper check for node status
-		nodeStatus = model.NodeAlarm
-		if config.GetRegistered() {
-			nodeStatus = model.NodeConnected
-		}
-
-		if disconnect {
-			nodeStatus = model.NodeDisconnected
-		}
 	}
 
 	msg := com.StatusMsg{

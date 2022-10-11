@@ -298,7 +298,7 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string
 	}
 
 	manifest.DeleteKnownManifest(manifestUniqueID)
-	err = SendStatus("")
+	err = SendStatus()
 	if err != nil {
 		log.Error(deploymentID, err)
 		return err
@@ -335,7 +335,7 @@ func DataServiceExist(manifestUniqueID model.ManifestUniqueID) (bool, error) {
 
 func setAndSendStatus(manifestID string, containerCount int, manifestUniqueID model.ManifestUniqueID, status string, inTransition bool) {
 	manifest.SetStatus(manifestID, containerCount, manifestUniqueID, status, inTransition)
-	err := SendStatus("")
+	err := SendStatus()
 	if err != nil {
 		log.Error(err)
 	}
