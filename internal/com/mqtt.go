@@ -18,6 +18,7 @@ const (
 	topicEdgeAppLogs   = "debug"
 	topicNodePublicKey = "nodePublicKey"
 	TopicOrgPrivateKey = "orgKey"
+	TopicNodeDelete    = "delete"
 )
 
 var client mqtt.Client
@@ -98,10 +99,17 @@ func DisconnectNode() {
 
 func createMqttClient() error {
 	// Build the options for the mqtt client
+	nodeStatusTopic := topicNodeStatus + "/" + config.GetNodeId()
+	willPayload, err := json.Marshal(StatusMsg{Status: model.NodeDisconnected})
+	if err != nil {
+		return err
+	}
+
 	channelOptions := mqtt.NewClientOptions()
 	channelOptions.AddBroker(params.Broker)
 	channelOptions.SetClientID(config.GetNodeId())
 	channelOptions.SetConnectionLostHandler(connectLostHandler)
+	channelOptions.SetWill(nodeStatusTopic, string(willPayload), 1, true)
 
 	if !params.NoTLS {
 		channelOptions.SetUsername(config.GetNodeId())
@@ -160,7 +168,7 @@ func newTLSConfig() (*tls.Config, error) {
 func publishMessage(topic string, message interface{}, retained bool) error {
 	payload, err := json.Marshal(message)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	log.Debugln("Publishing message >> Topic:", topic, ">> Payload:", string(payload))

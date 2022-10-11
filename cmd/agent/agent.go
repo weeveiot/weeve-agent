@@ -72,6 +72,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	err = com.ConnectNode(setSubscriptionHandlers())
 	if err != nil {
 		log.Fatal(err)
@@ -83,17 +84,17 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		msg, err := handler.GetStatusMessage()
+
+		dataservice.SetNodeStatus(model.NodeDisconnected)
+		err = dataservice.SendStatus()
 		if err != nil {
 			log.Fatal(err)
-		}
-		err = com.SendHeartbeat(msg)
-		if err != nil {
-			log.Error(err)
 		}
 		log.Info("weeve agent disconnected")
 		os.Exit(0)
 	}
+
+	dataservice.SetNodeStatus(model.NodeConnected)
 
 	err = com.SendNodePublicKey(nodePubKey)
 	if err != nil {
@@ -196,7 +197,6 @@ func parseCLIoptions() (string, bool) {
 	// FLAG: Broker, NoTLS, Heartbeat, TopicName
 	addMqttHookToLog(brokerUrl, opt.NoTLS)
 	com.SetParams(opt)
-	handler.SetDisconnected(opt.Disconnect)
 
 	return opt.ManifestPath, opt.Disconnect
 }
@@ -217,54 +217,47 @@ func validateBrokerUrl(u *url.URL) {
 
 func setSubscriptionHandlers() map[string]mqtt.MessageHandler {
 	subscriptions := make(map[string]mqtt.MessageHandler)
+
 	subscriptions[com.TopicOrchestration] = handler.OrchestrationHandler
 	subscriptions[com.TopicOrgPrivateKey] = handler.OrgPrivKeyHandler
+	subscriptions[com.TopicNodeDelete] = handler.NodeDeleteHandler
 
 	return subscriptions
 }
 
 func monitorDataServiceStatus() {
-	edgeApps, err := handler.GetDataServiceStatus()
+	edgeApps, err := dataservice.GetDataServiceStatus()
 	if err != nil {
 		log.Error(err)
 	}
 
 	for {
 		time.Sleep(time.Second * time.Duration(5))
-		latestEdgeApps, statusChange, err := handler.CompareDataServiceStatus(edgeApps)
+		latestEdgeApps, statusChange, err := dataservice.CompareDataServiceStatus(edgeApps)
 		if err != nil {
 			log.Error(err)
 			continue
 		}
+		log.Debug("Latest edge app status: ", latestEdgeApps)
 
-		log.Debug("Latest edge app status: ", edgeApps)
 		if statusChange {
-			msg, err := handler.GetStatusMessage()
+			err := dataservice.SendStatus()
 			if err != nil {
 				log.Error(err)
 				continue
 			}
-			err = com.SendHeartbeat(msg)
-			if err != nil {
-				log.Error(err)
-			} else {
-				edgeApps = latestEdgeApps
-			}
+			edgeApps = latestEdgeApps
 		}
 	}
 }
 
 func sendHeartbeat() {
 	for {
-		msg, err := handler.GetStatusMessage()
+		err := dataservice.SendStatus()
 		if err != nil {
 			log.Error(err)
-		} else {
-			err = com.SendHeartbeat(msg)
-			if err != nil {
-				log.Error(err)
-			}
 		}
+
 		time.Sleep(time.Second * time.Duration(com.GetHeartbeat()))
 	}
 }
@@ -276,18 +269,7 @@ func sendEdgeAppLogs() {
 		until := time.Now().UTC().Format(time.RFC3339Nano)
 
 		for _, manif := range knownManifests {
-			msg, err := handler.GetEdgeAppLogsMsg(manif, until)
-			if err != nil {
-				log.Error(err)
-			} else {
-
-				err = com.SendEdgeAppLogs(msg)
-				if err != nil {
-					log.Error(err)
-				} else {
-					manifest.SetLastLogRead(manif.ManifestUniqueID, until)
-				}
-			}
+			dataservice.SendEdgeAppLogs(manif, until)
 		}
 
 		time.Sleep(time.Second * time.Duration(config.GetEdgeAppLogIntervalSec()))

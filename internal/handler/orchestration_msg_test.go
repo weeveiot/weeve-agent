@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
-	"time"
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/docker/docker/api/types"
@@ -81,18 +81,8 @@ func TestProcessMessagePass(t *testing.T) {
 		t.FailNow()
 	}
 
-	fmt.Println("TESTING START EDGE APPLICATION...")
-	err = startEdgeApplication(man)
-	if err != nil {
-		err = undeployEdgeApplication(man, dataservice.CMDRemove)
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.FailNow()
-	}
-
-	fmt.Println("TESTING REDEPLOY EDGE APPLICATION...")
-	err = reDeployEdgeApplication(jsonBytes, man)
+	fmt.Println("TESTING RESUME EDGE APPLICATION...")
+	err = resumeEdgeApplication(man)
 	if err != nil {
 		err = undeployEdgeApplication(man, dataservice.CMDRemove)
 		if err != nil {
@@ -151,43 +141,6 @@ func deployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
 	return nil
 }
 
-func reDeployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
-	jsonParsed, err := gabs.ParseJSON(jsonBytes)
-	if err != nil {
-		return err
-	}
-
-	jsonParsed.Set("REDEPLOY", "command")
-	jsonBytes = jsonParsed.Bytes()
-
-	currentTime := time.Now()
-	// Process deploy edge application
-	err = handler.ProcessOrchestrationMessage(jsonBytes)
-	if err != nil {
-		return fmt.Errorf("ProcessMessage returned %v status", err)
-	}
-
-	net, err := getNetwork(man.ManifestUniqueID)
-	if err != nil {
-		return err
-	}
-
-	if len(net) > 0 {
-		if net[0].Created.After(currentTime) {
-			_, err := checkContainersExistsWithStatus(man.ManifestUniqueID, len(man.Modules), "running")
-			if err != nil {
-				return err
-			}
-		} else {
-			return errors.New("Expected new network, found old network")
-		}
-	} else {
-		return errors.New("Network not created")
-	}
-
-	return nil
-}
-
 func stopEdgeApplication(man manifest.Manifest) error {
 	// Process stop edge application
 	manCmd.Command = dataservice.CMDStopService
@@ -209,9 +162,9 @@ func stopEdgeApplication(man manifest.Manifest) error {
 	return nil
 }
 
-func startEdgeApplication(man manifest.Manifest) error {
-	// Process start edge application
-	manCmd.Command = dataservice.CMDStartService
+func resumeEdgeApplication(man manifest.Manifest) error {
+	// Process resume edge application
+	manCmd.Command = dataservice.CMDResumeService
 	jsonB, err := json.Marshal(manCmd)
 	if err != nil {
 		return err
@@ -346,7 +299,7 @@ func checkContainersExistsWithStatus(manID model.ManifestUniqueID, containerCoun
 		return false, fmt.Errorf("Expected number of containers %v, number of available containers %v", containerCount, len(dsContainers))
 	}
 	for _, dsContainer := range dsContainers {
-		if dsContainer.State != status {
+		if dsContainer.State != strings.ToLower(status) {
 			return false, fmt.Errorf("Container expected status %s, but current status %s", status, dsContainer.State)
 		}
 	}

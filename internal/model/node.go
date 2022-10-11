@@ -39,19 +39,18 @@ const (
 	NodeConnected    = "Connected"
 	NodeAlarm        = "Alarm"
 	NodeDisconnected = "Disconnected"
+	NodeDeleted      = "Deleted"
 )
 
 const (
-	EdgeAppRunning    = "Running"
-	EdgeAppPaused     = "Paused"
-	EdgeAppError      = "Error"
-	EdgeAppIninted    = "Initiated"
-	EdgeAppUndeployed = "Undeployed"
+	EdgeAppRunning   = "Running"
+	EdgeAppStopped   = "Stopped"
+	EdgeAppError     = "Error"
+	EdgeAppInitiated = "Initiated"
 )
 
 const (
 	ModuleRunning    = "Running"
-	ModulePaused     = "Paused"
 	ModuleRestarting = "Restarting"
 	ModuleCreated    = "Created"
 	ModuleExited     = "Exited"

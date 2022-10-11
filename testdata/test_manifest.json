@@ -29,23 +29,28 @@
             "envs": [
                 {
                     "key": "MQTT_BROKER",
-                    "value": "mqtt://mapi-dev.weeve.engineering"
+                    "value": "mqtt://mapi-dev.weeve.engineering",
+                    "secret": false
                 },
                 {
                     "key": "PORT",
-                    "value": "1883"
+                    "value": "1883",
+                    "secret": false
                 },
                 {
                     "key": "PROTOCOL",
-                    "value": "mqtt"
+                    "value": "mqtt",
+                    "secret": false
                 },
                 {
                     "key": "TOPIC",
-                    "value": "revpi_I14"
+                    "value": "revpi_I14",
+                    "secret": false
                 },
                 {
                     "key": "QOS",
-                    "value": "0"
+                    "value": "0",
+                    "secret": false
                 }
             ],
             "ports": [
@@ -73,15 +78,18 @@
             "envs": [
                 {
                     "key": "INPUT_LABEL",
-                    "value": "temp"
+                    "value": "temp",
+                    "secret": false
                 },
                 {
                     "key": "WINDOW_SIZE",
-                    "value": "3"
+                    "value": "3",
+                    "secret": false
                 },
                 {
                     "key": "SEND_ON_CHANGE",
-                    "value": "true"
+                    "value": "true",
+                    "secret": false
                 }
             ],
             "ports": [],
@@ -104,15 +112,18 @@
             "envs": [
                 {
                     "key": "INPUT_LABEL",
-                    "value": "temp"
+                    "value": "temp",
+                    "secret": false
                 },
                 {
                     "key": "CONDITION",
-                    "value": "(==) equal to"
+                    "value": "(==) equal to",
+                    "secret": false
                 },
                 {
                     "key": "COMPARE_VALUE",
-                    "value": "1"
+                    "value": "1",
+                    "secret": false
                 }
             ],
             "ports": [],
@@ -135,23 +146,33 @@
             "envs": [
                 {
                     "key": "INPUT_LABEL",
-                    "value": "temp"
+                    "value": "temp",
+                    "secret": false
                 },
                 {
                     "key": "INPUT_UNIT",
-                    "value": "number"
+                    "value": "number",
+                    "secret": false
                 },
                 {
                     "key": "ALERT_SEVERITY",
-                    "value": "Warning"
+                    "value": "Warning",
+                    "secret": false
                 },
                 {
                     "key": "ALERT_MESSAGE",
-                    "value": "{{alert_severity}}: Leak detected on device {{device_name}} at {{time}}"
+                    "value": "{{alert_severity}}: Leak detected on device {{device_name}} at {{time}}",
+                    "secret": false
                 },
                 {
                     "key": "SLACK_WEBHOOK_URL",
-                    "value": "https://hooks.slack.com/services/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"
+                    "value": "https://hooks.slack.com/services/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",
+                    "secret": false
+                },
+                {
+                    "Key": "envToTestHowSecretsWork",
+                    "Value": "JdqVMUV1DHDYfMGsBna4mDLTLAfMMAOUqaCWs9aCy7yQv841cIJ/V/UBMA==",
+                    "Secret": true
                 }
             ],
             "ports": [],
