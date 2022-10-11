@@ -219,3 +219,12 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 		}
 	}
 }
+
+func InspectContainer(containerID string) (types.ContainerJSON, error) {
+	containerJSON, err := dockerClient.ContainerInspect(context.Background(), containerID)
+	if err != nil {
+		return types.ContainerJSON{}, err
+	}
+
+	return containerJSON, nil
+}

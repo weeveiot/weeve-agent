@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 
+	linq "github.com/ahmetb/go-linq/v3"
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
@@ -15,6 +16,17 @@ const ManifestFile = "known_manifests.jsonl"
 
 func GetKnownManifests() []model.ManifestStatus {
 	return knownManifests
+}
+
+func DeleteKnownManifest(manifestUniqueID model.ManifestUniqueID) {
+	linq.From(knownManifests).Where(func(c interface{}) bool {
+		return c.(model.ManifestStatus).ManifestUniqueID != manifestUniqueID
+	}).ToSlice(&knownManifests)
+
+	err := writeKnownManifestsToFile()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func SetStatus(manifestID string, containerCount int, manifestUniqueID model.ManifestUniqueID, status string, inTransition bool) {
@@ -43,12 +55,7 @@ func SetStatus(manifestID string, containerCount int, manifestUniqueID model.Man
 		})
 	}
 
-	encodedJson, err := json.MarshalIndent(knownManifests, "", " ")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = os.WriteFile(ManifestFile, encodedJson, 0644)
+	err := writeKnownManifestsToFile()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -66,12 +73,7 @@ func SetLastLogRead(manifestUniqueID model.ManifestUniqueID, lastLogReadTime str
 		}
 	}
 
-	encodedJson, err := json.MarshalIndent(knownManifests, "", " ")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = os.WriteFile(ManifestFile, encodedJson, 0644)
+	err := writeKnownManifestsToFile()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -96,4 +98,28 @@ func InitKnownManifests() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func GetEdgeAppStatus(manif model.ManifestUniqueID) string {
+	for _, manifest := range knownManifests {
+		if manif.ManifestName == manifest.ManifestUniqueID.ManifestName && manif.VersionNumber == manifest.ManifestUniqueID.VersionNumber {
+			return manifest.Status
+		}
+	}
+
+	return ""
+}
+
+func writeKnownManifestsToFile() error {
+	encodedJson, err := json.MarshalIndent(knownManifests, "", " ")
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(ManifestFile, encodedJson, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
