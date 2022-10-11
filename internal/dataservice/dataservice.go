@@ -294,7 +294,6 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string
 	}
 
 	if errorlist != "" {
-		log.Error(deploymentID, err)
 		return errors.New("Data Service could not be undeployed completely. Cause(s): " + errorlist)
 	}
 
