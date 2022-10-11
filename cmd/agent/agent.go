@@ -76,6 +76,8 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		dataservice.SetNodeStatus(model.NodeDisconnected)
 		err = dataservice.SendStatus()
 		if err != nil {
 			log.Fatal(err)
@@ -182,9 +184,6 @@ func parseCLIoptions() (string, bool) {
 	// FLAG: Broker, NoTLS, Heartbeat, TopicName
 	addMqttHookToLog(brokerUrl, opt.NoTLS)
 	com.SetParams(opt)
-	if opt.Disconnect {
-		dataservice.SetNodeStatus(model.NodeDisconnected)
-	}
 
 	return opt.ManifestPath, opt.Disconnect
 }
