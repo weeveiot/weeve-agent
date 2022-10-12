@@ -61,10 +61,15 @@ func InitNodeKeypair() ([]byte, error) {
 	log.Info("Node private key set.")
 	log.Info("Generating node public key...")
 
+	pk, err := x509.MarshalPKIXPublicKey(&nodePrivateKey.PublicKey)
+	if err != nil {
+		return nil, err
+	}
+
 	// return public key
 	publicKeyPem := &pem.Block{
-		Type:  "RSA PUBLIC KEY",
-		Bytes: x509.MarshalPKCS1PublicKey(&nodePrivateKey.PublicKey),
+		Type:  "PUBLIC KEY",
+		Bytes: pk,
 	}
 	publicKeyPemBytes := pem.EncodeToMemory(publicKeyPem)
 	if publicKeyPemBytes == nil {
