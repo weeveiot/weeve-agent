@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"strings"
 	"testing"
 
@@ -13,12 +14,16 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/stretchr/testify/assert"
+	"github.com/weeveiot/weeve-agent/internal/com"
+	"github.com/weeveiot/weeve-agent/internal/config"
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/handler"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
+	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
 )
 
 func init() {
@@ -35,6 +40,11 @@ var ctx = context.Background()
 var dockerCli *client.Client
 
 func TestProcessMessagePass(t *testing.T) {
+	config.ConfigPath = path.Join(ioutility.GetExeDir(), "../nodeconfig.json")
+	config.UpdateNodeConfig(model.Params{})
+	com.SetParams(model.Params{Broker: "tcp://localhost:1883", NoTLS: true, Heartbeat: 60})
+	com.ConnectNode(map[string]mqtt.MessageHandler{})
+
 	assert := assert.New(t)
 	// Prepare test data
 	manifestPath := "../../testdata/test_manifest.json"
