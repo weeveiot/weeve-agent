@@ -20,8 +20,9 @@ type moduleMsg struct {
 }
 
 type envMsg struct {
-	Key   string `validate:"required,notblank"`
-	Value string `validate:"required"`
+	Key    string `validate:"required,notblank"`
+	Value  string `validate:"required"`
+	Secret bool   `validate:"required"`
 }
 
 type portMsg struct {

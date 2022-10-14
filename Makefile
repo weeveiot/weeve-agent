@@ -1,15 +1,15 @@
 .DEFAULT_GOAL := build-all
 
 build-x86:
-	GOOS=linux GOARCH=amd64 go build -o build/weeve-agent-linux-amd64 ./cmd/agent/agent.go
+	GOOS=linux GOARCH=amd64 go build -o bin/weeve-agent-linux-amd64 ./cmd/agent/agent.go
 .PHONY: build-x86
 
 build-arm:
-	GOOS=linux GOARCH=arm GOARM=7 go build -o build/weeve-agent-linux-arm-v7 ./cmd/agent/agent.go
+	GOOS=linux GOARCH=arm GOARM=7 go build -o bin/weeve-agent-linux-arm-v7 ./cmd/agent/agent.go
 .PHONY: build-arm
 
 build-darwin:
-	GOOS=darwin GOARCH=amd64 go build -o build/weeve-agent-darwin ./cmd/agent/agent.go
+	GOOS=darwin GOARCH=amd64 go build -o bin/weeve-agent-darwin ./cmd/agent/agent.go
 .PHONY: build-darwin
 
 cross:

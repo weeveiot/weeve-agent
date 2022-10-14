@@ -30,3 +30,7 @@ type DeviceParamsMsg struct {
 	StorageFree  float64 `json:"storageFree"`
 	RamFree      float64 `json:"ramFree"`
 }
+
+type nodePublicKeyMsg struct {
+	NodePublicKey string `json:"nodePublicKey"`
+}

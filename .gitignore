@@ -4,17 +4,11 @@
 /bin/
 /pkg/
 *.exe
-build/
 *.pem
 *.pem.crt
 *.pem.key
 *.zip
 *.jsonl
 *.log
-node_listener
-node-service
-agent_darwin_amd64
-weeve_agent
-cmd/agent/__debug_bin
 nodeconfig.json
 weeve-agent/
