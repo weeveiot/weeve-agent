@@ -309,7 +309,7 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string
 
 func UndeployAll() error {
 	knownManifests := manifest.GetKnownManifests()
-	log.Info(knownManifests)
+	log.Info("Undeploying all edge apps ", knownManifests)
 
 	for _, manif := range knownManifests {
 		err := UndeployDataService(manif.ManifestUniqueID, CMDRemove)

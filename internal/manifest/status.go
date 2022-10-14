@@ -19,9 +19,13 @@ func GetKnownManifests() []model.ManifestStatus {
 }
 
 func DeleteKnownManifest(manifestUniqueID model.ManifestUniqueID) {
+	var filteredKnownManifests []model.ManifestStatus
+
 	linq.From(knownManifests).Where(func(c interface{}) bool {
 		return c.(model.ManifestStatus).ManifestUniqueID != manifestUniqueID
-	}).ToSlice(&knownManifests)
+	}).ToSlice(&filteredKnownManifests)
+
+	knownManifests = filteredKnownManifests
 
 	err := writeKnownManifestsToFile()
 	if err != nil {
