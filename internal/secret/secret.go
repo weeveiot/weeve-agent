@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
@@ -113,7 +114,8 @@ func ProcessOrgPrivKeyMessage(payload []byte) error {
 		return err
 	}
 
-	orgSecretKey, err := rsa.DecryptPKCS1v15(rand.Reader, nodePrivateKey, encryptedOrgKey)
+	label := []byte("orgKey")
+	orgSecretKey, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, nodePrivateKey, encryptedOrgKey, label)
 	if err != nil {
 		return err
 	}
