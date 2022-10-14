@@ -74,8 +74,10 @@ The main entry command initiates logging, parses flags, and passes control to th
 The [paho](github.com/eclipse/paho.mqtt.golang) MQTT client is used for MQTT communication.
 TLS is optionally configurable, and supports server authentication, therefore a CA certificate used to sign the certificate needs to be provided.
 
-After the initial setup the agent subscribes on the topic <nodeId>/orchestration and waits for incoming commands from MAPI.
-It also publishes a status message to <nodeId>/nodestatus every `heartbeat` seconds, which includes the status of the node, the running edge apps and their modules as well as an overview of the available node ressources.
+After the initial setup the agent publishes it public key to MAPI, subscribes on the topic <nodeId>/orchestration and waits for incoming commands from MAPI. It additionally subscribes to <nodeId>/orgKey to receive the secret organization key, that will be used to decrypt secret parameters shared in the manifests from MAPI.
+ATTENTION: the key sharing function is meant to only be used over secure communication channel. Never use it with `--notls` option!
+
+The agent also publishes a status message to <nodeId>/nodestatus every `heartbeat` seconds, which includes the status of the node, the running edge apps and their modules as well as an overview of the available node ressources.
 
 ### Local setup
 #### Prerequisites
