@@ -10,14 +10,12 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/jessevdk/go-flags"
-	"github.com/shirou/logrusmqtt"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
 
@@ -195,7 +193,6 @@ func parseCLIoptions() (string, bool) {
 	}
 
 	// FLAG: Broker, NoTLS, Heartbeat, TopicName
-	addMqttHookToLog(brokerUrl, opt.NoTLS)
 	com.SetParams(opt)
 
 	return opt.ManifestPath, opt.Disconnect
@@ -274,32 +271,4 @@ func sendEdgeAppLogs() {
 
 		time.Sleep(time.Second * time.Duration(config.GetEdgeAppLogIntervalSec()))
 	}
-}
-
-func addMqttHookToLog(brokerUrl *url.URL, insecure bool) {
-	host, port, _ := net.SplitHostPort(brokerUrl.Host)
-
-	prt, err := strconv.Atoi(port)
-	if err != nil {
-		log.Fatal("Error on converting port string into int ", err)
-	}
-
-	params := logrusmqtt.MQTTHookParams{
-		Hostname: host,
-		Port:     prt,
-		Topic:    config.GetNodeId() + "/debug", // logrusmqtt will additionally append /<loglevel> to this topic
-		Insecure: insecure,
-	}
-
-	if !insecure {
-		params.CAFilepath = config.GetRootCertPath()
-	}
-
-	hook, err := logrusmqtt.NewMQTTHook(params, log.DebugLevel)
-	if err != nil {
-		log.Fatal("Error on adding log hook ", err)
-	}
-
-	log.Debugf("Sending agent's logs to %+v", params)
-	log.AddHook(hook)
 }
