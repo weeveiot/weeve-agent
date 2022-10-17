@@ -1,6 +1,10 @@
 package com
 
-import "github.com/weeveiot/weeve-agent/internal/docker"
+import (
+	"time"
+
+	"github.com/weeveiot/weeve-agent/internal/docker"
+)
 
 type EdgeAppLogMsg struct {
 	ManifestID    string                `json:"manifestID"`
@@ -16,6 +20,12 @@ type EdgeAppMsg struct {
 	ManifestID string         `json:"manifestID"`
 	Status     string         `json:"status"`
 	Containers []ContainerMsg `json:"containers"`
+}
+
+type agentLogMsg struct {
+	Time  time.Time `json:"time"`
+	Level string    `json:"level"`
+	Msg   string    `json:"msg"`
 }
 
 type StatusMsg struct {

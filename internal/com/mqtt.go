@@ -15,7 +15,7 @@ import (
 const (
 	TopicOrchestration = "orchestration"
 	topicNodeStatus    = "nodestatus"
-	topicEdgeAppLogs   = "debug"
+	topicLogs          = "debug"
 	topicNodePublicKey = "nodePublicKey"
 	TopicOrgPrivateKey = "orgKey"
 	TopicNodeDelete    = "delete"
@@ -42,23 +42,14 @@ func GetHeartbeat() int {
 func SendHeartbeat(msg StatusMsg) error {
 	nodeStatusTopic := topicNodeStatus + "/" + config.GetNodeId()
 	log.Debugln("Sending update >>", "Topic:", nodeStatusTopic, ">> Body:", msg)
-	err := publishMessage(nodeStatusTopic, msg, false)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return publishMessage(nodeStatusTopic, msg, false)
 }
 
 func SendEdgeAppLogs(msg EdgeAppLogMsg) error {
 	if len(msg.ContainerLogs) > 0 {
-		edgeAppLogsTopic := config.GetNodeId() + "/" + msg.ManifestID + "/" + topicEdgeAppLogs
+		edgeAppLogsTopic := config.GetNodeId() + "/" + msg.ManifestID + "/" + topicLogs
 		log.Debugln("Sending edge app logs >>", "Topic:", edgeAppLogsTopic, ">> Body:", msg)
-		err := publishMessage(edgeAppLogsTopic, msg, false)
-		if err != nil {
-			log.Errorln("Failed to publish logs", ">> Topic:", edgeAppLogsTopic, ">> Error:", err)
-			return err
-		}
+		return publishMessage(edgeAppLogsTopic, msg, false)
 	}
 
 	return nil
@@ -86,6 +77,7 @@ func ConnectNode(subscriptions map[string]mqtt.MessageHandler) error {
 		}
 	}
 
+	addMqttHookToLogs(log.DebugLevel)
 	return nil
 }
 
@@ -171,7 +163,6 @@ func publishMessage(topic string, message interface{}, retained bool) error {
 		return err
 	}
 
-	log.Debugln("Publishing message >> Topic:", topic, ">> Payload:", string(payload))
 	// sending with QoS of 1 to ensure that the message gets delivered
 	if token := client.Publish(topic, 1, retained, payload); token.Wait() && token.Error() != nil {
 		return token.Error()
