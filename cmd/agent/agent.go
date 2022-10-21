@@ -110,7 +110,10 @@ func main() {
 
 	// Cleanup on ending the process
 	<-done
-	com.DisconnectNode()
+	err = com.DisconnectNode()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func parseCLIoptions() (string, bool) {
