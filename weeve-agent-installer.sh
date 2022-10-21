@@ -77,7 +77,7 @@ check_for_agent(){
 validating_docker(){
   log Validating if docker is installed and running ...
   if [ "$OS" = "Linux" ]; then
-    if RESULT=$(systemctl is-active docker 2>&1); then
+    if RESULT=$(ls /var/run/docker.sock 2>&1); then
       log Docker is running.
     else
       log Docker is not running, is docker installed?
