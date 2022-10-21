@@ -42,7 +42,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 
 		} else if command == CMDDeployLocal {
 			// Clean old data service resources
-			err := UndeployDataService(man.ManifestUniqueID, CMDUndeploy)
+			err := UndeployDataService(man.ManifestUniqueID)
 			if err != nil {
 				log.Error(deploymentID, "Error while cleaning old data service -> ", err)
 				setAndSendStatus(man.ID, containerCount, man.ManifestUniqueID, model.EdgeAppError)
@@ -102,7 +102,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 		log.Error(deploymentID, "No valid contianers in Manifest")
 		setAndSendStatus(man.ID, containerCount, man.ManifestUniqueID, model.EdgeAppError)
 		log.Info(deploymentID, "Initiating rollback ...")
-		UndeployDataService(man.ManifestUniqueID, CMDRemove)
+		RemoveDataService(man.ManifestUniqueID)
 		return errors.New("no valid contianers in manifest")
 	}
 
@@ -112,7 +112,7 @@ func DeployDataService(man manifest.Manifest, command string) error {
 		if err != nil {
 			log.Error(deploymentID, "Failed to create and start container ", containerConfig.ContainerName)
 			log.Info(deploymentID, "Initiating rollback ...")
-			UndeployDataService(man.ManifestUniqueID, CMDRemove)
+			RemoveDataService(man.ManifestUniqueID)
 			setAndSendStatus(man.ID, containerCount, man.ManifestUniqueID, model.EdgeAppError)
 			return err
 		}
@@ -213,7 +213,68 @@ func ResumeDataService(manifestUniqueID model.ManifestUniqueID) error {
 	return nil
 }
 
-func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string) error {
+func UndeployDataService(manifestUniqueID model.ManifestUniqueID) error {
+	log.Infoln("Undeploying data service:", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
+
+	deploymentID := manifestUniqueID.ManifestName + "-" + manifestUniqueID.VersionNumber + " | "
+
+	// Check if data service already exist
+	dataServiceExists, err := DataServiceExist(manifestUniqueID)
+	if err != nil {
+		log.Error(deploymentID, err)
+		return err
+	}
+
+	if !dataServiceExists {
+		log.Warnln(deploymentID, "Trying to undeploy a non-existant edge application with ManifestName: ", manifestUniqueID.ManifestName, " and VersionNumber: ", manifestUniqueID.VersionNumber)
+		return nil
+	}
+
+	setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppExecuting)
+
+	//******** STEP 1 - Stop and Remove Containers *************//
+	dsContainers, err := docker.ReadDataServiceContainers(manifestUniqueID)
+	if err != nil {
+		log.Error(deploymentID, "Failed to read data service containers.")
+		setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppError)
+		return err
+	}
+
+	var errorlist string
+	for _, dsContainer := range dsContainers {
+		err := docker.StopAndRemoveContainer(dsContainer.ID)
+		if err != nil {
+			log.Error(deploymentID, err)
+			setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppError)
+			errorlist = fmt.Sprintf("%v,%v", errorlist, err)
+		}
+	}
+
+	//******** STEP 3 - Remove Network *************//
+	log.Info(deploymentID, "Pruning networks ...")
+
+	err = docker.NetworkPrune(manifestUniqueID)
+	if err != nil {
+		log.Error(deploymentID, err)
+		setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppError)
+		errorlist = fmt.Sprintf("%v,%v", errorlist, err)
+	}
+
+	if errorlist != "" {
+		return errors.New("Data Service could not be undeployed completely. Cause(s): " + errorlist)
+	}
+
+	setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppUndeployed)
+	err = SendStatus()
+	if err != nil {
+		log.Error(deploymentID, err)
+		return err
+	}
+
+	return nil
+}
+
+func RemoveDataService(manifestUniqueID model.ManifestUniqueID) error {
 	log.Infoln("Undeploying data service:", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
 
 	deploymentID := manifestUniqueID.ManifestName + "-" + manifestUniqueID.VersionNumber + " | "
@@ -255,30 +316,28 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string
 		}
 	}
 
-	if command == CMDRemove {
-		//******** STEP 2 - Remove Images WITHOUT Containers *************//
-		containers, err := docker.ReadAllContainers()
-		if err != nil {
-			log.Error(deploymentID, "Failed to read all containers.")
-			setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppError)
-			return err
+	//******** STEP 2 - Remove Images WITHOUT Containers *************//
+	containers, err := docker.ReadAllContainers()
+	if err != nil {
+		log.Error(deploymentID, "Failed to read all containers.")
+		setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppError)
+		return err
+	}
+
+	for imageID := range numContainersPerImage {
+		for _, container := range containers {
+			if container.ImageID == imageID {
+				numContainersPerImage[imageID]++
+			}
 		}
 
-		for imageID := range numContainersPerImage {
-			for _, container := range containers {
-				if container.ImageID == imageID {
-					numContainersPerImage[imageID]++
-				}
-			}
-
-			if numContainersPerImage[imageID] == 0 {
-				log.Info(deploymentID, "Remove Image - ", imageID)
-				err := docker.ImageRemove(imageID)
-				if err != nil {
-					log.Error(deploymentID, err)
-					setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppError)
-					errorlist = fmt.Sprintf("%v,%v", errorlist, err)
-				}
+		if numContainersPerImage[imageID] == 0 {
+			log.Info(deploymentID, "Remove Image - ", imageID)
+			err := docker.ImageRemove(imageID)
+			if err != nil {
+				log.Error(deploymentID, err)
+				setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppError)
+				errorlist = fmt.Sprintf("%v,%v", errorlist, err)
 			}
 		}
 	}
@@ -297,12 +356,7 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string
 		return errors.New("Data Service could not be undeployed completely. Cause(s): " + errorlist)
 	}
 
-	if command == CMDRemove {
-		manifest.DeleteKnownManifest(manifestUniqueID)
-	} else {
-		setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppUndeployed)
-	}
-
+	manifest.DeleteKnownManifest(manifestUniqueID)
 	err = SendStatus()
 	if err != nil {
 		log.Error(deploymentID, err)
@@ -317,7 +371,7 @@ func UndeployAll() error {
 	log.Info("Undeploying all edge apps ", knownManifests)
 
 	for _, manif := range knownManifests {
-		err := UndeployDataService(manif.ManifestUniqueID, CMDRemove)
+		err := RemoveDataService(manif.ManifestUniqueID)
 		if err != nil {
 			return err
 		}
