@@ -47,6 +47,7 @@ const (
 	EdgeAppStopped   = "Stopped"
 	EdgeAppError     = "Error"
 	EdgeAppInitiated = "Initiated"
+	EdgeAppExecuting = "Executing"
 )
 
 const (

@@ -145,7 +145,7 @@ func StopDataService(manifestUniqueID model.ManifestUniqueID) error {
 		return errors.New("no data service containers found")
 	}
 
-	setAndSendStatus("", 0, manifestUniqueID, "", true)
+	setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppExecuting, true)
 
 	for _, container := range containers {
 		if container.State == strings.ToLower(model.ModuleRunning) {
@@ -190,7 +190,7 @@ func ResumeDataService(manifestUniqueID model.ManifestUniqueID) error {
 		return errors.New("no data service containers found")
 	}
 
-	setAndSendStatus("", 0, manifestUniqueID, "", true)
+	setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppExecuting, true)
 
 	for _, container := range containers {
 		if container.State != strings.ToLower(model.ModuleRunning) {
@@ -230,7 +230,7 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID, command string
 		return nil
 	}
 
-	setAndSendStatus("", 0, manifestUniqueID, "", true)
+	setAndSendStatus("", 0, manifestUniqueID, model.EdgeAppExecuting, true)
 
 	//******** STEP 1 - Stop and Remove Containers *************//
 	// map { imageID: number_of_allocated_containers }, needed for removing images as not supported by Go-Docker SDK

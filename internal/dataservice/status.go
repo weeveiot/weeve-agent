@@ -65,7 +65,7 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 			return edgeApps, err
 		}
 
-		if !manif.InTransition && (manif.Status == model.EdgeAppRunning || manif.Status == model.EdgeAppStopped) && len(appContainers) != manif.ContainerCount {
+		if (!manif.InTransition || manif.Status != model.EdgeAppExecuting) && (manif.Status == model.EdgeAppRunning || manif.Status == model.EdgeAppStopped) && len(appContainers) != manif.ContainerCount {
 			edgeApplication.Status = model.EdgeAppError
 		}
 
@@ -78,7 +78,7 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 			container := com.ContainerMsg{Name: strings.Join(con.Names, ", "), Status: ioutility.FirstToUpper(con.State)}
 			containersStat = append(containersStat, container)
 
-			if !manif.InTransition && edgeApplication.Status != model.EdgeAppError {
+			if (!manif.InTransition || manif.Status != model.EdgeAppExecuting) && edgeApplication.Status != model.EdgeAppError {
 				if manif.Status == model.EdgeAppRunning && con.State != strings.ToLower(model.ModuleRunning) {
 					edgeApplication.Status = model.EdgeAppError
 				}
