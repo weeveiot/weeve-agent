@@ -33,7 +33,7 @@ func DeleteKnownManifest(manifestUniqueID model.ManifestUniqueID) {
 	}
 }
 
-func SetStatus(manifestID string, containerCount int, manifestUniqueID model.ManifestUniqueID, status string, inTransition bool) {
+func SetStatus(manifestID string, containerCount int, manifestUniqueID model.ManifestUniqueID, status string) {
 	if status != "" {
 		log.Debugln("Setting status", status, "to data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
 	}
@@ -41,10 +41,7 @@ func SetStatus(manifestID string, containerCount int, manifestUniqueID model.Man
 	manifestKnown := false
 	for i, manifest := range knownManifests {
 		if manifest.ManifestUniqueID == manifestUniqueID {
-			if status != "" {
-				knownManifests[i].Status = status
-			}
-			knownManifests[i].InTransition = inTransition
+			knownManifests[i].Status = status
 			manifestKnown = true
 			break
 		}
@@ -55,7 +52,6 @@ func SetStatus(manifestID string, containerCount int, manifestUniqueID model.Man
 			ManifestUniqueID: manifestUniqueID,
 			Status:           status,
 			ContainerCount:   containerCount,
-			InTransition:     inTransition,
 		})
 	}
 

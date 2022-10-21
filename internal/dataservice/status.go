@@ -3,6 +3,7 @@ package dataservice
 import (
 	"strings"
 
+	"github.com/docker/docker/api/types"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/host"
@@ -59,14 +60,17 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 	for _, manif := range knownManifests {
 		edgeApplication := com.EdgeAppMsg{ManifestID: manif.ManifestID, Status: manif.Status}
 		containersStat := []com.ContainerMsg{}
+		appContainers := []types.Container{}
 
-		appContainers, err := docker.ReadDataServiceContainers(manif.ManifestUniqueID)
-		if err != nil {
-			return edgeApps, err
-		}
+		if manif.Status != model.EdgeAppUndeployed {
+			appContainers, err := docker.ReadDataServiceContainers(manif.ManifestUniqueID)
+			if err != nil {
+				return edgeApps, err
+			}
 
-		if (!manif.InTransition || manif.Status != model.EdgeAppExecuting) && (manif.Status == model.EdgeAppRunning || manif.Status == model.EdgeAppStopped) && len(appContainers) != manif.ContainerCount {
-			edgeApplication.Status = model.EdgeAppError
+			if (manif.Status != model.EdgeAppInitiated && manif.Status != model.EdgeAppExecuting) && (manif.Status == model.EdgeAppRunning || manif.Status == model.EdgeAppStopped) && len(appContainers) != manif.ContainerCount {
+				edgeApplication.Status = model.EdgeAppError
+			}
 		}
 
 		for _, con := range appContainers {
@@ -78,7 +82,7 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 			container := com.ContainerMsg{Name: strings.Join(con.Names, ", "), Status: ioutility.FirstToUpper(con.State)}
 			containersStat = append(containersStat, container)
 
-			if (!manif.InTransition || manif.Status != model.EdgeAppExecuting) && edgeApplication.Status != model.EdgeAppError {
+			if (manif.Status != model.EdgeAppInitiated && manif.Status != model.EdgeAppExecuting) && edgeApplication.Status != model.EdgeAppError {
 				if manif.Status == model.EdgeAppRunning && con.State != strings.ToLower(model.ModuleRunning) {
 					edgeApplication.Status = model.EdgeAppError
 				}

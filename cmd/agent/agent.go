@@ -266,7 +266,9 @@ func sendEdgeAppLogs() {
 		until := time.Now().UTC().Format(time.RFC3339Nano)
 
 		for _, manif := range knownManifests {
-			dataservice.SendEdgeAppLogs(manif, until)
+			if manif.Status != model.EdgeAppUndeployed {
+				dataservice.SendEdgeAppLogs(manif, until)
+			}
 		}
 
 		time.Sleep(time.Second * time.Duration(config.GetEdgeAppLogIntervalSec()))

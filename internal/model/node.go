@@ -26,7 +26,6 @@ type ManifestStatus struct {
 	ManifestUniqueID ManifestUniqueID `json:"manifestUniqueID"`
 	Status           string           `json:"status"`
 	ContainerCount   int              `json:"containerCount"`
-	InTransition     bool             `json:"inTransition"`
 	LastLogReadTime  string           `json:"lastLogReadTime"`
 }
 
@@ -43,11 +42,12 @@ const (
 )
 
 const (
-	EdgeAppRunning   = "Running"
-	EdgeAppStopped   = "Stopped"
-	EdgeAppError     = "Error"
-	EdgeAppInitiated = "Initiated"
-	EdgeAppExecuting = "Executing"
+	EdgeAppRunning    = "Running"
+	EdgeAppStopped    = "Stopped"
+	EdgeAppError      = "Error"
+	EdgeAppInitiated  = "Initiated"
+	EdgeAppExecuting  = "Executing"
+	EdgeAppUndeployed = "Undeployed"
 )
 
 const (
