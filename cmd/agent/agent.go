@@ -267,7 +267,7 @@ func sendEdgeAppLogs() {
 
 		for _, manif := range knownManifests {
 			if manif.Status != model.EdgeAppUndeployed {
-				dataservice.SendEdgeAppLogs(manif, until)
+				dataservice.SendEdgeAppLogs(*manif, until)
 			}
 		}
 

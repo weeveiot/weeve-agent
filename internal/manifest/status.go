@@ -16,16 +16,16 @@ type ManifestStatus struct {
 	LastLogReadTime string
 }
 
-var knownManifests = make(map[model.ManifestUniqueID]ManifestStatus)
+var knownManifests = make(map[model.ManifestUniqueID]*ManifestStatus)
 
 const ManifestFile = "known_manifests.jsonl"
 
-func GetKnownManifests() map[model.ManifestUniqueID]ManifestStatus {
+func GetKnownManifests() map[model.ManifestUniqueID]*ManifestStatus {
 	return knownManifests
 }
 
 func AddKnownManifest(man Manifest) {
-	knownManifests[man.ManifestUniqueID] = ManifestStatus{
+	knownManifests[man.ManifestUniqueID] = &ManifestStatus{
 		Manifest: man,
 		Status:   model.EdgeAppInitiated,
 	}
