@@ -58,17 +58,17 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 	knownManifests := manifest.GetKnownManifests()
 
 	for _, manif := range knownManifests {
-		edgeApplication := com.EdgeAppMsg{ManifestID: manif.ManifestID, Status: manif.Status}
+		edgeApplication := com.EdgeAppMsg{ManifestID: manif.Manifest.ID, Status: manif.Status}
 		containersStat := []com.ContainerMsg{}
 		appContainers := []types.Container{}
 
 		if manif.Status != model.EdgeAppUndeployed {
-			appContainers, err := docker.ReadDataServiceContainers(manif.ManifestUniqueID)
+			appContainers, err := docker.ReadDataServiceContainers(manif.Manifest.ManifestUniqueID)
 			if err != nil {
 				return edgeApps, err
 			}
 
-			if (manif.Status != model.EdgeAppInitiated && manif.Status != model.EdgeAppExecuting) && (manif.Status == model.EdgeAppRunning || manif.Status == model.EdgeAppStopped) && len(appContainers) != manif.ContainerCount {
+			if (manif.Status != model.EdgeAppInitiated && manif.Status != model.EdgeAppExecuting) && (manif.Status == model.EdgeAppRunning || manif.Status == model.EdgeAppStopped) && len(appContainers) != len(manif.Manifest.Modules) {
 				edgeApplication.Status = model.EdgeAppError
 			}
 		}

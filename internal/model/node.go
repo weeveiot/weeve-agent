@@ -21,14 +21,6 @@ type Params struct {
 	Disconnect   bool   `long:"disconnect" description:"Disconnect/remove node from weeve manager" required:"false"`
 }
 
-type ManifestStatus struct {
-	ManifestID       string           `json:"manifestID"`
-	ManifestUniqueID ManifestUniqueID `json:"manifestUniqueID"`
-	Status           string           `json:"status"`
-	ContainerCount   int              `json:"containerCount"`
-	LastLogReadTime  string           `json:"lastLogReadTime"`
-}
-
 type ManifestUniqueID struct {
 	VersionNumber string
 	ManifestName  string
