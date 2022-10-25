@@ -25,7 +25,12 @@ func ReadDeployManifestLocal(manifestPath string) error {
 		return err
 	}
 
-	err = DeployDataService(thisManifest, CMDDeployLocal)
+	err = UndeployDataService(thisManifest.ManifestUniqueID)
+	if err != nil {
+		return err
+	}
+
+	err = DeployDataService(thisManifest)
 	if err != nil {
 		return err
 	}

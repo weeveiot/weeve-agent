@@ -32,7 +32,7 @@ func ProcessOrchestrationMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		err = dataservice.DeployDataService(manifest, operation)
+		err = dataservice.DeployDataService(manifest)
 		if err != nil {
 			return err
 		}

@@ -13,21 +13,19 @@ import (
 
 const (
 	CMDDeploy        = "DEPLOY"
-	CMDDeployLocal   = "LOCAL_DEPLOY"
 	CMDStopService   = "STOP"
 	CMDResumeService = "RESUME"
 	CMDUndeploy      = "UNDEPLOY"
 	CMDRemove        = "REMOVE"
 )
 
-func DeployDataService(man manifest.Manifest, command string) error {
-	//******** STEP 1 - Check if Data Service is already deployed *************//
+func DeployDataService(man manifest.Manifest) error {
 	containerCount := len(man.Modules)
-
 	deploymentID := man.ManifestUniqueID.ManifestName + "-" + man.ManifestUniqueID.VersionNumber + " | "
 
-	log.Info(deploymentID, fmt.Sprintf("%ving data service ...", command))
+	log.Info(deploymentID, "Deploying data service ...")
 
+	//******** STEP 1 - Check if Data Service is already deployed *************//
 	dataServiceExists, err := DataServiceExist(man.ManifestUniqueID)
 	if err != nil {
 		log.Error(deploymentID, err)
@@ -36,19 +34,8 @@ func DeployDataService(man manifest.Manifest, command string) error {
 	}
 
 	if dataServiceExists {
-		if command == CMDDeploy {
-			log.Warn(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", man.ManifestUniqueID.ManifestName, man.ManifestUniqueID.VersionNumber))
-			return nil
-
-		} else if command == CMDDeployLocal {
-			// Clean old data service resources
-			err := UndeployDataService(man.ManifestUniqueID)
-			if err != nil {
-				log.Error(deploymentID, "Error while cleaning old data service -> ", err)
-				setAndSendStatus(man.ID, containerCount, man.ManifestUniqueID, model.EdgeAppError)
-				return errors.New("local deployment failed")
-			}
-		}
+		log.Warn(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", man.ManifestUniqueID.ManifestName, man.ManifestUniqueID.VersionNumber))
+		return nil
 	}
 
 	setAndSendStatus(man.ID, containerCount, man.ManifestUniqueID, model.EdgeAppInitiated)
