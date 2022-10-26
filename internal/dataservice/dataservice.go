@@ -56,11 +56,11 @@ func DeployDataService(man manifest.Manifest) error {
 			log.Info(deploymentID, "Pulling ", imgDetails.ImageName)
 			err = docker.PullImage(imgDetails)
 			if err != nil {
-				msg := "Unable to pull image/s, " + err.Error()
-				log.Error(deploymentID, msg)
+				log.Error(deploymentID, "Unable to pull image/s, "+err.Error())
 				setAndSendStatus(man.ManifestUniqueID, model.EdgeAppError)
+				log.Info(deploymentID, "Initiating rollback ...")
+				RemoveDataService(man.ManifestUniqueID)
 				return errors.New("unable to pull image/s")
-
 			}
 		}
 	}
@@ -72,6 +72,8 @@ func DeployDataService(man manifest.Manifest) error {
 	if err != nil {
 		log.Error(err)
 		setAndSendStatus(man.ManifestUniqueID, model.EdgeAppError)
+		log.Info(deploymentID, "Initiating rollback ...")
+		RemoveDataService(man.ManifestUniqueID)
 		return err
 	}
 
@@ -84,7 +86,7 @@ func DeployDataService(man manifest.Manifest) error {
 	containerConfigs := man.Modules
 
 	if len(containerConfigs) == 0 {
-		log.Error(deploymentID, "No valid contianers in Manifest")
+		log.Error(deploymentID, "No valid containers in Manifest")
 		setAndSendStatus(man.ManifestUniqueID, model.EdgeAppError)
 		log.Info(deploymentID, "Initiating rollback ...")
 		RemoveDataService(man.ManifestUniqueID)
@@ -95,6 +97,7 @@ func DeployDataService(man manifest.Manifest) error {
 		log.Info(deploymentID, "Creating ", containerConfig.ContainerName, " from ", containerConfig.ImageName, ":", containerConfig.ImageTag)
 		containerID, err := docker.CreateAndStartContainer(containerConfig)
 		if err != nil {
+			log.Error(err)
 			log.Error(deploymentID, "Failed to create and start container ", containerConfig.ContainerName)
 			log.Info(deploymentID, "Initiating rollback ...")
 			RemoveDataService(man.ManifestUniqueID)
@@ -121,6 +124,7 @@ func StopDataService(manifestUniqueID model.ManifestUniqueID) error {
 
 	containers, err := docker.ReadDataServiceContainers(manifestUniqueID)
 	if err != nil {
+		log.Error(err)
 		log.Error("Failed to read data service containers.")
 		return err
 	}
@@ -137,6 +141,7 @@ func StopDataService(manifestUniqueID model.ManifestUniqueID) error {
 			log.Info("Stopping container:", strings.Join(container.Names[:], ","))
 			err := docker.StopContainer(container.ID)
 			if err != nil {
+				log.Error(err)
 				log.Error("Could not stop a container")
 				setAndSendStatus(manifestUniqueID, model.EdgeAppError)
 
@@ -165,6 +170,7 @@ func ResumeDataService(manifestUniqueID model.ManifestUniqueID) error {
 
 	containers, err := docker.ReadDataServiceContainers(manifestUniqueID)
 	if err != nil {
+		log.Error(err)
 		log.Error("Failed to read data service containers.")
 		setAndSendStatus(manifestUniqueID, model.EdgeAppError)
 		return err
@@ -220,6 +226,7 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID) error {
 	//******** STEP 1 - Stop and Remove Containers *************//
 	dsContainers, err := docker.ReadDataServiceContainers(manifestUniqueID)
 	if err != nil {
+		log.Error(err)
 		log.Error(deploymentID, "Failed to read data service containers.")
 		setAndSendStatus(manifestUniqueID, model.EdgeAppError)
 		return err
@@ -275,6 +282,7 @@ func RemoveDataService(manifestUniqueID model.ManifestUniqueID) error {
 
 	usedImageIDs, err := docker.GetImagesByName(usedImageNames)
 	if err != nil {
+		log.Error(err)
 		log.Error(deploymentID, "Failed to read the used images.")
 		setAndSendStatus(manifestUniqueID, model.EdgeAppError)
 		return err
@@ -286,6 +294,7 @@ func RemoveDataService(manifestUniqueID model.ManifestUniqueID) error {
 	}
 	containers, err := docker.ReadAllContainers()
 	if err != nil {
+		log.Error(err)
 		log.Error(deploymentID, "Failed to read all containers.")
 		setAndSendStatus(manifestUniqueID, model.EdgeAppError)
 		return err

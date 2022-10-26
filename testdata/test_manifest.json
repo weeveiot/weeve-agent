@@ -53,12 +53,6 @@
                     "secret": false
                 }
             ],
-            "ports": [
-                {
-                    "container": "1883",
-                    "host": "1883"
-                }
-            ],
             "mounts": [],
             "devices": [],
             "type": "Input"

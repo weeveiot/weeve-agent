@@ -15,6 +15,7 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/weeveiot/weeve-agent/internal/com"
 	"github.com/weeveiot/weeve-agent/internal/config"
@@ -40,6 +41,7 @@ var ctx = context.Background()
 var dockerCli *client.Client
 
 func TestProcessMessagePass(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
 	config.ConfigPath = path.Join(ioutility.GetExeDir(), "../nodeconfig.json")
 	config.UpdateNodeConfig(model.Params{})
 	com.SetParams(model.Params{Broker: "tcp://localhost:1883", NoTLS: true, Heartbeat: 60})
@@ -74,16 +76,13 @@ func TestProcessMessagePass(t *testing.T) {
 	fmt.Println("TESTING EDGE APPLICATION DEPLOYMENT...")
 	err = deployEdgeApplication(jsonBytes, man)
 	if err != nil {
-		err = undeployEdgeApplication(man, dataservice.CMDRemove)
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.FailNow()
+		t.Fatal(err)
 	}
 
 	fmt.Println("TESTING STOP EDGE APPLICATION...")
 	err = stopEdgeApplication(man)
 	if err != nil {
+		t.Error(err)
 		err = undeployEdgeApplication(man, dataservice.CMDRemove)
 		if err != nil {
 			t.Fatal(err)
@@ -94,6 +93,7 @@ func TestProcessMessagePass(t *testing.T) {
 	fmt.Println("TESTING RESUME EDGE APPLICATION...")
 	err = resumeEdgeApplication(man)
 	if err != nil {
+		t.Error(err)
 		err = undeployEdgeApplication(man, dataservice.CMDRemove)
 		if err != nil {
 			t.Fatal(err)
@@ -104,21 +104,13 @@ func TestProcessMessagePass(t *testing.T) {
 	fmt.Println("TESTING UNDEPLOY EDGE APPLICATION...")
 	err = undeployEdgeApplication(man, dataservice.CMDUndeploy)
 	if err != nil {
-		err = undeployEdgeApplication(man, dataservice.CMDRemove)
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.FailNow()
+		t.Fatal(err)
 	}
 
 	fmt.Println("DEPLOYING EDGE APPLICATION FOR TESTING REMOVE EDGE APPLICATION...")
 	err = deployEdgeApplication(jsonBytes, man)
 	if err != nil {
-		err = undeployEdgeApplication(man, dataservice.CMDRemove)
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.FailNow()
+		t.Fatal(err)
 	}
 
 	fmt.Println("TESTING REMOVE EDGE APPLICATION...")
