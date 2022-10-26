@@ -44,7 +44,7 @@ func TestProcessMessagePass(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	config.ConfigPath = path.Join(ioutility.GetExeDir(), "../nodeconfig.json")
 	config.UpdateNodeConfig(model.Params{})
-	com.SetParams(model.Params{Broker: "tcp://localhost:1883", NoTLS: true, Heartbeat: 60})
+	com.SetParams(model.Params{Broker: "mqtt://test.mosquitto.org:1883", NoTLS: true, Heartbeat: 60})
 	com.ConnectNode(map[string]mqtt.MessageHandler{})
 
 	assert := assert.New(t)

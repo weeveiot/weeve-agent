@@ -14,7 +14,7 @@ import (
 	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
 )
 
-var nodeStatus string = model.NodeAlarm
+var nodeStatus string = model.NodeDisconnected
 
 func SetNodeStatus(status string) {
 	nodeStatus = status

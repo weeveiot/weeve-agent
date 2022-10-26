@@ -20,7 +20,7 @@ type Params struct {
 	RootCertPath string `long:"rootcert" short:"r" description:"Path to MQTT broker (server) certificate" required:"false"`
 	ConfigPath   string `long:"config" description:"Path to the .json config file" required:"false"`
 	ManifestPath string `long:"manifest" description:"Path to the .json manifest file" required:"false"`
-	Disconnect   bool   `long:"disconnect" description:"Disconnect/remove node from weeve manager" required:"false"`
+	Delete       bool   `long:"delete" description:"Remove node from weeve manager" required:"false"`
 }
 
 type ManifestUniqueID struct {
@@ -41,7 +41,6 @@ func (uniqueID *ManifestUniqueID) UnmarshalText(text []byte) error {
 
 const (
 	NodeConnected    = "Connected"
-	NodeAlarm        = "Alarm"
 	NodeDisconnected = "Disconnected"
 	NodeDeleted      = "Deleted"
 )

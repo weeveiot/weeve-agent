@@ -29,7 +29,7 @@
             "envs": [
                 {
                     "key": "MQTT_BROKER",
-                    "value": "mqtt://mapi-dev.weeve.engineering",
+                    "value": "mqtt://test.mosquitto.org",
                     "secret": false
                 },
                 {
@@ -53,6 +53,7 @@
                     "secret": false
                 }
             ],
+            "ports": [],
             "mounts": [],
             "devices": [],
             "type": "Input"

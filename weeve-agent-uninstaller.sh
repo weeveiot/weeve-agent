@@ -13,9 +13,9 @@ SERVICE_FILE=/lib/systemd/system/weeve-agent.service
 
 # Exctrating the command to run weeve-agent
 LINE=$(grep "ExecStart" "$SERVICE_FILE")
-COMMAND="sudo ${LINE#ExecStart=} --disconnect"
+COMMAND="sudo ${LINE#ExecStart=} --delete"
 
-WEEVE_AGENT_DIR="$PWD/weeve-agent"  
+WEEVE_AGENT_DIR="$PWD/weeve-agent"
 if [ ! -d "$WEEVE_AGENT_DIR" ]; then
   log weeve-agent directory does not exists in the current path
   log please run the script in the path where weeve-agent directory exists
@@ -56,4 +56,4 @@ else
   log "$WEEVE_AGENT_DIR" doesnt exists
 fi
 
-log Removed weeve-agent contents if any. 
+log Removed weeve-agent contents if any.
