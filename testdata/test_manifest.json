@@ -29,7 +29,7 @@
             "envs": [
                 {
                     "key": "MQTT_BROKER",
-                    "value": "mqtt://mapi-dev.weeve.engineering",
+                    "value": "mqtt://test.mosquitto.org",
                     "secret": false
                 },
                 {
@@ -53,12 +53,7 @@
                     "secret": false
                 }
             ],
-            "ports": [
-                {
-                    "container": "1883",
-                    "host": "1883"
-                }
-            ],
+            "ports": [],
             "mounts": [],
             "devices": [],
             "type": "Input"
@@ -168,11 +163,6 @@
                     "key": "SLACK_WEBHOOK_URL",
                     "value": "https://hooks.slack.com/services/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",
                     "secret": false
-                },
-                {
-                    "Key": "envToTestHowSecretsWork",
-                    "Value": "JdqVMUV1DHDYfMGsBna4mDLTLAfMMAOUqaCWs9aCy7yQv841cIJ/V/UBMA==",
-                    "Secret": true
                 }
             ],
             "ports": [],

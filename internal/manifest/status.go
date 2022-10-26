@@ -2,62 +2,50 @@ package manifest
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"os"
 
-	linq "github.com/ahmetb/go-linq/v3"
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
-var knownManifests []model.ManifestStatus
+type ManifestStatus struct {
+	Manifest        Manifest
+	Status          string
+	LastLogReadTime string
+}
+
+var knownManifests = make(map[model.ManifestUniqueID]*ManifestStatus)
 
 const ManifestFile = "known_manifests.jsonl"
 
-func GetKnownManifests() []model.ManifestStatus {
+func GetKnownManifests() map[model.ManifestUniqueID]*ManifestStatus {
 	return knownManifests
 }
 
-func DeleteKnownManifest(manifestUniqueID model.ManifestUniqueID) {
-	var filteredKnownManifests []model.ManifestStatus
-
-	linq.From(knownManifests).Where(func(c interface{}) bool {
-		return c.(model.ManifestStatus).ManifestUniqueID != manifestUniqueID
-	}).ToSlice(&filteredKnownManifests)
-
-	knownManifests = filteredKnownManifests
-
-	err := writeKnownManifestsToFile()
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func SetStatus(manifestID string, containerCount int, manifestUniqueID model.ManifestUniqueID, status string, inTransition bool) {
-	if status != "" {
-		log.Debugln("Setting status", status, "to data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
-	}
-
-	manifestKnown := false
-	for i, manifest := range knownManifests {
-		if manifest.ManifestUniqueID == manifestUniqueID {
-			if status != "" {
-				knownManifests[i].Status = status
-			}
-			knownManifests[i].InTransition = inTransition
-			manifestKnown = true
-			break
-		}
-	}
+func GetUsedImages(uniqueID model.ManifestUniqueID) ([]string, error) {
+	var images []string
+	manifest, manifestKnown := knownManifests[uniqueID]
 	if !manifestKnown {
-		knownManifests = append(knownManifests, model.ManifestStatus{
-			ManifestID:       manifestID,
-			ManifestUniqueID: manifestUniqueID,
-			Status:           status,
-			ContainerCount:   containerCount,
-			InTransition:     inTransition,
-		})
+		return nil, errors.New("could not get the images. the edge app is not known")
 	}
+	for _, module := range manifest.Manifest.Modules {
+		images = append(images, module.ImageName+":"+module.ImageTag)
+	}
+	return images, nil
+}
+
+func AddKnownManifest(man Manifest) {
+	man.clearSecretValues() // remove env variables so that secrets never touch the hard disk
+	knownManifests[man.ManifestUniqueID] = &ManifestStatus{
+		Manifest: man,
+		Status:   model.EdgeAppInitiated,
+	}
+}
+
+func DeleteKnownManifest(manifestUniqueID model.ManifestUniqueID) {
+	delete(knownManifests, manifestUniqueID)
 
 	err := writeKnownManifestsToFile()
 	if err != nil {
@@ -65,22 +53,36 @@ func SetStatus(manifestID string, containerCount int, manifestUniqueID model.Man
 	}
 }
 
-func SetLastLogRead(manifestUniqueID model.ManifestUniqueID, lastLogReadTime string) {
+func SetStatus(manifestUniqueID model.ManifestUniqueID, status string) error {
+	log.Debugln("Setting status", status, "to data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
+
+	manifest, manifestKnown := knownManifests[manifestUniqueID]
+	if !manifestKnown {
+		return errors.New("could not set the status. the edge app is not known (deployed)")
+	}
+	manifest.Status = status
+
+	err := writeKnownManifestsToFile()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return nil
+}
+
+func SetLastLogRead(manifestUniqueID model.ManifestUniqueID, lastLogReadTime string) error {
 	log.Debugln("Setting last log read time", lastLogReadTime, "to data service", manifestUniqueID)
 
-	for i, manifest := range knownManifests {
-		if manifest.ManifestUniqueID == manifestUniqueID {
-			if lastLogReadTime != "" {
-				knownManifests[i].LastLogReadTime = lastLogReadTime
-			}
-			break
-		}
+	manifest, manifestKnown := knownManifests[manifestUniqueID]
+	if !manifestKnown {
+		return errors.New("could not set the status. the edge app is not known (deployed)")
 	}
+	manifest.LastLogReadTime = lastLogReadTime
 
 	err := writeKnownManifestsToFile()
 	if err != nil {
 		log.Fatal(err)
 	}
+	return nil
 }
 
 func InitKnownManifests() error {
@@ -101,14 +103,8 @@ func InitKnownManifests() error {
 	return json.Unmarshal(byteValue, &knownManifests)
 }
 
-func GetEdgeAppStatus(manif model.ManifestUniqueID) string {
-	for _, manifest := range knownManifests {
-		if manif.ManifestName == manifest.ManifestUniqueID.ManifestName && manif.VersionNumber == manifest.ManifestUniqueID.VersionNumber {
-			return manifest.Status
-		}
-	}
-
-	return ""
+func GetEdgeAppStatus(manifestUniqueID model.ManifestUniqueID) string {
+	return knownManifests[manifestUniqueID].Status
 }
 
 func writeKnownManifestsToFile() error {

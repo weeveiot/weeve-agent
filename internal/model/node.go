@@ -1,5 +1,7 @@
 package model
 
+import "strings"
+
 type Params struct {
 	Stdout       bool   `long:"out" description:"Print logs to stdout" required:"false"`
 	Broker       string `long:"broker" short:"b" description:"Broker to connect" required:"true"`
@@ -18,16 +20,7 @@ type Params struct {
 	RootCertPath string `long:"rootcert" short:"r" description:"Path to MQTT broker (server) certificate" required:"false"`
 	ConfigPath   string `long:"config" description:"Path to the .json config file" required:"false"`
 	ManifestPath string `long:"manifest" description:"Path to the .json manifest file" required:"false"`
-	Disconnect   bool   `long:"disconnect" description:"Disconnect/remove node from weeve manager" required:"false"`
-}
-
-type ManifestStatus struct {
-	ManifestID       string           `json:"manifestID"`
-	ManifestUniqueID ManifestUniqueID `json:"manifestUniqueID"`
-	Status           string           `json:"status"`
-	ContainerCount   int              `json:"containerCount"`
-	InTransition     bool             `json:"inTransition"`
-	LastLogReadTime  string           `json:"lastLogReadTime"`
+	Delete       bool   `long:"delete" description:"Remove node from weeve manager" required:"false"`
 }
 
 type ManifestUniqueID struct {
@@ -35,18 +28,30 @@ type ManifestUniqueID struct {
 	ManifestName  string
 }
 
+func (uniqueID ManifestUniqueID) MarshalText() (text []byte, err error) {
+	return []byte(uniqueID.ManifestName + "+" + uniqueID.VersionNumber), nil
+}
+
+func (uniqueID *ManifestUniqueID) UnmarshalText(text []byte) error {
+	parts := strings.Split(string(text), "+")
+	uniqueID.ManifestName = parts[0]
+	uniqueID.VersionNumber = parts[1]
+	return nil
+}
+
 const (
 	NodeConnected    = "Connected"
-	NodeAlarm        = "Alarm"
 	NodeDisconnected = "Disconnected"
 	NodeDeleted      = "Deleted"
 )
 
 const (
-	EdgeAppRunning   = "Running"
-	EdgeAppStopped   = "Stopped"
-	EdgeAppError     = "Error"
-	EdgeAppInitiated = "Initiated"
+	EdgeAppRunning    = "Running"
+	EdgeAppStopped    = "Stopped"
+	EdgeAppError      = "Error"
+	EdgeAppInitiated  = "Initiated"
+	EdgeAppExecuting  = "Executing"
+	EdgeAppUndeployed = "Undeployed"
 )
 
 const (

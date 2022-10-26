@@ -60,9 +60,11 @@
         "-b",
         "tls://mapi-dev.weeve.engineering:8883",
         "--heartbeat",
-        "120",
+        "10",
         "--loglevel",
         "debug",
+        "--rootcert",
+        "${workspaceRoot}/ca.crt",
         "--config",
         "${workspaceRoot}/nodeconfig.json"
       ]

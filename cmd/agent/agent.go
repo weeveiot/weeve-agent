@@ -46,7 +46,7 @@ func init() {
 }
 
 func main() {
-	localManifest, disconnect := parseCLIoptions()
+	localManifest, deleteNode := parseCLIoptions()
 
 	err := manifest.InitKnownManifests()
 	if err != nil {
@@ -76,19 +76,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if disconnect {
-		log.Info("Undeploying all the edge applications ...")
-		err := dataservice.UndeployAll()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		dataservice.SetNodeStatus(model.NodeDisconnected)
-		err = dataservice.SendStatus()
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Info("weeve agent disconnected")
+	if deleteNode {
+		handler.DeleteNode()
 		os.Exit(0)
 	}
 
@@ -198,7 +187,7 @@ func parseCLIoptions() (string, bool) {
 	// FLAG: Broker, NoTLS, Heartbeat, TopicName
 	com.SetParams(opt)
 
-	return opt.ManifestPath, opt.Disconnect
+	return opt.ManifestPath, opt.Delete
 }
 
 func validateBrokerUrl(u *url.URL) {
@@ -269,7 +258,9 @@ func sendEdgeAppLogs() {
 		until := time.Now().UTC().Format(time.RFC3339Nano)
 
 		for _, manif := range knownManifests {
-			dataservice.SendEdgeAppLogs(manif, until)
+			if manif.Status != model.EdgeAppUndeployed {
+				dataservice.SendEdgeAppLogs(*manif, until)
+			}
 		}
 
 		time.Sleep(time.Second * time.Duration(config.GetEdgeAppLogIntervalSec()))

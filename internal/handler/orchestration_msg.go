@@ -32,7 +32,7 @@ func ProcessOrchestrationMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		err = dataservice.DeployDataService(manifest, operation)
+		err = dataservice.DeployDataService(manifest)
 		if err != nil {
 			return err
 		}
@@ -65,7 +65,7 @@ func ProcessOrchestrationMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		err = dataservice.UndeployDataService(manifestUniqueID, operation)
+		err = dataservice.UndeployDataService(manifestUniqueID)
 		if err != nil {
 			return err
 		}
@@ -76,11 +76,12 @@ func ProcessOrchestrationMessage(payload []byte) error {
 		if err != nil {
 			return err
 		}
-		err = dataservice.UndeployDataService(manifestUniqueID, operation)
+		err = dataservice.RemoveDataService(manifestUniqueID)
 		if err != nil {
 			return err
 		}
 		log.Info("Full removal done!")
+
 	default:
 		return errors.New("received message with unknown command")
 	}

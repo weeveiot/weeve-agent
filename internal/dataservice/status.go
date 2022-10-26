@@ -14,7 +14,7 @@ import (
 	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
 )
 
-var nodeStatus string = model.NodeAlarm
+var nodeStatus string = model.NodeDisconnected
 
 func SetNodeStatus(status string) {
 	nodeStatus = status
@@ -54,21 +54,25 @@ func GetStatusMessage() (com.StatusMsg, error) {
 
 func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 	edgeApps := []com.EdgeAppMsg{}
-	knownManifests := manifest.GetKnownManifests()
 
-	for _, manif := range knownManifests {
-		edgeApplication := com.EdgeAppMsg{ManifestID: manif.ManifestID, Status: manif.Status}
-		containersStat := []com.ContainerMsg{}
+	for _, manif := range manifest.GetKnownManifests() {
+		edgeApplication := com.EdgeAppMsg{ManifestID: manif.Manifest.ID, Status: manif.Status}
 
-		appContainers, err := docker.ReadDataServiceContainers(manif.ManifestUniqueID)
+		if manif.Status == model.EdgeAppUndeployed {
+			edgeApps = append(edgeApps, edgeApplication)
+			continue
+		}
+
+		appContainers, err := docker.ReadDataServiceContainers(manif.Manifest.ManifestUniqueID)
 		if err != nil {
 			return edgeApps, err
 		}
 
-		if !manif.InTransition && (manif.Status == model.EdgeAppRunning || manif.Status == model.EdgeAppStopped) && len(appContainers) != manif.ContainerCount {
+		if (manif.Status == model.EdgeAppRunning || manif.Status == model.EdgeAppStopped) && len(appContainers) != len(manif.Manifest.Modules) {
 			edgeApplication.Status = model.EdgeAppError
 		}
 
+		containersStat := []com.ContainerMsg{}
 		for _, con := range appContainers {
 			containerJSON, err := docker.InspectContainer(con.ID)
 			if err != nil {
@@ -78,7 +82,7 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 			container := com.ContainerMsg{Name: strings.Join(con.Names, ", "), Status: ioutility.FirstToUpper(con.State)}
 			containersStat = append(containersStat, container)
 
-			if !manif.InTransition && edgeApplication.Status != model.EdgeAppError {
+			if (manif.Status != model.EdgeAppInitiated && manif.Status != model.EdgeAppExecuting) && edgeApplication.Status != model.EdgeAppError {
 				if manif.Status == model.EdgeAppRunning && con.State != strings.ToLower(model.ModuleRunning) {
 					edgeApplication.Status = model.EdgeAppError
 				}
