@@ -235,7 +235,7 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID) error {
 		}
 	}
 
-	//******** STEP 3 - Remove Network *************//
+	//******** STEP 2 - Remove Network *************//
 	log.Info(deploymentID, "Pruning networks ...")
 
 	err = docker.NetworkPrune(manifestUniqueID)
@@ -250,11 +250,6 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID) error {
 	}
 
 	setAndSendStatus(manifestUniqueID, model.EdgeAppUndeployed)
-	err = SendStatus()
-	if err != nil {
-		log.Error(deploymentID, err)
-		return err
-	}
 
 	return nil
 }
@@ -270,29 +265,18 @@ func RemoveDataService(manifestUniqueID model.ManifestUniqueID) error {
 		return err
 	}
 
-	// map { imageID: number_of_allocated_containers }, needed for removing images as not supported by Go-Docker SDK
-	numContainersPerImage := make(map[string]int)
-
-	dsContainers, err := docker.ReadDataServiceContainers(manifestUniqueID)
+	//******** STEP 2 - Remove Images WITHOUT Containers *************//
+	usedImages, err := docker.GetImagesByName(manifest.GetUsedImages(manifestUniqueID))
 	if err != nil {
-		log.Error(deploymentID, "Failed to read data service containers.")
+		log.Error(deploymentID, "Failed to read the used images.")
 		setAndSendStatus(manifestUniqueID, model.EdgeAppError)
 		return err
 	}
 
-	var errorlist string
-	for _, dsContainer := range dsContainers {
-		numContainersPerImage[dsContainer.ImageID] = 0
-
-		err := docker.StopAndRemoveContainer(dsContainer.ID)
-		if err != nil {
-			log.Error(deploymentID, err)
-			setAndSendStatus(manifestUniqueID, model.EdgeAppError)
-			errorlist = fmt.Sprintf("%v,%v", errorlist, err)
-		}
+	numContainersPerImage := make(map[string]int) // map { imageID: number_of_allocated_containers }
+	for _, image := range usedImages {
+		numContainersPerImage[image.ID] = 0
 	}
-
-	//******** STEP 2 - Remove Images WITHOUT Containers *************//
 	containers, err := docker.ReadAllContainers()
 	if err != nil {
 		log.Error(deploymentID, "Failed to read all containers.")
@@ -300,6 +284,7 @@ func RemoveDataService(manifestUniqueID model.ManifestUniqueID) error {
 		return err
 	}
 
+	var errorlist string
 	for imageID := range numContainersPerImage {
 		for _, container := range containers {
 			if container.ImageID == imageID {
@@ -318,18 +303,8 @@ func RemoveDataService(manifestUniqueID model.ManifestUniqueID) error {
 		}
 	}
 
-	//******** STEP 3 - Remove Network *************//
-	log.Info(deploymentID, "Pruning networks ...")
-
-	err = docker.NetworkPrune(manifestUniqueID)
-	if err != nil {
-		log.Error(deploymentID, err)
-		setAndSendStatus(manifestUniqueID, model.EdgeAppError)
-		errorlist = fmt.Sprintf("%v,%v", errorlist, err)
-	}
-
 	if errorlist != "" {
-		return errors.New("Data Service could not be undeployed completely. Cause(s): " + errorlist)
+		return errors.New("Data Service could not be removed completely. Cause(s): " + errorlist)
 	}
 
 	manifest.DeleteKnownManifest(manifestUniqueID)
@@ -343,10 +318,9 @@ func RemoveDataService(manifestUniqueID model.ManifestUniqueID) error {
 }
 
 func UndeployAll() error {
-	knownManifests := manifest.GetKnownManifests()
-	log.Info("Undeploying all edge apps ", knownManifests)
+	log.Info("Undeploying all edge apps")
 
-	for uniqueID := range knownManifests {
+	for uniqueID := range manifest.GetKnownManifests() {
 		err := RemoveDataService(uniqueID)
 		if err != nil {
 			return err

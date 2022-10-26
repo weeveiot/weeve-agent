@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 
@@ -93,4 +94,13 @@ func ImageRemove(imageID string) error {
 		return err
 	}
 	return nil
+}
+
+func GetImagesByName(images []string) ([]types.ImageSummary, error) {
+	filter := filters.NewArgs()
+	for _, image := range images {
+		filter.Add("reference", image)
+	}
+	options := types.ImageListOptions{Filters: filter}
+	return dockerClient.ImageList(ctx, options)
 }

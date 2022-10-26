@@ -3,7 +3,6 @@ package dataservice
 import (
 	"strings"
 
-	"github.com/docker/docker/api/types"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/host"
@@ -55,24 +54,25 @@ func GetStatusMessage() (com.StatusMsg, error) {
 
 func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 	edgeApps := []com.EdgeAppMsg{}
-	knownManifests := manifest.GetKnownManifests()
 
-	for _, manif := range knownManifests {
+	for _, manif := range manifest.GetKnownManifests() {
 		edgeApplication := com.EdgeAppMsg{ManifestID: manif.Manifest.ID, Status: manif.Status}
-		containersStat := []com.ContainerMsg{}
-		appContainers := []types.Container{}
 
-		if manif.Status != model.EdgeAppUndeployed {
-			appContainers, err := docker.ReadDataServiceContainers(manif.Manifest.ManifestUniqueID)
-			if err != nil {
-				return edgeApps, err
-			}
-
-			if (manif.Status != model.EdgeAppInitiated && manif.Status != model.EdgeAppExecuting) && (manif.Status == model.EdgeAppRunning || manif.Status == model.EdgeAppStopped) && len(appContainers) != len(manif.Manifest.Modules) {
-				edgeApplication.Status = model.EdgeAppError
-			}
+		if manif.Status == model.EdgeAppUndeployed {
+			edgeApps = append(edgeApps, edgeApplication)
+			continue
 		}
 
+		appContainers, err := docker.ReadDataServiceContainers(manif.Manifest.ManifestUniqueID)
+		if err != nil {
+			return edgeApps, err
+		}
+
+		if (manif.Status == model.EdgeAppRunning || manif.Status == model.EdgeAppStopped) && len(appContainers) != len(manif.Manifest.Modules) {
+			edgeApplication.Status = model.EdgeAppError
+		}
+
+		containersStat := []com.ContainerMsg{}
 		for _, con := range appContainers {
 			containerJSON, err := docker.InspectContainer(con.ID)
 			if err != nil {

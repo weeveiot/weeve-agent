@@ -1,5 +1,7 @@
 package model
 
+import "strings"
+
 type Params struct {
 	Stdout       bool   `long:"out" description:"Print logs to stdout" required:"false"`
 	Broker       string `long:"broker" short:"b" description:"Broker to connect" required:"true"`
@@ -24,6 +26,17 @@ type Params struct {
 type ManifestUniqueID struct {
 	VersionNumber string
 	ManifestName  string
+}
+
+func (uniqueID ManifestUniqueID) MarshalText() (text []byte, err error) {
+	return []byte(uniqueID.ManifestName + "+" + uniqueID.VersionNumber), nil
+}
+
+func (uniqueID *ManifestUniqueID) UnmarshalText(text []byte) error {
+	parts := strings.Split(string(text), "+")
+	uniqueID.ManifestName = parts[0]
+	uniqueID.VersionNumber = parts[1]
+	return nil
 }
 
 const (

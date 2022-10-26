@@ -24,6 +24,14 @@ func GetKnownManifests() map[model.ManifestUniqueID]*ManifestStatus {
 	return knownManifests
 }
 
+func GetUsedImages(uniqueID model.ManifestUniqueID) []string {
+	var images []string
+	for _, module := range knownManifests[uniqueID].Manifest.Modules {
+		images = append(images, module.ImageName+":"+module.ImageTag)
+	}
+	return images
+}
+
 func AddKnownManifest(man Manifest) {
 	knownManifests[man.ManifestUniqueID] = &ManifestStatus{
 		Manifest: man,
