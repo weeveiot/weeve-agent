@@ -42,7 +42,7 @@ func GetHeartbeat() int {
 func SendHeartbeat(msg StatusMsg) error {
 	nodeStatusTopic := topicNodeStatus + "/" + config.GetNodeId()
 	log.Debugln("Sending update >>", "Topic:", nodeStatusTopic, ">> Body:", msg)
-	return publishMessage(nodeStatusTopic, msg, false)
+	return publishMessage(nodeStatusTopic, msg, true)
 }
 
 func SendEdgeAppLogs(msg EdgeAppLogMsg) error {
@@ -64,6 +64,13 @@ func SendNodePublicKey(nodePublicKey []byte) error {
 	return publishMessage(topic, msg, true)
 }
 
+func sendDisconnectedStatus() error {
+	nodeStatusTopic := topicNodeStatus + "/" + config.GetNodeId()
+	msg := StatusMsg{Status: model.NodeDisconnected}
+	log.Debugln("Sending update >>", "Topic:", nodeStatusTopic, ">> Body:", msg)
+	return publishMessage(nodeStatusTopic, msg, true)
+}
+
 func ConnectNode(subscriptions map[string]mqtt.MessageHandler) error {
 	err := createMqttClient()
 	if err != nil {
@@ -81,12 +88,17 @@ func ConnectNode(subscriptions map[string]mqtt.MessageHandler) error {
 	return nil
 }
 
-func DisconnectNode() {
+func DisconnectNode() error {
 	log.Info("Disconnecting.....")
 	if client.IsConnected() {
+		err := sendDisconnectedStatus()
+		if err != nil {
+			return err
+		}
 		client.Disconnect(250)
 		log.Debug("MQTT client disconnected")
 	}
+	return nil
 }
 
 func createMqttClient() error {
