@@ -310,3 +310,9 @@ func parseConnections(connectionsStringMap connectionsString) (connectionsInt, e
 
 	return connectionsIntMap, nil
 }
+
+func (m *Manifest) clearSecretValues() {
+	for _, module := range m.Modules {
+		module.EnvArgs = nil
+	}
+}

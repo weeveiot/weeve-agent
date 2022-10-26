@@ -33,6 +33,7 @@ func GetUsedImages(uniqueID model.ManifestUniqueID) []string {
 }
 
 func AddKnownManifest(man Manifest) {
+	man.clearSecretValues() // remove env variables so that secrets never touch the hard disk
 	knownManifests[man.ManifestUniqueID] = &ManifestStatus{
 		Manifest: man,
 		Status:   model.EdgeAppInitiated,
