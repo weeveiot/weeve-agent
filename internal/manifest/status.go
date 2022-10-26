@@ -24,12 +24,16 @@ func GetKnownManifests() map[model.ManifestUniqueID]*ManifestStatus {
 	return knownManifests
 }
 
-func GetUsedImages(uniqueID model.ManifestUniqueID) []string {
+func GetUsedImages(uniqueID model.ManifestUniqueID) ([]string, error) {
 	var images []string
-	for _, module := range knownManifests[uniqueID].Manifest.Modules {
+	manifest, manifestKnown := knownManifests[uniqueID]
+	if !manifestKnown {
+		return nil, errors.New("could not get the images. the edge app is not known")
+	}
+	for _, module := range manifest.Manifest.Modules {
 		images = append(images, module.ImageName+":"+module.ImageTag)
 	}
-	return images
+	return images, nil
 }
 
 func AddKnownManifest(man Manifest) {

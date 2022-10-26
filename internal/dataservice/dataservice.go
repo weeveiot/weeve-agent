@@ -266,7 +266,14 @@ func RemoveDataService(manifestUniqueID model.ManifestUniqueID) error {
 	}
 
 	//******** STEP 2 - Remove Images WITHOUT Containers *************//
-	usedImages, err := docker.GetImagesByName(manifest.GetUsedImages(manifestUniqueID))
+	usedImageNames, err := manifest.GetUsedImages(manifestUniqueID)
+	if err != nil {
+		log.Error(deploymentID, err)
+		setAndSendStatus(manifestUniqueID, model.EdgeAppError)
+		return err
+	}
+
+	usedImageIDs, err := docker.GetImagesByName(usedImageNames)
 	if err != nil {
 		log.Error(deploymentID, "Failed to read the used images.")
 		setAndSendStatus(manifestUniqueID, model.EdgeAppError)
@@ -274,7 +281,7 @@ func RemoveDataService(manifestUniqueID model.ManifestUniqueID) error {
 	}
 
 	numContainersPerImage := make(map[string]int) // map { imageID: number_of_allocated_containers }
-	for _, image := range usedImages {
+	for _, image := range usedImageIDs {
 		numContainersPerImage[image.ID] = 0
 	}
 	containers, err := docker.ReadAllContainers()

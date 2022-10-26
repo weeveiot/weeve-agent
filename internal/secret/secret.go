@@ -135,6 +135,9 @@ func ProcessOrgPrivKeyMessage(payload []byte) error {
 }
 
 func DecryptEnv(enc string) (string, error) {
+	if decryptor == nil {
+		return "", errors.New("don't have org's private key. cannot decrypt")
+	}
 	encBytes, err := base64.StdEncoding.DecodeString(enc)
 	if err != nil {
 		return "", err
