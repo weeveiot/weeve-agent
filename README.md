@@ -38,27 +38,30 @@ The installer script can take the following optional parameters:
 curl -sO http://weeve-agent-dev.s3.amazonaws.com/weeve-agent-uninstaller.sh && sh weeve-agent-uninstaller.sh
 ```
 
-## CLI parameters for weeve agent
+## Parameters
+The parameter file is created, when creating a new node in the UI and can be downloaded there.
+The user can also overwrite the parameters stored there using the CLI options that can be found in the table below.
 Also use `agent -h` or `agent --help` for help.
 
-| Parameter   | Short | Required | Description                                            | Default         |
-| ----------- | ----- | -------- | ------------------------------------------------------ | --------------- |
-| broker      | b     | true     | URL of the MQTT broker to connect                      |                 |
-| out         |       | false    | Print logs to stdout                                   | false           |
-| heartbeat   | t     | false    | Time period of heartbeat messages (sec)                | 30              |
-| mqttlogs    | m     | false    | For developer - Display detailed MQTT logging messages |                 |
-| notls       |       | false    | For developer - disable TLS for MQTT                   |                 |
-| loglevel    | l     | false    | Set the logging level                                  | info            |
-| logfilename |       | false    | Set the name of the log file                           | Weeve_Agent.log |
-| logsize     |       | false    | Set the size of each log files (MB)                    | 1               |
-| logage      |       | false    | Set the time period to retain the log files (days)     | 1               |
-| logbackup   |       | false    | Set the max number of log files to retain              | 5               |
-| logcompress |       | false    | Compress the log files                                 | false           |
-| nodeId      | i     | false    | ID of this node                                        |                 |
-| name        | n     | false    | Name of the node                                       |                 |
-| rootcert    | r     | false    | Path to MQTT broker (server) certificate               |                 |
-| config      |       | false    | Path to the .json config file                          |<exe dir>        |
-| manifest    |       | false    | Path to the .json manifest file to be deployed         |                 |
+| Parameter   | Short | Description                                            | Default         |
+| ----------- | ----- | ------------------------------------------------------ | --------------- |
+| version     | v     | Print version information and exit                     |                 |
+| broker      | b     | URL of the MQTT broker to connect                      |                 |
+| out         |       | Print logs to stdout                                   | false           |
+| heartbeat   | t     | Time period of heartbeat messages (sec)                | 10              |
+| mqttlogs    |       | For developer - Display detailed MQTT logging messages |                 |
+| notls       |       | For developer - disable TLS for MQTT                   |                 |
+| loglevel    | l     | Set the logging level                                  | info            |
+| logfilename |       | Set the name of the log file                           | Weeve_Agent.log |
+| logsize     |       | Set the size of each log files (MB)                    | 1               |
+| logage      |       | Set the time period to retain the log files (days)     | 1               |
+| logbackup   |       | Set the max number of log files to retain              | 5               |
+| logcompress |       | Compress the log files                                 | false           |
+| nodeId      | i     | ID of this node                                        |                 |
+| name        | n     | Name of the node                                       |                 |
+| rootcert    |       | Path to MQTT broker (server) certificate               |                 |
+| config      |       | Path to the .json config file                          |/path/to/exe/dir/|
+| manifest    |       | Path to the .json manifest file to be deployed         |                 |
 
 ## Documentation
 See the official technical documentation on https://docs.weeve.engineering/.
@@ -90,28 +93,19 @@ MQTT_PORT=8083
 docker run --rm --name mosquitto -p $MQTT_PORT:1883 eclipse-mosquitto:2.0.14 mosquitto -v -c /mosquitto-no-auth.conf
 ```
 
-Edit `nodeconfig.json` and fill the fields `NodeId` and `NodeName` with unique values, also set the `Registered` field to `true` e.g.:
-```json
-{
- "RootCertPath": "",
- "NodeId": "1234567890",
- "Password": "",
- "APIkey": "",
- "NodeName": "LocalTestNode",
- "Registered": true
-}
-```
+Get a configuration file from the UI by creating a new node or construct your own using `agent-conf.json.example` as an example.
+E.g. fill the fields `NodeId` and `NodeName` with unique values, also set the `Registered` field to `true`.
 
-Build the agent binary from the project root folder;
+Build the agent binary from the project root folder
 
 ```bash
-go build -o ./bin/agent ./cmd/agent/agent.go
+make build-<your arch>
 ```
 
-And run it locally with your preffered configuration, for example;
+And run it locally with your preffered configuration, for example
 
 ```bash
-./bin/agent --out --notls --broker=mqtt://localhost:$MQTT_PORT --heartbeat=300 --loglevel=debug --config nodeconfig.json
+./bin/weeve-agent-<os>-<arch> --out --notls --broker=mqtt://localhost:$MQTT_PORT --loglevel=debug --config agent-conf.json
 ```
 
 The mosquitto client can be used to publish the messages to the agent.
@@ -119,7 +113,7 @@ The mosquitto client can be used to publish the messages to the agent.
 Example messages can be found in `testdata`.
 
 ```bash
-mosquitto_pub -L mqtt://localhost:$MQTT_PORT/<nodeId>/orchestration -f test_manifest.json
+mosquitto_pub -L mqtt://localhost:$MQTT_PORT/<nodeId>/orchestration -f testdata/test_manifest.json
 ```
 
 You can observe the agent's status messages by subscribing to the corresponding topic:
