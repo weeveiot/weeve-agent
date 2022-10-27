@@ -119,7 +119,7 @@ mosquitto_pub -L mqtt://localhost:$MQTT_PORT/<nodeId>/orchestration -f testdata/
 You can observe the agent's status messages by subscribing to the corresponding topic:
 
 ```bash
-mosquitto_sub -L mqtt://localhost:$MQTT_PORT/<nodeId>/nodestatus
+mosquitto_sub -L mqtt://localhost:$MQTT_PORT/nodestatus/<nodeId>
 ```
 
 ### Unit testing
