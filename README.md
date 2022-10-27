@@ -39,9 +39,13 @@ curl -sO http://weeve-agent-dev.s3.amazonaws.com/weeve-agent-uninstaller.sh && s
 ```
 
 ## Parameters
-The parameter file is created, when creating a new node in the UI and can be downloaded there.
-The user can also overwrite the parameters stored there using the CLI options that can be found in the table below.
-Also use `agent -h` or `agent --help` for help.
+The weeve agent depends on configuration for execution. The configuration of the agent includes describing how the agent connects to a backend server, and the behaviour of the weeve agent.
+
+The weeve agent can be configured using a configuration file, directly with command line arguments, or a combination of both.
+
+A configuration file, with the default name of `agent-conf.json` must exist in the same folder of the binary.
+
+Configuration parameters are listed in the table below with defaults, or can be displayed with the `agent --help` command.
 
 | Parameter   | Short | Description                                            | Default         |
 | ----------- | ----- | ------------------------------------------------------ | --------------- |
@@ -60,7 +64,7 @@ Also use `agent -h` or `agent --help` for help.
 | nodeId      | i     | ID of this node                                        |                 |
 | name        | n     | Name of the node                                       |                 |
 | rootcert    |       | Path to MQTT broker (server) certificate               |                 |
-| config      |       | Path to the .json config file                          |/path/to/exe/dir/|
+| config      |       | Path to the .json config file                          |{BINARY FOLDER}/agent-conf.json|
 | manifest    |       | Path to the .json manifest file to be deployed         |                 |
 
 ## Documentation
