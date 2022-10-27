@@ -2,6 +2,8 @@ package model
 
 import "strings"
 
+var Version string = "YYY.MM.DD (commit hash)"
+
 type Params struct {
 	Stdout       bool   `long:"out" description:"Print logs to stdout" required:"false"`
 	Broker       string `long:"broker" short:"b" description:"Broker to connect" required:"true"`

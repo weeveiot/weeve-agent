@@ -123,6 +123,12 @@ func parseCLIoptions() (string, bool) {
 		os.Exit(1)
 	}
 
+	// FLAG: Version
+	if opt.Version {
+		fmt.Println("weeve agent - built on", model.Version)
+		os.Exit(0)
+	}
+
 	// FLAG: LogLevel
 	l, _ := log.ParseLevel(opt.LogLevel)
 	log.SetLevel(l)

@@ -66,7 +66,7 @@ func SendNodePublicKey(nodePublicKey []byte) error {
 
 func sendDisconnectedStatus() error {
 	nodeStatusTopic := topicNodeStatus + "/" + config.GetNodeId()
-	msg := StatusMsg{Status: model.NodeDisconnected}
+	msg := disconnectedMsg
 	log.Debugln("Sending update >>", "Topic:", nodeStatusTopic, ">> Body:", msg)
 	return publishMessage(nodeStatusTopic, msg, true)
 }
@@ -104,7 +104,7 @@ func DisconnectNode() error {
 func createMqttClient() error {
 	// Build the options for the mqtt client
 	nodeStatusTopic := topicNodeStatus + "/" + config.GetNodeId()
-	willPayload, err := json.Marshal(StatusMsg{Status: model.NodeDisconnected})
+	willPayload, err := json.Marshal(disconnectedMsg)
 	if err != nil {
 		return err
 	}

@@ -113,11 +113,7 @@ func CreateAndStartContainer(containerConfig manifest.ContainerConfig) (string, 
 }
 
 func StopContainer(containerID string) error {
-	if err := dockerClient.ContainerStop(ctx, containerID, nil); err != nil {
-		return err
-	}
-
-	return nil
+	return dockerClient.ContainerStop(ctx, containerID, nil)
 }
 
 func StopAndRemoveContainer(containerID string) error {
