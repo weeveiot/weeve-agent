@@ -86,7 +86,7 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 				if manif.Status == model.EdgeAppRunning && con.State != strings.ToLower(model.ModuleRunning) {
 					edgeApplication.Status = model.EdgeAppError
 				}
-				if manif.Status == model.EdgeAppStopped && (con.State != strings.ToLower(model.ModuleExited) || containerJSON.State.ExitCode != 0) {
+				if manif.Status == model.EdgeAppStopped && (con.State != strings.ToLower(model.ModuleExited) || (containerJSON.State.ExitCode != 0 && containerJSON.State.ExitCode != 137)) {
 					edgeApplication.Status = model.EdgeAppError
 				}
 			}
