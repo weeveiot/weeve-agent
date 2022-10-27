@@ -11,4 +11,5 @@
 *.jsonl
 *.log
 nodeconfig.json
+agent-conf.json
 weeve-agent/
