@@ -48,33 +48,34 @@ curl -sO http://weeve-agent-dev.s3.amazonaws.com/weeve-agent-uninstaller.sh && s
 
 ## Parameters
 
-The weeve agent depends on configuration for execution. The configuration of the agent includes describing how the agent connects to a backend server, and the behaviour of the weeve agent.
+The weeve agent depends on configuration for execution.
+The configuration of the agent includes describing how the agent connects to a backend server, and the behaviour of the weeve agent.
 
-The weeve agent can be configured using a configuration file, directly with command line arguments, or a combination of both.
-
-A configuration file, with the default name of `agent-conf.json` must exist in the same folder of the binary.
+The weeve agent can be configured using a configuration file (by specifying `--config` flag), directly with command line arguments, or a combination of both.
 
 Configuration parameters are listed in the table below with defaults, or can be displayed with the `agent --help` command.
 
-| Parameter   | Short | Description                                                     | Default         |
-| ----------- | ----- | --------------------------------------------------------------- | --------------- |
-| version     | v     | Print version information and exit                              |                 |
-| broker      | b     | URL of the MQTT broker to connect                               |                 |
-| out         |       | Print logs to stdout                                            | false           |
-| heartbeat   | t     | Time period of heartbeat messages (sec)                         | 10              |
-| mqttlogs    |       | For developers - Display detailed MQTT logging messages         |                 |
-| notls       |       | For developers - disable TLS for MQTT                           |                 |
-| loglevel    | l     | Set the logging level                                           | info            |
-| logfilename |       | Set the name of the log file                                    | Weeve_Agent.log |
-| logsize     |       | Set the size of each log files (MB)                             | 1               |
-| logage      |       | Set the time period to retain the log files (days)              | 1               |
-| logbackup   |       | Set the max number of log files to retain                       | 5               |
-| logcompress |       | Compress the log files                                          | false           |
-| nodeId      | i     | ID of this node                                                 |                 |
-| name        | n     | Name of the node                                                |                 |
-| rootcert    |       | Path to MQTT broker (server) certificate                        |                 |
-| config      |       | Path to the .json config file                                   |                 |
-| manifest    |       | For developers - Path to the .json manifest file to be deployed |                 |
+| Parameter   | Short | Required | Description                                                     | Default         |
+| ----------- | ----- | -------- | --------------------------------------------------------------- | --------------- |
+| version     | v     | false    | Print version information and exit                              |                 |
+| broker      | b     | true     | URL of the MQTT broker to connect                               |                 |
+| nodeId      | i     | true     | ID of this node                                                 |                 |
+| name        | n     | true     | Name of the node                                                |                 |
+| notls       |       | false    | For developers - disable TLS for MQTT                           | false           |
+| password    |       | false    | Password for TLS                                                | ""              |
+| rootcert    |       | false    | Path to MQTT broker (server) certificate                        | ca.crt          |
+| loglevel    | l     | false    | Set the logging level                                           | info            |
+| logfilename |       | false    | Set the name of the log file                                    | Weeve_Agent.log |
+| logsize     |       | false    | Set the size of each log files (MB)                             | 1               |
+| logage      |       | false    | Set the time period to retain the log files (days)              | 1               |
+| logbackup   |       | false    | Set the max number of log files to retain                       | 5               |
+| logcompress |       | false    | Compress the log files                                          | false           |
+| mqttlogs    |       | false    | For developers - Display detailed MQTT logging messages         | false           |
+| heartbeat   | t     | false    | Time period between heartbeat messages (sec)                    | 10              |
+| logsendinvl |       | false    | Time period between sending edge app logs (sec)                 | 60              |
+| out         |       | false    | Print logs to stdout                                            | false           |
+| config      |       | false    | Path to the .json config file                                   |                 |
+| manifest    |       | false    | For developers - Path to the .json manifest file to be deployed |                 |
 
 ## Documentation
 

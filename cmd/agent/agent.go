@@ -4,13 +4,9 @@ import (
 	"fmt"
 	"io"
 	golog "log"
-	"net"
-	"net/url"
 	"os"
 	"os/signal"
-	"path"
 	"path/filepath"
-	"strings"
 	"syscall"
 	"time"
 
@@ -27,7 +23,6 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
 	"github.com/weeveiot/weeve-agent/internal/secret"
-	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
 )
 
 type PlainFormatter struct {
@@ -46,7 +41,8 @@ func init() {
 }
 
 func main() {
-	localManifest, deleteNode := parseCLIoptions()
+	logToStdout, localManifest, deleteNode := parseCLIoptions()
+	setupLogging(logToStdout)
 
 	err := manifest.InitKnownManifests()
 	if err != nil {
@@ -105,11 +101,7 @@ func main() {
 	}
 }
 
-func parseCLIoptions() (string, bool) {
-	// The config file is used to store the agent configuration
-	// If the agent binary restarts, this file will be used to start the agent again
-	const configFileName = "nodeconfig.json"
-
+func parseCLIoptions() (bool, string, bool) {
 	var opt model.Params
 
 	parser := flags.NewParser(&opt, flags.Default)
@@ -123,49 +115,38 @@ func parseCLIoptions() (string, bool) {
 		os.Exit(1)
 	}
 
-	// FLAG: Version
 	if opt.Version {
 		fmt.Println("weeve agent - built on", model.Version)
 		os.Exit(0)
 	}
 
-	// FLAG: ConfigPath
-	if len(opt.ConfigPath) > 0 {
-		config.ConfigPath = opt.ConfigPath
-	} else {
-		// use the default path and filename
-		config.ConfigPath = path.Join(ioutility.GetExeDir(), configFileName)
-	}
-	log.Info("Loading config file from ", config.ConfigPath)
+	config.Set(opt)
 
-	params := config.UpdateNodeConfig(opt)
-	log.Infof("Set node config to following params: %+v", params)
+	return opt.Stdout, opt.ManifestPath, opt.Delete
+}
 
-	// FLAG: LogLevel
-	l, _ := log.ParseLevel(params.LogLevel)
+func setupLogging(toStdout bool) {
+	l, _ := log.ParseLevel(config.Params.LogLevel)
 	log.SetLevel(l)
 
-	// LOG CONFIGS
 	logFile := &lumberjack.Logger{
-		Filename:   filepath.ToSlash(params.LogFileName),
-		MaxSize:    params.LogSize,
-		MaxAge:     params.LogAge,
-		MaxBackups: params.LogBackup,
-		Compress:   params.LogCompress,
+		Filename:   filepath.ToSlash(config.Params.LogFileName),
+		MaxSize:    config.Params.LogSize,
+		MaxAge:     config.Params.LogAge,
+		MaxBackups: config.Params.LogBackup,
+		Compress:   config.Params.LogCompress,
 	}
 
 	var logOutput io.Writer
 
-	// FLAG: Stdout
-	if opt.Stdout {
+	if toStdout {
 		logOutput = io.MultiWriter(os.Stdout, logFile)
 	} else {
 		logOutput = logFile
 	}
 	log.SetOutput(logOutput)
 
-	// FLAG: Include the logs from the Paho package
-	if params.MqttLogs {
+	if config.Params.MqttLogs {
 		mqtt.ERROR = golog.New(logOutput, "[ERROR] ", 0)
 		mqtt.CRITICAL = golog.New(logOutput, "[CRIT] ", 0)
 		mqtt.WARN = golog.New(logOutput, "[WARN]  ", 0)
@@ -174,41 +155,6 @@ func parseCLIoptions() (string, bool) {
 
 	log.Info("Started logging")
 	log.Info("Logging level set to ", log.GetLevel())
-
-	// FLAG: Broker
-	brokerUrl, err := url.Parse(params.Broker)
-	if err != nil {
-		log.Fatal("Error on parsing broker ", err)
-	}
-	validateBrokerUrl(brokerUrl)
-
-	// FLAG: NoTLS
-	if params.NoTLS {
-		log.Info("TLS disabled!")
-	} else {
-		if brokerUrl.Scheme != "tls" {
-			log.Fatalf("Incorrect protocol, TLS is required unless --notls is set. You specified protocol in broker to: %v", brokerUrl.Scheme)
-		}
-	}
-
-	// FLAG: Broker, NoTLS, Heartbeat, TopicName
-	com.SetParams(params)
-
-	return opt.ManifestPath, opt.Delete
-}
-
-func validateBrokerUrl(u *url.URL) {
-	host, port, err := net.SplitHostPort(u.Host)
-	if err != nil {
-		log.Fatal("Error on spliting host port ", err)
-	}
-
-	// Strictly require protocol and host in Broker specification
-	if (len(strings.TrimSpace(host)) == 0) || (len(strings.TrimSpace(u.Scheme)) == 0) {
-		log.Fatal("Error in --broker option: Specify both protocol:\\\\host in the Broker URL")
-	}
-
-	log.Infof("Broker host->%v at port->%v over %v", host, port, u.Scheme)
 }
 
 func setSubscriptionHandlers() map[string]mqtt.MessageHandler {
@@ -254,7 +200,7 @@ func sendHeartbeat() {
 			log.Error(err)
 		}
 
-		time.Sleep(time.Second * time.Duration(com.GetHeartbeat()))
+		time.Sleep(time.Second * time.Duration(config.Params.Heartbeat))
 	}
 }
 
@@ -270,6 +216,6 @@ func sendEdgeAppLogs() {
 			}
 		}
 
-		time.Sleep(time.Second * time.Duration(config.GetEdgeAppLogIntervalSec()))
+		time.Sleep(time.Second * time.Duration(config.Params.LogSendInvl))
 	}
 }

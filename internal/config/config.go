@@ -2,72 +2,61 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
-	"math/rand"
+	"net"
+	"net/url"
 	"os"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
-var ConfigPath string
-var params Params
-
-type Params struct {
-	Password          string
-	APIkey            string
-	Registered        bool
-	EdgeAppLogInvlSec int
-	Broker            string
-	Heartbeat         int
-	MqttLogs          bool
-	NoTLS             bool
-	LogLevel          string
-	LogFileName       string
-	LogSize           int
-	LogAge            int
-	LogBackup         int
-	LogCompress       bool
-	LogSendInvl       int
-	NodeId            string
-	NodeName          string
-	RootCertPath      string
+type ParamStruct struct {
+	Broker       string
+	NodeId       string
+	NodeName     string
+	NoTLS        bool
+	Password     string
+	RootCertPath string
+	LogLevel     string
+	LogFileName  string
+	LogSize      int
+	LogAge       int
+	LogBackup    int
+	LogCompress  bool
+	MqttLogs     bool
+	Heartbeat    int
+	LogSendInvl  int
 }
 
-func GetRootCertPath() string {
-	return params.RootCertPath
+// default values
+var Params = ParamStruct{
+	NoTLS:        false,
+	Password:     "",
+	RootCertPath: "ca.crt",
+	LogLevel:     "info",
+	LogFileName:  "Weeve_Agent.log",
+	LogSize:      1,
+	LogAge:       1,
+	LogBackup:    5,
+	LogCompress:  false,
+	MqttLogs:     false,
+	Heartbeat:    10,
+	LogSendInvl:  60,
 }
 
-func GetNodeId() string {
-	return params.NodeId
-}
-
-func GetPassword() string {
-	return params.Password
-}
-
-func GetRegistered() bool {
-	return params.Registered
-}
-
-func GetEdgeAppLogIntervalSec() int {
-	return params.EdgeAppLogInvlSec
-}
-
-func writeNodeConfigToFile() {
-	encodedJson, err := json.MarshalIndent(params, "", " ")
-	if err != nil {
-		log.Fatal(err)
+func Set(opt model.Params) {
+	if opt.ConfigPath != "" {
+		log.Info("Loading config file from ", opt.ConfigPath)
+		readNodeConfigFromFile(opt.ConfigPath)
 	}
-
-	err = os.WriteFile(ConfigPath, encodedJson, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
+	applyCLIparams(opt)
+	validateConfig()
+	log.Infof("Set node config to following params: %+v", Params)
 }
 
-func readNodeConfigFromFile() {
-	jsonFile, err := os.Open(ConfigPath)
+func readNodeConfigFromFile(configPath string) {
+	jsonFile, err := os.Open(configPath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -75,104 +64,104 @@ func readNodeConfigFromFile() {
 
 	decoder := json.NewDecoder(jsonFile)
 	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&params)
+	err = decoder.Decode(&Params)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func UpdateNodeConfig(opt model.Params) Params {
-	const defaultNodeName = "New Node"
-	const maxNumNodes = 10000
-
-	readNodeConfigFromFile()
-
-	var configChanged bool
+func applyCLIparams(opt model.Params) {
 	if opt.Broker != "" {
-		params.Broker = opt.Broker
-		configChanged = true
-	}
-
-	if opt.Heartbeat > 0 {
-		params.Heartbeat = opt.Heartbeat
-		configChanged = true
-	}
-
-	if opt.MqttLogs {
-		params.MqttLogs = opt.MqttLogs
-		configChanged = true
-	}
-
-	if opt.NoTLS {
-		params.NoTLS = opt.NoTLS
-		configChanged = true
-	}
-
-	if opt.LogLevel != "" {
-		params.LogLevel = opt.LogLevel
-		configChanged = true
-	}
-
-	if opt.LogFileName != "" {
-		params.LogFileName = opt.LogFileName
-		configChanged = true
-	}
-
-	if opt.LogSize > 0 {
-		params.LogSize = opt.LogSize
-		configChanged = true
-	}
-
-	if opt.LogAge > 0 {
-		params.LogAge = opt.LogAge
-		configChanged = true
-	}
-
-	if opt.LogBackup > 0 {
-		params.LogBackup = opt.LogBackup
-		configChanged = true
-	}
-
-	if opt.LogCompress {
-		params.LogCompress = opt.LogCompress
-		configChanged = true
-	}
-
-	if opt.LogSendInvl > 0 {
-		params.EdgeAppLogInvlSec = opt.LogSendInvl
-		configChanged = true
+		Params.Broker = opt.Broker
 	}
 
 	if opt.NodeId != "" {
-		params.NodeId = opt.NodeId
-		configChanged = true
+		Params.NodeId = opt.NodeId
 	}
 
 	if opt.NodeName != "" {
-		params.NodeName = opt.NodeName
-		configChanged = true
-	} else {
-		// randomize the default node name from the config file
-		if params.NodeName == "" || params.NodeName == defaultNodeName {
-			params.NodeName = fmt.Sprintf(defaultNodeName+"%d", rand.Intn(maxNumNodes))
-			configChanged = true
-		}
+		Params.NodeName = opt.NodeName
+	}
+
+	if opt.NoTLS {
+		Params.NoTLS = opt.NoTLS
+	}
+
+	if opt.Password != "" {
+		Params.Password = opt.Password
 	}
 
 	if opt.RootCertPath != "" {
-		params.RootCertPath = opt.RootCertPath
-		configChanged = true
+		Params.RootCertPath = opt.RootCertPath
 	}
 
-	if configChanged {
-		writeNodeConfigToFile()
+	if opt.LogLevel != "" {
+		Params.LogLevel = opt.LogLevel
 	}
 
-	return params
+	if opt.LogFileName != "" {
+		Params.LogFileName = opt.LogFileName
+	}
+
+	if opt.LogSize > 0 {
+		Params.LogSize = opt.LogSize
+	}
+
+	if opt.LogAge > 0 {
+		Params.LogAge = opt.LogAge
+	}
+
+	if opt.LogBackup > 0 {
+		Params.LogBackup = opt.LogBackup
+	}
+
+	if opt.LogCompress {
+		Params.LogCompress = opt.LogCompress
+	}
+
+	if opt.MqttLogs {
+		Params.MqttLogs = opt.MqttLogs
+	}
+
+	if opt.Heartbeat > 0 {
+		Params.Heartbeat = opt.Heartbeat
+	}
+
+	if opt.LogSendInvl > 0 {
+		Params.LogSendInvl = opt.LogSendInvl
+	}
 }
 
-func SetRegistered(registered bool) {
-	params.Registered = registered
+func validateConfig() {
+	if Params.Broker == "" {
+		log.Fatal("no broker specified")
+	}
 
-	writeNodeConfigToFile()
+	brokerUrl, err := url.Parse(Params.Broker)
+	if err != nil {
+		log.Fatal("Error on parsing broker ", err)
+	}
+	validateBrokerUrl(brokerUrl)
+
+	if Params.NoTLS {
+		log.Info("TLS disabled!")
+	} else {
+		if brokerUrl.Scheme != "tls" {
+			log.Fatalf("Incorrect protocol, TLS is required unless --notls is set. You specified protocol in broker to: %v", brokerUrl.Scheme)
+		}
+	}
+}
+
+func validateBrokerUrl(u *url.URL) {
+	host, port, err := net.SplitHostPort(u.Host)
+	if err != nil {
+		log.Fatal("Error on spliting host port ", err)
+	}
+
+	// Strictly require protocol and host in Broker specification
+	if (len(strings.TrimSpace(host)) == 0) || (len(strings.TrimSpace(u.Scheme)) == 0) {
+		log.Fatal("Error in --broker option: Specify both protocol:\\\\host in the Broker URL")
+	}
+
+	log.Infof("Broker host->%v at port->%v over %v", host, port, u.Scheme)
 }
