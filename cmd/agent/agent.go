@@ -129,17 +129,29 @@ func parseCLIoptions() (string, bool) {
 		os.Exit(0)
 	}
 
+	// FLAG: ConfigPath
+	if len(opt.ConfigPath) > 0 {
+		config.ConfigPath = opt.ConfigPath
+	} else {
+		// use the default path and filename
+		config.ConfigPath = path.Join(ioutility.GetExeDir(), configFileName)
+	}
+	log.Info("Loading config file from ", config.ConfigPath)
+
+	params := config.UpdateNodeConfig(opt)
+	log.Infof("Set node config to following params: %+v", params)
+
 	// FLAG: LogLevel
-	l, _ := log.ParseLevel(opt.LogLevel)
+	l, _ := log.ParseLevel(params.LogLevel)
 	log.SetLevel(l)
 
 	// LOG CONFIGS
 	logFile := &lumberjack.Logger{
-		Filename:   filepath.ToSlash(opt.LogFileName),
-		MaxSize:    opt.LogSize,
-		MaxAge:     opt.LogAge,
-		MaxBackups: opt.LogBackup,
-		Compress:   opt.LogCompress,
+		Filename:   filepath.ToSlash(params.LogFileName),
+		MaxSize:    params.LogSize,
+		MaxAge:     params.LogAge,
+		MaxBackups: params.LogBackup,
+		Compress:   params.LogCompress,
 	}
 
 	var logOutput io.Writer
@@ -153,7 +165,7 @@ func parseCLIoptions() (string, bool) {
 	log.SetOutput(logOutput)
 
 	// FLAG: Include the logs from the Paho package
-	if opt.MqttLogs {
+	if params.MqttLogs {
 		mqtt.ERROR = golog.New(logOutput, "[ERROR] ", 0)
 		mqtt.CRITICAL = golog.New(logOutput, "[CRIT] ", 0)
 		mqtt.WARN = golog.New(logOutput, "[WARN]  ", 0)
@@ -163,26 +175,15 @@ func parseCLIoptions() (string, bool) {
 	log.Info("Started logging")
 	log.Info("Logging level set to ", log.GetLevel())
 
-	// FLAG: ConfigPath
-	if len(opt.ConfigPath) > 0 {
-		config.ConfigPath = opt.ConfigPath
-	} else {
-		// use the default path and filename
-		config.ConfigPath = path.Join(ioutility.GetExeDir(), configFileName)
-	}
-	log.Debug("Loading config file from ", config.ConfigPath)
-
-	config.UpdateNodeConfig(opt)
-
 	// FLAG: Broker
-	brokerUrl, err := url.Parse(opt.Broker)
+	brokerUrl, err := url.Parse(params.Broker)
 	if err != nil {
 		log.Fatal("Error on parsing broker ", err)
 	}
 	validateBrokerUrl(brokerUrl)
 
 	// FLAG: NoTLS
-	if opt.NoTLS {
+	if params.NoTLS {
 		log.Info("TLS disabled!")
 	} else {
 		if brokerUrl.Scheme != "tls" {
@@ -191,7 +192,7 @@ func parseCLIoptions() (string, bool) {
 	}
 
 	// FLAG: Broker, NoTLS, Heartbeat, TopicName
-	com.SetParams(opt)
+	com.SetParams(params)
 
 	return opt.ManifestPath, opt.Delete
 }

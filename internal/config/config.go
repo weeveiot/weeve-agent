@@ -11,15 +11,27 @@ import (
 )
 
 var ConfigPath string
+var params Params
 
-var params struct {
-	RootCertPath      string
-	NodeId            string
+type Params struct {
 	Password          string
 	APIkey            string
-	NodeName          string
 	Registered        bool
 	EdgeAppLogInvlSec int
+	Broker            string
+	Heartbeat         int
+	MqttLogs          bool
+	NoTLS             bool
+	LogLevel          string
+	LogFileName       string
+	LogSize           int
+	LogAge            int
+	LogBackup         int
+	LogCompress       bool
+	LogSendInvl       int
+	NodeId            string
+	NodeName          string
+	RootCertPath      string
 }
 
 func GetRootCertPath() string {
@@ -32,14 +44,6 @@ func GetNodeId() string {
 
 func GetPassword() string {
 	return params.Password
-}
-
-func GetAPIkey() string {
-	return params.APIkey
-}
-
-func GetNodeName() string {
-	return params.NodeName
 }
 
 func GetRegistered() bool {
@@ -77,20 +81,60 @@ func readNodeConfigFromFile() {
 	}
 }
 
-func UpdateNodeConfig(opt model.Params) {
+func UpdateNodeConfig(opt model.Params) Params {
 	const defaultNodeName = "New Node"
 	const maxNumNodes = 10000
 
 	readNodeConfigFromFile()
 
 	var configChanged bool
-	if len(opt.NodeId) > 0 {
-		params.NodeId = opt.NodeId
+	if opt.Broker != "" {
+		params.Broker = opt.Broker
 		configChanged = true
 	}
 
-	if len(opt.RootCertPath) > 0 {
-		params.RootCertPath = opt.RootCertPath
+	if opt.Heartbeat > 0 {
+		params.Heartbeat = opt.Heartbeat
+		configChanged = true
+	}
+
+	if opt.MqttLogs {
+		params.MqttLogs = opt.MqttLogs
+		configChanged = true
+	}
+
+	if opt.NoTLS {
+		params.NoTLS = opt.NoTLS
+		configChanged = true
+	}
+
+	if opt.LogLevel != "" {
+		params.LogLevel = opt.LogLevel
+		configChanged = true
+	}
+
+	if opt.LogFileName != "" {
+		params.LogFileName = opt.LogFileName
+		configChanged = true
+	}
+
+	if opt.LogSize > 0 {
+		params.LogSize = opt.LogSize
+		configChanged = true
+	}
+
+	if opt.LogAge > 0 {
+		params.LogAge = opt.LogAge
+		configChanged = true
+	}
+
+	if opt.LogBackup > 0 {
+		params.LogBackup = opt.LogBackup
+		configChanged = true
+	}
+
+	if opt.LogCompress {
+		params.LogCompress = opt.LogCompress
 		configChanged = true
 	}
 
@@ -99,7 +143,12 @@ func UpdateNodeConfig(opt model.Params) {
 		configChanged = true
 	}
 
-	if len(opt.NodeName) > 0 {
+	if opt.NodeId != "" {
+		params.NodeId = opt.NodeId
+		configChanged = true
+	}
+
+	if opt.NodeName != "" {
 		params.NodeName = opt.NodeName
 		configChanged = true
 	} else {
@@ -110,16 +159,16 @@ func UpdateNodeConfig(opt model.Params) {
 		}
 	}
 
-	log.Debugf("Set node config to following params: %+v", params)
+	if opt.RootCertPath != "" {
+		params.RootCertPath = opt.RootCertPath
+		configChanged = true
+	}
+
 	if configChanged {
 		writeNodeConfigToFile()
 	}
-}
 
-func SetNodeId(nodeId string) {
-	params.NodeId = nodeId
-
-	writeNodeConfigToFile()
+	return params
 }
 
 func SetRegistered(registered bool) {

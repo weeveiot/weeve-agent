@@ -9,7 +9,6 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/config"
-	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 const (
@@ -28,7 +27,7 @@ var params struct {
 	Heartbeat int
 }
 
-func SetParams(opt model.Params) {
+func SetParams(opt config.Params) {
 	params.Broker = opt.Broker
 	params.NoTLS = opt.NoTLS
 	params.Heartbeat = opt.Heartbeat

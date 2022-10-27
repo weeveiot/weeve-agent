@@ -1,9 +1,20 @@
 {
-    "RootCertPath": "ca.crt",
-    "NodeId": "",
-    "Password": "",
-    "APIkey": "",
-    "NodeName": "New Node8081",
-    "Registered": false,
-    "EdgeAppLogInvlSec": 60
-   }
+ "Password": "",
+ "APIkey": "",
+ "Registered": true,
+ "EdgeAppLogInvlSec": 60,
+ "Broker": "tls://mapi-dev.weeve.engineering:8883",
+ "Heartbeat": 10,
+ "MqttLogs": false,
+ "NoTLS": false,
+ "LogLevel": "info",
+ "LogFileName": "Weeve_Agent.log",
+ "LogSize": 1,
+ "LogAge": 1,
+ "LogBackup": 5,
+ "LogCompress": false,
+ "LogSendInvl": 60,
+ "NodeId": "",
+ "NodeName": "New Node",
+ "RootCertPath": "ca.crt"
+}
