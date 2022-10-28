@@ -4,7 +4,7 @@
  "NodeName": "New Node",
  "NoTLS": false,
  "Password": "",
- "RootCertPath": "ca.crt"
+ "RootCertPath": "ca.crt",
  "LogLevel": "info",
  "LogFileName": "Weeve_Agent.log",
  "LogSize": 1,
@@ -13,5 +13,5 @@
  "LogCompress": false,
  "MqttLogs": false,
  "Heartbeat": 10,
- "LogSendInvl": 60,
+ "LogSendInvl": 60
 }
