@@ -59,7 +59,7 @@ Configuration parameters are listed in the table below with defaults, or can be 
 | ----------- | ----- | -------- | --------------------------------------------------------------- | --------------- |
 | version     | v     | false    | Print version information and exit                              |                 |
 | broker      | b     | true     | URL of the MQTT broker to connect                               |                 |
-| nodeId      | i     | true     | ID of this node                                                 |                 |
+| id          | i     | true     | ID of this node                                                 |                 |
 | name        | n     | true     | Name of the node                                                |                 |
 | notls       |       | false    | For developers - disable TLS for MQTT                           | false           |
 | password    |       | false    | Password for TLS                                                | ""              |

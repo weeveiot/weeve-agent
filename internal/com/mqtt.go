@@ -108,7 +108,7 @@ func createMqttClient() error {
 		channelOptions.SetTLSConfig(tlsconfig)
 	}
 
-	log.Debug("Starting MQTT client with options >> ", channelOptions)
+	log.Debugf("Starting MQTT client with options >> %+v", channelOptions)
 
 	client = mqtt.NewClient(channelOptions)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {

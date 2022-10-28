@@ -50,7 +50,6 @@ func createContainer(containerConfig manifest.ContainerConfig) (string, error) {
 		AttachStdin:  false,
 		AttachStdout: true,
 		AttachStderr: true,
-		Cmd:          containerConfig.EntryPointArgs,
 		Env:          containerConfig.EnvArgs,
 		Tty:          false,
 		ExposedPorts: containerConfig.ExposedPorts,
@@ -59,7 +58,6 @@ func createContainer(containerConfig manifest.ContainerConfig) (string, error) {
 
 	hostConfig := &container.HostConfig{
 		PortBindings: containerConfig.PortBinding,
-		NetworkMode:  container.NetworkMode(containerConfig.NetworkDriver),
 		RestartPolicy: container.RestartPolicy{
 			Name:              "on-failure",
 			MaximumRetryCount: 100,

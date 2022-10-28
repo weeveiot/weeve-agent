@@ -7,7 +7,7 @@ var Version string = "YYY.MM.DD (commit hash)"
 type Params struct {
 	Version      bool   `long:"version" short:"v" description:"Print version information and exit"`
 	Broker       string `long:"broker" short:"b" description:"Broker to connect"`
-	NodeId       string `long:"nodeId" short:"i" description:"ID of this node"`
+	NodeId       string `long:"id" short:"i" description:"ID of this node"`
 	NodeName     string `long:"name" short:"n" description:"Name of this node to be registered"`
 	NoTLS        bool   `long:"notls" description:"For developer - disable TLS for MQTT"`
 	Password     string `long:"password" description:"Password for TLS"`

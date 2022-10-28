@@ -8,7 +8,8 @@ import (
 )
 
 func RegisterNode() error {
-	if config.Params.NodeId == "" {
+	log.Info("Registering the node...")
+	if config.Params.NodeId == "" || config.Params.NodeName == "" {
 		// TODO: do node registration stuff
 		return errors.New("registration is not implemented at the moment. make sure to provide a valid node id and name")
 	} else {

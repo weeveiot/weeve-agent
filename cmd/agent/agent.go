@@ -115,8 +115,8 @@ func parseCLIoptions() (bool, string, bool) {
 		os.Exit(1)
 	}
 
+	fmt.Println("weeve agent - built on", model.Version)
 	if opt.Version {
-		fmt.Println("weeve agent - built on", model.Version)
 		os.Exit(0)
 	}
 

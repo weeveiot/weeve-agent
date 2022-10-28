@@ -104,7 +104,7 @@ func DeployDataService(man manifest.Manifest) error {
 			setAndSendStatus(man.ManifestUniqueID, model.EdgeAppError)
 			return err
 		}
-		log.Info(deploymentID, "Successfully created container ", containerID, " with args: ", containerConfig.EntryPointArgs)
+		log.Info(deploymentID, "Successfully created container ", containerID)
 		log.Info(deploymentID, "Started!")
 	}
 

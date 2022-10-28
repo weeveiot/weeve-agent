@@ -30,20 +30,18 @@ type Manifest struct {
 
 // This struct holds information for starting a container
 type ContainerConfig struct {
-	ContainerName  string
-	ImageName      string
-	ImageTag       string
-	EntryPointArgs []string
-	EnvArgs        []string
-	NetworkName    string
-	NetworkDriver  string
-	ExposedPorts   nat.PortSet // This must be set for the container create
-	PortBinding    nat.PortMap // This must be set for the containerStart
-	NetworkConfig  network.NetworkingConfig
-	MountConfigs   []mount.Mount
-	Labels         map[string]string
-	Registry       RegistryDetails
-	Resources      container.Resources
+	ContainerName string
+	ImageName     string
+	ImageTag      string
+	EnvArgs       []string
+	NetworkName   string
+	ExposedPorts  nat.PortSet // This must be set for the container create
+	PortBinding   nat.PortMap // This must be set for the containerStart
+	NetworkConfig network.NetworkingConfig
+	MountConfigs  []mount.Mount
+	Labels        map[string]string
+	Registry      RegistryDetails
+	Resources     container.Resources
 }
 
 type RegistryDetails struct {
@@ -102,7 +100,12 @@ func Parse(payload []byte) (Manifest, error) {
 			imageName = imageName + ":" + containerConfig.ImageTag
 		}
 
-		containerConfig.Registry = RegistryDetails{module.Image.Registry.Url, imageName, module.Image.Registry.UserName, module.Image.Registry.Password}
+		containerConfig.Registry = RegistryDetails{
+			module.Image.Registry.Url,
+			imageName,
+			module.Image.Registry.UserName,
+			module.Image.Registry.Password,
+		}
 
 		envArgs, err := parseArguments(module.Envs)
 		if err != nil {
@@ -311,8 +314,14 @@ func parseConnections(connectionsStringMap connectionsString) (connectionsInt, e
 	return connectionsIntMap, nil
 }
 
-func (m *Manifest) clearSecretValues() {
-	for _, module := range m.Modules {
-		module.EnvArgs = nil
+func clearSecretValues(man Manifest) Manifest {
+	// perform a deep copy, while removing env variables and passwords
+	manCopy := man
+	manCopy.Modules = make([]ContainerConfig, len(man.Modules))
+	copy(manCopy.Modules, man.Modules)
+	for i := range manCopy.Modules {
+		manCopy.Modules[i].EnvArgs = nil
+		manCopy.Modules[i].Registry.Password = ""
 	}
+	return manCopy
 }

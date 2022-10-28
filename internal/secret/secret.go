@@ -77,7 +77,7 @@ func InitNodeKeypair() ([]byte, error) {
 		return nil, errors.New("failed to encode PEM block containing public key")
 	}
 
-	log.Info("Generated node public key:\n", string(publicKeyPemBytes))
+	log.Debug("Generated node public key:\n", string(publicKeyPemBytes))
 	return publicKeyPemBytes, nil
 }
 
