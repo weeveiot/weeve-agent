@@ -14,6 +14,7 @@ import (
 	"github.com/docker/docker/api/types"
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
+	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 const registryUrl = "https://registry-1.docker.io"
@@ -229,7 +230,7 @@ func ReadAllContainers() ([]types.Container, error) {
 	return containerStructs, nil
 }
 
-func ReadDataServiceContainers(manifestUniqueID manifest.ManifestUniqueID) ([]types.Container, error) {
+func ReadDataServiceContainers(manifestUniqueID model.ManifestUniqueID) ([]types.Container, error) {
 	var dataServiceContainers []types.Container
 
 	allContainers, err := ReadAllContainers()

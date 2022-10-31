@@ -20,7 +20,7 @@ Right now weeve agent can run on Linux systems with a Docker installation on the
 
 The node needs to be registered first to set a node name and acquire a node ID from the database.
 For this follow our [quick setup guide](https://docs.weeve.engineering/guides/installing-the-weeve-agent).
-If the node is already registered, please fill the fields `nodeId` and `nodeName` in the config file `nodeconfig.json`.
+If the node is already registered, please fill the fields `nodeId` and `nodeName` in the config file `agent-conf.json`.
 
 ### Installation
 
@@ -31,14 +31,14 @@ curl -sO http://weeve-agent-dev.s3.amazonaws.com/weeve-agent-installer.sh && sh 
 ```
 
 The installer script can take the following optional parameters:
-| Parameter | Required | Description | Possible Values | Default |
-| ----------- | -------- | ------------------------------------------------------------ | ------------------------------------- | --------- |
-| configpath | true | path of the JSON file with node configuration | | |
-| release | true | path of the JSON file with node configuration | prod, dev | |
-| test | false | set to 'true' to build agent from local and run | false, true | false |
-| broker | false | URL of the MQTT broker to connect | | |
-| loglevel | false | level of log verbosity | debug, info, warning, error | info |
-| heartbeat | false | time period of heartbeat messages (sec) | | |
+| Parameter  | Required | Description                                     | Possible Values             | Default |
+| ---------- | -------- | ----------------------------------------------- | --------------------------- | ------- |
+| configpath | true     | path of the JSON file with node configuration   |                             |         |
+| release    | true     | path of the JSON file with node configuration   | prod, dev                   |         |
+| test       | false    | set to 'true' to build agent from local and run | false, true                 | false   |
+| broker     | false    | URL of the MQTT broker to connect               |                             |         |
+| loglevel   | false    | level of log verbosity                          | debug, info, warning, error | info    |
+| heartbeat  | false    | time period of heartbeat messages (sec)         |                             |         |
 
 ### Uninstallation
 

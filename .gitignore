@@ -10,5 +10,4 @@
 *.zip
 *.jsonl
 *.log
-nodeconfig.json
 weeve-agent/

@@ -24,7 +24,7 @@ cross:
 .PHONY: cross
 
 secunet:
-	GOOS=linux GOARCH=amd64 go build -o bin/agent_secunet -tags secunet cmd/agent/agent.go
+	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o bin/agent_secunet -tags secunet cmd/agent/agent.go
 	docker build -f Dockerfile.secunet -t secunet-test .
 .PHONY: secunet
 

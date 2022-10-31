@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path"
 	"strings"
 	"testing"
 
@@ -24,7 +23,6 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/handler"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
-	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
 )
 
 func init() {
@@ -42,9 +40,14 @@ var dockerCli *client.Client
 
 func TestProcessMessagePass(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	config.ConfigPath = path.Join(ioutility.GetExeDir(), "../nodeconfig.json")
-	config.UpdateNodeConfig(model.Params{})
-	com.SetParams(model.Params{Broker: "mqtt://test.mosquitto.org:1883", NoTLS: true, Heartbeat: 60})
+	opt := model.Params{
+		Broker:    "mqtt://test.mosquitto.org:1883",
+		NoTLS:     true,
+		Heartbeat: 60,
+		NodeId:    "1234567890",
+		NodeName:  "Test Node",
+	}
+	config.Set(opt)
 	com.ConnectNode(map[string]mqtt.MessageHandler{})
 
 	assert := assert.New(t)
@@ -248,15 +251,15 @@ func parseManifest(jsonParsed *gabs.Container) (manifest.Manifest, error) {
 	for _, module := range modules {
 		var containerConfig manifest.ContainerConfig
 
-		containerConfig.ImageName = module.Search("image").Search("name").Data().(string)
-		containerConfig.ImageTag = module.Search("image").Search("tag").Data().(string)
+		imageName := module.Search("image").Search("name").Data().(string)
+		imageTag := module.Search("image").Search("tag").Data().(string)
 
-		imageName := containerConfig.ImageName
-		if containerConfig.ImageTag != "" {
-			imageName = imageName + ":" + containerConfig.ImageTag
+		if imageTag == "" {
+			containerConfig.ImageName = imageName
+		} else {
+			containerConfig.ImageName = imageName + ":" + imageTag
 		}
 
-		containerConfig.Registry = manifest.RegistryDetails{ImageName: imageName}
 		containerConfigs = append(containerConfigs, containerConfig)
 	}
 
@@ -312,8 +315,7 @@ func checkContainersExistsWithStatus(manID model.ManifestUniqueID, containerCoun
 func checkImages(man manifest.Manifest, exist bool) (bool, error) {
 
 	for _, module := range man.Modules {
-		imgDetails := module.Registry
-		_, _, err := dockerCli.ImageInspectWithRaw(ctx, imgDetails.ImageName)
+		_, _, err := dockerCli.ImageInspectWithRaw(ctx, module.ImageName)
 		if err != nil {
 			if client.IsErrNotFound(err) {
 				if exist {

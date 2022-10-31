@@ -11,6 +11,7 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/model"
 	"github.com/weeveiot/weeve-agent/internal/secret"
 
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
@@ -32,7 +33,6 @@ type Manifest struct {
 type ContainerConfig struct {
 	ContainerName string
 	ImageName     string
-	ImageTag      string
 	EnvArgs       []string
 	NetworkName   string
 	ExposedPorts  nat.PortSet // This must be set for the container create
@@ -40,15 +40,8 @@ type ContainerConfig struct {
 	NetworkConfig network.NetworkingConfig
 	MountConfigs  []mount.Mount
 	Labels        map[string]string
-	Registry      RegistryDetails
+	AuthConfig    types.AuthConfig
 	Resources     container.Resources
-}
-
-type RegistryDetails struct {
-	Url       string
-	ImageName string
-	UserName  string
-	Password  string
 }
 
 type connectionsInt map[int][]int
@@ -91,20 +84,18 @@ func Parse(payload []byte) (Manifest, error) {
 
 		var containerConfig ContainerConfig
 
-		containerConfig.ImageName = module.Image.Name
-		containerConfig.ImageTag = module.Image.Tag
 		containerConfig.Labels = labels
 
-		imageName := containerConfig.ImageName
-		if containerConfig.ImageTag != "" {
-			imageName = imageName + ":" + containerConfig.ImageTag
+		if module.Image.Tag == "" {
+			containerConfig.ImageName = module.Image.Name
+		} else {
+			containerConfig.ImageName = module.Image.Name + ":" + module.Image.Tag
 		}
 
-		containerConfig.Registry = RegistryDetails{
-			module.Image.Registry.Url,
-			imageName,
-			module.Image.Registry.UserName,
-			module.Image.Registry.Password,
+		containerConfig.AuthConfig = types.AuthConfig{
+			ServerAddress: module.Image.Registry.Url,
+			Username:      module.Image.Registry.UserName,
+			Password:      module.Image.Registry.Password,
 		}
 
 		envArgs, err := parseArguments(module.Envs)
@@ -185,7 +176,7 @@ func GetEdgeAppUniqueID(payload []byte) (model.ManifestUniqueID, error) {
 func (m Manifest) UpdateManifest(networkName string) {
 	for i, module := range m.Modules {
 		m.Modules[i].NetworkName = networkName
-		m.Modules[i].ContainerName = makeContainerName(networkName, module.ImageName, module.ImageTag, i)
+		m.Modules[i].ContainerName = makeContainerName(networkName, module.ImageName, i)
 
 		m.Modules[i].EnvArgs = append(m.Modules[i].EnvArgs, fmt.Sprintf("%v=%v", "INGRESS_HOST", m.Modules[i].ContainerName))
 	}
@@ -201,8 +192,8 @@ func (m Manifest) UpdateManifest(networkName string) {
 
 // makeContainerName is a simple utility to return a standard container name
 // This function appends the pipelineID and containerName with _
-func makeContainerName(networkName string, imageName string, tag string, index int) string {
-	containerName := fmt.Sprint(networkName, ".", imageName, "_", tag, ".", index)
+func makeContainerName(networkName string, imageName string, index int) string {
+	containerName := fmt.Sprint(networkName, ".", imageName, ".", index)
 
 	// create regular expression for all alphanumeric characters and _ . -
 	reg, err := regexp.Compile("[^A-Za-z0-9_.-]+")
@@ -211,6 +202,7 @@ func makeContainerName(networkName string, imageName string, tag string, index i
 	}
 
 	containerName = strings.ReplaceAll(containerName, " ", "")
+	containerName = strings.ReplaceAll(containerName, ":", "_")
 	containerName = reg.ReplaceAllString(containerName, "_")
 
 	return containerName
@@ -321,7 +313,7 @@ func clearSecretValues(man Manifest) Manifest {
 	copy(manCopy.Modules, man.Modules)
 	for i := range manCopy.Modules {
 		manCopy.Modules[i].EnvArgs = nil
-		manCopy.Modules[i].Registry.Password = ""
+		manCopy.Modules[i].AuthConfig.Password = ""
 	}
 	return manCopy
 }
