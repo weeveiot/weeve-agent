@@ -41,16 +41,13 @@ func SetupDockerClient() {
 }
 
 func createContainer(containerConfig manifest.ContainerConfig) (string, error) {
-	imageName := containerConfig.ImageName + ":" + containerConfig.ImageTag
-
-	log.Debugln("Creating container", containerConfig.ContainerName, "from", imageName)
+	log.Debugln("Creating container", containerConfig.ContainerName, "from", containerConfig.ImageName)
 
 	config := &container.Config{
-		Image:        imageName,
+		Image:        containerConfig.ImageName,
 		AttachStdin:  false,
 		AttachStdout: true,
 		AttachStderr: true,
-		Cmd:          containerConfig.EntryPointArgs,
 		Env:          containerConfig.EnvArgs,
 		Tty:          false,
 		ExposedPorts: containerConfig.ExposedPorts,
@@ -59,7 +56,6 @@ func createContainer(containerConfig manifest.ContainerConfig) (string, error) {
 
 	hostConfig := &container.HostConfig{
 		PortBindings: containerConfig.PortBinding,
-		NetworkMode:  container.NetworkMode(containerConfig.NetworkDriver),
 		RestartPolicy: container.RestartPolicy{
 			Name:              "on-failure",
 			MaximumRetryCount: 100,
@@ -113,11 +109,7 @@ func CreateAndStartContainer(containerConfig manifest.ContainerConfig) (string, 
 }
 
 func StopContainer(containerID string) error {
-	if err := dockerClient.ContainerStop(ctx, containerID, nil); err != nil {
-		return err
-	}
-
-	return nil
+	return dockerClient.ContainerStop(ctx, containerID, nil)
 }
 
 func StopAndRemoveContainer(containerID string) error {

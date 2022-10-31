@@ -2,25 +2,29 @@ package model
 
 import "strings"
 
+var Version string = "YYY.MM.DD (commit hash)"
+
 type Params struct {
-	Stdout       bool   `long:"out" description:"Print logs to stdout" required:"false"`
-	Broker       string `long:"broker" short:"b" description:"Broker to connect" required:"true"`
-	Heartbeat    int    `long:"heartbeat" short:"t" description:"Heartbeat time in seconds" required:"false" default:"30"`
-	MqttLogs     bool   `long:"mqttlogs" short:"m" description:"For developer - Display detailed MQTT logging messages" required:"false"`
-	NoTLS        bool   `long:"notls" description:"For developer - disable TLS for MQTT" required:"false"`
-	LogLevel     string `long:"loglevel" short:"l" default:"info" description:"Set the logging level" required:"false"`
-	LogFileName  string `long:"logfilename" default:"Weeve_Agent.log" description:"Set the name of the log file" required:"false"`
-	LogSize      int    `long:"logsize" default:"1" description:"Set the size of each log files (MB)" required:"false"`
-	LogAge       int    `long:"logage" default:"1" description:"Set the time period to retain the log files (days)" required:"false"`
-	LogBackup    int    `long:"logbackup" default:"5" description:"Set the max number of log files to retain" required:"false"`
-	LogCompress  bool   `long:"logcompress" description:"To compress the log files" required:"false"`
-	LogSendInvl  int    `long:"logsendinvl" description:"Time interval in sec to send edge app logs" required:"false" default:"60"`
-	NodeId       string `long:"nodeId" short:"i" description:"ID of this node" required:"false" default:""`
-	NodeName     string `long:"name" short:"n" description:"Name of this node to be registered" required:"false"`
-	RootCertPath string `long:"rootcert" short:"r" description:"Path to MQTT broker (server) certificate" required:"false"`
-	ConfigPath   string `long:"config" description:"Path to the .json config file" required:"false"`
-	ManifestPath string `long:"manifest" description:"Path to the .json manifest file" required:"false"`
-	Delete       bool   `long:"delete" description:"Remove node from weeve manager" required:"false"`
+	Version      bool   `long:"version" short:"v" description:"Print version information and exit"`
+	Broker       string `long:"broker" short:"b" description:"Broker to connect"`
+	NodeId       string `long:"id" short:"i" description:"ID of this node"`
+	NodeName     string `long:"name" short:"n" description:"Name of this node to be registered"`
+	NoTLS        bool   `long:"notls" description:"For developer - disable TLS for MQTT"`
+	Password     string `long:"password" description:"Password for TLS"`
+	RootCertPath string `long:"rootcert" description:"Path to MQTT broker (server) certificate"`
+	LogLevel     string `long:"loglevel" short:"l" description:"Set the logging level"`
+	LogFileName  string `long:"logfilename" description:"Set the name of the log file"`
+	LogSize      int    `long:"logsize" description:"Set the size of each log files (MB)"`
+	LogAge       int    `long:"logage" description:"Set the time period to retain the log files (days)"`
+	LogBackup    int    `long:"logbackup" description:"Set the max number of log files to retain"`
+	LogCompress  bool   `long:"logcompress" description:"To compress the log files"`
+	MqttLogs     bool   `long:"mqttlogs" description:"For developer - Display detailed MQTT logging messages"`
+	Heartbeat    int    `long:"heartbeat" short:"t" description:"Heartbeat time in seconds" `
+	LogSendInvl  int    `long:"logsendinvl" description:"Time interval in sec to send edge app logs" `
+	Stdout       bool   `long:"out" description:"Print logs to stdout"`
+	ConfigPath   string `long:"config" description:"Path to the .json config file"`
+	ManifestPath string `long:"manifest" description:"Path to the .json manifest file"`
+	Delete       bool   `long:"delete" short:"d" description:"Remove node from weeve manager (when uninstalling the agent)"`
 }
 
 type ManifestUniqueID struct {

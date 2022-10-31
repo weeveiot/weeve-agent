@@ -9,7 +9,6 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/config"
-	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 const (
@@ -22,32 +21,16 @@ const (
 )
 
 var client mqtt.Client
-var params struct {
-	Broker    string
-	NoTLS     bool
-	Heartbeat int
-}
-
-func SetParams(opt model.Params) {
-	params.Broker = opt.Broker
-	params.NoTLS = opt.NoTLS
-	params.Heartbeat = opt.Heartbeat
-	log.Debugf("Set the following MQTT params: %+v", params)
-}
-
-func GetHeartbeat() int {
-	return params.Heartbeat
-}
 
 func SendHeartbeat(msg StatusMsg) error {
-	nodeStatusTopic := topicNodeStatus + "/" + config.GetNodeId()
+	nodeStatusTopic := topicNodeStatus + "/" + config.Params.NodeId
 	log.Debugln("Sending update >>", "Topic:", nodeStatusTopic, ">> Body:", msg)
 	return publishMessage(nodeStatusTopic, msg, true)
 }
 
 func SendEdgeAppLogs(msg EdgeAppLogMsg) error {
 	if len(msg.ContainerLogs) > 0 {
-		edgeAppLogsTopic := config.GetNodeId() + "/" + msg.ManifestID + "/" + topicLogs
+		edgeAppLogsTopic := config.Params.NodeId + "/" + msg.ManifestID + "/" + topicLogs
 		log.Debugln("Sending edge app logs >>", "Topic:", edgeAppLogsTopic, ">> Body:", msg)
 		return publishMessage(edgeAppLogsTopic, msg, false)
 	}
@@ -56,7 +39,7 @@ func SendEdgeAppLogs(msg EdgeAppLogMsg) error {
 }
 
 func SendNodePublicKey(nodePublicKey []byte) error {
-	topic := topicNodePublicKey + "/" + config.GetNodeId()
+	topic := topicNodePublicKey + "/" + config.Params.NodeId
 	msg := nodePublicKeyMsg{
 		NodePublicKey: string(nodePublicKey),
 	}
@@ -65,8 +48,8 @@ func SendNodePublicKey(nodePublicKey []byte) error {
 }
 
 func sendDisconnectedStatus() error {
-	nodeStatusTopic := topicNodeStatus + "/" + config.GetNodeId()
-	msg := StatusMsg{Status: model.NodeDisconnected}
+	nodeStatusTopic := topicNodeStatus + "/" + config.Params.NodeId
+	msg := disconnectedMsg
 	log.Debugln("Sending update >>", "Topic:", nodeStatusTopic, ">> Body:", msg)
 	return publishMessage(nodeStatusTopic, msg, true)
 }
@@ -103,21 +86,21 @@ func DisconnectNode() error {
 
 func createMqttClient() error {
 	// Build the options for the mqtt client
-	nodeStatusTopic := topicNodeStatus + "/" + config.GetNodeId()
-	willPayload, err := json.Marshal(StatusMsg{Status: model.NodeDisconnected})
+	nodeStatusTopic := topicNodeStatus + "/" + config.Params.NodeId
+	willPayload, err := json.Marshal(disconnectedMsg)
 	if err != nil {
 		return err
 	}
 
 	channelOptions := mqtt.NewClientOptions()
-	channelOptions.AddBroker(params.Broker)
-	channelOptions.SetClientID(config.GetNodeId())
+	channelOptions.AddBroker(config.Params.Broker)
+	channelOptions.SetClientID(config.Params.NodeId)
 	channelOptions.SetConnectionLostHandler(connectLostHandler)
 	channelOptions.SetWill(nodeStatusTopic, string(willPayload), 1, true)
 
-	if !params.NoTLS {
-		channelOptions.SetUsername(config.GetNodeId())
-		channelOptions.SetPassword(config.GetPassword())
+	if !config.Params.NoTLS {
+		channelOptions.SetUsername(config.Params.NodeId)
+		channelOptions.SetPassword(config.Params.Password)
 		tlsconfig, err := newTLSConfig()
 		if err != nil {
 			return err
@@ -125,7 +108,7 @@ func createMqttClient() error {
 		channelOptions.SetTLSConfig(tlsconfig)
 	}
 
-	log.Debug("Starting MQTT client with options >> ", channelOptions)
+	log.Debugf("Starting MQTT client with options >> %+v", channelOptions)
 
 	client = mqtt.NewClient(channelOptions)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
@@ -137,7 +120,7 @@ func createMqttClient() error {
 }
 
 func subscribeAndSetHandler(topic string, handler mqtt.MessageHandler) error {
-	fullTopic := config.GetNodeId() + "/" + topic
+	fullTopic := config.Params.NodeId + "/" + topic
 
 	log.Debug("Subscribing to topic ", fullTopic)
 	if token := client.Subscribe(fullTopic, 1, handler); token.Wait() && token.Error() != nil {
@@ -152,10 +135,10 @@ var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err
 }
 
 func newTLSConfig() (*tls.Config, error) {
-	log.Debug("MQTT root cert path >> ", config.GetRootCertPath())
+	log.Debug("MQTT root cert path >> ", config.Params.RootCertPath)
 
 	certpool := x509.NewCertPool()
-	rootCert, err := os.ReadFile(config.GetRootCertPath())
+	rootCert, err := os.ReadFile(config.Params.RootCertPath)
 	if err != nil {
 		return nil, err
 	}

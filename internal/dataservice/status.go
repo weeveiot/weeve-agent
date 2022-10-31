@@ -47,6 +47,7 @@ func GetStatusMessage() (com.StatusMsg, error) {
 		Status:           nodeStatus,
 		EdgeApplications: edgeApps,
 		DeviceParams:     deviceParams,
+		AgentVersion:     model.Version,
 	}
 
 	return msg, nil

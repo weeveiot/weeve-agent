@@ -36,8 +36,7 @@ func TestGetManifest(t *testing.T) {
 
 	if len(manifest.Modules) == 4 {
 		assert.Equal(3, len(manifest.Modules[0].Labels))
-		assert.Equal("weevenetwork/mqtt-ingress", manifest.Modules[0].ImageName)
-		assert.Equal("V1", manifest.Modules[0].ImageTag)
+		assert.Equal("weevenetwork/mqtt-ingress:V1", manifest.Modules[0].ImageName)
 		assert.Equal(11, len(manifest.Modules[0].EnvArgs))
 		if (len(manifest.Modules[0].EnvArgs)) == 10 {
 			assert.Equal("MQTT_BROKER=mqtt://mapi-dev.weeve.engineering", manifest.Modules[0].EnvArgs[0])

@@ -11,6 +11,7 @@ import (
 	"github.com/ahmetb/go-linq/v3"
 	"github.com/docker/docker/api/types"
 	log "github.com/sirupsen/logrus"
+	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 var existingNetworks = make(map[string]string)
@@ -63,7 +64,7 @@ func readAllNetworks() []types.NetworkResource {
 	return networks
 }
 
-func ReadDataServiceNetworks(manifestUniqueID manifest.ManifestUniqueID) ([]types.NetworkResource, error) {
+func ReadDataServiceNetworks(manifestUniqueID model.ManifestUniqueID) ([]types.NetworkResource, error) {
 	key := manifestUniqueID.ManifestName + manifestUniqueID.VersionNumber
 	networkName := existingNetworks[key]
 
@@ -90,7 +91,7 @@ func CreateNetwork(name string, labels map[string]string) (string, error) {
 	return networkName, nil
 }
 
-func NetworkPrune(manifestUniqueID manifest.ManifestUniqueID) error {
+func NetworkPrune(manifestUniqueID model.ManifestUniqueID) error {
 	key := manifestUniqueID.ManifestName + manifestUniqueID.VersionNumber
 	delete(existingNetworks, key)
 	return nil

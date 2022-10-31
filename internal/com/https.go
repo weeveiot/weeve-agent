@@ -1,20 +1,17 @@
 package com
 
 import (
-	"time"
+	"errors"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/config"
 )
 
-const registrationTimeout = 5
-
 func RegisterNode() error {
-	if !config.GetRegistered() {
-		log.Info("Registering node and downloading certificate and key ...")
-		time.Sleep(registrationTimeout)
-		config.SetRegistered(true)
+	log.Info("Registering the node...")
+	if config.Params.NodeId == "" || config.Params.NodeName == "" {
 		// TODO: do node registration stuff
+		return errors.New("registration is not implemented at the moment. make sure to provide a valid node id and name")
 	} else {
 		log.Info("Node already registered!")
 	}

@@ -13,7 +13,7 @@ type mqttHook struct {
 func addMqttHookToLogs(level log.Level) {
 	hook := mqttHook{
 		levels: log.AllLevels[:level+1],
-		topic:  config.GetNodeId() + "/" + topicLogs,
+		topic:  config.Params.NodeId + "/" + topicLogs,
 	}
 
 	log.AddHook(hook)

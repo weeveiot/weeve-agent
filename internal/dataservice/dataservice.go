@@ -42,19 +42,18 @@ func DeployDataService(man manifest.Manifest) error {
 	log.Info(deploymentID, "Iterating modules, pulling image into host if missing ...")
 
 	for _, module := range man.Modules {
-		imgDetails := module.Registry
 		// Check if image exist in local
-		exists, err := docker.ImageExists(imgDetails.ImageName)
+		exists, err := docker.ImageExists(module.ImageName)
 		if err != nil {
 			log.Error(deploymentID, err)
 			return err
 		}
 		if exists { // Image already exists, continue
-			log.Info(deploymentID, fmt.Sprintf("Image %v, already exists on host", imgDetails.ImageName))
+			log.Info(deploymentID, fmt.Sprintf("Image %v, already exists on host", module.ImageName))
 		} else { // Pull this image
-			log.Info(deploymentID, fmt.Sprintf("Image %v, does not exist on host", imgDetails.ImageName))
-			log.Info(deploymentID, "Pulling ", imgDetails.ImageName)
-			err = docker.PullImage(imgDetails)
+			log.Info(deploymentID, fmt.Sprintf("Image %v, does not exist on host", module.ImageName))
+			log.Info(deploymentID, "Pulling ", module.ImageName)
+			err = docker.PullImage(module.AuthConfig, module.ImageName)
 			if err != nil {
 				log.Error(deploymentID, "Unable to pull image/s, "+err.Error())
 				setAndSendStatus(man.ManifestUniqueID, model.EdgeAppError)
@@ -94,7 +93,7 @@ func DeployDataService(man manifest.Manifest) error {
 	}
 
 	for _, containerConfig := range containerConfigs {
-		log.Info(deploymentID, "Creating ", containerConfig.ContainerName, " from ", containerConfig.ImageName, ":", containerConfig.ImageTag)
+		log.Info(deploymentID, "Creating ", containerConfig.ContainerName, " from ", containerConfig.ImageName)
 		containerID, err := docker.CreateAndStartContainer(containerConfig)
 		if err != nil {
 			log.Error(err)
@@ -104,7 +103,7 @@ func DeployDataService(man manifest.Manifest) error {
 			setAndSendStatus(man.ManifestUniqueID, model.EdgeAppError)
 			return err
 		}
-		log.Info(deploymentID, "Successfully created container ", containerID, " with args: ", containerConfig.EntryPointArgs)
+		log.Info(deploymentID, "Successfully created container ", containerID)
 		log.Info(deploymentID, "Started!")
 	}
 

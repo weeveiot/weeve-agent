@@ -31,15 +31,15 @@ func GetUsedImages(uniqueID model.ManifestUniqueID) ([]string, error) {
 		return nil, errors.New("could not get the images. the edge app is not known")
 	}
 	for _, module := range manifest.Manifest.Modules {
-		images = append(images, module.ImageName+":"+module.ImageTag)
+		images = append(images, module.ImageName)
 	}
 	return images, nil
 }
 
 func AddKnownManifest(man Manifest) {
-	man.clearSecretValues() // remove env variables so that secrets never touch the hard disk
+	manCopy := clearSecretValues(man) // remove some fields so that secret values never touch the hard disk
 	knownManifests[man.ManifestUniqueID] = &ManifestStatus{
-		Manifest: man,
+		Manifest: manCopy,
 		Status:   model.EdgeAppInitiated,
 	}
 }

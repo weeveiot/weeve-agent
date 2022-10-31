@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/weeveiot/weeve-agent/internal/docker"
+	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 type EdgeAppLogMsg struct {
@@ -32,6 +33,7 @@ type StatusMsg struct {
 	Status           string          `json:"status"`
 	EdgeApplications []EdgeAppMsg    `json:"edgeApplications"`
 	DeviceParams     DeviceParamsMsg `json:"deviceParams"`
+	AgentVersion     string          `json:"agentVersion"`
 }
 
 type DeviceParamsMsg struct {
@@ -43,4 +45,16 @@ type DeviceParamsMsg struct {
 
 type nodePublicKeyMsg struct {
 	NodePublicKey string `json:"nodePublicKey"`
+}
+
+var disconnectedMsg = StatusMsg{
+	Status:           model.NodeDisconnected,
+	EdgeApplications: nil,
+	DeviceParams: DeviceParamsMsg{
+		SystemUpTime: 0,
+		SystemLoad:   0,
+		StorageFree:  100,
+		RamFree:      100,
+	},
+	AgentVersion: model.Version,
 }

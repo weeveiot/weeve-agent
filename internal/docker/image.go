@@ -12,18 +12,11 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
-	"github.com/weeveiot/weeve-agent/internal/manifest"
 
 	log "github.com/sirupsen/logrus"
 )
 
-func PullImage(imgDetails manifest.RegistryDetails) error {
-	authConfig := types.AuthConfig{
-		Username:      imgDetails.UserName,
-		Password:      imgDetails.Password,
-		ServerAddress: imgDetails.Url,
-	}
-
+func PullImage(authConfig types.AuthConfig, imageName string) error {
 	encodedJSON, err := json.Marshal(authConfig)
 	if err != nil {
 		return err
@@ -31,7 +24,7 @@ func PullImage(imgDetails manifest.RegistryDetails) error {
 
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
 
-	events, err := dockerClient.ImagePull(ctx, imgDetails.ImageName, types.ImagePullOptions{RegistryAuth: authStr})
+	events, err := dockerClient.ImagePull(ctx, imageName, types.ImagePullOptions{RegistryAuth: authStr})
 	if err != nil {
 		return err
 	}
@@ -63,11 +56,11 @@ func PullImage(imgDetails manifest.RegistryDetails) error {
 	// Latest event for up-to-date image
 	// EVENT: {Status:Status: Image is up to date for busybox:latest Error: Progress: ProgressDetail:{Current:0 Total:0}}
 	if event != nil {
-		if strings.Contains(event.Status, fmt.Sprintf("Downloaded newer image for %s", imgDetails.ImageName)) {
-			log.Info("Pulled image " + imgDetails.ImageName + " into host")
+		if strings.Contains(event.Status, fmt.Sprintf("Downloaded newer image for %s", imageName)) {
+			log.Info("Pulled image " + imageName + " into host")
 		}
-		if strings.Contains(event.Status, fmt.Sprintf("Image is up to date for %s", imgDetails.ImageName)) {
-			log.Info("Updated image " + imgDetails.ImageName + " into host")
+		if strings.Contains(event.Status, fmt.Sprintf("Image is up to date for %s", imageName)) {
+			log.Info("Updated image " + imageName + " into host")
 		}
 	}
 

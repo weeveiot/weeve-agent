@@ -13,8 +13,8 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/docker/docker/api/types"
 	log "github.com/sirupsen/logrus"
-	"github.com/weeveiot/weeve-agent/internal/manifest"
 )
 
 var existingImagesNameToId = make(map[string]string)
@@ -89,22 +89,22 @@ func getNameAndTag(fullImageName string) (string, string) {
 }
 
 // WIP!!!
-func PullImage(imgDetails manifest.RegistryDetails) error {
+func PullImage(authConfig types.AuthConfig, imageName string) error {
 	// TODO: transform to HTTPS
 
-	// token, err := getAuthToken(imgDetails.ImageName)
+	// token, err := getAuthToken(imageName)
 	// if err != nil {
 	// 	return err
 	// }
 
-	// getManifest(token, imgDetails.ImageName, "")
+	// getManifest(token, imageName, "")
 
 	// INTERIM SOLUTION
 	const downloadScriptName = "download-frozen-image-v2.sh"
 	const archiveScriptName = "archive.sh"
-	nameWithoutTag, _ := getNameAndTag(imgDetails.ImageName)
+	nameWithoutTag, _ := getNameAndTag(imageName)
 	fileName := nameWithoutTag + ".tar.gz"
-	cmd := exec.Command("./"+downloadScriptName, nameWithoutTag, imgDetails.ImageName)
+	cmd := exec.Command("./"+downloadScriptName, nameWithoutTag, imageName)
 	out, err := cmd.CombinedOutput()
 
 	fmt.Println(string(out))
