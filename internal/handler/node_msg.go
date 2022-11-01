@@ -13,9 +13,11 @@ var NodeDeleteHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 }
 
 func DeleteNode() {
+	log.Debug("Deleting node...")
+
 	err := dataservice.UndeployAll()
 	if err != nil {
-		log.Error(err)
+		log.Error("Deletion of node failed! CAUSE --> ", err)
 	}
 
 	dataservice.SetNodeStatus(model.NodeDeleted)

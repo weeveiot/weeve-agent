@@ -33,10 +33,12 @@ type Log struct {
 }
 
 func SetupDockerClient() {
+	log.Debug("Initalizing docker client...")
+
 	var err error
 	dockerClient, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Docker client creation failed with Error: %v", err)
 	}
 }
 

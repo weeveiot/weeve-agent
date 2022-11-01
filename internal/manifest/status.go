@@ -86,6 +86,8 @@ func SetLastLogRead(manifestUniqueID model.ManifestUniqueID, lastLogReadTime str
 }
 
 func InitKnownManifests() error {
+	log.Debug("Initializing known manifests...")
+
 	jsonFile, err := os.Open(ManifestFile)
 	if os.IsNotExist(err) {
 		return nil

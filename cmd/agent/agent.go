@@ -41,16 +41,16 @@ func init() {
 }
 
 func main() {
-	logToStdout, localManifest, deleteNode := parseCLIoptions()
-	setupLogging(logToStdout)
+	localManifest, deleteNode := parseCLIoptions()
 
 	err := manifest.InitKnownManifests()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Initialize of known manifests failed! CAUSE --> ", err)
 	}
+
 	nodePubKey, err := secret.InitNodeKeypair()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Initialization of node keypair failed! CAUSE --> ", err)
 	}
 
 	docker.SetupDockerClient()
@@ -64,12 +64,12 @@ func main() {
 
 	err = com.RegisterNode()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Node registration failed! CAUSE --> ", err)
 	}
 
 	err = com.ConnectNode(setSubscriptionHandlers())
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Connecting to node failed! CAUSE --> ", err)
 	}
 
 	if deleteNode {
@@ -81,7 +81,7 @@ func main() {
 
 	err = com.SendNodePublicKey(nodePubKey)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Sending node public key failed! CAUSE --> ", err)
 	}
 
 	// Kill the agent on a keyboard interrupt
@@ -97,11 +97,11 @@ func main() {
 	<-done
 	err = com.DisconnectNode()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Disconnection of node failed! CAUSE --> ", err)
 	}
 }
 
-func parseCLIoptions() (bool, string, bool) {
+func parseCLIoptions() (string, bool) {
 	var opt model.Params
 
 	parser := flags.NewParser(&opt, flags.Default)
@@ -115,14 +115,16 @@ func parseCLIoptions() (bool, string, bool) {
 		os.Exit(1)
 	}
 
-	fmt.Println("weeve agent - built on", model.Version)
+	setupLogging(opt.Stdout)
+
+	log.Info("weeve agent - built on", model.Version)
 	if opt.Version {
 		os.Exit(0)
 	}
 
 	config.Set(opt)
 
-	return opt.Stdout, opt.ManifestPath, opt.Delete
+	return opt.ManifestPath, opt.Delete
 }
 
 func setupLogging(toStdout bool) {

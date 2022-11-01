@@ -28,6 +28,8 @@ var nodePrivateKey *rsa.PrivateKey
 var decryptor cipher.AEAD
 
 func InitNodeKeypair() ([]byte, error) {
+	log.Debug("Initializing node keypair...")
+
 	pemFile, err := os.Open(nodePrivateKeyFile)
 	if err != nil {
 		if os.IsNotExist(err) {

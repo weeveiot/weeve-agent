@@ -4,11 +4,14 @@ import (
 	"io"
 	"os"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 )
 
 // Read local manifest file provided and deploy it
 func ReadDeployManifestLocal(manifestPath string) error {
+	log.Info("Reading local manifest to deploy...")
+
 	jsonFile, err := os.Open(manifestPath)
 	if err != nil {
 		return err

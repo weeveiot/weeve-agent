@@ -55,6 +55,8 @@ func sendDisconnectedStatus() error {
 }
 
 func ConnectNode(subscriptions map[string]mqtt.MessageHandler) error {
+	log.Debug("Connecting node...")
+
 	err := createMqttClient()
 	if err != nil {
 		return err
@@ -72,7 +74,7 @@ func ConnectNode(subscriptions map[string]mqtt.MessageHandler) error {
 }
 
 func DisconnectNode() error {
-	log.Info("Disconnecting.....")
+	log.Info("Disconnecting node...")
 	if client.IsConnected() {
 		err := sendDisconnectedStatus()
 		if err != nil {
