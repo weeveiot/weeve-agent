@@ -58,7 +58,7 @@ func Set(opt model.Params) {
 func readNodeConfigFromFile(configPath string) {
 	jsonFile, err := os.Open(configPath)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to open config file! CAUSE --> ", err)
 	}
 	defer jsonFile.Close()
 
@@ -66,7 +66,7 @@ func readNodeConfigFromFile(configPath string) {
 	decoder.DisallowUnknownFields()
 	err = decoder.Decode(&Params)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to parse config params! CAUSE --> ", err)
 	}
 }
 

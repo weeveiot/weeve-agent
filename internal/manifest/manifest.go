@@ -198,7 +198,7 @@ func makeContainerName(networkName string, imageName string, index int) string {
 	// create regular expression for all alphanumeric characters and _ . -
 	reg, err := regexp.Compile("[^A-Za-z0-9_.-]+")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Regular expression parsing failed! CAUSE --> ", err)
 	}
 
 	containerName = strings.ReplaceAll(containerName, " ", "")

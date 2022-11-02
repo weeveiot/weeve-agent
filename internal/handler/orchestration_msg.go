@@ -15,7 +15,7 @@ var OrchestrationHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt
 
 	err := ProcessOrchestrationMessage(msg.Payload())
 	if err != nil {
-		log.Error(err)
+		log.Error("Failed to process orchestration message failed! CAUSE --> ", err)
 	}
 }
 

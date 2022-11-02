@@ -49,7 +49,7 @@ func DeleteKnownManifest(manifestUniqueID model.ManifestUniqueID) {
 
 	err := writeKnownManifestsToFile()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to write known manifest to file! CAUSE --> ", err)
 	}
 }
 
@@ -64,7 +64,7 @@ func SetStatus(manifestUniqueID model.ManifestUniqueID, status string) error {
 
 	err := writeKnownManifestsToFile()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to write known manifest to file! CAUSE --> ", err)
 	}
 	return nil
 }
@@ -80,7 +80,7 @@ func SetLastLogRead(manifestUniqueID model.ManifestUniqueID, lastLogReadTime str
 
 	err := writeKnownManifestsToFile()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to write known manifest to file! CAUSE --> ", err)
 	}
 	return nil
 }

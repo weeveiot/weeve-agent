@@ -35,13 +35,13 @@ func SetupDockerClient() {
 	const keyFile = certDir + "/" + "key.pem"
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Unable to setup docker client! CAUSE --> ", err)
 	}
 
 	// // Save TLS keys to decrypt communication with Wireshark
 	// w, err := os.OpenFile("/home/paul/.ssl-key.log", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0600)
 	// if err != nil {
-	// 	log.Fatal(err)
+	// 	log.Fatal("Unable to open .ssl-key.log! CAUSE --> ", err)
 	// }
 
 	t := &http.Transport{

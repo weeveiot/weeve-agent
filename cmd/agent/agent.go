@@ -169,16 +169,20 @@ func setSubscriptionHandlers() map[string]mqtt.MessageHandler {
 }
 
 func monitorDataServiceStatus() {
+	log.Debug("Start monitering data service status...")
+
 	edgeApps, err := dataservice.GetDataServiceStatus()
 	if err != nil {
-		log.Error(err)
+		log.Error("GetDataServiceStatus failed! CAUSE --> ", err)
 	}
 
 	for {
+		log.Debug("Monitering data service status...")
+
 		time.Sleep(time.Second * time.Duration(5))
 		latestEdgeApps, statusChange, err := dataservice.CompareDataServiceStatus(edgeApps)
 		if err != nil {
-			log.Error(err)
+			log.Error("CompareDataServiceStatus failed! CAUSE --> ", err)
 			continue
 		}
 		log.Debug("Latest edge app status: ", latestEdgeApps)
@@ -186,7 +190,7 @@ func monitorDataServiceStatus() {
 		if statusChange {
 			err := dataservice.SendStatus()
 			if err != nil {
-				log.Error(err)
+				log.Error("SendStatus failed! CAUSE --> ", err)
 				continue
 			}
 			edgeApps = latestEdgeApps
@@ -195,10 +199,14 @@ func monitorDataServiceStatus() {
 }
 
 func sendHeartbeat() {
+	log.Debug("Start sending heartbeats...")
+
 	for {
+		log.Debug("Sending heartbeat...")
+
 		err := dataservice.SendStatus()
 		if err != nil {
-			log.Error(err)
+			log.Error("SendStatus failed! CAUSE --> ", err)
 		}
 
 		time.Sleep(time.Second * time.Duration(config.Params.Heartbeat))
@@ -206,6 +214,8 @@ func sendHeartbeat() {
 }
 
 func sendEdgeAppLogs() {
+	log.Debug("Start sending edge app logs")
+
 	for {
 		log.Debug("Check if new logs available for edge apps")
 		knownManifests := manifest.GetKnownManifests()

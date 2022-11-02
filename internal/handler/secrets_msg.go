@@ -11,6 +11,6 @@ var OrgPrivKeyHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 
 	err := secret.ProcessOrgPrivKeyMessage(msg.Payload())
 	if err != nil {
-		log.Error(err)
+		log.Error("Failed to process organization private key message! CAUSE --> ", err)
 	}
 }
