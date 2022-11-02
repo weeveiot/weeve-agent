@@ -11,6 +11,8 @@ type mqttHook struct {
 }
 
 func addMqttHookToLogs(level log.Level) {
+	log.Debug("Adding MQTT hook to logs...")
+
 	hook := mqttHook{
 		levels: log.AllLevels[:level+1],
 		topic:  config.Params.NodeId + "/" + topicLogs,

@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 
+	_erros "github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
@@ -93,13 +94,13 @@ func InitKnownManifests() error {
 		return nil
 	}
 	if err != nil {
-		return err
+		return _erros.Wrap(err, "InitKnownManifests")
 	}
 	defer jsonFile.Close()
 
 	byteValue, err := io.ReadAll(jsonFile)
 	if err != nil {
-		return err
+		return _erros.Wrap(err, "InitKnownManifests")
 	}
 
 	return json.Unmarshal(byteValue, &knownManifests)
