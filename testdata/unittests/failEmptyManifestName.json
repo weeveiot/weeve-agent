@@ -1,0 +1,27 @@
+{
+    "_id": "62bef68d664ed72f8ecdd690",
+    "manifestName": " ",
+    "versionNumber": 1,
+    "connections": {
+        "0": [
+            "1"
+        ]
+    },
+    "modules": [
+        {
+            "moduleID": "62bdb84e664ed72f8ecd88e1",
+            "moduleName": "mqtt-ingress",
+            "image": {
+                "name": "weevenetwork/mqtt-ingress",
+                "tag": "V1",
+                "registry": {}
+            },
+            "envs": [],
+            "ports": [],
+            "mounts": [],
+            "devices": [],
+            "type": "Input"
+        }
+    ],
+    "command": "DEPLOY"
+}

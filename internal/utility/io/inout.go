@@ -9,7 +9,7 @@ import (
 )
 
 func GetExeDir() string {
-	exePath, err := os.Getwd()
+	exePath, err := os.Executable()
 	if err != nil {
 		log.Fatal("Could not get the path to the executable.")
 	}

@@ -1,189 +1,264 @@
 package manifest_test
 
 import (
+	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 
-	"github.com/Jeffail/gabs/v2"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/go-connections/nat"
 	"github.com/stretchr/testify/assert"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 )
 
-var filePath string
-var errMsg string
+var manifestUniqueID struct {
+	ManifestName  string  `json:"manifestName"`
+	VersionNumber float64 `json:"versionNumber"`
+}
 
-const invalidJSON = "../../testdata/pipeline_unit/failInvalidJSON.json"
-const mvpManifest = "../../testdata/manifest/mvp-manifest.json"
-const sampleManifestBytesMVP = "../../testdata/manifest/test_manifest_3broker.json"
+func TestGetManifest(t *testing.T) {
+	assert := assert.New(t)
 
-// Unit function to validate negative tests
-func ExecuteFailTest(t *testing.T) {
-	json, err := ioutil.ReadFile(filePath)
+	json, err := os.ReadFile("../../testdata/unittests/mvpManifest.json")
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
-	jsonParsed, err := gabs.ParseJSON(json)
-	if err != nil {
-		t.Error(err.Error())
-	}
+	manifest, _ := manifest.Parse(json)
 
-	err = manifest.ValidateManifest(jsonParsed)
-	if err == nil {
-		t.Error(errMsg)
-	}
-}
+	assert.NotNil(manifest)
+	assert.Equal("kunbus-demo-manifest", manifest.ManifestUniqueID.ManifestName)
+	assert.Equal(float64(1), manifest.VersionNumber)
+	assert.Equal(3, len(manifest.Connections))
+	assert.Equal(4, len(manifest.Modules))
 
-// Unit function to validate positive tests
-func ExecutePassTest(t *testing.T) {
-	json, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		t.Error(err)
-	}
-
-	jsonParsed, err := gabs.ParseJSON(json)
-	if err != nil {
-		t.Error(err.Error())
-	}
-
-	err = manifest.ValidateManifest(jsonParsed)
-	if err != nil {
-		t.Error(err.Error())
-	}
-}
-
-func TestInvalidJson(t *testing.T) {
-	json, err := ioutil.ReadFile(invalidJSON)
-	if err != nil {
-		t.Error(err)
-	}
-
-	_, err = gabs.ParseJSON(json)
-	if err == nil {
-		t.Error(err.Error())
-	}
-}
-
-func TestMissingCompose(t *testing.T) {
-	filePath = "testdata/pipeline_unit/failMissingCompose.json"
-	errMsg = "Should throw validation error: Please provide compose"
-	ExecuteFailTest(t)
-}
-
-func TestMissingNetwork(t *testing.T) {
-	filePath = "testdata/pipeline_unit/failMissingNetwork.json"
-	errMsg = "Should throw validation error: Please provide network details"
-	ExecuteFailTest(t)
-}
-
-func TestMissingNetworkName(t *testing.T) {
-	filePath = "testdata/pipeline_unit/failMissingNetworkName.json"
-	errMsg = "Should throw validation error: Please provide network name"
-	ExecuteFailTest(t)
-}
-
-func TestEmptyServices(t *testing.T) {
-	filePath = "testdata/pipeline_unit/failEmptyServices.json"
-	errMsg = "Should throw validation error: Please provide at least one service"
-	ExecuteFailTest(t)
-}
-
-func TestEmptyServiceModuleId(t *testing.T) {
-	filePath = "testdata/pipeline_unit/failMissingModuleId.json"
-	errMsg = "Should throw validation error: Please provide module id for service"
-	ExecuteFailTest(t)
-}
-
-func TestEmptyServiceName(t *testing.T) {
-	filePath = "testdata/pipeline_unit/failMissingServiceName.json"
-	errMsg = "Should throw validation error: Please provide name for service"
-	ExecuteFailTest(t)
-}
-
-func TestMissingImage(t *testing.T) {
-	filePath = "testdata/pipeline_unit/failMissingImage.json"
-	errMsg = "Should throw validation error: Please provide image details"
-	ExecuteFailTest(t)
-}
-
-func TestMissingImageName(t *testing.T) {
-	filePath = "testdata/pipeline_unit/failMissingImageName.json"
-	errMsg = "Should throw validation error: Please provide image name"
-	ExecuteFailTest(t)
-}
-
-func TestWorkingManifest(t *testing.T) {
-	filePath = "testdata/pipeline_unit/workingMVP.json"
-	errMsg = "Should not throw any error"
-	ExecutePassTest(t)
-}
-
-func TestLoad(t *testing.T) {
-	fmt.Println("Load the sample manifest")
-	json, err := ioutil.ReadFile(mvpManifest)
-	if err != nil {
-		t.Error(err)
-	}
-
-	jsonParsed, err := gabs.ParseJSON(json)
-	if err != nil {
-		t.Error(err.Error())
-	}
-	manifest, _ := manifest.GetManifest(jsonParsed)
-
-	ContainerConfigs := manifest.Modules
-
-	fmt.Println("Container details:")
-	for i, ContainerConf := range ContainerConfigs {
-		fmt.Println(i, ContainerConf)
-	}
-
-	fmt.Print(ContainerConfigs[0].MountConfigs)
-}
-
-// The simple -p "1883:1883" in a docker run command
-// Expands to multiple complex objects, basic assertions are done in this unittest
-func TestStartOptionsComplex(t *testing.T) {
-	json, err := ioutil.ReadFile(sampleManifestBytesMVP)
-	if err != nil {
-		t.Error(err)
-	}
-	jsonParsed, err := gabs.ParseJSON(json)
-	if err != nil {
-		t.Error(err.Error())
-	}
-	manifest, err := manifest.GetManifest(jsonParsed)
-	if err != nil {
-		panic(err)
-	}
-	startCommands := manifest.Modules
-	flgMosquitto := false
-	for _, command := range startCommands {
-		// fmt.Println("Start", i, command)
-		// PrintStartCommand(command)
-		// fmt.Println("Options:", command.Options)
-		if command.ImageName == "eclipse-mosquitto" {
-			flgMosquitto = true
-			assert.Equal(t, nat.PortSet{
-				nat.Port("1883/tcp"): struct{}{},
-			}, command.ExposedPorts, "Exposed Ports do not match")
-			assert.Equal(t,
-				nat.PortMap{
-					nat.Port("1883/tcp"): []nat.PortBinding{
-						{
-							HostIP:   "0.0.0.0",
-							HostPort: "1883",
-						},
-					},
-				},
-				command.PortBinding,
-				"Port binding does not match")
+	if len(manifest.Modules) == 4 {
+		assert.Equal(3, len(manifest.Modules[0].Labels))
+		assert.Equal("weevenetwork/mqtt-ingress:V1", manifest.Modules[0].ImageName)
+		assert.Equal(11, len(manifest.Modules[0].EnvArgs))
+		if (len(manifest.Modules[0].EnvArgs)) == 10 {
+			assert.Equal("MQTT_BROKER=mqtt://mapi-dev.weeve.engineering", manifest.Modules[0].EnvArgs[0])
+			assert.Equal("PORT=1883", manifest.Modules[0].EnvArgs[1])
+			assert.Equal("PROTOCOL=mqtt", manifest.Modules[0].EnvArgs[2])
+			assert.Equal("TOPIC=revpi_I14", manifest.Modules[0].EnvArgs[3])
+			assert.Equal("QOS=0", manifest.Modules[0].EnvArgs[4])
+			assert.Equal("SERVICE_ID=62bef68d664ed72f8ecdd690", manifest.Modules[0].EnvArgs[5])
+			assert.Equal("MODULE_NAME=weevenetwork/mqtt-ingress", manifest.Modules[0].EnvArgs[6])
+			assert.Equal("INGRESS_PORT=80", manifest.Modules[0].EnvArgs[7])
+			assert.Equal("INGRESS_PATH=/", manifest.Modules[0].EnvArgs[8])
+			assert.Equal("MODULE_TYPE=Input", manifest.Modules[0].EnvArgs[9])
 		}
-		// if command.ImageName == "weevenetwork/go-mqtt-gobot" {
-		// 	assert.Equal(t, container.NetworkMode("host"), command.NetworkMode)
-		// }
+
+		assert.Equal(struct{}{}, manifest.Modules[0].ExposedPorts[nat.Port("1883")])
+		assert.Equal([]nat.PortBinding{{HostPort: "1883"}}, manifest.Modules[0].PortBinding[nat.Port("1883")])
+
+		assert.Equal(1, len(manifest.Modules[0].MountConfigs))
+		if (len(manifest.Modules[0].MountConfigs)) == 1 {
+			assert.Equal(mount.Mount{Type: "bind",
+				Source:      "/data/host",
+				Target:      "/data",
+				ReadOnly:    false,
+				Consistency: "default",
+				BindOptions: &mount.BindOptions{Propagation: "rprivate", NonRecursive: true}},
+				manifest.Modules[0].MountConfigs[0])
+		}
+
+		assert.Equal(1, len(manifest.Modules[0].Resources.Devices))
+		if (len(manifest.Modules[0].MountConfigs)) == 1 {
+			assert.Equal(container.DeviceMapping{
+				PathOnHost:        "/dev/ttyUSB0/host",
+				PathInContainer:   "/dev/ttyUSB0",
+				CgroupPermissions: "rw",
+			},
+				manifest.Modules[0].Resources.Devices[0])
+		}
+
+		manifest.UpdateManifest("kunbus-demo-manifest_1d")
+		assert.Equal(13, len(manifest.Modules[0].EnvArgs))
+		if (len(manifest.Modules[0].EnvArgs)) == 12 {
+			assert.Equal("INGRESS_HOST=kunbus-demo-manifest_1d.weevenetwork_mqtt-ingress_V1.0", manifest.Modules[0].EnvArgs[10])
+			assert.Equal("EGRESS_URLS=http://kunbus-demo-manifest_1d.weevenetwork_fluctuation-filter_V1.1:80/", manifest.Modules[0].EnvArgs[11])
+		}
 	}
-	assert.True(t, flgMosquitto, "The manifest MUST include the mosquitto image definition with ports!")
+}
+
+func TestGetEdgeAppUniqueID(t *testing.T) {
+	assert := assert.New(t)
+
+	manifestUniqueID.ManifestName = "kunbus-demo-manifest"
+	manifestUniqueID.VersionNumber = 1
+
+	json, err := json.Marshal(manifestUniqueID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	man, err := manifest.GetEdgeAppUniqueID(json)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(manifestUniqueID.ManifestName, man.ManifestName)
+	assert.Equal(fmt.Sprintf("%g", manifestUniqueID.VersionNumber), man.VersionNumber)
+}
+
+func TestGetCommand_MissingCommand(t *testing.T) {
+	assert := assert.New(t)
+	errMsg := "Key: 'commandMsg.Command' Error:Field validation for 'Command' failed on the 'required' tag"
+
+	json, err := json.Marshal(manifestUniqueID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cmd, err := manifest.GetCommand(json)
+	assert.NotNil(err)
+	if err != nil {
+		assert.Equal(errMsg, err.Error())
+		assert.Equal("", cmd)
+	}
+}
+
+func TestGetCommand(t *testing.T) {
+	assert := assert.New(t)
+	var commandJson struct {
+		Command string `json:"command"`
+	}
+	commandJson.Command = "DEPLOY"
+
+	json, err := json.Marshal(commandJson)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cmd, err := manifest.GetCommand(json)
+	assert.Nil(err)
+	if err == nil {
+		assert.Equal(commandJson.Command, cmd)
+	}
+}
+
+// Utility function to run ValidateManifest fail tests
+func utilFailTestValidateManifest(t *testing.T, filePath string, errMsg string) {
+	assert := assert.New(t)
+
+	json, err := os.ReadFile(filePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = manifest.Parse(json)
+	assert.NotNil(err)
+	if err != nil {
+		assert.Contains(err.Error(), errMsg)
+	}
+}
+
+func TestValidateManifest_MissingManifestID(t *testing.T) {
+	errMsg := "Key: 'manifestMsg.ID' Error:Field validation for 'ID' failed on the 'required' tag"
+	filePath := "../../testdata/unittests/failMissingManifestID.json"
+	utilFailTestValidateManifest(t, filePath, errMsg)
+}
+
+func TestValidateManifest_EmptyManifestID(t *testing.T) {
+	errMsg := "Key: 'manifestMsg.ID' Error:Field validation for 'ID' failed on the 'notblank' tag"
+	filePath := "../../testdata/unittests/failEmptyManifestID.json"
+	utilFailTestValidateManifest(t, filePath, errMsg)
+}
+
+func TestValidateManifest_MissingManifestName(t *testing.T) {
+	errMsg := "Key: 'manifestMsg.ManifestName' Error:Field validation for 'ManifestName' failed on the 'required' tag"
+	filePath := "../../testdata/unittests/failMissingManifestName.json"
+	utilFailTestValidateManifest(t, filePath, errMsg)
+}
+
+func TestValidateManifest_EmptyManifestName(t *testing.T) {
+	errMsg := "Key: 'manifestMsg.ManifestName' Error:Field validation for 'ManifestName' failed on the 'notblank' tag"
+	filePath := "../../testdata/unittests/failEmptyManifestName.json"
+	utilFailTestValidateManifest(t, filePath, errMsg)
+}
+
+func TestValidateManifest_MissingManifestVersionNumber(t *testing.T) {
+	errMsg := "Key: 'manifestMsg.VersionNumber' Error:Field validation for 'VersionNumber' failed on the 'required' tag"
+	filePath := "../../testdata/unittests/failMissingManifestVersionNumber.json"
+	utilFailTestValidateManifest(t, filePath, errMsg)
+}
+
+func TestValidateManifest_MissingManifestCommand(t *testing.T) {
+	errMsg := "Key: 'manifestMsg.Command' Error:Field validation for 'Command' failed on the 'required' tag"
+	filePath := "../../testdata/unittests/failMissingManifestCommand.json"
+	utilFailTestValidateManifest(t, filePath, errMsg)
+}
+
+func TestValidateManifest_EmptyManifestCommand(t *testing.T) {
+	errMsg := "Key: 'manifestMsg.Command' Error:Field validation for 'Command' failed on the 'notblank' tag"
+	filePath := "../../testdata/unittests/failEmptyManifestCommand.json"
+	utilFailTestValidateManifest(t, filePath, errMsg)
+}
+
+func TestValidateManifest_MissingManifestModules(t *testing.T) {
+	errMsg := "Key: 'manifestMsg.Modules' Error:Field validation for 'Modules' failed on the 'required' tag"
+	filePath := "../../testdata/unittests/failMissingManifestModules.json"
+	utilFailTestValidateManifest(t, filePath, errMsg)
+}
+
+func TestValidateManifest_EmptyManifestModules(t *testing.T) {
+	errMsg := "Key: 'manifestMsg.Modules' Error:Field validation for 'Modules' failed on the 'notblank' tag"
+	filePath := "../../testdata/unittests/failEmptyManifestModules.json"
+	utilFailTestValidateManifest(t, filePath, errMsg)
+}
+
+func TestValidateManifest_MissingManifestImageName(t *testing.T) {
+	errMsg := "Key: 'moduleMsg.Image.Name' Error:Field validation for 'Name' failed on the 'required' tag"
+	filePath := "../../testdata/unittests/failMissingManifestImageName.json"
+	utilFailTestValidateManifest(t, filePath, errMsg)
+}
+
+func TestValidateManifest_EmptyManifestImageName(t *testing.T) {
+	errMsg := "Key: 'moduleMsg.Image.Name' Error:Field validation for 'Name' failed on the 'notblank' tag"
+	filePath := "../../testdata/unittests/failEmptyManifestImageName.json"
+	utilFailTestValidateManifest(t, filePath, errMsg)
+}
+
+func TestValidateManifest(t *testing.T) {
+	json, err := os.ReadFile("../../testdata/unittests/mvpManifest.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = manifest.Parse(json)
+	assert.Nil(t, err)
+}
+
+func TestValidateUniqueIDExist_EmptyManifestName(t *testing.T) {
+	assert := assert.New(t)
+	manifestUniqueID.ManifestName = " "
+	manifestUniqueID.VersionNumber = 1
+	errMsg := "Key: 'uniqueIDmsg.ManifestName' Error:Field validation for 'ManifestName' failed on the 'notblank' tag"
+
+	json, err := json.Marshal(manifestUniqueID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = manifest.GetEdgeAppUniqueID(json)
+	assert.NotNil(err)
+	if err != nil {
+		assert.Equal(errMsg, err.Error())
+	}
+}
+
+func TestValidateUniqueIDExist(t *testing.T) {
+	manifestUniqueID.ManifestName = "kunbus-demo-manifest"
+	manifestUniqueID.VersionNumber = 1
+
+	json, err := json.Marshal(manifestUniqueID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = manifest.GetEdgeAppUniqueID(json)
+	assert.Nil(t, err)
 }

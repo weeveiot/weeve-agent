@@ -1,10 +1,13 @@
-# weeve agent - v1.0.1
+# weeve agent - v1.1.0
 
 ## What's changed
 
-* Nothing much
-* Same old stuff
+* Add channels for agent's and module's logs
+* Add secrets management
+* Add device stats
+* Add simple versioning
+* Improve configuration options
 
 ## How to install
 
-> Instruction for installing this version
+Follow the instructions [here](https://docs.weeve.engineering/guides/installing-the-weeve-agent).

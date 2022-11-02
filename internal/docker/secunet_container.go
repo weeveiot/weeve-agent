@@ -7,13 +7,14 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
 	"github.com/docker/docker/api/types"
 	log "github.com/sirupsen/logrus"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
+	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
 const registryUrl = "https://registry-1.docker.io"
@@ -67,7 +68,7 @@ func StartContainer(containerID string) error {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
@@ -118,7 +119,7 @@ func CreateAndStartContainer(containerConfig manifest.ContainerConfig) (string, 
 	defer resp.Body.Close()
 
 	var resp_json map[string]string
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
@@ -151,7 +152,7 @@ func StopContainer(containerID string) error {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
@@ -178,7 +179,7 @@ func StopAndRemoveContainer(containerID string) error {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
@@ -201,7 +202,7 @@ func ReadAllContainers() ([]types.Container, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +230,7 @@ func ReadAllContainers() ([]types.Container, error) {
 	return containerStructs, nil
 }
 
-func ReadDataServiceContainers(manifestUniqueID manifest.ManifestUniqueID) ([]types.Container, error) {
+func ReadDataServiceContainers(manifestUniqueID model.ManifestUniqueID) ([]types.Container, error) {
 	var dataServiceContainers []types.Container
 
 	allContainers, err := ReadAllContainers()

@@ -2,7 +2,7 @@
 
 log() {
   # logger
-  echo '[' "$(date +"%Y-%m-%d %T")" ']:' INFO "$@" | tee -a "$LOG_FILE"
+  echo '[' "$(date +"%Y-%m-%d %T")" ']:' INFO "$@" | sudo tee -a "$LOG_FILE"
 }
 
 get_config(){
@@ -12,18 +12,19 @@ get_config(){
 }
 
 validate_config(){
-  CONFIG_FILE="`eval echo $CONFIG_FILE`"
+  CONFIG_FILE="$(eval echo "$CONFIG_FILE")"
   if [ -f "$CONFIG_FILE" ]; then
     log The node configuration JSON file exists
     CONFIG_FILE="$(cd "$(dirname "$CONFIG_FILE")" || exit; pwd)/$(basename "$CONFIG_FILE")"
   else
     log The required file containing the node configurations not found in the path: "$CONFIG_FILE"
+    log "exiting ..."
     exit 1
   fi
 }
 
 get_release(){
-  while [ "$RELEASE" != "prod" -a "$RELEASE" != "dev" ]; do
+  while [ "$RELEASE" != "prod" ] && [ "$RELEASE" != "dev" ]; do
     read -r -p "Enter the release type (prod or dev) or specify the test flag: " RELEASE
   done
 }
@@ -33,7 +34,7 @@ get_test(){
     BUILD_LOCAL="false"
   fi
 
-  while [ "$BUILD_LOCAL" != "true" -a "$BUILD_LOCAL" != "false" ]; do
+  while [ "$BUILD_LOCAL" != "true" ] && [ "$BUILD_LOCAL" != "false" ]; do
     read -r -p "Should weeve agent be built from local sources [true, false]?: " BUILD_LOCAL
   done
 }
@@ -76,12 +77,13 @@ check_for_agent(){
 validating_docker(){
   log Validating if docker is installed and running ...
   if [ "$OS" = "Linux" ]; then
-    if RESULT=$(systemctl is-active docker 2>&1); then
+    if RESULT=$(ls /var/run/docker.sock 2>&1); then
       log Docker is running.
     else
       log Docker is not running, is docker installed?
       log Error while validating docker: "$RESULT"
       log To install docker, visit https://docs.docker.com/engine/install/
+    log "exiting ..."
       exit 1
     fi
   fi
@@ -97,9 +99,9 @@ get_bucket_name(){
 
 set_weeve_url(){
     if [ "$RELEASE" = "prod" ]; then
-      WEEVE_URL="mapi-"$RELEASE".weeve.network"
+      WEEVE_URL="mapi-$RELEASE.weeve.network"
     elif [ "$RELEASE" = "dev" ]; then
-      WEEVE_URL="mapi-"$RELEASE".weeve.engineering"
+      WEEVE_URL="mapi-$RELEASE.weeve.engineering"
     fi
 }
 
@@ -111,6 +113,7 @@ build_test_binary(){
     BINARY_NAME="test-agent"
   else
     log Error occured while building binary for testing: "$RESULT"
+    log "exiting ..."
     exit 1
   fi
 }
@@ -132,6 +135,7 @@ download_binary(){
     "arm64" | "aarch64" | "aarch64_be" | "armv8b" | "armv8l") BINARY_ARCH="arm64"
     ;;
     *) log Unsupported architecture: "$ARCH"
+    log "exiting ..."
     exit 1
     ;;
   esac
@@ -142,6 +146,7 @@ download_binary(){
     "Darwin") BINARY_OS="macos"
     ;;
     *) log Unsupported OS: "$OS"
+    log "exiting ..."
     exit 1
     ;;
   esac
@@ -158,6 +163,7 @@ download_binary(){
   else
     log Error while downloading the executable: "$RESULT"
     CLEANUP="true"
+    log "exiting ..."
     exit 1
   fi
 }
@@ -171,6 +177,7 @@ download_dependencies(){
   else
     log Error while downloading the dependencies: "$RESULT"
     CLEANUP="true"
+    log "exiting ..."
     exit 1
   fi
 }
@@ -194,14 +201,14 @@ write_to_service(){
   log Adding the binary path to service file ...
   {
     printf "WorkingDirectory=%s\n" "$WEEVE_AGENT_DIR"
-    printf "ExecStart=%s\n" "$EXECUTE_BINARY"
+    printf "ExecStart=%s" "$EXECUTE_BINARY"
   } >> "$WEEVE_AGENT_DIR"/weeve-agent.service
 }
 
 execute_binary(){
   log Starting the agent binary ...
-  cd $WEEVE_AGENT_DIR
-  eval $EXECUTE_BINARY
+  cd "$WEEVE_AGENT_DIR"
+  eval "$EXECUTE_BINARY"
 }
 
 start_service(){
@@ -214,10 +221,8 @@ start_service(){
     log Weeve-agent is initiated ...
   else
     log Error while starting the weeve-agent service: "$RESULT"
-    log For good measure please check:
-    log   1. if the file contains the access token
-    log   2. if the access token in github is not expired
     CLEANUP="true"
+    log "exiting ..."
     exit 1
   fi
 

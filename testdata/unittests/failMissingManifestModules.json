@@ -1,0 +1,15 @@
+{
+    "_id": "62bef68d664ed72f8ecdd690",
+	"displayName": "Kunbus Demo App",
+	"manifestName": "kunbus-demo-manifest",
+	"description": "Sample manifest for Kunbus Demo App",
+	"versionNumber": 1,
+	"isPublished": true,
+	"isPublic": false,
+	"connections": {
+		"0": [
+			"1"
+		]
+	},
+    "command": "DEPLOY"
+}
