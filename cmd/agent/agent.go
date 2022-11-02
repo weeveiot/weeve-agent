@@ -41,7 +41,8 @@ func init() {
 }
 
 func main() {
-	localManifest, deleteNode := parseCLIoptions()
+	logToStdout, localManifest, deleteNode := parseCLIoptions()
+	setupLogging(logToStdout)
 
 	err := manifest.InitKnownManifests()
 	if err != nil {
@@ -101,7 +102,7 @@ func main() {
 	}
 }
 
-func parseCLIoptions() (string, bool) {
+func parseCLIoptions() (bool, string, bool) {
 	var opt model.Params
 
 	parser := flags.NewParser(&opt, flags.Default)
@@ -115,16 +116,14 @@ func parseCLIoptions() (string, bool) {
 		os.Exit(1)
 	}
 
-	setupLogging(opt.Stdout)
-
-	log.Info("weeve agent - built on", model.Version)
+	fmt.Println("weeve agent - built on", model.Version)
 	if opt.Version {
 		os.Exit(0)
 	}
 
 	config.Set(opt)
 
-	return opt.ManifestPath, opt.Delete
+	return opt.Stdout, opt.ManifestPath, opt.Delete
 }
 
 func setupLogging(toStdout bool) {
