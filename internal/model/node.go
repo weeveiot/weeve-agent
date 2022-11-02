@@ -2,7 +2,7 @@ package model
 
 import "strings"
 
-var Version string = "YYY.MM.DD (commit hash)"
+var Version string = "YYYY.MM.DD (commit hash)"
 
 type Params struct {
 	Version      bool   `long:"version" short:"v" description:"Print version information and exit"`

@@ -31,14 +31,14 @@ curl -sO http://weeve-agent-dev.s3.amazonaws.com/weeve-agent-installer.sh && sh 
 ```
 
 The installer script can take the following optional parameters:
-| Parameter  | Required | Description                                     | Possible Values             | Default |
-| ---------- | -------- | ----------------------------------------------- | --------------------------- | ------- |
-| configpath | true     | path of the JSON file with node configuration   |                             |         |
-| release    | true     | path of the JSON file with node configuration   | prod, dev                   |         |
-| test       | false    | set to 'true' to build agent from local and run | false, true                 | false   |
-| broker     | false    | URL of the MQTT broker to connect               |                             |         |
-| loglevel   | false    | level of log verbosity                          | debug, info, warning, error | info    |
-| heartbeat  | false    | time period of heartbeat messages (sec)         |                             |         |
+| Parameter  | Required | Description                                             | Possible Values             | Default |
+| ---------- | -------- | ------------------------------------------------------- | --------------------------- | ------- |
+| configpath | true     | path of the JSON file with node configuration           |                             |         |
+| release    | true     | the name of platform the node should be registered with | prod, dev                   |         |
+| test       | false    | set to 'true' to build agent from local and run         | false, true                 | false   |
+| broker     | false    | URL of the MQTT broker to connect                       |                             |         |
+| loglevel   | false    | level of log verbosity                                  | debug, info, warning, error | info    |
+| heartbeat  | false    | time period of heartbeat messages (sec)                 |                             | 10      |
 
 ### Uninstallation
 
