@@ -46,7 +46,7 @@ func main() {
 
 	err := manifest.InitKnownManifests()
 	if err != nil {
-		log.Fatal("Initialize of known manifests failed! CAUSE --> ", err)
+		log.Fatal("Initialization of known manifests failed! CAUSE --> ", err)
 	}
 
 	nodePubKey, err := secret.InitNodeKeypair()
@@ -70,7 +70,7 @@ func main() {
 
 	err = com.ConnectNode(setSubscriptionHandlers())
 	if err != nil {
-		log.Fatal("Connecting to node failed! CAUSE --> ", err)
+		log.Fatal("Failed to connect node! CAUSE --> ", err)
 	}
 
 	if deleteNode {
