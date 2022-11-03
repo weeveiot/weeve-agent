@@ -1,8 +1,9 @@
 package handler
 
 import (
+	"errors"
+
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
@@ -22,7 +23,7 @@ var OrchestrationHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt
 func ProcessOrchestrationMessage(payload []byte) error {
 	operation, err := manifest.GetCommand(payload)
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 	log.Infoln("Processing the", operation, "message")
 
@@ -30,55 +31,55 @@ func ProcessOrchestrationMessage(payload []byte) error {
 	case dataservice.CMDDeploy:
 		manifest, err := manifest.Parse(payload)
 		if err != nil {
-			return errors.Wrap(err, traceutility.FuncTrace())
+			return traceutility.Wrap(err)
 		}
 		err = dataservice.DeployDataService(manifest)
 		if err != nil {
-			return errors.Wrap(err, traceutility.FuncTrace())
+			return traceutility.Wrap(err)
 		}
 		log.Info("Deployment done!")
 
 	case dataservice.CMDStopService:
 		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(payload)
 		if err != nil {
-			return errors.Wrap(err, traceutility.FuncTrace())
+			return traceutility.Wrap(err)
 		}
 		err = dataservice.StopDataService(manifestUniqueID)
 		if err != nil {
-			return errors.Wrap(err, traceutility.FuncTrace())
+			return traceutility.Wrap(err)
 		}
 		log.Info("Service stopped!")
 
 	case dataservice.CMDResumeService:
 		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(payload)
 		if err != nil {
-			return errors.Wrap(err, traceutility.FuncTrace())
+			return traceutility.Wrap(err)
 		}
 		err = dataservice.ResumeDataService(manifestUniqueID)
 		if err != nil {
-			return errors.Wrap(err, traceutility.FuncTrace())
+			return traceutility.Wrap(err)
 		}
 		log.Info("Service resumed!")
 
 	case dataservice.CMDUndeploy:
 		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(payload)
 		if err != nil {
-			return errors.Wrap(err, traceutility.FuncTrace())
+			return traceutility.Wrap(err)
 		}
 		err = dataservice.UndeployDataService(manifestUniqueID)
 		if err != nil {
-			return errors.Wrap(err, traceutility.FuncTrace())
+			return traceutility.Wrap(err)
 		}
 		log.Info("Undeployment done!")
 
 	case dataservice.CMDRemove:
 		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(payload)
 		if err != nil {
-			return errors.Wrap(err, traceutility.FuncTrace())
+			return traceutility.Wrap(err)
 		}
 		err = dataservice.RemoveDataService(manifestUniqueID)
 		if err != nil {
-			return errors.Wrap(err, traceutility.FuncTrace())
+			return traceutility.Wrap(err)
 		}
 		log.Info("Full removal done!")
 

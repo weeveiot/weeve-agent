@@ -13,7 +13,6 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/weeveiot/weeve-agent/internal/manifest"
@@ -82,7 +81,7 @@ func createContainer(containerConfig manifest.ContainerConfig) (string, error) {
 		nil,
 		containerConfig.ContainerName)
 	if err != nil {
-		return containerCreateResponse.ID, errors.Wrap(err, traceutility.FuncTrace())
+		return containerCreateResponse.ID, traceutility.Wrap(err)
 	}
 	log.Debug("Created container " + containerConfig.ContainerName)
 
@@ -92,7 +91,7 @@ func createContainer(containerConfig manifest.ContainerConfig) (string, error) {
 func StartContainer(containerID string) error {
 	err := dockerClient.ContainerStart(ctx, containerID, types.ContainerStartOptions{})
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 	log.Debug("Started container ID ", containerID)
 
@@ -102,12 +101,12 @@ func StartContainer(containerID string) error {
 func CreateAndStartContainer(containerConfig manifest.ContainerConfig) (string, error) {
 	id, err := createContainer(containerConfig)
 	if err != nil {
-		return id, errors.Wrap(err, traceutility.FuncTrace())
+		return id, traceutility.Wrap(err)
 	}
 
 	err = StartContainer(id)
 	if err != nil {
-		return id, errors.Wrap(err, traceutility.FuncTrace())
+		return id, traceutility.Wrap(err)
 	}
 
 	return id, nil
@@ -129,7 +128,7 @@ func StopAndRemoveContainer(containerID string) error {
 
 	if err := dockerClient.ContainerRemove(ctx, containerID, removeOptions); err != nil {
 		log.Errorf("Unable to remove container: %s", err)
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 
 	return nil
@@ -140,7 +139,7 @@ func ReadAllContainers() ([]types.Container, error) {
 	options := types.ContainerListOptions{All: true}
 	containers, err := dockerClient.ContainerList(context.Background(), options)
 	if err != nil {
-		return nil, errors.Wrap(err, traceutility.FuncTrace())
+		return nil, traceutility.Wrap(err)
 	}
 	log.Debug("Docker_container -> ReadAllContainers response", containers)
 
@@ -154,7 +153,7 @@ func ReadDataServiceContainers(manifestUniqueID model.ManifestUniqueID) ([]types
 	options := types.ContainerListOptions{All: true, Filters: filter}
 	containers, err := dockerClient.ContainerList(context.Background(), options)
 	if err != nil {
-		return nil, errors.Wrap(err, traceutility.FuncTrace())
+		return nil, traceutility.Wrap(err)
 	}
 
 	return containers, nil
@@ -176,7 +175,7 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 
 	reader, err := dockerClient.ContainerLogs(context.Background(), containerID, options)
 	if err != nil {
-		return dockerLogs, errors.Wrap(err, traceutility.FuncTrace())
+		return dockerLogs, traceutility.Wrap(err)
 	}
 	defer reader.Close()
 
@@ -188,7 +187,7 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 			if err == io.EOF {
 				return dockerLogs, nil
 			}
-			return dockerLogs, errors.Wrap(err, traceutility.FuncTrace())
+			return dockerLogs, traceutility.Wrap(err)
 		}
 
 		count := binary.BigEndian.Uint32(header[4:])
@@ -198,7 +197,7 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 			if err == io.EOF {
 				return dockerLogs, nil
 			}
-			return dockerLogs, errors.Wrap(err, traceutility.FuncTrace())
+			return dockerLogs, traceutility.Wrap(err)
 		}
 
 		time, log, found := strings.Cut(string(data), " ")
@@ -220,7 +219,7 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 func InspectContainer(containerID string) (types.ContainerJSON, error) {
 	containerJSON, err := dockerClient.ContainerInspect(context.Background(), containerID)
 	if err != nil {
-		return types.ContainerJSON{}, errors.Wrap(err, traceutility.FuncTrace())
+		return types.ContainerJSON{}, traceutility.Wrap(err)
 	}
 
 	return containerJSON, nil

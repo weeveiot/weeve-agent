@@ -8,12 +8,13 @@ import (
 	"strings"
 	"testing"
 
+	"errors"
+
 	"github.com/Jeffail/gabs/v2"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 

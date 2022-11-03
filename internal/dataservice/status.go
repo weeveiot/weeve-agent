@@ -3,7 +3,6 @@ package dataservice
 import (
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/host"
@@ -26,11 +25,11 @@ func SetNodeStatus(status string) {
 func SendStatus() error {
 	msg, err := GetStatusMessage()
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 	err = com.SendHeartbeat(msg)
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 	return nil
 }
@@ -38,12 +37,12 @@ func SendStatus() error {
 func GetStatusMessage() (com.StatusMsg, error) {
 	edgeApps, err := GetDataServiceStatus()
 	if err != nil {
-		return com.StatusMsg{}, errors.Wrap(err, traceutility.FuncTrace())
+		return com.StatusMsg{}, traceutility.Wrap(err)
 	}
 
 	deviceParams, err := getDeviceParams()
 	if err != nil {
-		return com.StatusMsg{}, errors.Wrap(err, traceutility.FuncTrace())
+		return com.StatusMsg{}, traceutility.Wrap(err)
 	}
 
 	msg := com.StatusMsg{
@@ -69,7 +68,7 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 
 		appContainers, err := docker.ReadDataServiceContainers(manif.Manifest.ManifestUniqueID)
 		if err != nil {
-			return edgeApps, errors.Wrap(err, traceutility.FuncTrace())
+			return edgeApps, traceutility.Wrap(err)
 		}
 
 		if (manif.Status == model.EdgeAppRunning || manif.Status == model.EdgeAppStopped) && len(appContainers) != len(manif.Manifest.Modules) {
@@ -80,7 +79,7 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 		for _, con := range appContainers {
 			containerJSON, err := docker.InspectContainer(con.ID)
 			if err != nil {
-				return edgeApps, errors.Wrap(err, traceutility.FuncTrace())
+				return edgeApps, traceutility.Wrap(err)
 			}
 			// The Status of each container is (assumed to be): Running, Restarting, Created, Exited
 			container := com.ContainerMsg{Name: strings.Join(con.Names, ", "), Status: ioutility.FirstToUpper(con.State)}
@@ -108,7 +107,7 @@ func CompareDataServiceStatus(edgeApps []com.EdgeAppMsg) ([]com.EdgeAppMsg, bool
 
 	latestEdgeApps, err := GetDataServiceStatus()
 	if err != nil {
-		return nil, false, errors.Wrap(err, traceutility.FuncTrace())
+		return nil, false, traceutility.Wrap(err)
 	}
 	if len(edgeApps) == len(latestEdgeApps) {
 		for index, edgeApp := range edgeApps {
@@ -125,22 +124,22 @@ func CompareDataServiceStatus(edgeApps []com.EdgeAppMsg) ([]com.EdgeAppMsg, bool
 func getDeviceParams() (com.DeviceParamsMsg, error) {
 	uptime, err := host.Uptime()
 	if err != nil {
-		return com.DeviceParamsMsg{}, errors.Wrap(err, traceutility.FuncTrace())
+		return com.DeviceParamsMsg{}, traceutility.Wrap(err)
 	}
 
 	cpu, err := cpu.Percent(0, false)
 	if err != nil {
-		return com.DeviceParamsMsg{}, errors.Wrap(err, traceutility.FuncTrace())
+		return com.DeviceParamsMsg{}, traceutility.Wrap(err)
 	}
 
 	diskStat, err := disk.Usage("/")
 	if err != nil {
-		return com.DeviceParamsMsg{}, errors.Wrap(err, traceutility.FuncTrace())
+		return com.DeviceParamsMsg{}, traceutility.Wrap(err)
 	}
 
 	verMem, err := mem.VirtualMemory()
 	if err != nil {
-		return com.DeviceParamsMsg{}, errors.Wrap(err, traceutility.FuncTrace())
+		return com.DeviceParamsMsg{}, traceutility.Wrap(err)
 	}
 
 	params := com.DeviceParamsMsg{

@@ -25,18 +25,18 @@ func getAuthToken(imageName string) (string, error) {
 	commandUrl := fmt.Sprintf("%s/token?service=%s&scope=repository:library/%s:pull", authUrl, svcUrl, imageName)
 	resp, err := http.Get(commandUrl)
 	if err != nil {
-		return "", errors.Wrap(err, traceutility.FuncTrace())
+		return "", traceutility.Wrap(err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", errors.Wrap(err, traceutility.FuncTrace())
+		return "", traceutility.Wrap(err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		err = fmt.Errorf("PullImage: Could not get the authentication token. HTTP request failed. Code: %d Message: %s", resp.StatusCode, body)
-		return "", errors.Wrap(err, traceutility.FuncTrace())
+		return "", traceutility.Wrap(err)
 	}
 
 	var resp_json map[string]string
@@ -53,7 +53,7 @@ func getManifest(token, imageName, digest string) ([]byte, error) {
 	commandUrl := fmt.Sprintf("%s/v2/library/%s/manifests/%s", registryUrl, imageName, digest)
 	req, err := http.NewRequest(http.MethodGet, commandUrl, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, traceutility.FuncTrace())
+		return nil, traceutility.Wrap(err)
 	}
 	req.Header.Add("Authorization", "Bearer "+token)
 	req.Header.Add("Accept", "application/vnd.docker.distribution.manifest.list.v2+json")
@@ -62,18 +62,18 @@ func getManifest(token, imageName, digest string) ([]byte, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, errors.Wrap(err, traceutility.FuncTrace())
+		return nil, traceutility.Wrap(err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, errors.Wrap(err, traceutility.FuncTrace())
+		return nil, traceutility.Wrap(err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		err = fmt.Errorf("getManifest: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body)
-		return nil, errors.Wrap(err, traceutility.FuncTrace())
+		return nil, traceutility.Wrap(err)
 	}
 
 	return body, nil
@@ -96,7 +96,7 @@ func PullImage(authConfig types.AuthConfig, imageName string) error {
 
 	// token, err := getAuthToken(imageName)
 	// if err != nil {
-	// 	return errors.Wrap(err, traceutility.FuncTrace())
+	// 	return traceutility.Wrap(err)
 	// }
 
 	// getManifest(token, imageName, "")
@@ -111,13 +111,13 @@ func PullImage(authConfig types.AuthConfig, imageName string) error {
 
 	fmt.Println(string(out))
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 
 	cmd = exec.Command("./"+archiveScriptName, nameWithoutTag)
 	err = cmd.Run()
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 
 	// New multipart writer.
@@ -125,40 +125,40 @@ func PullImage(authConfig types.AuthConfig, imageName string) error {
 	writer := multipart.NewWriter(bufferedFile)
 	fw, err := writer.CreateFormFile("file", fileName)
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 	fd, err := os.Open(fileName)
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 	defer fd.Close()
 	_, err = io.Copy(fw, fd)
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 	writer.Close()
 
 	commandUrl := "/docker/images"
 	req, err := http.NewRequest(http.MethodPut, edgeUrl+commandUrl, bytes.NewReader(bufferedFile.Bytes()))
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		err = fmt.Errorf("PullImage: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body)
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 
 	var resp_json map[string]string
@@ -183,18 +183,18 @@ func ImageExists(imageName string) (bool, error) {
 		commandUrl := "/docker/images"
 		resp, err := client.Get(edgeUrl + commandUrl)
 		if err != nil {
-			return false, errors.Wrap(err, traceutility.FuncTrace())
+			return false, traceutility.Wrap(err)
 		}
 		defer resp.Body.Close()
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return false, errors.Wrap(err, traceutility.FuncTrace())
+			return false, traceutility.Wrap(err)
 		}
 
 		if resp.StatusCode != http.StatusOK {
 			err = fmt.Errorf("ReadAllContainers: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body)
-			return false, errors.Wrap(err, traceutility.FuncTrace())
+			return false, traceutility.Wrap(err)
 		}
 
 		type ImageInfo map[string]interface{}
@@ -227,23 +227,23 @@ func ImageRemove(imageID string) error {
 	commandUrl := fmt.Sprintf("/docker/images/%s", imageID)
 	req, err := http.NewRequest(http.MethodDelete, edgeUrl+commandUrl, nil)
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		err = fmt.Errorf("ImageRemove: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body)
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 
 	// remove image from local database

@@ -5,11 +5,11 @@ import (
 	"runtime"
 )
 
-func FuncTrace() string {
-	pc := make([]uintptr, 15)
+func Wrap(err error) error {
+	pc := make([]uintptr, 1)
 	n := runtime.Callers(2, pc)
-	frames := runtime.CallersFrames(pc[:n])
-	frame, _ := frames.Next()
+	frame, _ := runtime.CallersFrames(pc[:n]).Next()
+	contextStr := fmt.Sprintf("%s:%d %s", frame.File, frame.Line, frame.Function)
 
-	return fmt.Sprintf("%s:%d %s\n", frame.File, frame.Line, frame.Function)
+	return fmt.Errorf("%w\n%s", err, contextStr)
 }
