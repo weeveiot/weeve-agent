@@ -119,7 +119,7 @@ func createMqttClient() error {
 
 	client = mqtt.NewClient(channelOptions)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return errors.Wrap(token.Error(), traceutility.FuncTrace())
 	}
 	log.Debug("MQTT client is connected")
 
@@ -168,7 +168,7 @@ func publishMessage(topic string, message interface{}, retained bool) error {
 
 	// sending with QoS of 1 to ensure that the message gets delivered
 	if token := client.Publish(topic, 1, retained, payload); token.Wait() && token.Error() != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return errors.Wrap(token.Error(), traceutility.FuncTrace())
 	}
 
 	return nil

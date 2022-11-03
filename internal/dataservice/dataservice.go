@@ -98,7 +98,7 @@ func DeployDataService(man manifest.Manifest) error {
 		log.Info(deploymentID, "Creating ", containerConfig.ContainerName, " from ", containerConfig.ImageName)
 		containerID, err := docker.CreateAndStartContainer(containerConfig)
 		if err != nil {
-			log.Error("CreateAndStartContainer failed! CAUSE --> ", deploymentID, err)
+			log.Errorf("CreateAndStartContainer failed! DeploymentID --> %s, CAUSE --> %v", deploymentID, err)
 			log.Error(deploymentID, "Failed to create and start container ", containerConfig.ContainerName)
 			log.Info(deploymentID, "Initiating rollback ...")
 			RemoveDataService(man.ManifestUniqueID)
@@ -225,7 +225,7 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID) error {
 	//******** STEP 1 - Stop and Remove Containers *************//
 	dsContainers, err := docker.ReadDataServiceContainers(manifestUniqueID)
 	if err != nil {
-		log.Errorf("Undeployment failed! UndeploymentID --> %s, CAUSE --> %v", deploymentID, err)
+		log.Errorf("Undeployment failed! CAUSE --> ", err)
 		log.Error(deploymentID, "Failed to read data service containers.")
 		setAndSendStatus(manifestUniqueID, model.EdgeAppError)
 		return errors.Wrap(err, traceutility.FuncTrace())
