@@ -4,7 +4,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/weeveiot/weeve-agent/internal/manifest"
@@ -17,28 +16,28 @@ func ReadDeployManifestLocal(manifestPath string) error {
 
 	jsonFile, err := os.Open(manifestPath)
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 	defer jsonFile.Close()
 	// read our opened jsonFile as a byte array.
 	byteValue, err := io.ReadAll(jsonFile)
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 
 	thisManifest, err := manifest.Parse(byteValue)
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 
 	err = UndeployDataService(thisManifest.ManifestUniqueID)
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 
 	err = DeployDataService(thisManifest)
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 
 	return nil

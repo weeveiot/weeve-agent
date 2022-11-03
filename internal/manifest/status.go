@@ -5,7 +5,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/pkg/errors"
+	"errors"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/weeveiot/weeve-agent/internal/model"
@@ -95,13 +96,13 @@ func InitKnownManifests() error {
 		return nil
 	}
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 	defer jsonFile.Close()
 
 	byteValue, err := io.ReadAll(jsonFile)
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 
 	return json.Unmarshal(byteValue, &knownManifests)
@@ -114,12 +115,12 @@ func GetEdgeAppStatus(manifestUniqueID model.ManifestUniqueID) string {
 func writeKnownManifestsToFile() error {
 	encodedJson, err := json.MarshalIndent(knownManifests, "", " ")
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 
 	err = os.WriteFile(ManifestFile, encodedJson, 0644)
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 
 	return nil

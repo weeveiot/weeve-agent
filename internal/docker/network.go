@@ -8,10 +8,11 @@ import (
 	"strconv"
 	"strings"
 
+	"errors"
+
 	linq "github.com/ahmetb/go-linq/v3"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/weeveiot/weeve-agent/internal/model"
@@ -28,7 +29,7 @@ func readAllNetworks() ([]types.NetworkResource, error) {
 
 	networks, err := dockerClient.NetworkList(ctx, types.NetworkListOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, traceutility.FuncTrace())
+		return nil, traceutility.Wrap(err)
 	}
 
 	return networks, nil
@@ -44,7 +45,7 @@ func ReadDataServiceNetworks(manifestUniqueID model.ManifestUniqueID) ([]types.N
 
 	networks, err := dockerClient.NetworkList(ctx, options)
 	if err != nil {
-		return nil, errors.Wrap(err, traceutility.FuncTrace())
+		return nil, traceutility.Wrap(err)
 	}
 
 	return networks, nil
@@ -64,14 +65,14 @@ func makeNetworkName(name string) (string, error) {
 	var newCount int
 	maxCount, err := getLastCreatedNetworkCount()
 	if err != nil {
-		return "", errors.Wrap(err, traceutility.FuncTrace())
+		return "", traceutility.Wrap(err)
 	}
 	if maxCount < maxNetworkIndex {
 		newCount = maxCount + 1
 	} else {
 		newCount, err = getLowestAvailableNetworkCount()
 		if err != nil {
-			return "", errors.Wrap(err, traceutility.FuncTrace())
+			return "", traceutility.Wrap(err)
 		}
 		if newCount < 0 { // no available network count found
 			log.Warning("Number of data services limit is exceeded")
@@ -93,7 +94,7 @@ func CreateNetwork(name string, labels map[string]string) (string, error) {
 
 	networkName, err := makeNetworkName(name)
 	if err != nil {
-		return "", errors.Wrap(err, traceutility.FuncTrace())
+		return "", traceutility.Wrap(err)
 	}
 	if networkName == "" {
 		return "", errors.New("failed to generate network name")
@@ -101,7 +102,7 @@ func CreateNetwork(name string, labels map[string]string) (string, error) {
 
 	_, err = dockerClient.NetworkCreate(context.Background(), networkName, networkCreateOptions)
 	if err != nil {
-		return networkName, errors.Wrap(err, traceutility.FuncTrace())
+		return networkName, traceutility.Wrap(err)
 	}
 
 	return networkName, nil
@@ -114,7 +115,7 @@ func NetworkPrune(manifestUniqueID model.ManifestUniqueID) error {
 
 	pruneReport, err := dockerClient.NetworksPrune(ctx, filter)
 	if err != nil {
-		return errors.Wrap(err, traceutility.FuncTrace())
+		return traceutility.Wrap(err)
 	}
 	log.Info("Pruned networks: ", pruneReport.NetworksDeleted)
 	return nil
@@ -125,7 +126,7 @@ func getLastCreatedNetworkCount() (int, error) {
 
 	counts, err := getExistingNetworkCounts()
 	if err != nil {
-		return 0, errors.Wrap(err, traceutility.FuncTrace())
+		return 0, traceutility.Wrap(err)
 	}
 
 	for _, e := range counts {
@@ -140,7 +141,7 @@ func getLastCreatedNetworkCount() (int, error) {
 func getLowestAvailableNetworkCount() (int, error) {
 	counts, err := getExistingNetworkCounts()
 	if err != nil {
-		return 0, errors.Wrap(err, traceutility.FuncTrace())
+		return 0, traceutility.Wrap(err)
 	}
 
 	// find lowest available network count
@@ -165,7 +166,7 @@ func getExistingNetworkCounts() ([]int, error) {
 	var counts []int
 	networks, err := readAllNetworks()
 	if err != nil {
-		return nil, errors.Wrap(err, traceutility.FuncTrace())
+		return nil, traceutility.Wrap(err)
 	}
 	linq.From(networks).Select(func(c interface{}) interface{} {
 		nm := c.(types.NetworkResource).Name

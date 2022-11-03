@@ -46,12 +46,12 @@ func main() {
 
 	err := manifest.InitKnownManifests()
 	if err != nil {
-		log.Fatalf("Initialize of known manifests failed! CAUSE --> ", err)
+		log.Fatal("Initialize of known manifests failed! CAUSE --> ", err)
 	}
 
 	nodePubKey, err := secret.InitNodeKeypair()
 	if err != nil {
-		log.Fatalf("Initialization of node keypair failed! CAUSE --> ", err)
+		log.Fatal("Initialization of node keypair failed! CAUSE --> ", err)
 	}
 
 	docker.SetupDockerClient()
@@ -70,7 +70,7 @@ func main() {
 
 	err = com.ConnectNode(setSubscriptionHandlers())
 	if err != nil {
-		log.Fatalf("Connecting to node failed! CAUSE --> ", err)
+		log.Fatal("Connecting to node failed! CAUSE --> ", err)
 	}
 
 	if deleteNode {
