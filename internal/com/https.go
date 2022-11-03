@@ -1,9 +1,9 @@
 package com
 
 import (
-	"errors"
-
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+
 	"github.com/weeveiot/weeve-agent/internal/config"
 )
 

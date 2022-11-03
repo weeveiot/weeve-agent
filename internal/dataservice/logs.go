@@ -1,6 +1,7 @@
 package dataservice
 
 import (
+	"github.com/pkg/errors"
 	"github.com/weeveiot/weeve-agent/internal/com"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
@@ -9,12 +10,13 @@ import (
 func SendEdgeAppLogs(manif manifest.ManifestStatus, until string) error {
 	msg, err := GetEdgeAppLogsMsg(manif, until)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "SendEdgeAppLogs")
 	}
 	err = com.SendEdgeAppLogs(msg)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "SendEdgeAppLogs")
 	}
+
 	return manifest.SetLastLogRead(manif.Manifest.ManifestUniqueID, until)
 }
 
@@ -22,7 +24,7 @@ func GetEdgeAppLogsMsg(manif manifest.ManifestStatus, until string) (com.EdgeApp
 	var msg com.EdgeAppLogMsg
 	containerLogs, err := GetDataServiceLogs(manif, manif.LastLogReadTime, until)
 	if err != nil {
-		return msg, err
+		return msg, errors.Wrap(err, "GetEdgeAppLogsMsg")
 	}
 
 	msg = com.EdgeAppLogMsg{
@@ -38,13 +40,13 @@ func GetDataServiceLogs(manif manifest.ManifestStatus, since string, until strin
 
 	appContainers, err := docker.ReadDataServiceContainers(manif.Manifest.ManifestUniqueID)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "GetDataServiceLogs")
 	}
 
 	for _, container := range appContainers {
 		logs, err := docker.ReadContainerLogs(container.ID, since, until)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "GetDataServiceLogs")
 		}
 
 		if len(logs.Log) > 0 {

@@ -3,14 +3,15 @@
 package docker
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/ahmetb/go-linq/v3"
 	"github.com/docker/docker/api/types"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 

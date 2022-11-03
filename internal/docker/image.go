@@ -12,6 +12,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+	"github.com/pkg/errors"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -19,14 +20,14 @@ import (
 func PullImage(authConfig types.AuthConfig, imageName string) error {
 	encodedJSON, err := json.Marshal(authConfig)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "PullImage")
 	}
 
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
 
 	events, err := dockerClient.ImagePull(ctx, imageName, types.ImagePullOptions{RegistryAuth: authStr})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "PullImage")
 	}
 
 	d := json.NewDecoder(events)
@@ -47,7 +48,7 @@ func PullImage(authConfig types.AuthConfig, imageName string) error {
 			if err == io.EOF {
 				break
 			}
-			return err
+			return errors.Wrap(err, "PullImage")
 		}
 	}
 
@@ -75,17 +76,19 @@ func ImageExists(imageName string) (bool, error) {
 		if client.IsErrNotFound(err) {
 			return false, nil
 		} else {
-			return false, err
+			return false, errors.Wrap(err, "ImageExists")
 		}
 	}
+
 	return true, nil
 }
 
 func ImageRemove(imageID string) error {
 	_, err := dockerClient.ImageRemove(ctx, imageID, types.ImageRemoveOptions{})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "ImageRemove")
 	}
+
 	return nil
 }
 
@@ -95,5 +98,6 @@ func GetImagesByName(images []string) ([]types.ImageSummary, error) {
 		filter.Add("reference", image)
 	}
 	options := types.ImageListOptions{Filters: filter}
+
 	return dockerClient.ImageList(ctx, options)
 }

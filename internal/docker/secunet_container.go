@@ -13,6 +13,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	log "github.com/sirupsen/logrus"
+
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
 )

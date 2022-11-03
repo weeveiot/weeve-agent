@@ -1,9 +1,8 @@
 package handler
 
 import (
-	"errors"
-
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/weeveiot/weeve-agent/internal/dataservice"

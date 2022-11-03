@@ -214,7 +214,7 @@ func sendHeartbeat() {
 }
 
 func sendEdgeAppLogs() {
-	log.Debug("Start sending edge app logs")
+	log.Debug("Start sending edge app logs...")
 
 	for {
 		log.Debug("Check if new logs available for edge apps")

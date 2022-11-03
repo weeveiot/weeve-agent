@@ -3,10 +3,12 @@ package dataservice
 import (
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/mem"
+
 	"github.com/weeveiot/weeve-agent/internal/com"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
@@ -23,11 +25,11 @@ func SetNodeStatus(status string) {
 func SendStatus() error {
 	msg, err := GetStatusMessage()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "SendStatus")
 	}
 	err = com.SendHeartbeat(msg)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "SendStatus")
 	}
 	return nil
 }
@@ -35,12 +37,12 @@ func SendStatus() error {
 func GetStatusMessage() (com.StatusMsg, error) {
 	edgeApps, err := GetDataServiceStatus()
 	if err != nil {
-		return com.StatusMsg{}, err
+		return com.StatusMsg{}, errors.Wrap(err, "GetStatusMessage")
 	}
 
 	deviceParams, err := getDeviceParams()
 	if err != nil {
-		return com.StatusMsg{}, err
+		return com.StatusMsg{}, errors.Wrap(err, "GetStatusMessage")
 	}
 
 	msg := com.StatusMsg{
@@ -66,7 +68,7 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 
 		appContainers, err := docker.ReadDataServiceContainers(manif.Manifest.ManifestUniqueID)
 		if err != nil {
-			return edgeApps, err
+			return edgeApps, errors.Wrap(err, "GetDataServiceStatus")
 		}
 
 		if (manif.Status == model.EdgeAppRunning || manif.Status == model.EdgeAppStopped) && len(appContainers) != len(manif.Manifest.Modules) {
@@ -77,7 +79,7 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 		for _, con := range appContainers {
 			containerJSON, err := docker.InspectContainer(con.ID)
 			if err != nil {
-				return edgeApps, err
+				return edgeApps, errors.Wrap(err, "GetDataServiceStatus")
 			}
 			// The Status of each container is (assumed to be): Running, Restarting, Created, Exited
 			container := com.ContainerMsg{Name: strings.Join(con.Names, ", "), Status: ioutility.FirstToUpper(con.State)}
@@ -105,7 +107,7 @@ func CompareDataServiceStatus(edgeApps []com.EdgeAppMsg) ([]com.EdgeAppMsg, bool
 
 	latestEdgeApps, err := GetDataServiceStatus()
 	if err != nil {
-		return nil, false, err
+		return nil, false, errors.Wrap(err, "CompareDataServiceStatus")
 	}
 	if len(edgeApps) == len(latestEdgeApps) {
 		for index, edgeApp := range edgeApps {
@@ -122,22 +124,22 @@ func CompareDataServiceStatus(edgeApps []com.EdgeAppMsg) ([]com.EdgeAppMsg, bool
 func getDeviceParams() (com.DeviceParamsMsg, error) {
 	uptime, err := host.Uptime()
 	if err != nil {
-		return com.DeviceParamsMsg{}, err
+		return com.DeviceParamsMsg{}, errors.Wrap(err, "getDeviceParams")
 	}
 
 	cpu, err := cpu.Percent(0, false)
 	if err != nil {
-		return com.DeviceParamsMsg{}, err
+		return com.DeviceParamsMsg{}, errors.Wrap(err, "getDeviceParams")
 	}
 
 	diskStat, err := disk.Usage("/")
 	if err != nil {
-		return com.DeviceParamsMsg{}, err
+		return com.DeviceParamsMsg{}, errors.Wrap(err, "getDeviceParams")
 	}
 
 	verMem, err := mem.VirtualMemory()
 	if err != nil {
-		return com.DeviceParamsMsg{}, err
+		return com.DeviceParamsMsg{}, errors.Wrap(err, "getDeviceParams")
 	}
 
 	params := com.DeviceParamsMsg{
@@ -146,5 +148,6 @@ func getDeviceParams() (com.DeviceParamsMsg, error) {
 		StorageFree:  100.0 - diskStat.UsedPercent,
 		RamFree:      float64(verMem.Available) / float64(verMem.Total) * 100.0,
 	}
+
 	return params, nil
 }
