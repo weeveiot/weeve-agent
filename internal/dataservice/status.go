@@ -14,6 +14,7 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
 	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
+	traceutility "github.com/weeveiot/weeve-agent/internal/utility/trace"
 )
 
 var nodeStatus string = model.NodeDisconnected
@@ -25,11 +26,11 @@ func SetNodeStatus(status string) {
 func SendStatus() error {
 	msg, err := GetStatusMessage()
 	if err != nil {
-		return errors.Wrap(err, "SendStatus")
+		return errors.Wrap(err, traceutility.FuncTrace())
 	}
 	err = com.SendHeartbeat(msg)
 	if err != nil {
-		return errors.Wrap(err, "SendStatus")
+		return errors.Wrap(err, traceutility.FuncTrace())
 	}
 	return nil
 }
@@ -37,12 +38,12 @@ func SendStatus() error {
 func GetStatusMessage() (com.StatusMsg, error) {
 	edgeApps, err := GetDataServiceStatus()
 	if err != nil {
-		return com.StatusMsg{}, errors.Wrap(err, "GetStatusMessage")
+		return com.StatusMsg{}, errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	deviceParams, err := getDeviceParams()
 	if err != nil {
-		return com.StatusMsg{}, errors.Wrap(err, "GetStatusMessage")
+		return com.StatusMsg{}, errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	msg := com.StatusMsg{
@@ -68,7 +69,7 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 
 		appContainers, err := docker.ReadDataServiceContainers(manif.Manifest.ManifestUniqueID)
 		if err != nil {
-			return edgeApps, errors.Wrap(err, "GetDataServiceStatus")
+			return edgeApps, errors.Wrap(err, traceutility.FuncTrace())
 		}
 
 		if (manif.Status == model.EdgeAppRunning || manif.Status == model.EdgeAppStopped) && len(appContainers) != len(manif.Manifest.Modules) {
@@ -79,7 +80,7 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 		for _, con := range appContainers {
 			containerJSON, err := docker.InspectContainer(con.ID)
 			if err != nil {
-				return edgeApps, errors.Wrap(err, "GetDataServiceStatus")
+				return edgeApps, errors.Wrap(err, traceutility.FuncTrace())
 			}
 			// The Status of each container is (assumed to be): Running, Restarting, Created, Exited
 			container := com.ContainerMsg{Name: strings.Join(con.Names, ", "), Status: ioutility.FirstToUpper(con.State)}
@@ -107,7 +108,7 @@ func CompareDataServiceStatus(edgeApps []com.EdgeAppMsg) ([]com.EdgeAppMsg, bool
 
 	latestEdgeApps, err := GetDataServiceStatus()
 	if err != nil {
-		return nil, false, errors.Wrap(err, "CompareDataServiceStatus")
+		return nil, false, errors.Wrap(err, traceutility.FuncTrace())
 	}
 	if len(edgeApps) == len(latestEdgeApps) {
 		for index, edgeApp := range edgeApps {
@@ -124,22 +125,22 @@ func CompareDataServiceStatus(edgeApps []com.EdgeAppMsg) ([]com.EdgeAppMsg, bool
 func getDeviceParams() (com.DeviceParamsMsg, error) {
 	uptime, err := host.Uptime()
 	if err != nil {
-		return com.DeviceParamsMsg{}, errors.Wrap(err, "getDeviceParams")
+		return com.DeviceParamsMsg{}, errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	cpu, err := cpu.Percent(0, false)
 	if err != nil {
-		return com.DeviceParamsMsg{}, errors.Wrap(err, "getDeviceParams")
+		return com.DeviceParamsMsg{}, errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	diskStat, err := disk.Usage("/")
 	if err != nil {
-		return com.DeviceParamsMsg{}, errors.Wrap(err, "getDeviceParams")
+		return com.DeviceParamsMsg{}, errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	verMem, err := mem.VirtualMemory()
 	if err != nil {
-		return com.DeviceParamsMsg{}, errors.Wrap(err, "getDeviceParams")
+		return com.DeviceParamsMsg{}, errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	params := com.DeviceParamsMsg{

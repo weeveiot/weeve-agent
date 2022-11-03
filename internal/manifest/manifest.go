@@ -14,10 +14,12 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/go-playground/validator/v10"
 	"github.com/go-playground/validator/v10/non-standard/validators"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/weeveiot/weeve-agent/internal/model"
 	"github.com/weeveiot/weeve-agent/internal/secret"
+	traceutility "github.com/weeveiot/weeve-agent/internal/utility/trace"
 )
 
 type Manifest struct {
@@ -58,14 +60,14 @@ func Parse(payload []byte) (Manifest, error) {
 	var man manifestMsg
 	err := json.Unmarshal(payload, &man)
 	if err != nil {
-		return Manifest{}, err
+		return Manifest{}, errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	log.Debug("Parsed manifest json >> ", man)
 
 	err = validate.Struct(man)
 	if err != nil {
-		return Manifest{}, err
+		return Manifest{}, errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	labels := map[string]string{
@@ -79,7 +81,7 @@ func Parse(payload []byte) (Manifest, error) {
 	for _, module := range man.Modules {
 		err = validate.Struct(module)
 		if err != nil {
-			return Manifest{}, err
+			return Manifest{}, errors.Wrap(err, traceutility.FuncTrace())
 		}
 
 		var containerConfig ContainerConfig
@@ -100,7 +102,7 @@ func Parse(payload []byte) (Manifest, error) {
 
 		envArgs, err := parseArguments(module.Envs)
 		if err != nil {
-			return Manifest{}, err
+			return Manifest{}, errors.Wrap(err, traceutility.FuncTrace())
 		}
 
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "SERVICE_ID", man.ID))
@@ -113,12 +115,12 @@ func Parse(payload []byte) (Manifest, error) {
 		containerConfig.EnvArgs = envArgs
 		containerConfig.MountConfigs, err = parseMounts(module.Mounts)
 		if err != nil {
-			return Manifest{}, err
+			return Manifest{}, errors.Wrap(err, traceutility.FuncTrace())
 		}
 
 		devices, err := parseDevices(module.Devices)
 		if err != nil {
-			return Manifest{}, err
+			return Manifest{}, errors.Wrap(err, traceutility.FuncTrace())
 		}
 		containerConfig.Resources = container.Resources{Devices: devices}
 
@@ -128,7 +130,7 @@ func Parse(payload []byte) (Manifest, error) {
 
 	connections, err := parseConnections(man.Connections)
 	if err != nil {
-		return Manifest{}, err
+		return Manifest{}, errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	manifest := Manifest{
@@ -147,12 +149,12 @@ func GetCommand(payload []byte) (string, error) {
 	var msg commandMsg
 	err := json.Unmarshal(payload, &msg)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	err = validate.Struct(msg)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	return msg.Command, nil
@@ -162,12 +164,12 @@ func GetEdgeAppUniqueID(payload []byte) (model.ManifestUniqueID, error) {
 	var uniqueID uniqueIDmsg
 	err := json.Unmarshal(payload, &uniqueID)
 	if err != nil {
-		return model.ManifestUniqueID{}, err
+		return model.ManifestUniqueID{}, errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	err = validate.Struct(uniqueID)
 	if err != nil {
-		return model.ManifestUniqueID{}, err
+		return model.ManifestUniqueID{}, errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	return model.ManifestUniqueID{ManifestName: uniqueID.ManifestName, VersionNumber: fmt.Sprint(uniqueID.VersionNumber)}, nil
@@ -218,7 +220,7 @@ func parseArguments(options []envMsg) ([]string, error) {
 			var err error
 			value, err = secret.DecryptEnv(env.Value)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, traceutility.FuncTrace())
 			}
 		} else {
 			value = env.Value
@@ -292,13 +294,13 @@ func parseConnections(connectionsStringMap connectionsString) (connectionsInt, e
 		for _, value := range values {
 			valueInt, err := strconv.Atoi(value)
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, traceutility.FuncTrace())
 			}
 			valuesInt = append(valuesInt, valueInt)
 		}
 		keyInt, err := strconv.Atoi(key)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, traceutility.FuncTrace())
 		}
 		connectionsIntMap[keyInt] = valuesInt
 	}

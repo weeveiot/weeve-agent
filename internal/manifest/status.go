@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/weeveiot/weeve-agent/internal/model"
+	traceutility "github.com/weeveiot/weeve-agent/internal/utility/trace"
 )
 
 type ManifestStatus struct {
@@ -94,13 +95,13 @@ func InitKnownManifests() error {
 		return nil
 	}
 	if err != nil {
-		return errors.Wrap(err, "InitKnownManifests")
+		return errors.Wrap(err, traceutility.FuncTrace())
 	}
 	defer jsonFile.Close()
 
 	byteValue, err := io.ReadAll(jsonFile)
 	if err != nil {
-		return errors.Wrap(err, "InitKnownManifests")
+		return errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	return json.Unmarshal(byteValue, &knownManifests)
@@ -113,12 +114,12 @@ func GetEdgeAppStatus(manifestUniqueID model.ManifestUniqueID) string {
 func writeKnownManifestsToFile() error {
 	encodedJson, err := json.MarshalIndent(knownManifests, "", " ")
 	if err != nil {
-		return err
+		return errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	err = os.WriteFile(ManifestFile, encodedJson, 0644)
 	if err != nil {
-		return err
+		return errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	return nil

@@ -13,6 +13,7 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/pkg/errors"
+	traceutility "github.com/weeveiot/weeve-agent/internal/utility/trace"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -20,14 +21,14 @@ import (
 func PullImage(authConfig types.AuthConfig, imageName string) error {
 	encodedJSON, err := json.Marshal(authConfig)
 	if err != nil {
-		return errors.Wrap(err, "PullImage")
+		return errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
 
 	events, err := dockerClient.ImagePull(ctx, imageName, types.ImagePullOptions{RegistryAuth: authStr})
 	if err != nil {
-		return errors.Wrap(err, "PullImage")
+		return errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	d := json.NewDecoder(events)
@@ -48,7 +49,7 @@ func PullImage(authConfig types.AuthConfig, imageName string) error {
 			if err == io.EOF {
 				break
 			}
-			return errors.Wrap(err, "PullImage")
+			return errors.Wrap(err, traceutility.FuncTrace())
 		}
 	}
 
@@ -76,7 +77,7 @@ func ImageExists(imageName string) (bool, error) {
 		if client.IsErrNotFound(err) {
 			return false, nil
 		} else {
-			return false, errors.Wrap(err, "ImageExists")
+			return false, errors.Wrap(err, traceutility.FuncTrace())
 		}
 	}
 
@@ -86,7 +87,7 @@ func ImageExists(imageName string) (bool, error) {
 func ImageRemove(imageID string) error {
 	_, err := dockerClient.ImageRemove(ctx, imageID, types.ImageRemoveOptions{})
 	if err != nil {
-		return errors.Wrap(err, "ImageRemove")
+		return errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	return nil

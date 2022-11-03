@@ -15,6 +15,8 @@ import (
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+
+	traceutility "github.com/weeveiot/weeve-agent/internal/utility/trace"
 )
 
 const keySize = 2048
@@ -36,10 +38,10 @@ func InitNodeKeypair() ([]byte, error) {
 			log.Info("No node private key found. Generating...")
 			err := generateNodeKeypair()
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, traceutility.FuncTrace())
 			}
 		} else {
-			return nil, err
+			return nil, errors.Wrap(err, traceutility.FuncTrace())
 		}
 	} else {
 		log.Info("Node private key found.")
@@ -47,7 +49,7 @@ func InitNodeKeypair() ([]byte, error) {
 
 		byteValue, err := io.ReadAll(pemFile)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, traceutility.FuncTrace())
 		}
 
 		block, _ := pem.Decode(byteValue)
@@ -58,7 +60,7 @@ func InitNodeKeypair() ([]byte, error) {
 		// add org private key to node
 		nodePrivateKey, err = x509.ParsePKCS1PrivateKey(block.Bytes)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, traceutility.FuncTrace())
 		}
 	}
 	log.Info("Node private key set.")
@@ -66,7 +68,7 @@ func InitNodeKeypair() ([]byte, error) {
 
 	pk, err := x509.MarshalPKIXPublicKey(&nodePrivateKey.PublicKey)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	// return public key
@@ -87,7 +89,7 @@ func generateNodeKeypair() error {
 	var err error
 	nodePrivateKey, err = rsa.GenerateKey(rand.Reader, keySize)
 	if err != nil {
-		return err
+		return errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	// dump private key to file
@@ -98,7 +100,7 @@ func generateNodeKeypair() error {
 
 	privateKeyFile, err := os.OpenFile(nodePrivateKeyFile, os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
-		return err
+		return errors.Wrap(err, traceutility.FuncTrace())
 	}
 	return pem.Encode(privateKeyFile, privateKeyPem)
 }
@@ -107,29 +109,29 @@ func ProcessOrgPrivKeyMessage(payload []byte) error {
 	var orgPrivKeyMessage orgPrivKeyMsg
 	err := json.Unmarshal(payload, &orgPrivKeyMessage)
 	if err != nil {
-		return err
+		return errors.Wrap(err, traceutility.FuncTrace())
 	}
 	log.Debug("Received orga's encrypted private key:\n", orgPrivKeyMessage.EncryptedOrgKey)
 
 	encryptedOrgKey, err := base64.StdEncoding.DecodeString(orgPrivKeyMessage.EncryptedOrgKey)
 	if err != nil {
-		return err
+		return errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	label := []byte("orgKey")
 	orgSecretKey, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, nodePrivateKey, encryptedOrgKey, label)
 	if err != nil {
-		return err
+		return errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	block, err := aes.NewCipher(orgSecretKey)
 	if err != nil {
-		return err
+		return errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	decryptor, err = cipher.NewGCM(block)
 	if err != nil {
-		return err
+		return errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	log.Info("Orga's private key set.")
@@ -142,13 +144,13 @@ func DecryptEnv(enc string) (string, error) {
 	}
 	encBytes, err := base64.StdEncoding.DecodeString(enc)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, traceutility.FuncTrace())
 	}
 	nonce, ciphertext := encBytes[:decryptor.NonceSize()], encBytes[decryptor.NonceSize():]
 
 	plaintext, err := decryptor.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	return string(plaintext), nil

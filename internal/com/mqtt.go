@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/weeveiot/weeve-agent/internal/config"
+	traceutility "github.com/weeveiot/weeve-agent/internal/utility/trace"
 )
 
 const (
@@ -61,13 +62,13 @@ func ConnectNode(subscriptions map[string]mqtt.MessageHandler) error {
 
 	err := createMqttClient()
 	if err != nil {
-		return errors.Wrap(err, "ConnectNode")
+		return errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	for topic, handler := range subscriptions {
 		err = subscribeAndSetHandler(topic, handler)
 		if err != nil {
-			return errors.Wrap(err, "ConnectNode")
+			return errors.Wrap(err, traceutility.FuncTrace())
 		}
 	}
 
@@ -80,7 +81,7 @@ func DisconnectNode() error {
 	if client.IsConnected() {
 		err := sendDisconnectedStatus()
 		if err != nil {
-			return errors.Wrap(err, "DisconnectNode")
+			return errors.Wrap(err, traceutility.FuncTrace())
 		}
 		client.Disconnect(250)
 		log.Debug("MQTT client disconnected")
@@ -95,7 +96,7 @@ func createMqttClient() error {
 	nodeStatusTopic := topicNodeStatus + "/" + config.Params.NodeId
 	willPayload, err := json.Marshal(disconnectedMsg)
 	if err != nil {
-		return errors.Wrap(err, "createMqttClient")
+		return errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	channelOptions := mqtt.NewClientOptions()
@@ -109,7 +110,7 @@ func createMqttClient() error {
 		channelOptions.SetPassword(config.Params.Password)
 		tlsconfig, err := newTLSConfig()
 		if err != nil {
-			return errors.Wrap(err, "createMqttClient")
+			return errors.Wrap(err, traceutility.FuncTrace())
 		}
 		channelOptions.SetTLSConfig(tlsconfig)
 	}
@@ -118,7 +119,7 @@ func createMqttClient() error {
 
 	client = mqtt.NewClient(channelOptions)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		return errors.Wrap(token.Error(), "createMqttClient")
+		return errors.Wrap(err, traceutility.FuncTrace())
 	}
 	log.Debug("MQTT client is connected")
 
@@ -146,7 +147,7 @@ func newTLSConfig() (*tls.Config, error) {
 	certpool := x509.NewCertPool()
 	rootCert, err := os.ReadFile(config.Params.RootCertPath)
 	if err != nil {
-		return nil, errors.Wrap(err, "newTLSConfig")
+		return nil, errors.Wrap(err, traceutility.FuncTrace())
 	}
 	certpool.AppendCertsFromPEM(rootCert)
 
@@ -162,12 +163,12 @@ func newTLSConfig() (*tls.Config, error) {
 func publishMessage(topic string, message interface{}, retained bool) error {
 	payload, err := json.Marshal(message)
 	if err != nil {
-		return errors.Wrap(err, "publishMessage")
+		return errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	// sending with QoS of 1 to ensure that the message gets delivered
 	if token := client.Publish(topic, 1, retained, payload); token.Wait() && token.Error() != nil {
-		return errors.Wrap(token.Error(), "publishMessage")
+		return errors.Wrap(err, traceutility.FuncTrace())
 	}
 
 	return nil
