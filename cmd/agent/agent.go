@@ -94,6 +94,7 @@ func main() {
 	go sendHeartbeat()
 	go sendEdgeAppLogs()
 
+	log.Info("Weeve-agent started and running...")
 	// Cleanup on ending the process
 	<-done
 	err = com.DisconnectNode()
