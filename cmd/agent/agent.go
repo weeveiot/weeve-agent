@@ -177,8 +177,6 @@ func monitorDataServiceStatus() {
 	}
 
 	for {
-		log.Debug("Monitering data service status...")
-
 		time.Sleep(time.Second * time.Duration(5))
 		latestEdgeApps, statusChange, err := dataservice.CompareDataServiceStatus(edgeApps)
 		if err != nil {
@@ -202,8 +200,6 @@ func sendHeartbeat() {
 	log.Debug("Start sending heartbeats...")
 
 	for {
-		log.Debug("Sending heartbeat...")
-
 		err := dataservice.SendStatus()
 		if err != nil {
 			log.Error("SendStatus failed! CAUSE --> ", err)
@@ -217,7 +213,6 @@ func sendEdgeAppLogs() {
 	log.Debug("Start sending edge app logs...")
 
 	for {
-		log.Debug("Check if new logs available for edge apps")
 		knownManifests := manifest.GetKnownManifests()
 		until := time.Now().UTC().Format(time.RFC3339Nano)
 
