@@ -106,8 +106,10 @@ set_weeve_url(){
 }
 
 build_test_binary(){
-  if RESULT=$(go build -o "$WEEVE_AGENT_DIR"/test-agent cmd/agent/agent.go 2>&1); then
+  if RESULT=$(make build 2>&1); then
     log built weeve-agent binary for testing
+    mkdir -p "$WEEVE_AGENT_DIR"
+    mv bin/weeve-agent "$WEEVE_AGENT_DIR"/test-agent
     chmod u+x "$WEEVE_AGENT_DIR"/test-agent
     log Changed file permission
     BINARY_NAME="test-agent"
