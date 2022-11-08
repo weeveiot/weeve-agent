@@ -117,8 +117,8 @@ func parseCLIoptions() (bool, string, bool) {
 		os.Exit(1)
 	}
 
-	fmt.Println("weeve agent - built on", model.Version)
 	if opt.Version {
+		fmt.Println("weeve agent - built on", model.Version)
 		os.Exit(0)
 	}
 
@@ -151,10 +151,11 @@ func setupLogging(toStdout bool) {
 	if config.Params.MqttLogs {
 		mqtt.ERROR = golog.New(logOutput, "[ERROR] ", 0)
 		mqtt.CRITICAL = golog.New(logOutput, "[CRIT] ", 0)
-		mqtt.WARN = golog.New(logOutput, "[WARN]  ", 0)
+		mqtt.WARN = golog.New(logOutput, "[WARN] ", 0)
 		mqtt.DEBUG = golog.New(logOutput, "[DEBUG] ", 0)
 	}
 
+	log.Infoln("weeve agent - built on", model.Version)
 	log.Info("Started logging")
 	log.Info("Logging level set to ", log.GetLevel())
 }
