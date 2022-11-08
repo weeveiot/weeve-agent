@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	log "github.com/sirupsen/logrus"
+
 	"github.com/weeveiot/weeve-agent/internal/config"
 )
 

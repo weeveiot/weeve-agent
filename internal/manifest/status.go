@@ -2,12 +2,15 @@ package manifest
 
 import (
 	"encoding/json"
-	"errors"
 	"io"
 	"os"
 
+	"errors"
+
 	log "github.com/sirupsen/logrus"
+
 	"github.com/weeveiot/weeve-agent/internal/model"
+	traceutility "github.com/weeveiot/weeve-agent/internal/utility/trace"
 )
 
 type ManifestStatus struct {
@@ -49,7 +52,7 @@ func DeleteKnownManifest(manifestUniqueID model.ManifestUniqueID) {
 
 	err := writeKnownManifestsToFile()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to write known manifest to file! CAUSE --> ", err)
 	}
 }
 
@@ -64,7 +67,7 @@ func SetStatus(manifestUniqueID model.ManifestUniqueID, status string) error {
 
 	err := writeKnownManifestsToFile()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to write known manifest to file! CAUSE --> ", err)
 	}
 	return nil
 }
@@ -80,24 +83,26 @@ func SetLastLogRead(manifestUniqueID model.ManifestUniqueID, lastLogReadTime str
 
 	err := writeKnownManifestsToFile()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to write known manifest to file! CAUSE --> ", err)
 	}
 	return nil
 }
 
 func InitKnownManifests() error {
+	log.Debug("Initializing known manifests...")
+
 	jsonFile, err := os.Open(ManifestFile)
 	if os.IsNotExist(err) {
 		return nil
 	}
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 	defer jsonFile.Close()
 
 	byteValue, err := io.ReadAll(jsonFile)
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	return json.Unmarshal(byteValue, &knownManifests)
@@ -110,12 +115,12 @@ func GetEdgeAppStatus(manifestUniqueID model.ManifestUniqueID) string {
 func writeKnownManifestsToFile() error {
 	encodedJson, err := json.MarshalIndent(knownManifests, "", " ")
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	err = os.WriteFile(ManifestFile, encodedJson, 0644)
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	return nil

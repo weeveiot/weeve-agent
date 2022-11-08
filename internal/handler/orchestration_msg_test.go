@@ -3,11 +3,12 @@ package handler_test
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
 	"testing"
+
+	"errors"
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/docker/docker/api/types"
@@ -16,6 +17,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+
 	"github.com/weeveiot/weeve-agent/internal/com"
 	"github.com/weeveiot/weeve-agent/internal/config"
 	"github.com/weeveiot/weeve-agent/internal/dataservice"

@@ -3,6 +3,7 @@ package handler
 import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
+
 	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
@@ -13,9 +14,11 @@ var NodeDeleteHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 }
 
 func DeleteNode() {
+	log.Debug("Deleting node...")
+
 	err := dataservice.UndeployAll()
 	if err != nil {
-		log.Error(err)
+		log.Error("Deletion of node failed! CAUSE --> ", err)
 	}
 
 	dataservice.SetNodeStatus(model.NodeDeleted)

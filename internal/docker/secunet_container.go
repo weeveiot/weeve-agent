@@ -13,8 +13,10 @@ import (
 
 	"github.com/docker/docker/api/types"
 	log "github.com/sirupsen/logrus"
+
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
+	traceutility "github.com/weeveiot/weeve-agent/internal/utility/trace"
 )
 
 const registryUrl = "https://registry-1.docker.io"
@@ -35,13 +37,13 @@ func SetupDockerClient() {
 	const keyFile = certDir + "/" + "key.pem"
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Unable to setup docker client! CAUSE --> ", err)
 	}
 
 	// // Save TLS keys to decrypt communication with Wireshark
 	// w, err := os.OpenFile("/home/paul/.ssl-key.log", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0600)
 	// if err != nil {
-	// 	log.Fatal(err)
+	// 	log.Fatal("Unable to open .ssl-key.log! CAUSE --> ", err)
 	// }
 
 	t := &http.Transport{
@@ -59,23 +61,23 @@ func StartContainer(containerID string) error {
 	commandUrl := fmt.Sprintf("/docker/container/%s/start", containerID)
 	req, err := http.NewRequest(http.MethodPut, edgeUrl+commandUrl, nil)
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		err = fmt.Errorf("StartContainer: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body)
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	log.Debug("Started container ID ", containerID)
@@ -106,7 +108,7 @@ func CreateAndStartContainer(containerConfig manifest.ContainerConfig) (string, 
 
 	req_json, err := json.Marshal(req_body)
 	if err != nil {
-		return "", err
+		return "", traceutility.Wrap(err)
 	}
 
 	req, err := http.NewRequest(http.MethodPost, edgeUrl+postCommandUrl, bytes.NewBuffer(req_json))
@@ -114,19 +116,19 @@ func CreateAndStartContainer(containerConfig manifest.ContainerConfig) (string, 
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", err
+		return "", traceutility.Wrap(err)
 	}
 	defer resp.Body.Close()
 
 	var resp_json map[string]string
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return "", traceutility.Wrap(err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		err = fmt.Errorf("CreateAndStartContainer: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body)
-		return "", err
+		return "", traceutility.Wrap(err)
 	}
 
 	json.Unmarshal(body, &resp_json)
@@ -143,23 +145,23 @@ func StopContainer(containerID string) error {
 	commandUrl := fmt.Sprintf("/docker/container/%s/stop", containerID)
 	req, err := http.NewRequest(http.MethodPut, edgeUrl+commandUrl, nil)
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		err = fmt.Errorf("StopContainer: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body)
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	log.Debug("Stopped container ID ", containerID)
@@ -170,23 +172,23 @@ func StopAndRemoveContainer(containerID string) error {
 	commandUrl := fmt.Sprintf("/docker/container/%s", containerID)
 	req, err := http.NewRequest(http.MethodDelete, edgeUrl+commandUrl, nil)
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		err = fmt.Errorf("StopAndRemoveContainer: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body)
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	log.Debug("Killed container ID ", containerID)
@@ -198,18 +200,18 @@ func ReadAllContainers() ([]types.Container, error) {
 	commandUrl := fmt.Sprintf("/docker/container")
 	resp, err := client.Get(edgeUrl + commandUrl)
 	if err != nil {
-		return nil, err
+		return nil, traceutility.Wrap(err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, traceutility.Wrap(err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		err = fmt.Errorf("ReadAllContainers: HTTP request failed. Code: %d Message: %s", resp.StatusCode, body)
-		return nil, err
+		return nil, traceutility.Wrap(err)
 	}
 
 	var containerStructs []types.Container
@@ -235,7 +237,7 @@ func ReadDataServiceContainers(manifestUniqueID model.ManifestUniqueID) ([]types
 
 	allContainers, err := ReadAllContainers()
 	if err != nil {
-		return nil, err
+		return nil, traceutility.Wrap(err)
 	}
 
 	for _, container := range allContainers {

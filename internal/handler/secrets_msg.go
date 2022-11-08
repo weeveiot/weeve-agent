@@ -3,6 +3,7 @@ package handler
 import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
+
 	"github.com/weeveiot/weeve-agent/internal/secret"
 )
 
@@ -11,6 +12,6 @@ var OrgPrivKeyHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 
 	err := secret.ProcessOrgPrivKeyMessage(msg.Payload())
 	if err != nil {
-		log.Error(err)
+		log.Error("Failed to process organization private key message! CAUSE --> ", err)
 	}
 }

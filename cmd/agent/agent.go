@@ -46,11 +46,12 @@ func main() {
 
 	err := manifest.InitKnownManifests()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Initialization of known manifests failed! CAUSE --> ", err)
 	}
+
 	nodePubKey, err := secret.InitNodeKeypair()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Initialization of node keypair failed! CAUSE --> ", err)
 	}
 
 	docker.SetupDockerClient()
@@ -64,12 +65,12 @@ func main() {
 
 	err = com.RegisterNode()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Node registration failed! CAUSE --> ", err)
 	}
 
 	err = com.ConnectNode(setSubscriptionHandlers())
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to connect node! CAUSE --> ", err)
 	}
 
 	if deleteNode {
@@ -81,7 +82,7 @@ func main() {
 
 	err = com.SendNodePublicKey(nodePubKey)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Sending node public key failed! CAUSE --> ", err)
 	}
 
 	// Kill the agent on a keyboard interrupt
@@ -93,11 +94,12 @@ func main() {
 	go sendHeartbeat()
 	go sendEdgeAppLogs()
 
+	log.Info("Weeve-agent started and running...")
 	// Cleanup on ending the process
 	<-done
 	err = com.DisconnectNode()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Disconnection of node failed! CAUSE --> ", err)
 	}
 }
 
@@ -168,16 +170,18 @@ func setSubscriptionHandlers() map[string]mqtt.MessageHandler {
 }
 
 func monitorDataServiceStatus() {
+	log.Debug("Start monitering data service status...")
+
 	edgeApps, err := dataservice.GetDataServiceStatus()
 	if err != nil {
-		log.Error(err)
+		log.Error("GetDataServiceStatus failed! CAUSE --> ", err)
 	}
 
 	for {
 		time.Sleep(time.Second * time.Duration(5))
 		latestEdgeApps, statusChange, err := dataservice.CompareDataServiceStatus(edgeApps)
 		if err != nil {
-			log.Error(err)
+			log.Error("CompareDataServiceStatus failed! CAUSE --> ", err)
 			continue
 		}
 		log.Debug("Latest edge app status: ", latestEdgeApps)
@@ -185,7 +189,7 @@ func monitorDataServiceStatus() {
 		if statusChange {
 			err := dataservice.SendStatus()
 			if err != nil {
-				log.Error(err)
+				log.Error("SendStatus failed! CAUSE --> ", err)
 				continue
 			}
 			edgeApps = latestEdgeApps
@@ -194,10 +198,12 @@ func monitorDataServiceStatus() {
 }
 
 func sendHeartbeat() {
+	log.Debug("Start sending heartbeats...")
+
 	for {
 		err := dataservice.SendStatus()
 		if err != nil {
-			log.Error(err)
+			log.Error("SendStatus failed! CAUSE --> ", err)
 		}
 
 		time.Sleep(time.Second * time.Duration(config.Params.Heartbeat))
@@ -205,8 +211,9 @@ func sendHeartbeat() {
 }
 
 func sendEdgeAppLogs() {
+	log.Debug("Start sending edge app logs...")
+
 	for {
-		log.Debug("Check if new logs available for edge apps")
 		knownManifests := manifest.GetKnownManifests()
 		until := time.Now().UTC().Format(time.RFC3339Nano)
 

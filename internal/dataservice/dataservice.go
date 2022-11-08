@@ -1,14 +1,17 @@
 package dataservice
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
+	"errors"
+
 	log "github.com/sirupsen/logrus"
+
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
+	traceutility "github.com/weeveiot/weeve-agent/internal/utility/trace"
 )
 
 const (
@@ -27,8 +30,8 @@ func DeployDataService(man manifest.Manifest) error {
 	//******** STEP 1 - Check if Data Service is already deployed *************//
 	dataServiceExists, err := DataServiceExist(man.ManifestUniqueID)
 	if err != nil {
-		log.Error(deploymentID, err)
-		return err
+		log.Errorf("Deployment failed! DeploymentID --> %s, CAUSE --> %v", deploymentID, err)
+		return traceutility.Wrap(err)
 	}
 
 	if dataServiceExists {
@@ -45,8 +48,8 @@ func DeployDataService(man manifest.Manifest) error {
 		// Check if image exist in local
 		exists, err := docker.ImageExists(module.ImageName)
 		if err != nil {
-			log.Error(deploymentID, err)
-			return err
+			log.Errorf("Deployment failed! DeploymentID --> %s, CAUSE --> %v", deploymentID, err)
+			return traceutility.Wrap(err)
 		}
 		if exists { // Image already exists, continue
 			log.Info(deploymentID, fmt.Sprintf("Image %v, already exists on host", module.ImageName))
@@ -69,11 +72,11 @@ func DeployDataService(man manifest.Manifest) error {
 
 	networkName, err := docker.CreateNetwork(man.ManifestUniqueID.ManifestName, man.Labels)
 	if err != nil {
-		log.Error(err)
+		log.Error("CreateNetwork failed! CAUSE --> ", err)
 		setAndSendStatus(man.ManifestUniqueID, model.EdgeAppError)
 		log.Info(deploymentID, "Initiating rollback ...")
 		RemoveDataService(man.ManifestUniqueID)
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	man.UpdateManifest(networkName)
@@ -96,12 +99,12 @@ func DeployDataService(man manifest.Manifest) error {
 		log.Info(deploymentID, "Creating ", containerConfig.ContainerName, " from ", containerConfig.ImageName)
 		containerID, err := docker.CreateAndStartContainer(containerConfig)
 		if err != nil {
-			log.Error(err)
+			log.Errorf("CreateAndStartContainer failed! DeploymentID --> %s, CAUSE --> %v", deploymentID, err)
 			log.Error(deploymentID, "Failed to create and start container ", containerConfig.ContainerName)
 			log.Info(deploymentID, "Initiating rollback ...")
 			RemoveDataService(man.ManifestUniqueID)
 			setAndSendStatus(man.ManifestUniqueID, model.EdgeAppError)
-			return err
+			return traceutility.Wrap(err)
 		}
 		log.Info(deploymentID, "Successfully created container ", containerID)
 		log.Info(deploymentID, "Started!")
@@ -123,9 +126,8 @@ func StopDataService(manifestUniqueID model.ManifestUniqueID) error {
 
 	containers, err := docker.ReadDataServiceContainers(manifestUniqueID)
 	if err != nil {
-		log.Error(err)
-		log.Error("Failed to read data service containers.")
-		return err
+		log.Error("Failed to read data service containers! CAUSE --> ", err)
+		return traceutility.Wrap(err)
 	}
 
 	if len(containers) == 0 {
@@ -140,11 +142,10 @@ func StopDataService(manifestUniqueID model.ManifestUniqueID) error {
 			log.Info("Stopping container:", strings.Join(container.Names[:], ","))
 			err := docker.StopContainer(container.ID)
 			if err != nil {
-				log.Error(err)
-				log.Error("Could not stop a container")
+				log.Error("Could not stop a container! CAUSE --> ", err)
 				setAndSendStatus(manifestUniqueID, model.EdgeAppError)
 
-				return err
+				return traceutility.Wrap(err)
 			}
 
 			log.Info(strings.Join(container.Names[:], ","), ": ", container.Status, " --> exited")
@@ -169,10 +170,10 @@ func ResumeDataService(manifestUniqueID model.ManifestUniqueID) error {
 
 	containers, err := docker.ReadDataServiceContainers(manifestUniqueID)
 	if err != nil {
-		log.Error(err)
+		log.Error("Unable to resume data service! CAUSE --> ", err)
 		log.Error("Failed to read data service containers.")
 		setAndSendStatus(manifestUniqueID, model.EdgeAppError)
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	if len(containers) == 0 {
@@ -189,7 +190,7 @@ func ResumeDataService(manifestUniqueID model.ManifestUniqueID) error {
 			if err != nil {
 				log.Errorln("Could not start a container", err)
 				setAndSendStatus(manifestUniqueID, model.EdgeAppError)
-				return err
+				return traceutility.Wrap(err)
 			}
 
 			log.Info(strings.Join(container.Names[:], ","), ": ", container.State, "--> running")
@@ -211,8 +212,8 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID) error {
 	// Check if data service already exist
 	dataServiceExists, err := DataServiceExist(manifestUniqueID)
 	if err != nil {
-		log.Error(deploymentID, err)
-		return err
+		log.Errorf("Undeployment failed! UndeploymentID --> %s, CAUSE --> %v", deploymentID, err)
+		return traceutility.Wrap(err)
 	}
 
 	if !dataServiceExists {
@@ -225,17 +226,17 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID) error {
 	//******** STEP 1 - Stop and Remove Containers *************//
 	dsContainers, err := docker.ReadDataServiceContainers(manifestUniqueID)
 	if err != nil {
-		log.Error(err)
+		log.Errorf("Undeployment failed! CAUSE --> ", err)
 		log.Error(deploymentID, "Failed to read data service containers.")
 		setAndSendStatus(manifestUniqueID, model.EdgeAppError)
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	var errorlist string
 	for _, dsContainer := range dsContainers {
 		err := docker.StopAndRemoveContainer(dsContainer.ID)
 		if err != nil {
-			log.Error(deploymentID, err)
+			log.Errorf("Undeployment failed! UndeploymentID --> %s, CAUSE --> %v", deploymentID, err)
 			setAndSendStatus(manifestUniqueID, model.EdgeAppError)
 			errorlist = fmt.Sprintf("%v,%v", errorlist, err)
 		}
@@ -246,7 +247,7 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID) error {
 
 	err = docker.NetworkPrune(manifestUniqueID)
 	if err != nil {
-		log.Error(deploymentID, err)
+		log.Errorf("Undeployment failed! UndeploymentID --> %s, CAUSE --> %v", deploymentID, err)
 		setAndSendStatus(manifestUniqueID, model.EdgeAppError)
 		errorlist = fmt.Sprintf("%v,%v", errorlist, err)
 	}
@@ -268,23 +269,23 @@ func RemoveDataService(manifestUniqueID model.ManifestUniqueID) error {
 	//******** STEP 1 - Undeploy the data service *************//
 	err := UndeployDataService(manifestUniqueID)
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	//******** STEP 2 - Remove Images WITHOUT Containers *************//
 	usedImageNames, err := manifest.GetUsedImages(manifestUniqueID)
 	if err != nil {
-		log.Error(deploymentID, err)
+		log.Errorf("Data service removal failed! UndeploymentID --> %s, CAUSE --> %v", deploymentID, err)
 		setAndSendStatus(manifestUniqueID, model.EdgeAppError)
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	usedImageIDs, err := docker.GetImagesByName(usedImageNames)
 	if err != nil {
-		log.Error(err)
+		log.Error("Unable to get images! CAUSE --> ", err)
 		log.Error(deploymentID, "Failed to read the used images.")
 		setAndSendStatus(manifestUniqueID, model.EdgeAppError)
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	numContainersPerImage := make(map[string]int) // map { imageID: number_of_allocated_containers }
@@ -293,10 +294,10 @@ func RemoveDataService(manifestUniqueID model.ManifestUniqueID) error {
 	}
 	containers, err := docker.ReadAllContainers()
 	if err != nil {
-		log.Error(err)
+		log.Error("Unable to read containers! CAUSE --> ", err)
 		log.Error(deploymentID, "Failed to read all containers.")
 		setAndSendStatus(manifestUniqueID, model.EdgeAppError)
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	var errorlist string
@@ -311,7 +312,7 @@ func RemoveDataService(manifestUniqueID model.ManifestUniqueID) error {
 			log.Info(deploymentID, "Remove Image - ", imageID)
 			err := docker.ImageRemove(imageID)
 			if err != nil {
-				log.Error(deploymentID, err)
+				log.Errorf("Data service removal failed! UndeploymentID --> %s, CAUSE --> %v", deploymentID, err)
 				setAndSendStatus(manifestUniqueID, model.EdgeAppError)
 				errorlist = fmt.Sprintf("%v,%v", errorlist, err)
 			}
@@ -325,8 +326,8 @@ func RemoveDataService(manifestUniqueID model.ManifestUniqueID) error {
 	manifest.DeleteKnownManifest(manifestUniqueID)
 	err = SendStatus()
 	if err != nil {
-		log.Error(deploymentID, err)
-		return err
+		log.Errorf("Failed to delete known manifest! UndeploymentID --> %s, CAUSE --> %v", deploymentID, err)
+		return traceutility.Wrap(err)
 	}
 
 	return nil
@@ -338,7 +339,7 @@ func UndeployAll() error {
 	for uniqueID := range manifest.GetKnownManifests() {
 		err := RemoveDataService(uniqueID)
 		if err != nil {
-			return err
+			return traceutility.Wrap(err)
 		}
 	}
 
@@ -348,7 +349,7 @@ func UndeployAll() error {
 func DataServiceExist(manifestUniqueID model.ManifestUniqueID) (bool, error) {
 	networks, err := docker.ReadDataServiceNetworks(manifestUniqueID)
 	if err != nil {
-		return false, err
+		return false, traceutility.Wrap(err)
 	}
 	if len(networks) > 0 {
 		return true, nil
@@ -358,14 +359,16 @@ func DataServiceExist(manifestUniqueID model.ManifestUniqueID) (bool, error) {
 }
 
 func setAndSendStatus(manifestUniqueID model.ManifestUniqueID, status string) {
+	log.Debug("Setting and sending data service status...")
+
 	err := manifest.SetStatus(manifestUniqueID, status)
 	if err != nil {
-		log.Error(err)
+		log.Error("SetStatus failed! CAUSE --> ", err)
 		return
 	}
 
 	err = SendStatus()
 	if err != nil {
-		log.Error(err)
+		log.Error("SendStatus failed! CAUSE --> ", err)
 	}
 }
