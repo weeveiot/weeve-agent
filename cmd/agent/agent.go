@@ -74,7 +74,7 @@ func main() {
 	}
 
 	if deleteNode {
-		handler.DeleteNode()
+		handler.DeleteNode(model.NodeDisconnected)
 		os.Exit(0)
 	}
 
