@@ -35,8 +35,8 @@ func readAllNetworks() ([]types.NetworkResource, error) {
 	return networks, nil
 }
 
-func ReadDataServiceNetworks(manifestUniqueID model.ManifestUniqueID) ([]types.NetworkResource, error) {
-	log.Debug("Docker_container -> ReadDataServiceNetworks")
+func ReadEdgeAppNetworks(manifestUniqueID model.ManifestUniqueID) ([]types.NetworkResource, error) {
+	log.Debug("Docker_container -> ReadEdgeAppNetworks")
 
 	filter := filters.NewArgs()
 	filter.Add("label", "manifestName="+manifestUniqueID.ManifestName)

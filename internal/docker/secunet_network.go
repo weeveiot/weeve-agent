@@ -65,7 +65,7 @@ func readAllNetworks() []types.NetworkResource {
 	return networks
 }
 
-func ReadDataServiceNetworks(manifestUniqueID model.ManifestUniqueID) ([]types.NetworkResource, error) {
+func ReadEdgeAppNetworks(manifestUniqueID model.ManifestUniqueID) ([]types.NetworkResource, error) {
 	key := manifestUniqueID.ManifestName + manifestUniqueID.VersionNumber
 	networkName := existingNetworks[key]
 
