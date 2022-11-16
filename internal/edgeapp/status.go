@@ -1,4 +1,4 @@
-package dataservice
+package edgeapp
 
 import (
 	"strings"
@@ -35,7 +35,7 @@ func SendStatus() error {
 }
 
 func GetStatusMessage() (com.StatusMsg, error) {
-	edgeApps, err := GetDataServiceStatus()
+	edgeApps, err := GetEdgeAppStatus()
 	if err != nil {
 		return com.StatusMsg{}, traceutility.Wrap(err)
 	}
@@ -55,7 +55,7 @@ func GetStatusMessage() (com.StatusMsg, error) {
 	return msg, nil
 }
 
-func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
+func GetEdgeAppStatus() ([]com.EdgeAppMsg, error) {
 	edgeApps := []com.EdgeAppMsg{}
 
 	for _, manif := range manifest.GetKnownManifests() {
@@ -66,7 +66,7 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 			continue
 		}
 
-		appContainers, err := docker.ReadDataServiceContainers(manif.Manifest.ManifestUniqueID)
+		appContainers, err := docker.ReadEdgeAppContainers(manif.Manifest.ManifestUniqueID)
 		if err != nil {
 			return edgeApps, traceutility.Wrap(err)
 		}
@@ -102,10 +102,10 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 	return edgeApps, nil
 }
 
-func CompareDataServiceStatus(edgeApps []com.EdgeAppMsg) ([]com.EdgeAppMsg, bool, error) {
+func CompareEdgeAppStatus(edgeApps []com.EdgeAppMsg) ([]com.EdgeAppMsg, bool, error) {
 	statusChange := false
 
-	latestEdgeApps, err := GetDataServiceStatus()
+	latestEdgeApps, err := GetEdgeAppStatus()
 	if err != nil {
 		return nil, false, traceutility.Wrap(err)
 	}

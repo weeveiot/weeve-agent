@@ -1,4 +1,4 @@
-package dataservice
+package edgeapp
 
 import (
 	"io"
@@ -30,12 +30,12 @@ func ReadDeployManifestLocal(manifestPath string) error {
 		return traceutility.Wrap(err)
 	}
 
-	err = UndeployDataService(thisManifest.ManifestUniqueID)
+	err = UndeployEdgeApp(thisManifest.ManifestUniqueID)
 	if err != nil {
 		return traceutility.Wrap(err)
 	}
 
-	err = DeployDataService(thisManifest)
+	err = DeployEdgeApp(thisManifest)
 	if err != nil {
 		return traceutility.Wrap(err)
 	}

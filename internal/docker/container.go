@@ -146,7 +146,7 @@ func ReadAllContainers() ([]types.Container, error) {
 	return containers, nil
 }
 
-func ReadDataServiceContainers(manifestUniqueID model.ManifestUniqueID) ([]types.Container, error) {
+func ReadEdgeAppContainers(manifestUniqueID model.ManifestUniqueID) ([]types.Container, error) {
 	filter := filters.NewArgs()
 	filter.Add("label", "manifestName="+manifestUniqueID.ManifestName)
 	filter.Add("label", "versionNumber="+manifestUniqueID.VersionNumber)

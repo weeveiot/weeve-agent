@@ -87,7 +87,7 @@ This section is a guide for developers intending to testing and developing the a
 
 ### Application architecture
 
-The weeve agent can be considered as a Docker orchestration layer with a purpose built business logic for a data service - multiple containers in communication with each other.
+The weeve agent can be considered as a Docker orchestration layer with a purpose built business logic for a edge app - multiple containers in communication with each other.
 As such, the project relies on the [Golang Docker SDK](https://godoc.org/github.com/docker/docker).
 
 The main entry command initiates logging, parses flags, and passes control to the publish and subscribe MQTT client software.

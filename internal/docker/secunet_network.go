@@ -40,7 +40,7 @@ func makeNetworkName(name string) string {
 	} else {
 		newCount = getLowestAvailableNetworkCount()
 		if newCount < 0 { // no available network count found
-			log.Warning("Number of data services limit is exceeded")
+			log.Warning("Number of edge apps limit is exceeded")
 			return ""
 		}
 	}
@@ -65,7 +65,7 @@ func readAllNetworks() []types.NetworkResource {
 	return networks
 }
 
-func ReadDataServiceNetworks(manifestUniqueID model.ManifestUniqueID) ([]types.NetworkResource, error) {
+func ReadEdgeAppNetworks(manifestUniqueID model.ManifestUniqueID) ([]types.NetworkResource, error) {
 	key := manifestUniqueID.ManifestName + manifestUniqueID.VersionNumber
 	networkName := existingNetworks[key]
 

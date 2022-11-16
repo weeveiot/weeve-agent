@@ -232,8 +232,8 @@ func ReadAllContainers() ([]types.Container, error) {
 	return containerStructs, nil
 }
 
-func ReadDataServiceContainers(manifestUniqueID model.ManifestUniqueID) ([]types.Container, error) {
-	var dataServiceContainers []types.Container
+func ReadEdgeAppContainers(manifestUniqueID model.ManifestUniqueID) ([]types.Container, error) {
+	var edgeAppContainers []types.Container
 
 	allContainers, err := ReadAllContainers()
 	if err != nil {
@@ -242,9 +242,9 @@ func ReadDataServiceContainers(manifestUniqueID model.ManifestUniqueID) ([]types
 
 	for _, container := range allContainers {
 		if existingContainers[container.ID] == manifestUniqueID.ManifestName+manifestUniqueID.VersionNumber {
-			dataServiceContainers = append(dataServiceContainers, container)
+			edgeAppContainers = append(edgeAppContainers, container)
 		}
 	}
 
-	return dataServiceContainers, nil
+	return edgeAppContainers, nil
 }

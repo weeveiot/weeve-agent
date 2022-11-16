@@ -35,8 +35,8 @@ func readAllNetworks() ([]types.NetworkResource, error) {
 	return networks, nil
 }
 
-func ReadDataServiceNetworks(manifestUniqueID model.ManifestUniqueID) ([]types.NetworkResource, error) {
-	log.Debug("Docker_container -> ReadDataServiceNetworks")
+func ReadEdgeAppNetworks(manifestUniqueID model.ManifestUniqueID) ([]types.NetworkResource, error) {
+	log.Debug("Docker_container -> ReadEdgeAppNetworks")
 
 	filter := filters.NewArgs()
 	filter.Add("label", "manifestName="+manifestUniqueID.ManifestName)
@@ -75,7 +75,7 @@ func makeNetworkName(name string) (string, error) {
 			return "", traceutility.Wrap(err)
 		}
 		if newCount < 0 { // no available network count found
-			log.Warning("Number of data services limit is exceeded")
+			log.Warning("Number of edge apps limit is exceeded")
 			return "", nil
 		}
 	}
