@@ -323,7 +323,7 @@ func RemoveDataService(manifestUniqueID model.ManifestUniqueID) error {
 	return nil
 }
 
-func UndeployAll() error {
+func RemoveAll() error {
 	log.Info("Removing all edge apps")
 
 	for uniqueID := range manifest.GetKnownManifests() {
