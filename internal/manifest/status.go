@@ -61,7 +61,7 @@ func DeleteKnownManifest(manifestUniqueID model.ManifestUniqueID) {
 }
 
 func SetStatus(manifestUniqueID model.ManifestUniqueID, status string) error {
-	log.Debugln("Setting status", status, "to data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
+	log.Debugln("Setting status", status, "to edge app", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
 
 	manifest, manifestKnown := knownManifests[manifestUniqueID]
 	if !manifestKnown {
@@ -77,7 +77,7 @@ func SetStatus(manifestUniqueID model.ManifestUniqueID, status string) error {
 }
 
 func SetLastLogRead(manifestUniqueID model.ManifestUniqueID, lastLogReadTime string) error {
-	log.Debugln("Setting last log read time", lastLogReadTime, "to data service", manifestUniqueID)
+	log.Debugln("Setting last log read time", lastLogReadTime, "to edge app", manifestUniqueID)
 
 	manifest, manifestKnown := knownManifests[manifestUniqueID]
 	if !manifestKnown {

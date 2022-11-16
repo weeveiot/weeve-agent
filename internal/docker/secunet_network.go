@@ -40,7 +40,7 @@ func makeNetworkName(name string) string {
 	} else {
 		newCount = getLowestAvailableNetworkCount()
 		if newCount < 0 { // no available network count found
-			log.Warning("Number of data services limit is exceeded")
+			log.Warning("Number of edge apps limit is exceeded")
 			return ""
 		}
 	}

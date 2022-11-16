@@ -171,7 +171,7 @@ func setSubscriptionHandlers() map[string]mqtt.MessageHandler {
 }
 
 func monitorDataServiceStatus() {
-	log.Debug("Start monitering data service status...")
+	log.Debug("Start monitering edge app status...")
 
 	edgeApps, err := dataservice.GetDataServiceStatus()
 	if err != nil {
