@@ -27,6 +27,10 @@ func GetKnownManifests() map[model.ManifestUniqueID]*ManifestStatus {
 	return knownManifests
 }
 
+func GetKnownManifest(manifestUniqueID model.ManifestUniqueID) *ManifestStatus {
+	return knownManifests[manifestUniqueID]
+}
+
 func GetUsedImages(uniqueID model.ManifestUniqueID) ([]string, error) {
 	var images []string
 	manifest, manifestKnown := knownManifests[uniqueID]

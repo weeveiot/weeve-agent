@@ -28,13 +28,8 @@ func DeployDataService(man manifest.Manifest) error {
 	log.Info(deploymentID, "Deploying data service ...")
 
 	//******** STEP 1 - Check if Data Service is already deployed *************//
-	dataServiceExists, err := DataServiceExist(man.ManifestUniqueID)
-	if err != nil {
-		log.Errorf("Deployment failed! DeploymentID --> %s, CAUSE --> %v", deploymentID, err)
-		return traceutility.Wrap(err)
-	}
-
-	if dataServiceExists {
+	dataServiceStatus := manifest.GetKnownManifest(man.ManifestUniqueID)
+	if dataServiceStatus != nil && dataServiceStatus.Status != model.EdgeAppUndeployed {
 		log.Warn(deploymentID, fmt.Sprintf("Data service %v, %v already exist!", man.ManifestUniqueID.ManifestName, man.ManifestUniqueID.VersionNumber))
 		return nil
 	}
@@ -209,14 +204,9 @@ func UndeployDataService(manifestUniqueID model.ManifestUniqueID) error {
 
 	deploymentID := manifestUniqueID.ManifestName + "-" + manifestUniqueID.VersionNumber + " | "
 
-	// Check if data service already exist
-	dataServiceExists, err := DataServiceExist(manifestUniqueID)
-	if err != nil {
-		log.Errorf("Undeployment failed! UndeploymentID --> %s, CAUSE --> %v", deploymentID, err)
-		return traceutility.Wrap(err)
-	}
-
-	if !dataServiceExists {
+	// Check if data service exist
+	dataServiceStatus := manifest.GetKnownManifest(manifestUniqueID)
+	if dataServiceStatus == nil {
 		log.Warnln(deploymentID, "Trying to undeploy a non-existant edge application with ManifestName: ", manifestUniqueID.ManifestName, " and VersionNumber: ", manifestUniqueID.VersionNumber)
 		return nil
 	}
@@ -344,18 +334,6 @@ func UndeployAll() error {
 	}
 
 	return nil
-}
-
-func DataServiceExist(manifestUniqueID model.ManifestUniqueID) (bool, error) {
-	networks, err := docker.ReadDataServiceNetworks(manifestUniqueID)
-	if err != nil {
-		return false, traceutility.Wrap(err)
-	}
-	if len(networks) > 0 {
-		return true, nil
-	} else {
-		return false, nil
-	}
 }
 
 func setAndSendStatus(manifestUniqueID model.ManifestUniqueID, status string) {
