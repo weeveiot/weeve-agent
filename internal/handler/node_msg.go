@@ -9,7 +9,7 @@ import (
 )
 
 var NodeDeleteHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	log.Infoln("Received message on topic:", msg.Topic(), "Payload:", string(msg.Payload()))
+	log.Debugln("Received message on topic:", msg.Topic(), "Payload:", string(msg.Payload()))
 	DeleteNode(model.NodeDeleted)
 }
 
