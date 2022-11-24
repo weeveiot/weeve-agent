@@ -148,7 +148,3 @@ To execute all unit tests run the following command from the project root direct
 ```bash
 go test -v ./...
 ```
-
-## Containerization
-
-Weeve agent can also run in a container, given the right environment. Currently we support container orchestration in the secunet container environment. To create a container run `make secunet` in the top project directory. This will create a container `secunet-test` ready to be deployed on a secunet gateway. It can then be deployed using the repository [secunet deployment](https://github.com/weeveiot/secunet-deployment).
