@@ -263,12 +263,33 @@ cleanup() {
     fi
 
     if [ -d "$WEEVE_AGENT_DIR" ] ; then
-      sudo rm -r "$WEEVE_AGENT_DIR"
-      log "$WEEVE_AGENT_DIR" removed
+      REMOVE_EDGE_APPS=false
+
+      if [[ $(cat known_manifests.jsonl | jsonValue Status) ]]; then
+        read -r -p "There are some edge apps installed on system, do you want to remove edge apps too? y/n: " RESPONSE
+        if [ "$RESPONSE" = "y" ] || [ "$RESPONSE" = "yes" ]; then
+          log Proceeding with the removal of existing edge apps ...
+          REMOVE_EDGE_APPS=true
+
+          LINE=$(grep "ExecStart" "$SERVICE_FILE")
+          COMMAND="sudo ${LINE#ExecStart=} --delete"
+          log weeve-agent disconnecting ...
+          if RESULT=$(cd "$WEEVE_AGENT_DIR" && eval "$COMMAND" 2>&1); then
+            log weeve-agent disconnected
+            sudo rm -r "$WEEVE_AGENT_DIR"
+            log "$WEEVE_AGENT_DIR" removed
+          else
+            log Error while restarting weeve-agent for disconnection: "$RESULT"
+          fi
+        fi
+      fi
+
+      if [ "$REMOVE_EDGE_APPS" = false ] ; then
+        find . ! -name 'known_manifests.jsonl' -type f -exec rm -f {} +
+      fi
     else
       log "$WEEVE_AGENT_DIR" doesnt exists
     fi
-
   fi
 }
 
