@@ -27,18 +27,18 @@ If the node is already registered, please fill the fields `nodeId` and `nodeName
 Execute this one-line installer with the path to your node configuration file:
 
 ```bash
-curl -sO http://weeve-agent-dev.s3.amazonaws.com/weeve-agent-installer.sh && sh weeve-agent-installer.sh configpath=<path-to-config-file> release=prod
+curl -sO http://weeve-agent-dev.s3.amazonaws.com/weeve-agent-installer.sh && sh weeve-agent-installer.sh --configpath=<path-to-config-file> --release=prod
 ```
 
 The installer script can take the following optional parameters:
-| Parameter  | Required | Description                                             | Possible Values             | Default |
-| ---------- | -------- | ------------------------------------------------------- | --------------------------- | ------- |
-| configpath | true     | path of the JSON file with node configuration           |                             |         |
-| release    | true     | the name of platform the node should be registered with | prod, dev                   |         |
-| test       | false    | set to 'true' to build agent from local and run         | false, true                 | false   |
-| broker     | false    | URL of the MQTT broker to connect                       |                             |         |
-| loglevel   | false    | level of log verbosity                                  | debug, info, warning, error | info    |
-| heartbeat  | false    | time period of heartbeat messages (sec)                 |                             | 10      |
+| Parameter  | Required | Description                                         | Possible Values             | Default |
+| ---------- | -------- | --------------------------------------------------- | --------------------------- | ------- |
+| configpath | true     | Path to the JSON file with node configuration       |                             |         |
+| release    | true     | Name of platform the node should be registered with | prod, dev                   |         |
+| test       | false    | If specified, build the agent from local sources    |                             | false   |
+| broker     | false    | URL of the MQTT broker to connect                   |                             |         |
+| loglevel   | false    | Level of log verbosity                              | debug, info, warning, error | info    |
+| heartbeat  | false    | Time period between heartbeat messages (sec)        |                             | 10      |
 
 ### Uninstallation
 
