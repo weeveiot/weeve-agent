@@ -17,7 +17,7 @@ const (
 	TopicOrchestration = "orchestration"
 	topicNodeStatus    = "nodestatus"
 	topicAgentLogs     = "agentlog"
-	topicApplogs       = "applog"
+	topicAppLogs       = "applog"
 	topicNodePublicKey = "nodePublicKey"
 	TopicOrgPrivateKey = "orgKey"
 	TopicNodeDelete    = "delete"
