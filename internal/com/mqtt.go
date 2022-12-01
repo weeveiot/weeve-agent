@@ -16,7 +16,8 @@ import (
 const (
 	TopicOrchestration = "orchestration"
 	topicNodeStatus    = "nodestatus"
-	topicLogs          = "debug"
+	topicAgentLogs     = "agentlog"
+	topicApplogs       = "applog"
 	topicNodePublicKey = "nodePublicKey"
 	TopicOrgPrivateKey = "orgKey"
 	TopicNodeDelete    = "delete"
@@ -32,7 +33,7 @@ func SendHeartbeat(msg StatusMsg) error {
 
 func SendEdgeAppLogs(msg EdgeAppLogMsg) error {
 	if len(msg.ContainerLogs) > 0 {
-		edgeAppLogsTopic := config.Params.NodeId + "/" + msg.ManifestID + "/" + topicLogs
+		edgeAppLogsTopic := topicApplogs + "/" + config.Params.NodeId
 		log.Debugln("Sending edge app logs >>", "Topic:", edgeAppLogsTopic, ">> Body:", msg)
 		return publishMessage(edgeAppLogsTopic, msg, false)
 	}
