@@ -1,6 +1,6 @@
 #!/bin/sh
 
-log(){
+log() {
   # logger
   echo '[' "$(date +"%Y-%m-%d %T")" ']:' INFO "$@" | sudo tee -a "$LOG_FILE"
 }
@@ -26,16 +26,6 @@ validate_config(){
 get_release(){
   while [ "$RELEASE" != "prod" ] && [ "$RELEASE" != "dev" ]; do
     read -r -p "Enter the release type (prod or dev) or specify the test flag: " RELEASE
-  done
-}
-
-get_test(){
-  if [ -z "$BUILD_LOCAL" ]; then
-    BUILD_LOCAL="false"
-  fi
-
-  while [ "$BUILD_LOCAL" != "true" ] && [ "$BUILD_LOCAL" != "false" ]; do
-    read -r -p "Should weeve agent be built from local sources [true, false]?: " BUILD_LOCAL
   done
 }
 
@@ -264,15 +254,86 @@ cleanup() {
 
     if [ -d "$WEEVE_AGENT_DIR" ] ; then
       cd "$WEEVE_AGENT_DIR"
-      find . ! -name 'known_manifests.jsonl' -type f -exec rm -f {} +
+      sudo find . ! -name 'known_manifests.jsonl' -type f -exec rm -f {} +
+      log "$WEEVE_AGENT_DIR" removed
     else
       log "$WEEVE_AGENT_DIR" doesnt exists
     fi
+
   fi
+}
+
+show_help() {
+  cat << EOF
+Usage: ./weeve-agent-installer.sh [OPTION]...
+Download weeve agent, install and configure it.
+
+Options:
+  -h, --help                  Display this help message
+  --configpath                Path to the JSON file with node configuration
+  --release                   Name of platform the node should be registered with [prod, dev]
+  --test                      If specified, build the agent from local sources
+  --broker                    URL of the MQTT broker to connect
+  --loglevel                  Level of log verbosity
+  --heartbeat                 Time period between heartbeat messages (sec)
+
+EOF
 }
 
 # Delcaring and defining variables
 LOG_FILE=installer.log
+
+WEEVE_AGENT_DIR="$PWD/weeve-agent"
+
+SERVICE_FILE=/lib/systemd/system/weeve-agent.service
+
+CLEANUP="false"
+
+trap cleanup EXIT
+
+options=$(getopt -l "help,configpath:,release:,test,broker:,loglevel:,heartbeat:" -- "h" "$@") || {
+  show_help
+  exit 1
+}
+
+eval set -- "$options"
+
+while true; do
+  case "$1" in
+    -h|--help)
+      show_help
+      exit 0
+      ;;
+    --configpath)
+      shift
+      CONFIG_FILE="$1"
+      ;;
+    --release)
+      shift
+      RELEASE="$1"
+      ;;
+    --test)
+      BUILD_LOCAL=true
+      ;;
+    --broker)
+      shift
+      BROKER="$1"
+      ;;
+    --loglevel)
+      shift
+      LOG_LEVEL="$1"
+      ;;
+    --heartbeat)
+      shift
+      HEARTBEAT="$1"
+      ;;
+    --)
+      shift
+      break
+      ;;
+    esac
+    shift
+done
 
 log Detecting the OS of the machine ...
 OS=$(uname -s)
@@ -283,42 +344,16 @@ if [ "$OS" = "Linux" ]; then
   sudo systemctl daemon-reload
 fi
 
-WEEVE_AGENT_DIR="$PWD/weeve-agent"
-
-SERVICE_FILE=/lib/systemd/system/weeve-agent.service
-
-CLEANUP="false"
-
-trap cleanup EXIT
-
-# read command line arguments
-for ARGUMENT in "$@"
-do
-  KEY=$(echo "$ARGUMENT" | cut --fields 1 --delimiter='=')
-  VALUE=$(echo "$ARGUMENT" | cut --fields 2 --delimiter='=')
-
-  case "$KEY" in
-    "configpath") CONFIG_FILE="$VALUE" ;;
-    "release") RELEASE="$VALUE" ;;
-    "test") BUILD_LOCAL="$VALUE" ;;
-    "broker") BROKER="$VALUE" ;;
-    "loglevel") LOG_LEVEL="$VALUE" ;;
-    "heartbeat") HEARTBEAT="$VALUE" ;;
-    *)
-  esac
-done
-
 get_config
 
 validate_config
 
-get_test
-
-if [ "$BUILD_LOCAL" = "false" ]; then
+if [ -z "$BUILD_LOCAL" ]; then
   get_release
 
   get_bucket_name
 else
+  log Building from local sources, setting release to dev
   RELEASE="dev"
 fi
 
@@ -331,7 +366,6 @@ get_loglevel
 get_heartbeat
 
 log All arguments are set
-log Test mode is set to "$BUILD_LOCAL"
 log Broker is set to "$BROKER"
 log Log level is set to "$LOG_LEVEL"
 log Heartbeat interval is set to "$HEARTBEAT"
@@ -340,14 +374,14 @@ check_for_agent
 
 validating_docker
 
-if [ "$BUILD_LOCAL" = "true" ]; then
-  build_test_binary
-
-  copy_dependencies
-else
+if [ -z "$BUILD_LOCAL" ]; then
   download_binary
 
   download_dependencies
+else
+  build_test_binary
+
+  copy_dependencies
 fi
 
 write_to_service
