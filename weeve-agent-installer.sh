@@ -29,24 +29,6 @@ get_release(){
   done
 }
 
-get_broker(){
-  if [ -z "$BROKER" ]; then
-    BROKER="tls://$WEEVE_URL:8883"
-  fi
-}
-
-get_loglevel(){
-  if [ -z "$LOG_LEVEL" ]; then
-    LOG_LEVEL="info"
-  fi
-}
-
-get_heartbeat(){
-  if [ -z "$HEARTBEAT" ]; then
-    HEARTBEAT="10"
-  fi
-}
-
 check_for_agent(){
   # looking for existing agent instance
   if [ -d "$WEEVE_AGENT_DIR" ] || [ -f "$SERVICE_FILE" ]; then
@@ -54,9 +36,16 @@ check_for_agent(){
     read -r -p "Proceeding with the installation will cause REMOVAL of the existing contents of weeve-agent! Do you want to proceed? y/n: " RESPONSE
     if [ "$RESPONSE" = "y" ] || [ "$RESPONSE" = "yes" ]; then
       log Proceeding with the removal of existing weeve-agent contents ...
-      CLEANUP="true"
-      cleanup
-      CLEANUP="false"
+      if [ -f "$WEEVE_AGENT_DIR/known_manifests.jsonl" ]; then
+        # preserve the contents of known_manifests.jsonl
+        sudo mv "$WEEVE_AGENT_DIR/known_manifests.jsonl" /tmp/known_manifests.jsonl
+        cleanup
+        # restore the contents of known_manifests.jsonl
+        mkdir -p "$WEEVE_AGENT_DIR"
+        sudo mv /tmp/known_manifests.jsonl "$WEEVE_AGENT_DIR/known_manifests.jsonl"
+      else
+        cleanup
+      fi
     else
       log exiting ...
       exit 0
@@ -146,7 +135,7 @@ download_binary(){
   # downloading the respective weeve-agent binary
   BINARY_NAME="weeve-agent-$BINARY_OS-$BINARY_ARCH"
 
-  if RESULT=$(mkdir "$WEEVE_AGENT_DIR" \
+  if RESULT=$(mkdir -p "$WEEVE_AGENT_DIR" \
   && cd "$WEEVE_AGENT_DIR" \
   && wget http://"$S3_BUCKET".s3.amazonaws.com/"$BINARY_NAME" 2>&1); then
     log Weeve-agent binary downloaded
@@ -154,7 +143,7 @@ download_binary(){
     log Changed file permission
   else
     log Error while downloading the executable: "$RESULT"
-    CLEANUP="true"
+    cleanup
     log "exiting ..."
     exit 1
   fi
@@ -168,7 +157,7 @@ download_dependencies(){
     log Dependencies downloaded
   else
     log Error while downloading the dependencies: "$RESULT"
-    CLEANUP="true"
+    cleanup
     log "exiting ..."
     exit 1
   fi
@@ -179,15 +168,21 @@ write_to_service(){
   # following are the example for the lines appended to weeve-agent.service
 
   BINARY_PATH="$WEEVE_AGENT_DIR/$BINARY_NAME"
+  ARGUMENTS="--out --config $CONFIG_FILE"
 
   # the CLI arguments for weeve agent
-  ARG_STDOUT="--out"
-  ARG_BROKER="--broker $BROKER"
-  ARG_ROOT_CERT="--rootcert $WEEVE_AGENT_DIR/ca.crt"
-  ARG_LOG_LEVEL="--loglevel $LOG_LEVEL"
-  ARG_HEARTBEAT="--heartbeat $HEARTBEAT"
-  ARG_NODECONFIG="--config $CONFIG_FILE"
-  ARGUMENTS="$ARG_STDOUT $ARG_HEARTBEAT $ARG_BROKER $ARG_ROOT_CERT $ARG_LOG_LEVEL $ARG_NODECONFIG"
+  if [ -n "$BROKER" ]; then
+    ARGUMENTS="$ARGUMENTS --broker $BROKER"
+    echo "$BROKER" | grep -q 'tls://' && ARGUMENTS="$ARGUMENTS --rootcert $WEEVE_AGENT_DIR/ca.crt" || ARGUMENTS="$ARGUMENTS --notls"
+  fi
+
+  if [ -n "$LOG_LEVEL" ]; then
+    ARGUMENTS="$ARGUMENTS --loglevel $LOG_LEVEL"
+  fi
+
+  if [ -n "$HEARTBEAT" ]; then
+    ARGUMENTS="$ARGUMENTS --heartbeat $HEARTBEAT"
+  fi
   EXECUTE_BINARY="$BINARY_PATH $ARGUMENTS"
 
   log Adding the binary path to service file ...
@@ -213,7 +208,7 @@ start_service(){
     log Weeve-agent is initiated ...
   else
     log Error while starting the weeve-agent service: "$RESULT"
-    CLEANUP="true"
+    cleanup
     log "exiting ..."
     exit 1
   fi
@@ -222,43 +217,37 @@ start_service(){
 }
 
 tail_agent_log(){
-  # parsing the weeve-agent log for to verify if the weeve-agent is registered and connected
-  # on successful completion of the script $CLEANUP is set to false to skip the clean-up on exit
+  # parsing the weeve-agent log to verify if the weeve-agent is registered and connected
   log tailing the weeve-agent logs
   timeout 10s tail -f "$WEEVE_AGENT_DIR"/Weeve_Agent.log | sed '/ON connect >> connected >> registered : true/ q'
 }
 
 cleanup() {
   # function to clean-up the contents on failure at any point
-  # note that this function will be called even at successful ending of the script hence the conditional execution using variable CLEANUP
-  if [ "$CLEANUP" = "true" ]; then
+  log cleaning up the contents ...
 
-    log cleaning up the contents ...
-
-    if [ "$OS" = "Linux" ]; then
-      if RESULT=$(systemctl is-active weeve-agent 2>&1); then
-        sudo systemctl stop weeve-agent
-        sudo systemctl daemon-reload
-        log weeve-agent service stopped
-      else
-        log weeve-agent service not running
-      fi
-
-      if [ -f "$SERVICE_FILE" ]; then
-        sudo rm "$SERVICE_FILE"
-        log "$SERVICE_FILE" removed
-      else
-        log "$SERVICE_FILE" doesnt exists
-      fi
-    fi
-
-    if [ -d "$WEEVE_AGENT_DIR" ] ; then
-      sudo rm -r "$WEEVE_AGENT_DIR"
-      log "$WEEVE_AGENT_DIR" removed
+  if [ "$OS" = "Linux" ]; then
+    if RESULT=$(systemctl is-active weeve-agent 2>&1); then
+      sudo systemctl stop weeve-agent
+      sudo systemctl daemon-reload
+      log weeve-agent service stopped
     else
-      log "$WEEVE_AGENT_DIR" doesnt exists
+      log weeve-agent service not running
     fi
 
+    if [ -f "$SERVICE_FILE" ]; then
+      sudo rm "$SERVICE_FILE"
+      log "$SERVICE_FILE" removed
+    else
+      log "$SERVICE_FILE" doesnt exists
+    fi
+  fi
+
+  if [ -d "$WEEVE_AGENT_DIR" ] ; then
+    sudo rm -r "$WEEVE_AGENT_DIR"
+    log "$WEEVE_AGENT_DIR" removed
+  else
+    log "$WEEVE_AGENT_DIR" doesnt exists
   fi
 }
 
@@ -285,10 +274,6 @@ LOG_FILE=installer.log
 WEEVE_AGENT_DIR="$PWD/weeve-agent"
 
 SERVICE_FILE=/lib/systemd/system/weeve-agent.service
-
-CLEANUP="false"
-
-trap cleanup EXIT
 
 options=$(getopt -l "help,configpath:,release:,test,broker:,loglevel:,heartbeat:" -- "h" "$@") || {
   show_help
@@ -357,17 +342,6 @@ else
 fi
 
 set_weeve_url
-
-get_broker
-
-get_loglevel
-
-get_heartbeat
-
-log All arguments are set
-log Broker is set to "$BROKER"
-log Log level is set to "$LOG_LEVEL"
-log Heartbeat interval is set to "$HEARTBEAT"
 
 check_for_agent
 
