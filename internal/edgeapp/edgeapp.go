@@ -25,7 +25,7 @@ const (
 func DeployEdgeApp(man manifest.Manifest) error {
 	deploymentID := man.ManifestUniqueID.ManifestName + "-" + man.ManifestUniqueID.VersionNumber + " | "
 
-	log.Info(deploymentID, "Deploying ege app ...")
+	log.Info(deploymentID, "Deploying edge app ...")
 
 	//******** STEP 1 - Check if Edge App is already deployed *************//
 	edgeAppStatus := manifest.GetKnownManifest(man.ManifestUniqueID)

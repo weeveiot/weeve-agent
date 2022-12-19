@@ -24,6 +24,7 @@ const (
 )
 
 var client mqtt.Client
+var subscriptionsMap map[string]mqtt.MessageHandler
 
 func SendHeartbeat(msg StatusMsg) error {
 	nodeStatusTopic := topicNodeStatus + "/" + config.Params.NodeId
@@ -60,16 +61,11 @@ func sendDisconnectedStatus() error {
 func ConnectNode(subscriptions map[string]mqtt.MessageHandler) error {
 	log.Debug("Connecting node...")
 
+	subscriptionsMap = subscriptions
+
 	err := createMqttClient()
 	if err != nil {
 		return traceutility.Wrap(err)
-	}
-
-	for topic, handler := range subscriptions {
-		err = subscribeAndSetHandler(topic, handler)
-		if err != nil {
-			return traceutility.Wrap(err)
-		}
 	}
 
 	addMqttHookToLogs(log.DebugLevel)
@@ -102,6 +98,7 @@ func createMqttClient() error {
 	channelOptions := mqtt.NewClientOptions()
 	channelOptions.AddBroker(config.Params.Broker)
 	channelOptions.SetClientID(config.Params.NodeId)
+	channelOptions.SetOnConnectHandler(onConnectHandler)
 	channelOptions.SetConnectionLostHandler(connectLostHandler)
 	channelOptions.SetWill(nodeStatusTopic, string(willPayload), 1, true)
 
@@ -121,7 +118,6 @@ func createMqttClient() error {
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		return traceutility.Wrap(token.Error())
 	}
-	log.Debug("MQTT client is connected")
 
 	return nil
 }
@@ -139,6 +135,17 @@ func subscribeAndSetHandler(topic string, handler mqtt.MessageHandler) error {
 
 var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
 	log.Warning("Connection lost ", err)
+}
+
+var onConnectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
+	log.Debug("MQTT client is (re)connected")
+
+	for topic, handler := range subscriptionsMap {
+		err := subscribeAndSetHandler(topic, handler)
+		if err != nil {
+			log.Error(traceutility.Wrap(err))
+		}
+	}
 }
 
 func newTLSConfig() (*tls.Config, error) {
