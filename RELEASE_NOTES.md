@@ -1,12 +1,11 @@
-# weeve agent - v1.1.0
+# weeve agent - v1.1.1
 
 ## What's changed
 
-* Add channels for agent's and module's logs
-* Add secrets management
-* Add device stats
-* Add simple versioning
-* Improve configuration options
+- preserve `known_manifests.jsonl` when reinstalling the agent
+- check data service exist in `known_manifests.jsonl`
+- change the format of CLI flags for the installer script
+- change topics for logs being published through mqtt
 
 ## How to install
 
