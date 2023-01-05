@@ -2,6 +2,10 @@
 
 LDFLAGS=-ldflags="-X 'github.com/weeveiot/weeve-agent/internal/model.Version=$(shell date +%Y.%m.%d) ($(shell git rev-parse --short HEAD))'"
 
+build:
+	go build $(LDFLAGS) -o bin/weeve-agent ./cmd/agent/agent.go
+.PHONY: build
+
 build-x86:
 	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o bin/weeve-agent-linux-amd64 ./cmd/agent/agent.go
 .PHONY: build-x86
@@ -22,11 +26,6 @@ cross:
 	GOOS=darwin  GOARCH=amd64 go build $(LDFLAGS) -o installer-contents/weeve-agent-macos-amd64    ./cmd/agent/agent.go
 	GOOS=darwin  GOARCH=arm64 go build $(LDFLAGS) -o installer-contents/weeve-agent-macos-arm64    ./cmd/agent/agent.go
 .PHONY: cross
-
-secunet:
-	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o bin/agent_secunet -tags secunet cmd/agent/agent.go
-	docker build -f Dockerfile.secunet -t secunet-test .
-.PHONY: secunet
 
 build-all: build-arm build-x86 build-darwin
 .PHONY: build-all

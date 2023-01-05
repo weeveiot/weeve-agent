@@ -10,6 +10,7 @@ import (
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/go-connections/nat"
 	"github.com/stretchr/testify/assert"
+
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 )
 

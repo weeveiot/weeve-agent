@@ -7,17 +7,18 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/docker/go-connections/nat"
-	"github.com/weeveiot/weeve-agent/internal/model"
-	"github.com/weeveiot/weeve-agent/internal/secret"
-
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
+	"github.com/docker/go-connections/nat"
 	"github.com/go-playground/validator/v10"
 	"github.com/go-playground/validator/v10/non-standard/validators"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/weeveiot/weeve-agent/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/secret"
+	traceutility "github.com/weeveiot/weeve-agent/internal/utility/trace"
 )
 
 type Manifest struct {
@@ -58,14 +59,14 @@ func Parse(payload []byte) (Manifest, error) {
 	var man manifestMsg
 	err := json.Unmarshal(payload, &man)
 	if err != nil {
-		return Manifest{}, err
+		return Manifest{}, traceutility.Wrap(err)
 	}
 
 	log.Debug("Parsed manifest json >> ", man)
 
 	err = validate.Struct(man)
 	if err != nil {
-		return Manifest{}, err
+		return Manifest{}, traceutility.Wrap(err)
 	}
 
 	labels := map[string]string{
@@ -79,7 +80,7 @@ func Parse(payload []byte) (Manifest, error) {
 	for _, module := range man.Modules {
 		err = validate.Struct(module)
 		if err != nil {
-			return Manifest{}, err
+			return Manifest{}, traceutility.Wrap(err)
 		}
 
 		var containerConfig ContainerConfig
@@ -100,7 +101,7 @@ func Parse(payload []byte) (Manifest, error) {
 
 		envArgs, err := parseArguments(module.Envs)
 		if err != nil {
-			return Manifest{}, err
+			return Manifest{}, traceutility.Wrap(err)
 		}
 
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "SERVICE_ID", man.ID))
@@ -113,12 +114,12 @@ func Parse(payload []byte) (Manifest, error) {
 		containerConfig.EnvArgs = envArgs
 		containerConfig.MountConfigs, err = parseMounts(module.Mounts)
 		if err != nil {
-			return Manifest{}, err
+			return Manifest{}, traceutility.Wrap(err)
 		}
 
 		devices, err := parseDevices(module.Devices)
 		if err != nil {
-			return Manifest{}, err
+			return Manifest{}, traceutility.Wrap(err)
 		}
 		containerConfig.Resources = container.Resources{Devices: devices}
 
@@ -128,7 +129,7 @@ func Parse(payload []byte) (Manifest, error) {
 
 	connections, err := parseConnections(man.Connections)
 	if err != nil {
-		return Manifest{}, err
+		return Manifest{}, traceutility.Wrap(err)
 	}
 
 	manifest := Manifest{
@@ -147,12 +148,12 @@ func GetCommand(payload []byte) (string, error) {
 	var msg commandMsg
 	err := json.Unmarshal(payload, &msg)
 	if err != nil {
-		return "", err
+		return "", traceutility.Wrap(err)
 	}
 
 	err = validate.Struct(msg)
 	if err != nil {
-		return "", err
+		return "", traceutility.Wrap(err)
 	}
 
 	return msg.Command, nil
@@ -162,12 +163,12 @@ func GetEdgeAppUniqueID(payload []byte) (model.ManifestUniqueID, error) {
 	var uniqueID uniqueIDmsg
 	err := json.Unmarshal(payload, &uniqueID)
 	if err != nil {
-		return model.ManifestUniqueID{}, err
+		return model.ManifestUniqueID{}, traceutility.Wrap(err)
 	}
 
 	err = validate.Struct(uniqueID)
 	if err != nil {
-		return model.ManifestUniqueID{}, err
+		return model.ManifestUniqueID{}, traceutility.Wrap(err)
 	}
 
 	return model.ManifestUniqueID{ManifestName: uniqueID.ManifestName, VersionNumber: fmt.Sprint(uniqueID.VersionNumber)}, nil
@@ -198,7 +199,7 @@ func makeContainerName(networkName string, imageName string, index int) string {
 	// create regular expression for all alphanumeric characters and _ . -
 	reg, err := regexp.Compile("[^A-Za-z0-9_.-]+")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Regular expression parsing failed! CAUSE --> ", err)
 	}
 
 	containerName = strings.ReplaceAll(containerName, " ", "")
@@ -218,7 +219,7 @@ func parseArguments(options []envMsg) ([]string, error) {
 			var err error
 			value, err = secret.DecryptEnv(env.Value)
 			if err != nil {
-				return nil, err
+				return nil, traceutility.Wrap(err)
 			}
 		} else {
 			value = env.Value
@@ -292,13 +293,13 @@ func parseConnections(connectionsStringMap connectionsString) (connectionsInt, e
 		for _, value := range values {
 			valueInt, err := strconv.Atoi(value)
 			if err != nil {
-				return nil, err
+				return nil, traceutility.Wrap(err)
 			}
 			valuesInt = append(valuesInt, valueInt)
 		}
 		keyInt, err := strconv.Atoi(key)
 		if err != nil {
-			return nil, err
+			return nil, traceutility.Wrap(err)
 		}
 		connectionsIntMap[keyInt] = valuesInt
 	}

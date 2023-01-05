@@ -8,19 +8,23 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
+
 	"github.com/weeveiot/weeve-agent/internal/config"
+	traceutility "github.com/weeveiot/weeve-agent/internal/utility/trace"
 )
 
 const (
 	TopicOrchestration = "orchestration"
 	topicNodeStatus    = "nodestatus"
-	topicLogs          = "debug"
+	topicAgentLogs     = "agentlog"
+	topicAppLogs       = "applog"
 	topicNodePublicKey = "nodePublicKey"
 	TopicOrgPrivateKey = "orgKey"
 	TopicNodeDelete    = "delete"
 )
 
 var client mqtt.Client
+var subscriptionsMap map[string]mqtt.MessageHandler
 
 func SendHeartbeat(msg StatusMsg) error {
 	nodeStatusTopic := topicNodeStatus + "/" + config.Params.NodeId
@@ -30,7 +34,7 @@ func SendHeartbeat(msg StatusMsg) error {
 
 func SendEdgeAppLogs(msg EdgeAppLogMsg) error {
 	if len(msg.ContainerLogs) > 0 {
-		edgeAppLogsTopic := config.Params.NodeId + "/" + msg.ManifestID + "/" + topicLogs
+		edgeAppLogsTopic := topicAppLogs + "/" + config.Params.NodeId
 		log.Debugln("Sending edge app logs >>", "Topic:", edgeAppLogsTopic, ">> Body:", msg)
 		return publishMessage(edgeAppLogsTopic, msg, false)
 	}
@@ -55,16 +59,13 @@ func sendDisconnectedStatus() error {
 }
 
 func ConnectNode(subscriptions map[string]mqtt.MessageHandler) error {
+	log.Debug("Connecting node...")
+
+	subscriptionsMap = subscriptions
+
 	err := createMqttClient()
 	if err != nil {
-		return err
-	}
-
-	for topic, handler := range subscriptions {
-		err = subscribeAndSetHandler(topic, handler)
-		if err != nil {
-			return err
-		}
+		return traceutility.Wrap(err)
 	}
 
 	addMqttHookToLogs(log.DebugLevel)
@@ -72,11 +73,11 @@ func ConnectNode(subscriptions map[string]mqtt.MessageHandler) error {
 }
 
 func DisconnectNode() error {
-	log.Info("Disconnecting.....")
+	log.Info("Disconnecting node...")
 	if client.IsConnected() {
 		err := sendDisconnectedStatus()
 		if err != nil {
-			return err
+			return traceutility.Wrap(err)
 		}
 		client.Disconnect(250)
 		log.Debug("MQTT client disconnected")
@@ -85,16 +86,19 @@ func DisconnectNode() error {
 }
 
 func createMqttClient() error {
+	log.Debug("Creating MQTT client...")
+
 	// Build the options for the mqtt client
 	nodeStatusTopic := topicNodeStatus + "/" + config.Params.NodeId
 	willPayload, err := json.Marshal(disconnectedMsg)
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	channelOptions := mqtt.NewClientOptions()
 	channelOptions.AddBroker(config.Params.Broker)
 	channelOptions.SetClientID(config.Params.NodeId)
+	channelOptions.SetOnConnectHandler(onConnectHandler)
 	channelOptions.SetConnectionLostHandler(connectLostHandler)
 	channelOptions.SetWill(nodeStatusTopic, string(willPayload), 1, true)
 
@@ -103,7 +107,7 @@ func createMqttClient() error {
 		channelOptions.SetPassword(config.Params.Password)
 		tlsconfig, err := newTLSConfig()
 		if err != nil {
-			return err
+			return traceutility.Wrap(err)
 		}
 		channelOptions.SetTLSConfig(tlsconfig)
 	}
@@ -112,9 +116,8 @@ func createMqttClient() error {
 
 	client = mqtt.NewClient(channelOptions)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		return token.Error()
+		return traceutility.Wrap(token.Error())
 	}
-	log.Debug("MQTT client is connected")
 
 	return nil
 }
@@ -134,13 +137,24 @@ var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err
 	log.Warning("Connection lost ", err)
 }
 
+var onConnectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
+	log.Debug("MQTT client is (re)connected")
+
+	for topic, handler := range subscriptionsMap {
+		err := subscribeAndSetHandler(topic, handler)
+		if err != nil {
+			log.Error(traceutility.Wrap(err))
+		}
+	}
+}
+
 func newTLSConfig() (*tls.Config, error) {
 	log.Debug("MQTT root cert path >> ", config.Params.RootCertPath)
 
 	certpool := x509.NewCertPool()
 	rootCert, err := os.ReadFile(config.Params.RootCertPath)
 	if err != nil {
-		return nil, err
+		return nil, traceutility.Wrap(err)
 	}
 	certpool.AppendCertsFromPEM(rootCert)
 
@@ -149,18 +163,19 @@ func newTLSConfig() (*tls.Config, error) {
 		RootCAs:    certpool,
 		ClientAuth: tls.NoClientCert,
 	}
+
 	return configTLS, nil
 }
 
 func publishMessage(topic string, message interface{}, retained bool) error {
 	payload, err := json.Marshal(message)
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	// sending with QoS of 1 to ensure that the message gets delivered
 	if token := client.Publish(topic, 1, retained, payload); token.Wait() && token.Error() != nil {
-		return token.Error()
+		return traceutility.Wrap(token.Error())
 	}
 
 	return nil

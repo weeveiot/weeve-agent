@@ -27,18 +27,18 @@ If the node is already registered, please fill the fields `nodeId` and `nodeName
 Execute this one-line installer with the path to your node configuration file:
 
 ```bash
-curl -sO http://weeve-agent-dev.s3.amazonaws.com/weeve-agent-installer.sh && sh weeve-agent-installer.sh configpath=<path-to-config-file> release=prod
+curl -sO http://weeve-agent-dev.s3.amazonaws.com/weeve-agent-installer.sh && sh weeve-agent-installer.sh --configpath=<path-to-config-file> --release=prod
 ```
 
 The installer script can take the following optional parameters:
-| Parameter  | Required | Description                                             | Possible Values             | Default |
-| ---------- | -------- | ------------------------------------------------------- | --------------------------- | ------- |
-| configpath | true     | path of the JSON file with node configuration           |                             |         |
-| release    | true     | the name of platform the node should be registered with | prod, dev                   |         |
-| test       | false    | set to 'true' to build agent from local and run         | false, true                 | false   |
-| broker     | false    | URL of the MQTT broker to connect                       |                             |         |
-| loglevel   | false    | level of log verbosity                                  | debug, info, warning, error | info    |
-| heartbeat  | false    | time period of heartbeat messages (sec)                 |                             | 10      |
+| Parameter  | Required | Description                                         | Possible Values             | Default |
+| ---------- | -------- | --------------------------------------------------- | --------------------------- | ------- |
+| configpath | true     | Path to the JSON file with node configuration       |                             |         |
+| release    | true     | Name of platform the node should be registered with | prod, dev                   |         |
+| test       | false    | If specified, build the agent from local sources    |                             | false   |
+| broker     | false    | URL of the MQTT broker to connect                   |                             |         |
+| loglevel   | false    | Level of log verbosity                              | debug, info, warning, error | info    |
+| heartbeat  | false    | Time period between heartbeat messages (sec)        |                             | 10      |
 
 ### Uninstallation
 
@@ -87,7 +87,7 @@ This section is a guide for developers intending to testing and developing the a
 
 ### Application architecture
 
-The weeve agent can be considered as a Docker orchestration layer with a purpose built business logic for a data service - multiple containers in communication with each other.
+The weeve agent can be considered as a Docker orchestration layer with a purpose built business logic for a edge app - multiple containers in communication with each other.
 As such, the project relies on the [Golang Docker SDK](https://godoc.org/github.com/docker/docker).
 
 The main entry command initiates logging, parses flags, and passes control to the publish and subscribe MQTT client software.
@@ -148,7 +148,3 @@ To execute all unit tests run the following command from the project root direct
 ```bash
 go test -v ./...
 ```
-
-## Containerization
-
-Weeve agent can also run in a container, given the right environment. Currently we support container orchestration in the secunet container environment. To create a container run `make secunet` in the top project directory. This will create a container `secunet-test` ready to be deployed on a secunet gateway. It can then be deployed using the repository [secunet deployment](https://github.com/weeveiot/secunet-deployment).

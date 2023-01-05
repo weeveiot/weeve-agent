@@ -2,6 +2,7 @@ package com
 
 import (
 	log "github.com/sirupsen/logrus"
+
 	"github.com/weeveiot/weeve-agent/internal/config"
 )
 
@@ -11,9 +12,11 @@ type mqttHook struct {
 }
 
 func addMqttHookToLogs(level log.Level) {
+	log.Debug("Adding MQTT hook to logs...")
+
 	hook := mqttHook{
 		levels: log.AllLevels[:level+1],
-		topic:  config.Params.NodeId + "/" + topicLogs,
+		topic:  topicAgentLogs + "/" + config.Params.NodeId,
 	}
 
 	log.AddHook(hook)

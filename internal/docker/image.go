@@ -1,5 +1,3 @@
-//go:build !secunet
-
 package docker
 
 import (
@@ -12,6 +10,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+	traceutility "github.com/weeveiot/weeve-agent/internal/utility/trace"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -19,14 +18,14 @@ import (
 func PullImage(authConfig types.AuthConfig, imageName string) error {
 	encodedJSON, err := json.Marshal(authConfig)
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
 
 	events, err := dockerClient.ImagePull(ctx, imageName, types.ImagePullOptions{RegistryAuth: authStr})
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	d := json.NewDecoder(events)
@@ -47,7 +46,7 @@ func PullImage(authConfig types.AuthConfig, imageName string) error {
 			if err == io.EOF {
 				break
 			}
-			return err
+			return traceutility.Wrap(err)
 		}
 	}
 
@@ -75,17 +74,19 @@ func ImageExists(imageName string) (bool, error) {
 		if client.IsErrNotFound(err) {
 			return false, nil
 		} else {
-			return false, err
+			return false, traceutility.Wrap(err)
 		}
 	}
+
 	return true, nil
 }
 
 func ImageRemove(imageID string) error {
 	_, err := dockerClient.ImageRemove(ctx, imageID, types.ImageRemoveOptions{})
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
+
 	return nil
 }
 
@@ -95,5 +96,6 @@ func GetImagesByName(images []string) ([]types.ImageSummary, error) {
 		filter.Add("reference", image)
 	}
 	options := types.ImageListOptions{Filters: filter}
+
 	return dockerClient.ImageList(ctx, options)
 }

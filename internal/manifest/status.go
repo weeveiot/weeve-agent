@@ -2,12 +2,15 @@ package manifest
 
 import (
 	"encoding/json"
-	"errors"
 	"io"
 	"os"
 
+	"errors"
+
 	log "github.com/sirupsen/logrus"
+
 	"github.com/weeveiot/weeve-agent/internal/model"
+	traceutility "github.com/weeveiot/weeve-agent/internal/utility/trace"
 )
 
 type ManifestStatus struct {
@@ -22,6 +25,10 @@ const ManifestFile = "known_manifests.jsonl"
 
 func GetKnownManifests() map[model.ManifestUniqueID]*ManifestStatus {
 	return knownManifests
+}
+
+func GetKnownManifest(manifestUniqueID model.ManifestUniqueID) *ManifestStatus {
+	return knownManifests[manifestUniqueID]
 }
 
 func GetUsedImages(uniqueID model.ManifestUniqueID) ([]string, error) {
@@ -49,12 +56,12 @@ func DeleteKnownManifest(manifestUniqueID model.ManifestUniqueID) {
 
 	err := writeKnownManifestsToFile()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to write known manifest to file! CAUSE --> ", err)
 	}
 }
 
 func SetStatus(manifestUniqueID model.ManifestUniqueID, status string) error {
-	log.Debugln("Setting status", status, "to data service", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
+	log.Debugln("Setting status", status, "to edge app", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
 
 	manifest, manifestKnown := knownManifests[manifestUniqueID]
 	if !manifestKnown {
@@ -64,13 +71,13 @@ func SetStatus(manifestUniqueID model.ManifestUniqueID, status string) error {
 
 	err := writeKnownManifestsToFile()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to write known manifest to file! CAUSE --> ", err)
 	}
 	return nil
 }
 
 func SetLastLogRead(manifestUniqueID model.ManifestUniqueID, lastLogReadTime string) error {
-	log.Debugln("Setting last log read time", lastLogReadTime, "to data service", manifestUniqueID)
+	log.Debugln("Setting last log read time", lastLogReadTime, "to edge app", manifestUniqueID)
 
 	manifest, manifestKnown := knownManifests[manifestUniqueID]
 	if !manifestKnown {
@@ -80,24 +87,26 @@ func SetLastLogRead(manifestUniqueID model.ManifestUniqueID, lastLogReadTime str
 
 	err := writeKnownManifestsToFile()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to write known manifest to file! CAUSE --> ", err)
 	}
 	return nil
 }
 
 func InitKnownManifests() error {
+	log.Debug("Initializing known manifests...")
+
 	jsonFile, err := os.Open(ManifestFile)
 	if os.IsNotExist(err) {
 		return nil
 	}
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 	defer jsonFile.Close()
 
 	byteValue, err := io.ReadAll(jsonFile)
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	return json.Unmarshal(byteValue, &knownManifests)
@@ -110,12 +119,12 @@ func GetEdgeAppStatus(manifestUniqueID model.ManifestUniqueID) string {
 func writeKnownManifestsToFile() error {
 	encodedJson, err := json.MarshalIndent(knownManifests, "", " ")
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	err = os.WriteFile(ManifestFile, encodedJson, 0644)
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 
 	return nil

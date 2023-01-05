@@ -1,4 +1,4 @@
-package dataservice
+package edgeapp
 
 import (
 	"strings"
@@ -7,11 +7,13 @@ import (
 	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/mem"
+
 	"github.com/weeveiot/weeve-agent/internal/com"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
 	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
+	traceutility "github.com/weeveiot/weeve-agent/internal/utility/trace"
 )
 
 var nodeStatus string = model.NodeDisconnected
@@ -23,24 +25,24 @@ func SetNodeStatus(status string) {
 func SendStatus() error {
 	msg, err := GetStatusMessage()
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 	err = com.SendHeartbeat(msg)
 	if err != nil {
-		return err
+		return traceutility.Wrap(err)
 	}
 	return nil
 }
 
 func GetStatusMessage() (com.StatusMsg, error) {
-	edgeApps, err := GetDataServiceStatus()
+	edgeApps, err := GetEdgeAppStatus()
 	if err != nil {
-		return com.StatusMsg{}, err
+		return com.StatusMsg{}, traceutility.Wrap(err)
 	}
 
 	deviceParams, err := getDeviceParams()
 	if err != nil {
-		return com.StatusMsg{}, err
+		return com.StatusMsg{}, traceutility.Wrap(err)
 	}
 
 	msg := com.StatusMsg{
@@ -53,7 +55,7 @@ func GetStatusMessage() (com.StatusMsg, error) {
 	return msg, nil
 }
 
-func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
+func GetEdgeAppStatus() ([]com.EdgeAppMsg, error) {
 	edgeApps := []com.EdgeAppMsg{}
 
 	for _, manif := range manifest.GetKnownManifests() {
@@ -64,9 +66,9 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 			continue
 		}
 
-		appContainers, err := docker.ReadDataServiceContainers(manif.Manifest.ManifestUniqueID)
+		appContainers, err := docker.ReadEdgeAppContainers(manif.Manifest.ManifestUniqueID)
 		if err != nil {
-			return edgeApps, err
+			return edgeApps, traceutility.Wrap(err)
 		}
 
 		if (manif.Status == model.EdgeAppRunning || manif.Status == model.EdgeAppStopped) && len(appContainers) != len(manif.Manifest.Modules) {
@@ -77,7 +79,7 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 		for _, con := range appContainers {
 			containerJSON, err := docker.InspectContainer(con.ID)
 			if err != nil {
-				return edgeApps, err
+				return edgeApps, traceutility.Wrap(err)
 			}
 			// The Status of each container is (assumed to be): Running, Restarting, Created, Exited
 			container := com.ContainerMsg{Name: strings.Join(con.Names, ", "), Status: ioutility.FirstToUpper(con.State)}
@@ -100,12 +102,12 @@ func GetDataServiceStatus() ([]com.EdgeAppMsg, error) {
 	return edgeApps, nil
 }
 
-func CompareDataServiceStatus(edgeApps []com.EdgeAppMsg) ([]com.EdgeAppMsg, bool, error) {
+func CompareEdgeAppStatus(edgeApps []com.EdgeAppMsg) ([]com.EdgeAppMsg, bool, error) {
 	statusChange := false
 
-	latestEdgeApps, err := GetDataServiceStatus()
+	latestEdgeApps, err := GetEdgeAppStatus()
 	if err != nil {
-		return nil, false, err
+		return nil, false, traceutility.Wrap(err)
 	}
 	if len(edgeApps) == len(latestEdgeApps) {
 		for index, edgeApp := range edgeApps {
@@ -122,22 +124,22 @@ func CompareDataServiceStatus(edgeApps []com.EdgeAppMsg) ([]com.EdgeAppMsg, bool
 func getDeviceParams() (com.DeviceParamsMsg, error) {
 	uptime, err := host.Uptime()
 	if err != nil {
-		return com.DeviceParamsMsg{}, err
+		return com.DeviceParamsMsg{}, traceutility.Wrap(err)
 	}
 
 	cpu, err := cpu.Percent(0, false)
 	if err != nil {
-		return com.DeviceParamsMsg{}, err
+		return com.DeviceParamsMsg{}, traceutility.Wrap(err)
 	}
 
 	diskStat, err := disk.Usage("/")
 	if err != nil {
-		return com.DeviceParamsMsg{}, err
+		return com.DeviceParamsMsg{}, traceutility.Wrap(err)
 	}
 
 	verMem, err := mem.VirtualMemory()
 	if err != nil {
-		return com.DeviceParamsMsg{}, err
+		return com.DeviceParamsMsg{}, traceutility.Wrap(err)
 	}
 
 	params := com.DeviceParamsMsg{
@@ -146,5 +148,6 @@ func getDeviceParams() (com.DeviceParamsMsg, error) {
 		StorageFree:  100.0 - diskStat.UsedPercent,
 		RamFree:      float64(verMem.Available) / float64(verMem.Total) * 100.0,
 	}
+
 	return params, nil
 }

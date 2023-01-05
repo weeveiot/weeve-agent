@@ -3,11 +3,12 @@ package handler_test
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
 	"testing"
+
+	"errors"
 
 	"github.com/Jeffail/gabs/v2"
 	"github.com/docker/docker/api/types"
@@ -16,10 +17,11 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+
 	"github.com/weeveiot/weeve-agent/internal/com"
 	"github.com/weeveiot/weeve-agent/internal/config"
-	"github.com/weeveiot/weeve-agent/internal/dataservice"
 	"github.com/weeveiot/weeve-agent/internal/docker"
+	"github.com/weeveiot/weeve-agent/internal/edgeapp"
 	"github.com/weeveiot/weeve-agent/internal/handler"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
@@ -86,7 +88,7 @@ func TestProcessMessagePass(t *testing.T) {
 	err = stopEdgeApplication(man)
 	if err != nil {
 		t.Error(err)
-		err = undeployEdgeApplication(man, dataservice.CMDRemove)
+		err = undeployEdgeApplication(man, edgeapp.CMDRemove)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -97,7 +99,7 @@ func TestProcessMessagePass(t *testing.T) {
 	err = resumeEdgeApplication(man)
 	if err != nil {
 		t.Error(err)
-		err = undeployEdgeApplication(man, dataservice.CMDRemove)
+		err = undeployEdgeApplication(man, edgeapp.CMDRemove)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -105,7 +107,7 @@ func TestProcessMessagePass(t *testing.T) {
 	}
 
 	fmt.Println("TESTING UNDEPLOY EDGE APPLICATION...")
-	err = undeployEdgeApplication(man, dataservice.CMDUndeploy)
+	err = undeployEdgeApplication(man, edgeapp.CMDUndeploy)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +119,7 @@ func TestProcessMessagePass(t *testing.T) {
 	}
 
 	fmt.Println("TESTING REMOVE EDGE APPLICATION...")
-	err = undeployEdgeApplication(man, dataservice.CMDRemove)
+	err = undeployEdgeApplication(man, edgeapp.CMDRemove)
 	assert.Nil(err)
 }
 
@@ -148,7 +150,7 @@ func deployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
 
 func stopEdgeApplication(man manifest.Manifest) error {
 	// Process stop edge application
-	manCmd.Command = dataservice.CMDStopService
+	manCmd.Command = edgeapp.CMDStopService
 	jsonB, err := json.Marshal(manCmd)
 	if err != nil {
 		panic(err)
@@ -169,7 +171,7 @@ func stopEdgeApplication(man manifest.Manifest) error {
 
 func resumeEdgeApplication(man manifest.Manifest) error {
 	// Process resume edge application
-	manCmd.Command = dataservice.CMDResumeService
+	manCmd.Command = edgeapp.CMDResumeService
 	jsonB, err := json.Marshal(manCmd)
 	if err != nil {
 		return err
@@ -189,7 +191,7 @@ func resumeEdgeApplication(man manifest.Manifest) error {
 }
 
 func undeployEdgeApplication(man manifest.Manifest, operation string) error {
-	if operation == dataservice.CMDUndeploy || operation == dataservice.CMDRemove {
+	if operation == edgeapp.CMDUndeploy || operation == edgeapp.CMDRemove {
 		manCmd.Command = operation
 	} else {
 		return errors.New("Invalid operation: " + operation)
@@ -218,7 +220,7 @@ func undeployEdgeApplication(man manifest.Manifest, operation string) error {
 		return errors.New("Edge application undeployment failed, network not deleted")
 	}
 
-	if operation == dataservice.CMDUndeploy {
+	if operation == edgeapp.CMDUndeploy {
 		exist, err := checkImages(man, true)
 		if err != nil {
 			return err
