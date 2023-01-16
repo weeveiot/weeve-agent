@@ -1,8 +1,13 @@
 [Unit]
 Description=Weeve Agent
+ConditionPathExists=/etc/weeve-agent/agent-conf.json
+
 [Install]
 WantedBy=multi-user.target
+
 [Service]
 Type=simple
 Restart=always
 RestartSec=60s
+WorkingDirectory=/var/run/weeve-agent
+ExecStart=/usr/bin/weeve-agent --out --config /etc/weeve-agent/agent-conf.json

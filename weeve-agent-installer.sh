@@ -170,6 +170,9 @@ write_to_service(){
   BINARY_PATH="$WEEVE_AGENT_DIR/$BINARY_NAME"
   ARGUMENTS="--out --config $CONFIG_FILE"
 
+  # remove hardcoded parameters
+  sed -i '/ConditionPathExists\|WorkingDirectory\|ExecStart/d' "$WEEVE_AGENT_DIR"/weeve-agent.service
+
   # the CLI arguments for weeve agent
   if [ -n "$BROKER" ]; then
     ARGUMENTS="$ARGUMENTS --broker $BROKER"
