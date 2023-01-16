@@ -20,6 +20,9 @@ Description: A client to manage docker containers on IoT devices." > deb-${ARCH}
         mkdir -p deb-${ARCH}/var/run/weeve-agent
         cp ca.crt deb-${ARCH}/var/run/weeve-agent
 
+        mkdir -p deb-${ARCH}/lib/systemd/system/
+        cp weeve-agent.service deb-${ARCH}/lib/systemd/system
+
         mkdir -p deb-${ARCH}/usr/bin/
         cp bin/weeve-agent-linux-${ARCH} deb-${ARCH}/usr/bin/weeve-agent
 
@@ -37,7 +40,7 @@ create_sign_release(){
     for ARCH in amd64 arm arm64
     do
         # create weeve-agent.list file
-        echo "deb [arch=${ARCH} signed-by=/etc/apt/trusted.gpg.d/weeve.gpg] http://${BUCKET}.s3.amazonaws.com/apt-repo stable main" > weeve-agent-${ARCH}.list
+        echo "deb [arch=${ARCH} signed-by=/etc/apt/trusted.gpg.d/weeve.gpg] http://${BUCKET}.s3.amazonaws.com stable main" > weeve-agent-${ARCH}.list
         # copy the deb
         cp "../weeve-agent_${VERSION}_${ARCH}.deb" pool/main/
 
@@ -67,6 +70,6 @@ EMAIL=paul.gaiduk@weeve.network
 VERSION=$(git tag | sort -V | tail -n 1)
 VERSION=${VERSION#v}
 
-BUCKET=weeve-agent-legacy-dev
+BUCKET=weeve-agent-ppa
 
 "$@"

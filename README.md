@@ -25,8 +25,8 @@ If the node is already registered, please fill the fields `nodeId` and `nodeName
 ### Installation via apt
 On Debian-based systems you can install the production ready version of weeve-agent using the apt manager. For this `agent-conf.json` configuration file needs to be placed in `/etc/weeve-agent/agent-conf.json`.
 ```sh
-sudo curl -SsL -o /etc/apt/trusted.gpg.d/weeve.gpg http://weeve-agent-legacy-dev.s3.amazonaws.com/weeve.gpg
-sudo curl -SsL -o /etc/apt/sources.list.d/weeve-agent-$(uname -m).list http://weeve-agent-legacy-dev.s3.amazonaws.com/weeve-agent.list
+sudo curl -SsL -o /etc/apt/trusted.gpg.d/weeve.gpg http://weeve-agent-ppa.s3.amazonaws.com/weeve.gpg
+sudo curl -SsL -o /etc/apt/sources.list.d/weeve-agent.list http://weeve-agent-ppa.s3.amazonaws.com/weeve-agent-$(uname -m | sed 's/x86_64/amd64/g').list
 sudo apt update
 sudo apt install weeve-agent
 ```
