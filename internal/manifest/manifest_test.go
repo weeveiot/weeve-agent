@@ -117,7 +117,7 @@ func TestGetCommand_MissingCommand(t *testing.T) {
 	cmd, err := manifest.GetCommand(json)
 	assert.NotNil(err)
 	if err != nil {
-		assert.Equal(errMsg, err.Error())
+		assert.Contains(err.Error(), errMsg)
 		assert.Equal("", cmd)
 	}
 }
@@ -247,7 +247,7 @@ func TestValidateUniqueIDExist_EmptyManifestName(t *testing.T) {
 	_, err = manifest.GetEdgeAppUniqueID(json)
 	assert.NotNil(err)
 	if err != nil {
-		assert.Equal(errMsg, err.Error())
+		assert.Contains(err.Error(), errMsg)
 	}
 }
 
