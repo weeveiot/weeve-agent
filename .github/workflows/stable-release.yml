@@ -23,6 +23,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
+      - name: Test
+        run: go test -v ./...
+
       - name: Create build directory
         run: mkdir -p apt-repo
 
