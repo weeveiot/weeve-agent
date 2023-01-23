@@ -148,11 +148,11 @@ func setupLogging(toStdout bool) {
 	}
 	log.SetOutput(logOutput)
 
+	mqtt.ERROR = golog.New(logOutput, "error [MQTT]: ", golog.LstdFlags|golog.Lmsgprefix)
+	mqtt.CRITICAL = golog.New(logOutput, "crit [MQTT]: ", golog.LstdFlags|golog.Lmsgprefix)
+	mqtt.WARN = golog.New(logOutput, "warn [MQTT]: ", golog.LstdFlags|golog.Lmsgprefix)
 	if config.Params.MqttLogs {
-		mqtt.ERROR = golog.New(logOutput, "[ERROR] ", 0)
-		mqtt.CRITICAL = golog.New(logOutput, "[CRIT] ", 0)
-		mqtt.WARN = golog.New(logOutput, "[WARN] ", 0)
-		mqtt.DEBUG = golog.New(logOutput, "[DEBUG] ", 0)
+		mqtt.DEBUG = golog.New(logOutput, "debug [MQTT]: ", golog.LstdFlags|golog.Lmsgprefix)
 	}
 
 	log.Infoln("weeve agent - built on", model.Version)
