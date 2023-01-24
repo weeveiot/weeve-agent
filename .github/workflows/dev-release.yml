@@ -23,6 +23,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
+      - name: Test
+        run: go test -v ./...
+
       - name: Create build directory
         run: mkdir -p installer-contents
 
@@ -30,7 +33,7 @@ jobs:
         run: make cross
 
       - name: Copy contents to be ported to s3
-        run: mv weeve-agent.service weeve-agent-installer.sh weeve-agent-uninstaller.sh ./installer-contents
+        run: mv bin/* weeve-agent.service weeve-agent-installer.sh weeve-agent-uninstaller.sh ./installer-contents
 
       - name: Directory to installer-contents
         run: ls -la ./installer-contents

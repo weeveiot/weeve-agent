@@ -23,37 +23,31 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
+      - name: Test
+        run: go test -v ./...
+
       - name: Create build directory
-        run: mkdir -p installer-contents
+        run: mkdir -p apt-repo
 
       - name: Build cross compilation binary
         run: make cross
 
-      - name: Compute checksums
-        run: cd installer-contents; for f in *; do shasum --binary --algorithm 256 $f | tee -a checksums.txt > $f.sha256; done
+      - name: Create deb archives
+        run: ./release.sh create_debs
 
-      - name: copy License
-        run: mv LICENSE installer-contents/LICENSE
+      - name: Configure GPG keys
+        run: ./release.sh configure_gpg
+        env:
+          GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
 
-      - name: Copy contents to be ported to s3
-        run: mv weeve-agent.service weeve-agent-installer.sh weeve-agent-uninstaller.sh ./installer-contents
+      - name: Create and sign release files
+        run: ./release.sh create_sign_release
 
-      - name: Directory to installer-contents
-        run: ls -la ./installer-contents
-
-      - name: Release artifacts
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: "installer-contents/*"
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.event.inputs.tag }}
-          bodyFile: RELEASE_NOTES.md
-
-      - name: Release Binary to S3
+      - name: Release APT repo to S3
         uses: jakejarvis/s3-sync-action@master
         env:
-          AWS_S3_BUCKET: weeve-agent
+          AWS_S3_BUCKET: weeve-agent-ppa
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: eu-central-1
-          SOURCE_DIR: ./installer-contents
+          SOURCE_DIR: ./apt-repo

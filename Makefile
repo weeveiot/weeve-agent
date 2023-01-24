@@ -19,12 +19,9 @@ build-darwin:
 .PHONY: build-darwin
 
 cross:
-	rm -rf installer-contents
-	GOOS=linux   GOARCH=amd64 go build $(LDFLAGS) -o installer-contents/weeve-agent-linux-amd64    ./cmd/agent/agent.go
-	GOOS=linux   GOARCH=arm64 go build $(LDFLAGS) -o installer-contents/weeve-agent-linux-arm64    ./cmd/agent/agent.go
-	GOOS=linux   GOARCH=arm   go build $(LDFLAGS) -o installer-contents/weeve-agent-linux-arm      ./cmd/agent/agent.go
-	GOOS=darwin  GOARCH=amd64 go build $(LDFLAGS) -o installer-contents/weeve-agent-macos-amd64    ./cmd/agent/agent.go
-	GOOS=darwin  GOARCH=arm64 go build $(LDFLAGS) -o installer-contents/weeve-agent-macos-arm64    ./cmd/agent/agent.go
+	GOOS=linux   GOARCH=amd64 go build $(LDFLAGS) -o bin/weeve-agent-linux-amd64    ./cmd/agent/agent.go
+	GOOS=linux   GOARCH=arm64 go build $(LDFLAGS) -o bin/weeve-agent-linux-arm64    ./cmd/agent/agent.go
+	GOOS=linux   GOARCH=arm   go build $(LDFLAGS) -o bin/weeve-agent-linux-arm      ./cmd/agent/agent.go
 .PHONY: cross
 
 build-all: build-arm build-x86 build-darwin

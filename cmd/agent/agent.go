@@ -34,10 +34,12 @@ func (f *PlainFormatter) Format(entry *log.Entry) ([]byte, error) {
 	return []byte(fmt.Sprintf("%s %s : %s\n", timestamp, entry.Level, entry.Message)), nil
 }
 
+var logFormatter = &PlainFormatter{
+	TimestampFormat: "2006-01-02 15:04:05",
+}
+
 func init() {
-	log.SetFormatter(&PlainFormatter{
-		TimestampFormat: "2006-01-02 15:04:05",
-	})
+	log.SetFormatter(logFormatter)
 }
 
 func main() {
@@ -148,11 +150,14 @@ func setupLogging(toStdout bool) {
 	}
 	log.SetOutput(logOutput)
 
+	// create a logger that's not going to send it's messages to MQTT broker for the cases when it's not possible
+	com.CreateMQTTLogger(logOutput, logFormatter, l)
+
+	mqtt.ERROR = golog.New(logOutput, "error [MQTT]: ", golog.LstdFlags|golog.Lmsgprefix)
+	mqtt.CRITICAL = golog.New(logOutput, "crit [MQTT]: ", golog.LstdFlags|golog.Lmsgprefix)
+	mqtt.WARN = golog.New(logOutput, "warn [MQTT]: ", golog.LstdFlags|golog.Lmsgprefix)
 	if config.Params.MqttLogs {
-		mqtt.ERROR = golog.New(logOutput, "[ERROR] ", 0)
-		mqtt.CRITICAL = golog.New(logOutput, "[CRIT] ", 0)
-		mqtt.WARN = golog.New(logOutput, "[WARN] ", 0)
-		mqtt.DEBUG = golog.New(logOutput, "[DEBUG] ", 0)
+		mqtt.DEBUG = golog.New(logOutput, "debug [MQTT]: ", golog.LstdFlags|golog.Lmsgprefix)
 	}
 
 	log.Infoln("weeve agent - built on", model.Version)

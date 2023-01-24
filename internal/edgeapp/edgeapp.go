@@ -216,7 +216,7 @@ func UndeployEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
 	//******** STEP 1 - Stop and Remove Containers *************//
 	dsContainers, err := docker.ReadEdgeAppContainers(manifestUniqueID)
 	if err != nil {
-		log.Errorf("Undeployment failed! CAUSE --> ", err)
+		log.Error("Undeployment failed! CAUSE --> ", err)
 		log.Error(undeploymentID, "Failed to read edge app containers.")
 		setAndSendStatus(manifestUniqueID, model.EdgeAppError)
 		return traceutility.Wrap(err)
