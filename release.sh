@@ -17,8 +17,8 @@ Priority: optional
 Homepage: https://weeve.network
 Description: A client to manage docker containers on IoT devices." > deb-${ARCH}/DEBIAN/control
 
-        mkdir -p deb-${ARCH}/var/run/weeve-agent
-        cp ca.crt deb-${ARCH}/var/run/weeve-agent
+        mkdir -p deb-${ARCH}/var/lib/weeve-agent
+        cp ca.crt deb-${ARCH}/var/lib/weeve-agent
 
         mkdir -p deb-${ARCH}/lib/systemd/system/
         cp weeve-agent.service deb-${ARCH}/lib/systemd/system

@@ -9,5 +9,5 @@ WantedBy=multi-user.target
 Type=simple
 Restart=always
 RestartSec=60s
-WorkingDirectory=/var/run/weeve-agent
+WorkingDirectory=/var/lib/weeve-agent
 ExecStart=/usr/bin/weeve-agent --out --config /etc/weeve-agent/agent-conf.json

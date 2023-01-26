@@ -29,6 +29,16 @@ jobs:
       - name: Create build directory
         run: mkdir -p apt-repo
 
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+
+      - name: Check out APT repo contents
+        run: aws s3 sync s3://weeve-agent-ppa apt-repo
+
       - name: Build cross compilation binary
         run: make cross
 

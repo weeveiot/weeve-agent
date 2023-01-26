@@ -14,7 +14,7 @@ systemctl disable weeve-agent >/dev/null || true
 systemctl --system daemon-reload >/dev/null || true
 
 # run the agent again with --delete flag to clean up
-cd /var/run/weeve-agent && eval "$COMMAND" 2>&1 && cd -
+cd /var/lib/weeve-agent && eval "$COMMAND" 2>&1 && cd -
 }
 
 dummy() {
