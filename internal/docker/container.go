@@ -57,6 +57,9 @@ func createContainer(containerConfig manifest.ContainerConfig) (string, error) {
 	}
 
 	hostConfig := &container.HostConfig{
+		LogConfig: container.LogConfig{
+			Type: "local", // From https://docs.docker.com/config/containers/logging/local/: By default, the local driver preserves 100MB of log messages per container and uses automatic compression to reduce the size on disk. The 100MB default value is based on a 20M default size for each file and a default count of 5 for the number of such files (to account for log rotation).
+		},
 		PortBindings: containerConfig.PortBinding,
 		RestartPolicy: container.RestartPolicy{
 			Name:              "on-failure",
