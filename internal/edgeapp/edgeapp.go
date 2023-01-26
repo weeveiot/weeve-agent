@@ -90,12 +90,12 @@ func DeployEdgeApp(man manifest.Manifest) error {
 		return errors.New("no valid contianers in manifest")
 	}
 
-	for _, containerConfig := range containerConfigs {
-		log.Info(deploymentID, "Creating ", containerConfig.ContainerName, " from ", containerConfig.ImageName)
-		containerID, err := docker.CreateAndStartContainer(containerConfig)
+	// start containers in reverse order to prevent connectivity issues
+	for i := len(containerConfigs) - 1; i >= 0; i-- {
+		log.Info(deploymentID, "Creating ", containerConfigs[i].ContainerName, " from ", containerConfigs[i].ImageName)
+		containerID, err := docker.CreateAndStartContainer(containerConfigs[i])
 		if err != nil {
-			log.Errorf("CreateAndStartContainer failed! DeploymentID --> %s, CAUSE --> %v", deploymentID, err)
-			log.Error(deploymentID, "Failed to create and start container ", containerConfig.ContainerName)
+			log.Error(deploymentID, "Failed to create and start container ", containerConfigs[i].ContainerName, " CAUSE --> ", err)
 			log.Info(deploymentID, "Initiating rollback ...")
 			RemoveEdgeApp(man.ManifestUniqueID)
 			setAndSendStatus(man.ManifestUniqueID, model.EdgeAppError)
