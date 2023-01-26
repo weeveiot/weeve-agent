@@ -46,18 +46,16 @@ create_sign_release(){
 
         # create Packages* files
         mkdir -p dists/stable/main/binary-${ARCH}
-        dpkg-scanpackages --arch ${ARCH} pool/ > dists/stable/main/binary-${ARCH}/Packages
+        dpkg-scanpackages --arch ${ARCH} --multiversion pool/ > dists/stable/main/binary-${ARCH}/Packages
         cat dists/stable/main/binary-${ARCH}/Packages | gzip -9 > dists/stable/main/binary-${ARCH}/Packages.gz
-
-        # create *Release* files
-        cd dists/stable
-        apt-ftparchive release . > Release
-        gpg -abs -o - Release > Release.gpg
-        gpg --clearsign -o - Release > InRelease
-        cd ../.. # dists/stable
     done
 
-    cd .. # apt-repo
+    # create *Release* files
+    cd dists/stable
+    apt-ftparchive release . > Release
+    gpg -abs -o - Release > Release.gpg
+    gpg --clearsign -o - Release > InRelease
+    cd ../../..
 }
 
 configure_gpg(){
