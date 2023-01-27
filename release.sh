@@ -1,7 +1,7 @@
 #!/bin/bash
 
 create_debs(){
-    for ARCH in amd64 arm arm64
+    for ARCH in amd64 armhf arm64
     do
         mkdir -p deb-${ARCH}
         cp -r DEBIAN deb-${ARCH}
@@ -24,7 +24,12 @@ Description: A client to manage docker containers on IoT devices." > deb-${ARCH}
         cp weeve-agent.service deb-${ARCH}/lib/systemd/system
 
         mkdir -p deb-${ARCH}/usr/bin/
-        cp bin/weeve-agent-linux-${ARCH} deb-${ARCH}/usr/bin/weeve-agent
+        if [ "$ARCH" = "armhf" ]; then
+            GOARCH="arm"
+        else
+            GOARCH=$ARCH
+        fi
+        cp bin/weeve-agent-linux-${GOARCH} deb-${ARCH}/usr/bin/weeve-agent
 
         # TODO: generate the changelog
 
@@ -37,7 +42,7 @@ create_sign_release(){
     cd apt-repo
     mkdir -p pool/main/
 
-    for ARCH in amd64 arm arm64
+    for ARCH in amd64 armhf arm64
     do
         # copy the deb
         cp "../weeve-agent_${VERSION}_${ARCH}.deb" pool/main/
