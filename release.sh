@@ -39,8 +39,6 @@ create_sign_release(){
 
     for ARCH in amd64 arm arm64
     do
-        # create weeve-agent.list file
-        echo "deb [arch=${ARCH} signed-by=/etc/apt/trusted.gpg.d/weeve.gpg] http://${BUCKET}.s3.amazonaws.com stable main" > weeve-agent-${ARCH}.list
         # copy the deb
         cp "../weeve-agent_${VERSION}_${ARCH}.deb" pool/main/
 
@@ -67,7 +65,5 @@ EMAIL=paul.gaiduk@weeve.network
 
 VERSION=$(git tag | sort -V | tail -n 1)
 VERSION=${VERSION#v}
-
-BUCKET=weeve-agent-ppa
 
 "$@"
