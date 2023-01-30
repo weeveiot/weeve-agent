@@ -23,6 +23,12 @@ import (
 var ctx = context.Background()
 var dockerClient *client.Client
 
+//* complied regex to extract container logs
+var levelRegexp = regexp.MustCompile(`'level': '(.*?)'`)
+var filenameRegexp = regexp.MustCompile(`'filename': '(.*?)'`)
+var messageRegexp = regexp.MustCompile(`'message': '(.*?)'`)
+var timeRegexp = regexp.MustCompile(`'time': '(.*?)'`)
+
 type Log struct {
 	Level    string    `json:"level"`
 	Time     time.Time `json:"time"`
@@ -197,17 +203,14 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 			return dockerLogs, traceutility.Wrap(err)
 		}
 
-		levelRegexp := regexp.MustCompile(`'level': '(.*?)'`)
-		filenameRegexp := regexp.MustCompile(`'filename': '(.*?)'`)
-		messageRegexp := regexp.MustCompile(`'message': '(.*?)'`)
+		dataInString := string(data)
 
-		timeRegexp := regexp.MustCompile(`'time': '(.*?)'`)
-		timeInString := strings.Split(timeRegexp.FindStringSubmatch(string(data))[1], ",")
+		timeInString := strings.Split(timeRegexp.FindStringSubmatch(dataInString)[1], ",")
 		timeInTime, _ := time.Parse("2006-01-02 15:04:05", timeInString[0])
 
-		docLog.Level = levelRegexp.FindStringSubmatch(string(data))[1]
-		docLog.Filename = filenameRegexp.FindStringSubmatch(string(data))[1]
-		docLog.Message = messageRegexp.FindStringSubmatch(string(data))[1]
+		docLog.Level = levelRegexp.FindStringSubmatch(dataInString)[1]
+		docLog.Filename = filenameRegexp.FindStringSubmatch(dataInString)[1]
+		docLog.Message = messageRegexp.FindStringSubmatch(dataInString)[1]
 		docLog.Time = timeInTime
 
 		dockerLogs.Log = append(dockerLogs.Log, docLog)
