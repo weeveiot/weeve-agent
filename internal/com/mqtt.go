@@ -18,8 +18,8 @@ import (
 const (
 	TopicOrchestration = "orchestration"
 	topicNodeStatus    = "nodestatus"
-	topicAgentLogs     = "agentlog"
-	topicAppLogs       = "applog"
+	topicAgentLogs     = "agentlogs"
+	topicAppLogs       = "applogs"
 	topicNodePublicKey = "nodePublicKey"
 	TopicOrgPrivateKey = "orgKey"
 	TopicNodeDelete    = "delete"

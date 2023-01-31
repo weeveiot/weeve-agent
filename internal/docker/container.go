@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/binary"
 	"io"
+	"regexp"
 	"strings"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -21,15 +23,22 @@ import (
 var ctx = context.Background()
 var dockerClient *client.Client
 
+//* complied regex to extract container logs
+var levelRegexp = regexp.MustCompile(`'level': '(.*?)'`)
+var filenameRegexp = regexp.MustCompile(`'filename': '(.*?)'`)
+var messageRegexp = regexp.MustCompile(`'message': '(.*?)'`)
+var timeRegexp = regexp.MustCompile(`'time': '(.*?)'`)
+
+type Log struct {
+	Level    string    `json:"level"`
+	Time     time.Time `json:"time"`
+	Filename string    `json:"filename"`
+	Message  string    `json:"message"`
+}
+
 type ContainerLog struct {
 	ContainerID string `json:"containerID"`
 	Log         []Log  `json:"log"`
-}
-
-type Log struct {
-	Time   string `json:"time"`
-	Stream string `json:"stream"`
-	Log    string `json:"log"`
 }
 
 func SetupDockerClient() {
@@ -164,14 +173,9 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 	dockerLogs := ContainerLog{ContainerID: containerID}
 
 	options := types.ContainerLogsOptions{
-		ShowStdout: true,
 		ShowStderr: true,
 		Since:      since,
 		Until:      until,
-		Timestamps: true,
-		Follow:     false,
-		Tail:       "",
-		Details:    false,
 	}
 
 	reader, err := dockerClient.ContainerLogs(context.Background(), containerID, options)
@@ -183,6 +187,7 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 	header := make([]byte, 8)
 	for {
 		var docLog Log
+
 		_, err := reader.Read(header)
 		if err != nil {
 			if err == io.EOF {
@@ -201,19 +206,17 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 			return dockerLogs, traceutility.Wrap(err)
 		}
 
-		time, log, found := strings.Cut(string(data), " ")
-		if found {
-			docLog.Time = time
-			docLog.Log = log
-			switch header[0] {
-			case 1:
-				docLog.Stream = "Stdout"
-			default:
-				docLog.Stream = "Stderr"
-			}
+		dataInString := string(data)
 
-			dockerLogs.Log = append(dockerLogs.Log, docLog)
-		}
+		timeInString := strings.Split(timeRegexp.FindStringSubmatch(dataInString)[1], ",")
+		timeInTime, _ := time.Parse("2006-01-02 15:04:05", timeInString[0])
+
+		docLog.Level = levelRegexp.FindStringSubmatch(dataInString)[1]
+		docLog.Filename = filenameRegexp.FindStringSubmatch(dataInString)[1]
+		docLog.Message = messageRegexp.FindStringSubmatch(dataInString)[1]
+		docLog.Time = timeInTime
+
+		dockerLogs.Log = append(dockerLogs.Log, docLog)
 	}
 }
 
