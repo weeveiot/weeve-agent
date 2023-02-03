@@ -178,19 +178,20 @@ func ResumeEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
 
 	setAndSendStatus(manifestUniqueID, model.EdgeAppExecuting)
 
-	for _, container := range containers {
-		if container.State != strings.ToLower(model.ModuleRunning) {
-			log.Info("Starting container:", strings.Join(container.Names[:], ","))
-			err := docker.StartContainer(container.ID)
+	// start containers in reverse order to prevent connectivity issues
+	for i := len(containers) - 1; i >= 0; i-- {
+		if containers[i].State != strings.ToLower(model.ModuleRunning) {
+			log.Info("Starting container:", strings.Join(containers[i].Names[:], ","))
+			err := docker.StartContainer(containers[i].ID)
 			if err != nil {
 				log.Errorln("Could not start a container", err)
 				setAndSendStatus(manifestUniqueID, model.EdgeAppError)
 				return traceutility.Wrap(err)
 			}
 
-			log.Info(strings.Join(container.Names[:], ","), ": ", container.State, "--> running")
+			log.Info(strings.Join(containers[i].Names[:], ","), ": ", containers[i].State, "--> running")
 		} else {
-			log.Debugln("Container", container.ID, "is", container.State, "and", container.Status)
+			log.Debugln("Container", containers[i].ID, "is", containers[i].State, "and", containers[i].Status)
 		}
 	}
 
