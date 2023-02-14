@@ -104,12 +104,19 @@ func Parse(payload []byte) (Manifest, error) {
 			return Manifest{}, traceutility.Wrap(err)
 		}
 
+		fmt.Print(man.debugMode)
+
+		if man.debugMode {
+			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "LOG_LEVEL", "DEBUG"))
+		} else {
+			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "LOG_LEVEL", "INFO"))
+		}
+
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "SERVICE_ID", man.ID))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_NAME", containerConfig.ImageName))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PORT", 80))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PATH", "/"))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_TYPE", module.Type))
-		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "LOG_LEVEL", strings.ToUpper(log.GetLevel().String())))
 
 		containerConfig.EnvArgs = envArgs
 		containerConfig.MountConfigs, err = parseMounts(module.Mounts)
