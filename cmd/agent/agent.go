@@ -120,7 +120,7 @@ func parseCLIoptions() (bool, string, bool) {
 	}
 
 	if opt.Version {
-		fmt.Println("weeve agent - built on", model.Version)
+		fmt.Println("weeve agent -", model.Version)
 		os.Exit(0)
 	}
 
@@ -160,7 +160,7 @@ func setupLogging(toStdout bool) {
 		mqtt.DEBUG = golog.New(logOutput, "debug [MQTT]: ", golog.LstdFlags|golog.Lmsgprefix)
 	}
 
-	log.Infoln("weeve agent - built on", model.Version)
+	log.Info("weeve agent - ", model.Version)
 	log.Info("Started logging")
 	log.Info("Logging level set to ", log.GetLevel())
 }
