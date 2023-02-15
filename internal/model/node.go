@@ -28,18 +28,18 @@ type Params struct {
 }
 
 type ManifestUniqueID struct {
-	VersionNumber string
-	ManifestName  string
+	UpdatedAt    string
+	ManifestName string
 }
 
 func (uniqueID ManifestUniqueID) MarshalText() (text []byte, err error) {
-	return []byte(uniqueID.ManifestName + "+" + uniqueID.VersionNumber), nil
+	return []byte(uniqueID.ManifestName + "+" + uniqueID.UpdatedAt), nil
 }
 
 func (uniqueID *ManifestUniqueID) UnmarshalText(text []byte) error {
 	parts := strings.Split(string(text), "+")
 	uniqueID.ManifestName = parts[0]
-	uniqueID.VersionNumber = parts[1]
+	uniqueID.UpdatedAt = parts[1]
 	return nil
 }
 

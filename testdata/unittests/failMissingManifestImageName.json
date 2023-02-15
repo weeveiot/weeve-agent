@@ -1,6 +1,7 @@
 {
     "_id": "62bef68d664ed72f8ecdd690",
     "manifestName": "kunbus-demo-manifest",
+    "updatedAt": "2019-03-13T14:00:00.000Z",
     "versionNumber": 1,
     "connections": {
         "0": [

@@ -1,14 +1,16 @@
 {
-    "_id": "62bef68d664ed72f8ecdd690",
-    "manifestName": "kunbus-demo-manifest",
+    "_id": "62c2c675b3646e94a216ef17",
+    "manifestName": "FanInFanOut",
     "updatedAt": "2019-03-13T14:00:00.000Z",
+    "versionName": "v1",
     "versionNumber": 1,
     "connections": {
         "0": [
+            "2",
             "1"
         ],
         "1": [
-            "2"
+            "3"
         ],
         "2": [
             "3"
@@ -16,11 +18,11 @@
     },
     "modules": [
         {
-            "moduleID": "62bdb84e664ed72f8ecd88e1",
+            "moduleID": "62be26cf664ed72f8ecda630",
             "moduleName": "mqtt-ingress",
             "image": {
                 "name": "weevenetwork/mqtt-ingress",
-                "tag": "v1.0.0",
+                "tag": "V1",
                 "registry": {
                     "url": "https://hub.docker.com",
                     "userName": "",
@@ -30,28 +32,23 @@
             "envs": [
                 {
                     "key": "MQTT_BROKER",
-                    "value": "mqtt://test.mosquitto.org",
-                    "secret": false
+                    "value": "mqtt://mapi-dev.weeve.engineering"
                 },
                 {
                     "key": "PORT",
-                    "value": "1883",
-                    "secret": false
+                    "value": "1883"
                 },
                 {
                     "key": "PROTOCOL",
-                    "value": "mqtt",
-                    "secret": false
+                    "value": "mqtt"
                 },
                 {
                     "key": "TOPIC",
-                    "value": "revpi_I14",
-                    "secret": false
+                    "value": "weeve/faninfanout"
                 },
                 {
                     "key": "QOS",
-                    "value": "0",
-                    "secret": false
+                    "value": "0"
                 }
             ],
             "ports": [],
@@ -60,45 +57,11 @@
             "type": "Input"
         },
         {
-            "moduleID": "62bdb84e664ed72f8ecd88cd",
-            "moduleName": "fluctuation-filter",
-            "image": {
-                "name": "weevenetwork/fluctuation-filter",
-                "tag": "v1.0.0",
-                "registry": {
-                    "url": "https://hub.docker.com",
-                    "userName": "",
-                    "password": ""
-                }
-            },
-            "envs": [
-                {
-                    "key": "INPUT_LABEL",
-                    "value": "temp",
-                    "secret": false
-                },
-                {
-                    "key": "WINDOW_SIZE",
-                    "value": "3",
-                    "secret": false
-                },
-                {
-                    "key": "SEND_ON_CHANGE",
-                    "value": "true",
-                    "secret": false
-                }
-            ],
-            "ports": [],
-            "mounts": [],
-            "devices": [],
-            "type": "Processing"
-        },
-        {
-            "moduleID": "62bdb84e664ed72f8ecd88d7",
+            "moduleID": "62bdfdea664ed72f8ecda3ef",
             "moduleName": "comparison-filter",
             "image": {
                 "name": "weevenetwork/comparison-filter",
-                "tag": "v1.0.0",
+                "tag": "V1",
                 "registry": {
                     "url": "https://hub.docker.com",
                     "userName": "",
@@ -108,18 +71,15 @@
             "envs": [
                 {
                     "key": "INPUT_LABEL",
-                    "value": "temp",
-                    "secret": false
+                    "value": "temperature"
                 },
                 {
                     "key": "CONDITION",
-                    "value": "(==) equal to",
-                    "secret": false
+                    "value": "(>) greater than"
                 },
                 {
                     "key": "COMPARE_VALUE",
-                    "value": "1",
-                    "secret": false
+                    "value": "1"
                 }
             ],
             "ports": [],
@@ -128,11 +88,11 @@
             "type": "Processing"
         },
         {
-            "moduleID": "62bdb84e664ed72f8ecd88e3",
-            "moduleName": "slack-alert",
+            "moduleID": "62be085d664ed72f8ecda504",
+            "moduleName": "fluctuation-filter",
             "image": {
-                "name": "weevenetwork/slack-alert",
-                "tag": "v1.0.0",
+                "name": "weevenetwork/fluctuation-filter",
+                "tag": "V1",
                 "registry": {
                     "url": "https://hub.docker.com",
                     "userName": "",
@@ -142,28 +102,54 @@
             "envs": [
                 {
                     "key": "INPUT_LABEL",
-                    "value": "temp",
-                    "secret": false
+                    "value": "temperature"
+                },
+                {
+                    "key": "WINDOW_SIZE",
+                    "value": 3
+                },
+                {
+                    "key": "SEND_ON_CHANGE",
+                    "value": "True"
+                }
+            ],
+            "ports": [],
+            "mounts": [],
+            "devices": [],
+            "type": "Processing"
+        },
+        {
+            "moduleID": "62be13dc664ed72f8ecda5b1",
+            "moduleName": "slack-alert",
+            "image": {
+                "name": "weevenetwork/slack-alert",
+                "tag": "V1",
+                "registry": {
+                    "url": "https://hub.docker.com",
+                    "userName": "",
+                    "password": ""
+                }
+            },
+            "envs": [
+                {
+                    "key": "INPUT_LABEL",
+                    "value": "temperature"
                 },
                 {
                     "key": "INPUT_UNIT",
-                    "value": "number",
-                    "secret": false
+                    "value": "Celsius"
                 },
                 {
                     "key": "ALERT_SEVERITY",
-                    "value": "Warning",
-                    "secret": false
+                    "value": "Warning"
                 },
                 {
                     "key": "ALERT_MESSAGE",
-                    "value": "{{alert_severity}}: Leak detected on device {{device_name}} at {{time}}",
-                    "secret": false
+                    "value": "Data point {{label}} reached the value of {{value}} {{unit}} at {{time}}!"
                 },
                 {
                     "key": "SLACK_WEBHOOK_URL",
-                    "value": "https://hooks.slack.com/services/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",
-                    "secret": false
+                    "value": "https://hooks.slack.com/services/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"
                 }
             ],
             "ports": [],

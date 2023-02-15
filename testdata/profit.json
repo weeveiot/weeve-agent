@@ -1,0 +1,219 @@
+{
+    _id: ObjectId('632c4a03127320e293bb9bb5'),
+    displayName: 'ProFIT',
+    manifestName: 'ProFIT',
+    description: '',
+    updatedAt: '2021-12-01T12:00:00.000Z',
+    versionName: '',
+    versionNumber: 1,
+    isPublished: true,
+    isPublic: false,
+    connections: {
+        '0': [
+            '1'
+        ],
+        '1': [
+            '2'
+        ]
+    },
+    modules: [
+        {
+            moduleID: ObjectId('62ea32785974b41fec0da3a0'),
+            moduleName: 'serial-input',
+            type: ObjectId('62d8375b0ade8248f29b6146'),
+            displayName: 'Serial Input',
+            icon: 'https://icons-020-demo.s3.eu-central-1.amazonaws.com/mi_usb-serial_input.png',
+            image: {
+                name: 'weevenetwork/serial-input',
+                tag: 'v1.0.0',
+                registry: ObjectId('62d8375b0ade8248f29b6155')
+            },
+            envs: [
+                {
+                    name: 'Port',
+                    key: 'PORT',
+                    description: 'The USB port',
+                    value: '/dev/ttyACM0',
+                    type: 'text',
+                    options: [],
+                    dependencies: []
+                },
+                {
+                    name: 'Baud Rate',
+                    key: 'BAUD_RATE',
+                    description: 'The baud rate',
+                    value: '9600',
+                    type: 'select',
+                    options: [
+                        '1200',
+                        '2400',
+                        '4800',
+                        '9600',
+                        '57600',
+                        '115200'
+                    ],
+                    dependencies: []
+                },
+                {
+                    name: 'Data Bits',
+                    key: 'DATA_BITS',
+                    description: 'Number of data bits (optional)',
+                    value: '8',
+                    type: 'select',
+                    options: [
+                        '5',
+                        '6',
+                        '7',
+                        '8'
+                    ],
+                    dependencies: []
+                },
+                {
+                    name: 'Parity',
+                    key: 'PARITY',
+                    description: 'Enable parity checking (optional)',
+                    value: 'None',
+                    type: 'text',
+                    options: [
+                        'None',
+                        'Even',
+                        'Odd'
+                    ],
+                    dependencies: []
+                },
+                {
+                    name: 'Stop Bits',
+                    key: 'STOP_BITS',
+                    description: 'Number of stop bits (optional)',
+                    value: '1',
+                    type: 'select',
+                    options: [
+                        '1',
+                        '1.5',
+                        '2'
+                    ],
+                    dependencies: []
+                }
+            ],
+            ports: [],
+            envPorts: [],
+            mounts: [],
+            envMounts: [],
+            devices: [],
+            envDevices: [
+                'PORT'
+            ],
+            _id: ObjectId('62ea32785974b41fec0da3a0')
+        },
+        {
+            moduleID: ObjectId('631f427220584792ae177934'),
+            moduleName: 'serial-data-decryptor',
+            type: ObjectId('62d8375b0ade8248f29b6147'),
+            displayName: 'Serial Data Decryptor',
+            icon: 'https://icons-020-demo.s3.eu-central-1.amazonaws.com/mi_serial-data-decrypter_process.png',
+            image: {
+                name: 'weevenetwork/serial-data-decryptor',
+                tag: 'v1.0.0',
+                registry: ObjectId('62d8375b0ade8248f29b6155')
+            },
+            envs: [
+                {
+                    name: 'Decryption Key',
+                    key: 'AES_KEY',
+                    description: 'AES key to decrypt cyphertext in base64 format',
+                    value: 'AAECAwQFBgcICQoLDA0ODw==',
+                    type: 'text',
+                    options: [],
+                    dependencies: []
+                }
+            ],
+            ports: [],
+            envPorts: [],
+            mounts: [],
+            envMounts: [],
+            devices: [],
+            envDevices: [],
+            _id: ObjectId('631f427220584792ae177934')
+        },
+        {
+            moduleID: ObjectId('62de5197cf223e49151c5fbc'),
+            moduleName: 'slack-alert',
+            type: ObjectId('62d8375b0ade8248f29b6148'),
+            displayName: 'Slack Alert',
+            icon: 'https://icons-020-demo.s3.eu-central-1.amazonaws.com/mi_slack-alert_output.png',
+            image: {
+                name: 'weevenetwork/slack-alert',
+                tag: 'v1.0.0',
+                registry: ObjectId('62d8375b0ade8248f29b6155')
+            },
+            envs: [
+                {
+                    name: 'Input Label',
+                    key: 'INPUT_LABEL',
+                    description: 'The field to apply alert on',
+                    value: 'uptime',
+                    type: 'text',
+                    options: [],
+                    dependencies: []
+                },
+                {
+                    name: 'Input Unit',
+                    key: 'INPUT_UNIT',
+                    description: 'The input unit',
+                    value: 'days',
+                    type: 'text',
+                    options: [],
+                    dependencies: []
+                },
+                {
+                    name: 'Alert Severity',
+                    key: 'ALERT_SEVERITY',
+                    description: 'Order of the results',
+                    value: 'Warning',
+                    type: 'select',
+                    options: [
+                        'Warning',
+                        'Alarming',
+                        'Caution',
+                        'Broken'
+                    ],
+                    dependencies: []
+                },
+                {
+                    name: 'Alert Message',
+                    key: 'ALERT_MESSAGE',
+                    description: 'Use string interpolation format to get required field in the alert message -> {{label}}, {{value}}, {{unit}}, {{alert_severity}}, {{device_name}} and {{time}}',
+                    value: 'At {{time}} the microcontroller was up for {{value}}.',
+                    type: 'text',
+                    options: [],
+                    dependencies: []
+                },
+                {
+                    name: 'Slack Webhook URL',
+                    key: 'SLACK_WEBHOOK_URL',
+                    description: 'Webhook to the slack channel to put alerts on',
+                    value: 'https://hooks.slack.com/services/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',
+                    type: 'text',
+                    options: [],
+                    dependencies: []
+                }
+            ],
+            ports: [],
+            envPorts: [],
+            mounts: [],
+            envMounts: [],
+            devices: [],
+            envDevices: [],
+            _id: ObjectId('62de5197cf223e49151c5fbc')
+        }
+    ],
+    tenantID: ObjectId('62d837800ade8248f29b6157'),
+    organizationID: ObjectId('62d837bc0ade8248f29b6165'),
+    userID: ObjectId('62d83a9b0ade8248f29b6548'),
+    nodesDeployedOn: [
+        ObjectId('62ece3765974b41fec0f274b')
+    ],
+    updatedAt: ISODate('2022-10-04T14:13:55.646Z'),
+    createdAt: ISODate('2022-09-22T11:41:55.164Z'),
+    __v: 0
+}

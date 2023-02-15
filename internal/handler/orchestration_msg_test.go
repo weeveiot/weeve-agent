@@ -32,9 +32,9 @@ func init() {
 }
 
 var manCmd struct {
-	ManifestName  string  `json:"manifestName"`
-	VersionNumber float64 `json:"versionNumber"`
-	Command       string  `json:"command"`
+	ManifestName string `json:"manifestName"`
+	UpdatedAt    string `json:"updatedAt"`
+	Command      string `json:"command"`
 }
 
 var ctx = context.Background()
@@ -71,7 +71,7 @@ func TestProcessMessagePass(t *testing.T) {
 	}
 
 	manCmd.ManifestName = man.ManifestUniqueID.ManifestName
-	manCmd.VersionNumber = man.VersionNumber
+	manCmd.UpdatedAt = man.ManifestUniqueID.UpdatedAt
 
 	dockerCli, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -245,7 +245,7 @@ func undeployEdgeApplication(man manifest.Manifest, operation string) error {
 
 func parseManifest(jsonParsed *gabs.Container) (manifest.Manifest, error) {
 	manifestName := jsonParsed.Search("manifestName").Data().(string)
-	versionNumber := jsonParsed.Search("versionNumber").Data().(float64)
+	updatedAt := jsonParsed.Search("updatedAt").Data().(string)
 
 	var containerConfigs []manifest.ContainerConfig
 
@@ -266,8 +266,7 @@ func parseManifest(jsonParsed *gabs.Container) (manifest.Manifest, error) {
 	}
 
 	manifest := manifest.Manifest{
-		ManifestUniqueID: model.ManifestUniqueID{ManifestName: manifestName, VersionNumber: fmt.Sprint(versionNumber)},
-		VersionNumber:    versionNumber,
+		ManifestUniqueID: model.ManifestUniqueID{ManifestName: manifestName, UpdatedAt: updatedAt},
 		Modules:          containerConfigs,
 	}
 
@@ -277,7 +276,7 @@ func parseManifest(jsonParsed *gabs.Container) (manifest.Manifest, error) {
 func getNetwork(manID model.ManifestUniqueID) ([]types.NetworkResource, error) {
 	filter := filters.NewArgs()
 	filter.Add("label", "manifestName="+manID.ManifestName)
-	filter.Add("label", "versionNumber="+manID.VersionNumber)
+	filter.Add("label", "updatedAt="+manID.UpdatedAt)
 	options := types.NetworkListOptions{Filters: filter}
 	networks, err := dockerCli.NetworkList(context.Background(), options)
 	if err != nil {
@@ -290,7 +289,7 @@ func getNetwork(manID model.ManifestUniqueID) ([]types.NetworkResource, error) {
 func getEdgeApplicationContainers(manifestUniqueID model.ManifestUniqueID) ([]types.Container, error) {
 	filter := filters.NewArgs()
 	filter.Add("label", "manifestName="+manifestUniqueID.ManifestName)
-	filter.Add("label", "versionNumber="+manifestUniqueID.VersionNumber)
+	filter.Add("label", "updatedAt="+manifestUniqueID.UpdatedAt)
 	options := types.ContainerListOptions{All: true, Filters: filter}
 	containers, err := dockerCli.ContainerList(context.Background(), options)
 	if err != nil {

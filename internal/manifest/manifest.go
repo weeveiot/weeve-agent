@@ -70,9 +70,9 @@ func Parse(payload []byte) (Manifest, error) {
 	}
 
 	labels := map[string]string{
-		"manifestID":    man.ID,
-		"manifestName":  man.ManifestName,
-		"versionNumber": fmt.Sprint(man.VersionNumber),
+		"manifestID":   man.ID,
+		"manifestName": man.ManifestName,
+		"updatedAt":    man.UpdatedAt,
 	}
 
 	var containerConfigs []ContainerConfig
@@ -134,7 +134,7 @@ func Parse(payload []byte) (Manifest, error) {
 
 	manifest := Manifest{
 		ID:               man.ID,
-		ManifestUniqueID: model.ManifestUniqueID{ManifestName: man.ManifestName, VersionNumber: fmt.Sprint(man.VersionNumber)},
+		ManifestUniqueID: model.ManifestUniqueID{ManifestName: man.ManifestName, UpdatedAt: man.UpdatedAt},
 		VersionNumber:    man.VersionNumber,
 		Modules:          containerConfigs,
 		Labels:           labels,
@@ -171,7 +171,7 @@ func GetEdgeAppUniqueID(payload []byte) (model.ManifestUniqueID, error) {
 		return model.ManifestUniqueID{}, traceutility.Wrap(err)
 	}
 
-	return model.ManifestUniqueID{ManifestName: uniqueID.ManifestName, VersionNumber: fmt.Sprint(uniqueID.VersionNumber)}, nil
+	return model.ManifestUniqueID{ManifestName: uniqueID.ManifestName, UpdatedAt: uniqueID.UpdatedAt}, nil
 }
 
 func (m Manifest) UpdateManifest(networkName string) {

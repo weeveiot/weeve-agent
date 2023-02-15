@@ -23,14 +23,14 @@ const (
 )
 
 func DeployEdgeApp(man manifest.Manifest) error {
-	deploymentID := man.ManifestUniqueID.ManifestName + "-" + man.ManifestUniqueID.VersionNumber + " | "
+	deploymentID := man.ManifestUniqueID.ManifestName + "-" + man.ManifestUniqueID.UpdatedAt + " | "
 
 	log.Info(deploymentID, "Deploying edge app ...")
 
 	//******** STEP 1 - Check if Edge App is already deployed *************//
 	edgeAppStatus := manifest.GetKnownManifest(man.ManifestUniqueID)
 	if edgeAppStatus != nil && edgeAppStatus.Status != model.EdgeAppUndeployed {
-		log.Warn(deploymentID, fmt.Sprintf("Edge app %v, %v already exist!", man.ManifestUniqueID.ManifestName, man.ManifestUniqueID.VersionNumber))
+		log.Warn(deploymentID, fmt.Sprintf("Edge app %v from %v already exist!", man.ManifestUniqueID.ManifestName, man.ManifestUniqueID.UpdatedAt))
 		return nil
 	}
 
@@ -111,11 +111,11 @@ func DeployEdgeApp(man manifest.Manifest) error {
 }
 
 func StopEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
-	log.Infoln("Stopping edge app:", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
+	log.Infoln("Stopping edge app:", manifestUniqueID.ManifestName, manifestUniqueID.UpdatedAt)
 
 	status := manifest.GetEdgeAppStatus(manifestUniqueID)
 	if status != model.EdgeAppRunning {
-		log.Warn("Can't stop edge application with ManifestName: ", manifestUniqueID.ManifestName, " and VersionNumber: ", manifestUniqueID.VersionNumber, " with status ", status)
+		log.Warn("Can't stop edge application with ManifestName: ", manifestUniqueID.ManifestName, " updated at ", manifestUniqueID.UpdatedAt, " with status ", status)
 		return nil
 	}
 
@@ -155,11 +155,11 @@ func StopEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
 }
 
 func ResumeEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
-	log.Infoln("Resuming edge app:", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
+	log.Infoln("Resuming edge app:", manifestUniqueID.ManifestName, manifestUniqueID.UpdatedAt)
 
 	status := manifest.GetEdgeAppStatus(manifestUniqueID)
 	if status != model.EdgeAppStopped {
-		log.Warn("Can't resume edge application with ManifestName: ", manifestUniqueID.ManifestName, " and VersionNumber: ", manifestUniqueID.VersionNumber, " with status ", status)
+		log.Warn("Can't resume edge application with ManifestName: ", manifestUniqueID.ManifestName, " updated at ", manifestUniqueID.UpdatedAt, " with status ", status)
 		return nil
 	}
 
@@ -201,14 +201,14 @@ func ResumeEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
 }
 
 func UndeployEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
-	log.Infoln("Undeploying edge app:", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
+	log.Infoln("Undeploying edge app:", manifestUniqueID.ManifestName, manifestUniqueID.UpdatedAt)
 
-	undeploymentID := manifestUniqueID.ManifestName + "-" + manifestUniqueID.VersionNumber + " | "
+	undeploymentID := manifestUniqueID.ManifestName + "-" + manifestUniqueID.UpdatedAt + " | "
 
 	// Check if edge app exist
 	edgeAppStatus := manifest.GetKnownManifest(manifestUniqueID)
 	if edgeAppStatus == nil {
-		log.Warnln(undeploymentID, "Trying to undeploy a non-existant edge application with ManifestName: ", manifestUniqueID.ManifestName, " and VersionNumber: ", manifestUniqueID.VersionNumber)
+		log.Warnln(undeploymentID, "Trying to undeploy a non-existant edge application with ManifestName: ", manifestUniqueID.ManifestName, " updated at ", manifestUniqueID.UpdatedAt)
 		return nil
 	}
 
@@ -253,9 +253,9 @@ func UndeployEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
 }
 
 func RemoveEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
-	log.Infoln("Removing edge app:", manifestUniqueID.ManifestName, manifestUniqueID.VersionNumber)
+	log.Infoln("Removing edge app:", manifestUniqueID.ManifestName, manifestUniqueID.UpdatedAt)
 
-	removalID := manifestUniqueID.ManifestName + "-" + manifestUniqueID.VersionNumber + " | "
+	removalID := manifestUniqueID.ManifestName + "-" + manifestUniqueID.UpdatedAt + " | "
 
 	//******** STEP 1 - Undeploy the edge app *************//
 	err := UndeployEdgeApp(manifestUniqueID)
