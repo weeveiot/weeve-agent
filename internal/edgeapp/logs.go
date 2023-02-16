@@ -4,10 +4,11 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/com"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
+	"github.com/weeveiot/weeve-agent/internal/model"
 	traceutility "github.com/weeveiot/weeve-agent/internal/utility/trace"
 )
 
-func SendEdgeAppLogs(manif manifest.ManifestStatus, until string) error {
+func SendEdgeAppLogs(manif manifest.ManifestRecord, until string) error {
 	msg, err := GetEdgeAppLogsMsg(manif, until)
 	if err != nil {
 		return traceutility.Wrap(err)
@@ -20,9 +21,9 @@ func SendEdgeAppLogs(manif manifest.ManifestStatus, until string) error {
 	return manifest.SetLastLogRead(manif.Manifest.ManifestUniqueID, until)
 }
 
-func GetEdgeAppLogsMsg(manif manifest.ManifestStatus, until string) (com.EdgeAppLogMsg, error) {
+func GetEdgeAppLogsMsg(manif manifest.ManifestRecord, until string) (com.EdgeAppLogMsg, error) {
 	var msg com.EdgeAppLogMsg
-	containerLogs, err := GetEdgeAppLogs(manif, manif.LastLogReadTime, until)
+	containerLogs, err := GetEdgeAppLogs(manif.Manifest.ManifestUniqueID, manif.LastLogReadTime, until)
 	if err != nil {
 		return msg, traceutility.Wrap(err)
 	}
@@ -35,10 +36,10 @@ func GetEdgeAppLogsMsg(manif manifest.ManifestStatus, until string) (com.EdgeApp
 	return msg, nil
 }
 
-func GetEdgeAppLogs(manif manifest.ManifestStatus, since string, until string) ([]docker.ContainerLog, error) {
+func GetEdgeAppLogs(uniqueID model.ManifestUniqueID, since string, until string) ([]docker.ContainerLog, error) {
 	var containerLogs []docker.ContainerLog
 
-	appContainers, err := docker.ReadEdgeAppContainers(manif.Manifest.ManifestUniqueID)
+	appContainers, err := docker.ReadEdgeAppContainers(uniqueID)
 	if err != nil {
 		return nil, traceutility.Wrap(err)
 	}

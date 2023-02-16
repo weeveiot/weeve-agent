@@ -13,21 +13,21 @@ import (
 	traceutility "github.com/weeveiot/weeve-agent/internal/utility/trace"
 )
 
-type ManifestStatus struct {
+type ManifestRecord struct {
 	Manifest        Manifest
 	Status          string
 	LastLogReadTime string
 }
 
-var knownManifests = make(map[model.ManifestUniqueID]*ManifestStatus)
+var knownManifests = make(map[model.ManifestUniqueID]*ManifestRecord)
 
 const ManifestFile = "known_manifests.jsonl"
 
-func GetKnownManifests() map[model.ManifestUniqueID]*ManifestStatus {
+func GetKnownManifests() map[model.ManifestUniqueID]*ManifestRecord {
 	return knownManifests
 }
 
-func GetKnownManifest(manifestUniqueID model.ManifestUniqueID) *ManifestStatus {
+func GetKnownManifest(manifestUniqueID model.ManifestUniqueID) *ManifestRecord {
 	return knownManifests[manifestUniqueID]
 }
 
@@ -45,7 +45,7 @@ func GetUsedImages(uniqueID model.ManifestUniqueID) ([]string, error) {
 
 func AddKnownManifest(man Manifest) {
 	manCopy := clearSecretValues(man) // remove some fields so that secret values never touch the hard disk
-	knownManifests[man.ManifestUniqueID] = &ManifestStatus{
+	knownManifests[man.ManifestUniqueID] = &ManifestRecord{
 		Manifest: manCopy,
 		Status:   model.EdgeAppInitiated,
 	}

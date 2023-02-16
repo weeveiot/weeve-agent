@@ -28,8 +28,8 @@ func DeployEdgeApp(man manifest.Manifest) error {
 	log.Info(deploymentID, "Deploying edge app ...")
 
 	//******** STEP 1 - Check if Edge App is already deployed *************//
-	edgeAppStatus := manifest.GetKnownManifest(man.ManifestUniqueID)
-	if edgeAppStatus != nil && edgeAppStatus.Status != model.EdgeAppUndeployed {
+	edgeAppRecord := manifest.GetKnownManifest(man.ManifestUniqueID)
+	if edgeAppRecord != nil && edgeAppRecord.Status != model.EdgeAppUndeployed {
 		log.Warn(deploymentID, fmt.Sprintf("Edge app %v from %v already exist!", man.ManifestUniqueID.ManifestName, man.ManifestUniqueID.UpdatedAt))
 		return nil
 	}
@@ -206,8 +206,8 @@ func UndeployEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
 	undeploymentID := manifestUniqueID.ManifestName + "-" + manifestUniqueID.UpdatedAt + " | "
 
 	// Check if edge app exist
-	edgeAppStatus := manifest.GetKnownManifest(manifestUniqueID)
-	if edgeAppStatus == nil {
+	edgeAppRecord := manifest.GetKnownManifest(manifestUniqueID)
+	if edgeAppRecord == nil {
 		log.Warnln(undeploymentID, "Trying to undeploy a non-existant edge application with ManifestName: ", manifestUniqueID.ManifestName, " updated at ", manifestUniqueID.UpdatedAt)
 		return nil
 	}
