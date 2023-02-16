@@ -3,6 +3,7 @@ package edgeapp
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"errors"
 
@@ -27,11 +28,30 @@ func DeployEdgeApp(man manifest.Manifest) error {
 
 	log.Info(deploymentID, "Deploying edge app ...")
 
-	//******** STEP 1 - Check if Edge App is already deployed *************//
+	//******** STEP 1 - Check if a version of the edge app is already deployed *************//
 	edgeAppRecord := manifest.GetKnownManifest(man.ManifestUniqueID)
 	if edgeAppRecord != nil && edgeAppRecord.Status != model.EdgeAppUndeployed {
 		log.Warn(deploymentID, fmt.Sprintf("Edge app %v from %v already exist!", man.ManifestUniqueID.ManifestName, man.ManifestUniqueID.UpdatedAt))
 		return nil
+	}
+
+	// check if an older version of the edge app is deployed
+	newTimestamp, err := time.Parse(time.RFC3339, man.ManifestUniqueID.UpdatedAt)
+	if err != nil {
+		log.Error(deploymentID, "Deployment failed! UpdatedAt field in the manifest doesn't confirm to RFC 3339 format. Value: ", man.ManifestUniqueID.UpdatedAt)
+		return traceutility.Wrap(err)
+	}
+	for knownID := range manifest.GetKnownManifests() {
+		knownTimestamp, _ := time.Parse(time.RFC3339, knownID.UpdatedAt)
+		if knownID.ManifestName == man.ManifestUniqueID.ManifestName && knownTimestamp.Before(newTimestamp) {
+			// if so, remove it except for the images that are used by the new edge app
+			var newImages []string
+			for _, module := range man.Modules {
+				newImages = append(newImages, module.ImageNameFull)
+			}
+			RemoveEdgeApp(knownID, newImages)
+			break
+		}
 	}
 
 	manifest.AddKnownManifest(man)
@@ -41,22 +61,22 @@ func DeployEdgeApp(man manifest.Manifest) error {
 
 	for _, module := range man.Modules {
 		// Check if image exist in local
-		exists, err := docker.ImageExists(module.ImageName)
+		exists, err := docker.ImageExists(module.ImageNameFull)
 		if err != nil {
-			log.Errorf("Deployment failed! DeploymentID --> %s, CAUSE --> %v", deploymentID, err)
+			log.Error(deploymentID, "Deployment failed! CAUSE --> ", err)
 			return traceutility.Wrap(err)
 		}
 		if exists { // Image already exists, continue
-			log.Info(deploymentID, fmt.Sprintf("Image %v, already exists on host", module.ImageName))
+			log.Info(deploymentID, fmt.Sprintf("Image %v, already exists on host", module.ImageNameFull))
 		} else { // Pull this image
-			log.Info(deploymentID, fmt.Sprintf("Image %v, does not exist on host", module.ImageName))
-			log.Info(deploymentID, "Pulling ", module.ImageName)
-			err = docker.PullImage(module.AuthConfig, module.ImageName)
+			log.Info(deploymentID, fmt.Sprintf("Image %v, does not exist on host", module.ImageNameFull))
+			log.Info(deploymentID, "Pulling ", module.ImageNameFull)
+			err = docker.PullImage(module.AuthConfig, module.ImageNameFull)
 			if err != nil {
 				log.Error(deploymentID, "Unable to pull image/s, "+err.Error())
 				setAndSendStatus(man.ManifestUniqueID, model.EdgeAppError)
 				log.Info(deploymentID, "Initiating rollback ...")
-				RemoveEdgeApp(man.ManifestUniqueID)
+				RemoveEdgeApp(man.ManifestUniqueID, nil)
 				return errors.New("unable to pull image/s")
 			}
 		}
@@ -70,7 +90,7 @@ func DeployEdgeApp(man manifest.Manifest) error {
 		log.Error("CreateNetwork failed! CAUSE --> ", err)
 		setAndSendStatus(man.ManifestUniqueID, model.EdgeAppError)
 		log.Info(deploymentID, "Initiating rollback ...")
-		RemoveEdgeApp(man.ManifestUniqueID)
+		RemoveEdgeApp(man.ManifestUniqueID, nil)
 		return traceutility.Wrap(err)
 	}
 
@@ -86,18 +106,18 @@ func DeployEdgeApp(man manifest.Manifest) error {
 		log.Error(deploymentID, "No valid containers in Manifest")
 		setAndSendStatus(man.ManifestUniqueID, model.EdgeAppError)
 		log.Info(deploymentID, "Initiating rollback ...")
-		RemoveEdgeApp(man.ManifestUniqueID)
+		RemoveEdgeApp(man.ManifestUniqueID, nil)
 		return errors.New("no valid contianers in manifest")
 	}
 
 	// start containers in reverse order to prevent connectivity issues
 	for i := len(containerConfigs) - 1; i >= 0; i-- {
-		log.Info(deploymentID, "Creating ", containerConfigs[i].ContainerName, " from ", containerConfigs[i].ImageName)
+		log.Info(deploymentID, "Creating ", containerConfigs[i].ContainerName, " from ", containerConfigs[i].ImageNameFull)
 		containerID, err := docker.CreateAndStartContainer(containerConfigs[i])
 		if err != nil {
 			log.Error(deploymentID, "Failed to create and start container ", containerConfigs[i].ContainerName, " CAUSE --> ", err)
 			log.Info(deploymentID, "Initiating rollback ...")
-			RemoveEdgeApp(man.ManifestUniqueID)
+			RemoveEdgeApp(man.ManifestUniqueID, nil)
 			setAndSendStatus(man.ManifestUniqueID, model.EdgeAppError)
 			return traceutility.Wrap(err)
 		}
@@ -215,6 +235,7 @@ func UndeployEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
 	setAndSendStatus(manifestUniqueID, model.EdgeAppExecuting)
 
 	//******** STEP 1 - Stop and Remove Containers *************//
+	log.Info(undeploymentID, "Stopping and removing containers ...")
 	dsContainers, err := docker.ReadEdgeAppContainers(manifestUniqueID)
 	if err != nil {
 		log.Error("Undeployment failed! CAUSE --> ", err)
@@ -252,7 +273,7 @@ func UndeployEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
 	return nil
 }
 
-func RemoveEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
+func RemoveEdgeApp(manifestUniqueID model.ManifestUniqueID, keepImages []string) error {
 	log.Infoln("Removing edge app:", manifestUniqueID.ManifestName, manifestUniqueID.UpdatedAt)
 
 	removalID := manifestUniqueID.ManifestName + "-" + manifestUniqueID.UpdatedAt + " | "
@@ -264,6 +285,7 @@ func RemoveEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
 	}
 
 	//******** STEP 2 - Remove Images WITHOUT Containers *************//
+	log.Info(removalID, "Removing images that are not needed anymore ...")
 	usedImageNames, err := manifest.GetUsedImages(manifestUniqueID)
 	if err != nil {
 		log.Errorf("Edge app removal failed! RemovalID --> %s, CAUSE --> %v", removalID, err)
@@ -271,49 +293,61 @@ func RemoveEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
 		return traceutility.Wrap(err)
 	}
 
-	usedImageIDs, err := docker.GetImagesByName(usedImageNames)
-	if err != nil {
-		log.Error("Unable to get images! CAUSE --> ", err)
-		log.Error(removalID, "Failed to read the used images.")
-		setAndSendStatus(manifestUniqueID, model.EdgeAppError)
-		return traceutility.Wrap(err)
+	// make sure that the images that should be kept are not removed
+	var removeImageNames []string
+	if len(keepImages) > 0 {
+		removeImageNames = subtractArray(usedImageNames, keepImages)
+	} else {
+		removeImageNames = usedImageNames
 	}
 
-	numContainersPerImage := make(map[string]int) // map { imageID: number_of_allocated_containers }
-	for _, image := range usedImageIDs {
-		numContainersPerImage[image.ID] = 0
-	}
-	containers, err := docker.ReadAllContainers()
-	if err != nil {
-		log.Error("Unable to read containers! CAUSE --> ", err)
-		log.Error(removalID, "Failed to read all containers.")
-		setAndSendStatus(manifestUniqueID, model.EdgeAppError)
-		return traceutility.Wrap(err)
-	}
+	// check if there are images that should be removed
+	if len(removeImageNames) > 0 {
+		removeImageIDs, err := docker.GetImagesByName(removeImageNames)
+		if err != nil {
+			log.Error("Unable to get images! CAUSE --> ", err)
+			log.Error(removalID, "Failed to read the used images.")
+			setAndSendStatus(manifestUniqueID, model.EdgeAppError)
+			return traceutility.Wrap(err)
+		}
 
-	var errorlist string
-	for imageID := range numContainersPerImage {
-		for _, container := range containers {
-			if container.ImageID == imageID {
-				numContainersPerImage[imageID]++
+		numContainersPerImage := make(map[string]int) // map { imageID: number_of_allocated_containers }
+		for _, image := range removeImageIDs {
+			numContainersPerImage[image.ID] = 0
+		}
+		containers, err := docker.ReadAllContainers()
+		if err != nil {
+			log.Error("Unable to read containers! CAUSE --> ", err)
+			log.Error(removalID, "Failed to read all containers.")
+			setAndSendStatus(manifestUniqueID, model.EdgeAppError)
+			return traceutility.Wrap(err)
+		}
+
+		var errorlist string
+		for imageID := range numContainersPerImage {
+			for _, container := range containers {
+				if container.ImageID == imageID {
+					numContainersPerImage[imageID]++
+				}
+			}
+
+			if numContainersPerImage[imageID] == 0 {
+				log.Info(removalID, "Remove Image - ", imageID)
+				err := docker.ImageRemove(imageID)
+				if err != nil {
+					log.Errorf("Edge app removal failed! RemovalID --> %s, CAUSE --> %v", removalID, err)
+					setAndSendStatus(manifestUniqueID, model.EdgeAppError)
+					errorlist = fmt.Sprintf("%v,%v", errorlist, err)
+				}
 			}
 		}
 
-		if numContainersPerImage[imageID] == 0 {
-			log.Info(removalID, "Remove Image - ", imageID)
-			err := docker.ImageRemove(imageID)
-			if err != nil {
-				log.Errorf("Edge app removal failed! RemovalID --> %s, CAUSE --> %v", removalID, err)
-				setAndSendStatus(manifestUniqueID, model.EdgeAppError)
-				errorlist = fmt.Sprintf("%v,%v", errorlist, err)
-			}
+		if errorlist != "" {
+			return errors.New("Edge app could not be removed completely. Cause(s): " + errorlist)
 		}
 	}
 
-	if errorlist != "" {
-		return errors.New("Edge app could not be removed completely. Cause(s): " + errorlist)
-	}
-
+	//******** STEP 3 - Remove Manifest *************//
 	manifest.DeleteKnownManifest(manifestUniqueID)
 	err = SendStatus()
 	if err != nil {
@@ -328,7 +362,7 @@ func RemoveAll() error {
 	log.Info("Removing all edge apps")
 
 	for uniqueID := range manifest.GetKnownManifests() {
-		err := RemoveEdgeApp(uniqueID)
+		err := RemoveEdgeApp(uniqueID, nil)
 		if err != nil {
 			return traceutility.Wrap(err)
 		}
@@ -350,4 +384,17 @@ func setAndSendStatus(manifestUniqueID model.ManifestUniqueID, status string) {
 	if err != nil {
 		log.Error("SendStatus failed! CAUSE --> ", err)
 	}
+}
+
+func subtractArray(minuend, subtrahend []string) (difference []string) {
+	subtrahendMap := make(map[string]struct{}, len(subtrahend))
+	for _, key := range subtrahend {
+		subtrahendMap[key] = struct{}{}
+	}
+	for _, key := range minuend {
+		if _, found := subtrahendMap[key]; !found {
+			difference = append(difference, key)
+		}
+	}
+	return
 }

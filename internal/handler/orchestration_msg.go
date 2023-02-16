@@ -77,7 +77,7 @@ func ProcessOrchestrationMessage(payload []byte) error {
 		if err != nil {
 			return traceutility.Wrap(err)
 		}
-		err = edgeapp.RemoveEdgeApp(manifestUniqueID)
+		err = edgeapp.RemoveEdgeApp(manifestUniqueID, nil)
 		if err != nil {
 			return traceutility.Wrap(err)
 		}

@@ -38,7 +38,7 @@ func GetUsedImages(uniqueID model.ManifestUniqueID) ([]string, error) {
 		return nil, errors.New("could not get the images. the edge app is not known")
 	}
 	for _, module := range manifest.Manifest.Modules {
-		images = append(images, module.ImageName)
+		images = append(images, module.ImageNameFull)
 	}
 	return images, nil
 }

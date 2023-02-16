@@ -52,10 +52,10 @@ func SetupDockerClient() {
 }
 
 func createContainer(containerConfig manifest.ContainerConfig) (string, error) {
-	log.Debugln("Creating container", containerConfig.ContainerName, "from", containerConfig.ImageName)
+	log.Debugln("Creating container", containerConfig.ContainerName, "from", containerConfig.ImageNameFull)
 
 	config := &container.Config{
-		Image:        containerConfig.ImageName,
+		Image:        containerConfig.ImageNameFull,
 		AttachStdin:  false,
 		AttachStdout: true,
 		AttachStderr: true,

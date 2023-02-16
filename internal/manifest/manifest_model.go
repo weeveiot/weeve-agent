@@ -1,10 +1,10 @@
 package manifest
 
 type manifestMsg struct {
-	ID            string `json:"_id" validate:"required,notblank,alphanum"`
-	ManifestName  string `validate:"required,notblank"`
-	UpdatedAt     string `validate:"required,notblank"`
-	VersionNumber float64
+	ID            string            `json:"_id" validate:"required,notblank,alphanum"`
+	ManifestName  string            `validate:"required,notblank"`
+	UpdatedAt     string            `validate:"required,notblank"`
+	VersionNumber float64           `validate:"required"`
 	Connections   connectionsString `validate:"required"`
 	Modules       []moduleMsg       `validate:"required,notblank"`
 	Command       string            `validate:"required,notblank"`

@@ -33,7 +33,7 @@ type Manifest struct {
 // This struct holds information for starting a container
 type ContainerConfig struct {
 	ContainerName string
-	ImageName     string
+	ImageNameFull string
 	EnvArgs       []string
 	NetworkName   string
 	ExposedPorts  nat.PortSet // This must be set for the container create
@@ -88,9 +88,9 @@ func Parse(payload []byte) (Manifest, error) {
 		containerConfig.Labels = labels
 
 		if module.Image.Tag == "" {
-			containerConfig.ImageName = module.Image.Name
+			containerConfig.ImageNameFull = module.Image.Name
 		} else {
-			containerConfig.ImageName = module.Image.Name + ":" + module.Image.Tag
+			containerConfig.ImageNameFull = module.Image.Name + ":" + module.Image.Tag
 		}
 
 		containerConfig.AuthConfig = types.AuthConfig{
@@ -105,7 +105,7 @@ func Parse(payload []byte) (Manifest, error) {
 		}
 
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "SERVICE_ID", man.ID))
-		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_NAME", containerConfig.ImageName))
+		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_NAME", containerConfig.ImageNameFull))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PORT", 80))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PATH", "/"))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_TYPE", module.Type))
@@ -177,7 +177,7 @@ func GetEdgeAppUniqueID(payload []byte) (model.ManifestUniqueID, error) {
 func (m Manifest) UpdateManifest(networkName string) {
 	for i, module := range m.Modules {
 		m.Modules[i].NetworkName = networkName
-		m.Modules[i].ContainerName = makeContainerName(networkName, module.ImageName, i)
+		m.Modules[i].ContainerName = makeContainerName(networkName, module.ImageNameFull, i)
 
 		m.Modules[i].EnvArgs = append(m.Modules[i].EnvArgs, fmt.Sprintf("%v=%v", "INGRESS_HOST", m.Modules[i].ContainerName))
 	}
