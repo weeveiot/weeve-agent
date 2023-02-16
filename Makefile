@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := build-all
 
-LDFLAGS=-ldflags="-X 'github.com/weeveiot/weeve-agent/internal/model.Version=$(shell date +%Y.%m.%d) ($(shell git rev-parse --short HEAD))'"
+LDFLAGS=-ldflags="-X 'github.com/weeveiot/weeve-agent/internal/model.Version=$(shell git tag | sort -V | tail -n 1 | cut -c2-)'"
 
 build:
 	go build $(LDFLAGS) -o bin/weeve-agent ./cmd/agent/agent.go
