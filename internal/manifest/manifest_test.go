@@ -2,7 +2,6 @@ package manifest_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"testing"
 
@@ -15,8 +14,8 @@ import (
 )
 
 var manifestUniqueID struct {
-	ManifestName  string  `json:"manifestName"`
-	VersionNumber float64 `json:"versionNumber"`
+	ManifestName string `json:"manifestName"`
+	UpdatedAt    string `json:"updatedAt"`
 }
 
 func TestGetManifest(t *testing.T) {
@@ -31,13 +30,13 @@ func TestGetManifest(t *testing.T) {
 
 	assert.NotNil(manifest)
 	assert.Equal("kunbus-demo-manifest", manifest.ManifestUniqueID.ManifestName)
-	assert.Equal(float64(1), manifest.VersionNumber)
+	assert.Equal("2023-01-01T00:00:00Z", manifest.ManifestUniqueID.UpdatedAt)
 	assert.Equal(3, len(manifest.Connections))
 	assert.Equal(4, len(manifest.Modules))
 
 	if len(manifest.Modules) == 4 {
 		assert.Equal(3, len(manifest.Modules[0].Labels))
-		assert.Equal("weevenetwork/mqtt-ingress:V1", manifest.Modules[0].ImageName)
+		assert.Equal("weevenetwork/mqtt-ingress:V1", manifest.Modules[0].ImageNameFull)
 		assert.Equal(11, len(manifest.Modules[0].EnvArgs))
 		if (len(manifest.Modules[0].EnvArgs)) == 10 {
 			assert.Equal("MQTT_BROKER=mqtt://mapi-dev.weeve.engineering", manifest.Modules[0].EnvArgs[0])
@@ -89,7 +88,7 @@ func TestGetEdgeAppUniqueID(t *testing.T) {
 	assert := assert.New(t)
 
 	manifestUniqueID.ManifestName = "kunbus-demo-manifest"
-	manifestUniqueID.VersionNumber = 1
+	manifestUniqueID.UpdatedAt = "2023-01-01T00:00:00Z"
 
 	json, err := json.Marshal(manifestUniqueID)
 	if err != nil {
@@ -102,7 +101,7 @@ func TestGetEdgeAppUniqueID(t *testing.T) {
 	}
 
 	assert.Equal(manifestUniqueID.ManifestName, man.ManifestName)
-	assert.Equal(fmt.Sprintf("%g", manifestUniqueID.VersionNumber), man.VersionNumber)
+	assert.Equal(manifestUniqueID.UpdatedAt, man.UpdatedAt)
 }
 
 func TestGetCommand_MissingCommand(t *testing.T) {
@@ -181,9 +180,9 @@ func TestValidateManifest_EmptyManifestName(t *testing.T) {
 	utilFailTestValidateManifest(t, filePath, errMsg)
 }
 
-func TestValidateManifest_MissingManifestVersionNumber(t *testing.T) {
-	errMsg := "Key: 'manifestMsg.VersionNumber' Error:Field validation for 'VersionNumber' failed on the 'required' tag"
-	filePath := "../../testdata/unittests/failMissingManifestVersionNumber.json"
+func TestValidateManifest_MissingManifestUpdatedAt(t *testing.T) {
+	errMsg := "Key: 'manifestMsg.UpdatedAt' Error:Field validation for 'UpdatedAt' failed on the 'required' tag"
+	filePath := "../../testdata/unittests/failMissingManifestUpdatedAt.json"
 	utilFailTestValidateManifest(t, filePath, errMsg)
 }
 
@@ -236,7 +235,7 @@ func TestValidateManifest(t *testing.T) {
 func TestValidateUniqueIDExist_EmptyManifestName(t *testing.T) {
 	assert := assert.New(t)
 	manifestUniqueID.ManifestName = " "
-	manifestUniqueID.VersionNumber = 1
+	manifestUniqueID.UpdatedAt = "2021-05-11T12:00:00Z"
 	errMsg := "Key: 'uniqueIDmsg.ManifestName' Error:Field validation for 'ManifestName' failed on the 'notblank' tag"
 
 	json, err := json.Marshal(manifestUniqueID)
@@ -253,7 +252,7 @@ func TestValidateUniqueIDExist_EmptyManifestName(t *testing.T) {
 
 func TestValidateUniqueIDExist(t *testing.T) {
 	manifestUniqueID.ManifestName = "kunbus-demo-manifest"
-	manifestUniqueID.VersionNumber = 1
+	manifestUniqueID.UpdatedAt = "2021-05-11T12:00:00Z"
 
 	json, err := json.Marshal(manifestUniqueID)
 	if err != nil {

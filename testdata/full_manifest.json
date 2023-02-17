@@ -1,0 +1,272 @@
+{
+    _id: ObjectId('62bef68d664ed72f8ecdd690'),
+    displayName: 'Kunbus Demo App',
+    manifestName: 'kunbus-demo-manifest',
+    description: 'Sample manifest for Kunbus Demo App',
+    updatedAt: '2021-12-01T12:00:00.000Z',
+    versionName: 'v1',
+    versionNumber: 1,
+    isPublished: true,
+    isPublic: false,
+    connections: {
+        '0': [
+            '1'
+        ],
+        '1': [
+            '2'
+        ],
+        '2': [
+            '3'
+        ]
+    },
+    modules: [
+        {
+            moduleID: ObjectId('62bdb84e664ed72f8ecd88e1'),
+            moduleName: 'mqtt-ingress',
+            displayName: 'MQTT Ingress',
+            icon: 'https://icons-020-demo.s3.eu-central-1.amazonaws.com/mi_mqtt_input.png',
+            image: {
+                name: 'weevenetwork/mqtt-ingress',
+                tag: 'V1',
+                registry: ObjectId('62bdb844664ed72f8ecd87f6')
+            },
+            envs: [
+                {
+                    name: 'MQTT Broker',
+                    key: 'MQTT_BROKER',
+                    description: 'Broker to subscribe from',
+                    value: 'mqtt://mapi-dev.weeve.engineering',
+                    type: 'text',
+                    options: [],
+                    dependencies: []
+                },
+                {
+                    name: 'Port',
+                    key: 'PORT',
+                    description: 'Port on which the broker is listening',
+                    value: '1883',
+                    type: 'number',
+                    options: [],
+                    dependencies: []
+                },
+                {
+                    name: 'Protocol',
+                    key: 'PROTOCOL',
+                    description: 'Protocol used for connection',
+                    value: 'mqtt',
+                    type: 'select',
+                    options: [
+                        'mqtt',
+                        'ws'
+                    ],
+                    dependencies: []
+                },
+                {
+                    name: 'Topic',
+                    key: 'TOPIC',
+                    description: 'Topic to subscribe',
+                    value: 'revpi_I14',
+                    type: 'text',
+                    options: [],
+                    dependencies: []
+                },
+                {
+                    name: 'QOS',
+                    key: 'QOS',
+                    description: 'Quality of service for the connection',
+                    value: '0',
+                    type: 'select',
+                    options: [
+                        '0',
+                        '1',
+                        '2'
+                    ],
+                    dependencies: []
+                }
+            ],
+            ports: [],
+            envPorts: [
+                'PORT'
+            ],
+            mounts: [],
+            devices: [],
+            _id: ObjectId('62bef68d664ed72f8ecdd691')
+        },
+        {
+            moduleID: ObjectId('62bdb84e664ed72f8ecd88cd'),
+            moduleName: 'fluctuation-filter',
+            displayName: 'Fluctuation Filter',
+            icon: 'https://icons-020-demo.s3.eu-central-1.amazonaws.com/mi_fluctuation_filter_process.png',
+            image: {
+                name: 'weevenetwork/fluctuation-filter',
+                tag: 'V1',
+                registry: ObjectId('62bdb844664ed72f8ecd87f6')
+            },
+            envs: [
+                {
+                    name: 'Input Label',
+                    key: 'INPUT_LABEL',
+                    description: 'The field to apply module logic on',
+                    value: 'temp',
+                    type: 'text',
+                    options: [],
+                    dependencies: []
+                },
+                {
+                    name: 'Window Size',
+                    key: 'WINDOW_SIZE',
+                    description: 'Number of stable data instances to consider',
+                    value: '3',
+                    type: 'number',
+                    options: [],
+                    dependencies: []
+                },
+                {
+                    name: 'Send On Change',
+                    key: 'SEND_ON_CHANGE',
+                    description: 'Output data only when stable value changes.',
+                    value: 'true',
+                    type: 'select',
+                    options: [
+                        'true',
+                        'false'
+                    ],
+                    dependencies: []
+                }
+            ],
+            ports: [],
+            envPorts: [],
+            mounts: [],
+            devices: [],
+            _id: ObjectId('62bef68d664ed72f8ecdd692')
+        },
+        {
+            moduleID: ObjectId('62bdb84e664ed72f8ecd88d7'),
+            moduleName: 'comparison-filter',
+            displayName: 'Comparison Filter',
+            icon: 'https://icons-020-demo.s3.eu-central-1.amazonaws.com/mi_comparison_filter_process.png',
+            image: {
+                name: 'weevenetwork/comparison-filter',
+                tag: 'V1',
+                registry: ObjectId('62bdb844664ed72f8ecd87f6')
+            },
+            envs: [
+                {
+                    name: 'Input Label',
+                    key: 'INPUT_LABEL',
+                    description: 'The field to apply filter on',
+                    value: 'temp',
+                    type: 'text',
+                    options: [],
+                    dependencies: []
+                },
+                {
+                    name: 'Condition',
+                    key: 'CONDITION',
+                    description: 'Query/Condition for filtering the data',
+                    value: '(==) equal to',
+                    type: 'select',
+                    options: [
+                        'No condition',
+                        '(==) equal to',
+                        '(!=) not equal to',
+                        '(>) greater than',
+                        '(>=) greater than or equal to',
+                        '(<) less than',
+                        '(<=) less than or equal to'
+                    ],
+                    dependencies: []
+                },
+                {
+                    name: 'Compare value',
+                    key: 'COMPARE_VALUE',
+                    description: 'The value to compare with',
+                    value: '1',
+                    type: 'number',
+                    options: [],
+                    dependencies: []
+                }
+            ],
+            ports: [],
+            envPorts: [],
+            mounts: [],
+            devices: [],
+            _id: ObjectId('62bef68d664ed72f8ecdd693')
+        },
+        {
+            moduleID: ObjectId('62bdb84e664ed72f8ecd88e3'),
+            moduleName: 'slack-alert',
+            displayName: 'Slack Alert',
+            icon: 'https://icons-020-demo.s3.eu-central-1.amazonaws.com/mi_slack-alert_output.png',
+            image: {
+                name: 'weevenetwork/slack-alert',
+                tag: 'V1',
+                registry: ObjectId('62bdb844664ed72f8ecd87f6')
+            },
+            envs: [
+                {
+                    name: 'Input Label',
+                    key: 'INPUT_LABEL',
+                    description: 'The field to apply alert on',
+                    value: 'temp',
+                    type: 'text',
+                    options: [],
+                    dependencies: []
+                },
+                {
+                    name: 'Input Unit',
+                    key: 'INPUT_UNIT',
+                    description: 'The input unit',
+                    value: 'Celsius',
+                    type: 'text',
+                    options: [],
+                    dependencies: []
+                },
+                {
+                    name: 'Alert Severity',
+                    key: 'ALERT_SEVERITY',
+                    description: 'Order of the results',
+                    value: 'Warning',
+                    type: 'select',
+                    options: [
+                        'Warning',
+                        'Alarming',
+                        'Caution',
+                        'Broken'
+                    ],
+                    dependencies: []
+                },
+                {
+                    name: 'Alert Message',
+                    key: 'ALERT_MESSAGE',
+                    description: 'Use string interpolation format to get required field in the alert message -> {{label}}, {{value}}, {{unit}}, {{alert_severity}}, {{device_name}} and {{time}}',
+                    value: '{{alert_severity}}: Leak detected on device {{device_name}} at {{time}}',
+                    type: 'text',
+                    options: [],
+                    dependencies: []
+                },
+                {
+                    name: 'Slack Webhook URL',
+                    key: 'SLACK_WEBHOOK_URL',
+                    description: 'Webhook to the slack channel to put alerts on',
+                    value: 'https://hooks.slack.com/services/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',
+                    type: 'text',
+                    options: [],
+                    dependencies: []
+                }
+            ],
+            ports: [],
+            envPorts: [],
+            mounts: [],
+            devices: [],
+            _id: ObjectId('62bef68d664ed72f8ecdd694')
+        }
+    ],
+    tenantID: ObjectId('62bdb846664ed72f8ecd87f9'),
+    workspaceID: ObjectId('62bdb846664ed72f8ecd8812'),
+    userID: ObjectId('62bdb846664ed72f8ecd8816'),
+    nodesDeployedOn: [],
+    createdAt: ISODate('2022-07-01T13:28:45.452Z'),
+    updatedAt: ISODate('2022-07-01T13:28:45.452Z'),
+    __v: 0
+}

@@ -38,7 +38,7 @@ func ReadEdgeAppNetworks(manifestUniqueID model.ManifestUniqueID) ([]types.Netwo
 
 	filter := filters.NewArgs()
 	filter.Add("label", "manifestName="+manifestUniqueID.ManifestName)
-	filter.Add("label", "versionNumber="+manifestUniqueID.VersionNumber)
+	filter.Add("label", "updatedAt="+manifestUniqueID.UpdatedAt)
 	options := types.NetworkListOptions{Filters: filter}
 
 	networks, err := dockerClient.NetworkList(ctx, options)
@@ -109,7 +109,7 @@ func CreateNetwork(name string, labels map[string]string) (string, error) {
 func NetworkPrune(manifestUniqueID model.ManifestUniqueID) error {
 	filter := filters.NewArgs()
 	filter.Add("label", "manifestName="+manifestUniqueID.ManifestName)
-	filter.Add("label", "versionNumber="+manifestUniqueID.VersionNumber)
+	filter.Add("label", "updatedAt="+manifestUniqueID.UpdatedAt)
 
 	pruneReport, err := dockerClient.NetworksPrune(ctx, filter)
 	if err != nil {

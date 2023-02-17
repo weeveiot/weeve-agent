@@ -91,6 +91,10 @@ func ImageRemove(imageID string) error {
 }
 
 func GetImagesByName(images []string) ([]types.ImageSummary, error) {
+	if len(images) == 0 {
+		return nil, nil
+	}
+
 	filter := filters.NewArgs()
 	for _, image := range images {
 		filter.Add("reference", image)

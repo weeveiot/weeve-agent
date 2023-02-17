@@ -1,0 +1,84 @@
+{
+    "_id": "62b09c984b303ba38597edd6",
+    "command": "DEPLOY",
+    "connections": {
+        "1": [
+            "2"
+        ]
+    },
+    "manifestName": "device-manifest",
+    "updatedAt": "2019-03-13T14:00:00.000Z",
+    "modules": [
+        {
+            "devices": [
+                {
+                    "container": "/mnt/uart",
+                    "host": "/dev/ttyACM0"
+                }
+            ],
+            "envs": [
+                {
+                    "key": "PORT",
+                    "value": "/mnt/uart"
+                },
+                {
+                    "key": "BAUD_RATE",
+                    "value": "9600"
+                }
+            ],
+            "image": {
+                "name": "serial-ingress",
+                "registry": {
+                    "password": "",
+                    "url": "https://hub.docker.com",
+                    "userName": ""
+                },
+                "tag": "latest"
+            },
+            "moduleID": "62b323a23058c60c5f689432",
+            "moduleName": "serial-ingress",
+            "mounts": [],
+            "ports": []
+        },
+        {
+            "devices": [],
+            "envs": [
+                {
+                    "key": "INPUT_LABEL",
+                    "value": "temp"
+                },
+                {
+                    "key": "INPUT_UNIT",
+                    "value": "number"
+                },
+                {
+                    "key": "ALERT_SEVERITY",
+                    "value": "Warning"
+                },
+                {
+                    "key": "ALERT_MESSAGE",
+                    "value": "{{alert_severity}}: Leak detected on device {{device_name}} at {{time}}"
+                },
+                {
+                    "key": "SLACK_WEBHOOK_URL",
+                    "value": "https://hooks.slack.com/services/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"
+                }
+            ],
+            "image": {
+                "name": "weevenetwork/slack-alert",
+                "registry": {
+                    "password": "",
+                    "url": "https://hub.docker.com",
+                    "userName": ""
+                },
+                "tag": "latest"
+            },
+            "moduleID": "62b09bae4b303ba38597e5ba",
+            "moduleName": "slack-alert",
+            "mounts": [],
+            "ports": []
+        }
+    ],
+    "versionName": "v1",
+    "versionNumber": 1
+}

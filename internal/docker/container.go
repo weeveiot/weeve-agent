@@ -23,7 +23,7 @@ import (
 var ctx = context.Background()
 var dockerClient *client.Client
 
-//* complied regex to extract container logs
+// * complied regex to extract container logs
 var levelRegexp = regexp.MustCompile(`'level': '(.*?)'`)
 var filenameRegexp = regexp.MustCompile(`'filename': '(.*?)'`)
 var messageRegexp = regexp.MustCompile(`'message': '(.*?)'`)
@@ -52,10 +52,10 @@ func SetupDockerClient() {
 }
 
 func createContainer(containerConfig manifest.ContainerConfig) (string, error) {
-	log.Debugln("Creating container", containerConfig.ContainerName, "from", containerConfig.ImageName)
+	log.Debugln("Creating container", containerConfig.ContainerName, "from", containerConfig.ImageNameFull)
 
 	config := &container.Config{
-		Image:        containerConfig.ImageName,
+		Image:        containerConfig.ImageNameFull,
 		AttachStdin:  false,
 		AttachStdout: true,
 		AttachStderr: true,
@@ -159,7 +159,7 @@ func ReadAllContainers() ([]types.Container, error) {
 func ReadEdgeAppContainers(manifestUniqueID model.ManifestUniqueID) ([]types.Container, error) {
 	filter := filters.NewArgs()
 	filter.Add("label", "manifestName="+manifestUniqueID.ManifestName)
-	filter.Add("label", "versionNumber="+manifestUniqueID.VersionNumber)
+	filter.Add("label", "updatedAt="+manifestUniqueID.UpdatedAt)
 	options := types.ContainerListOptions{All: true, Filters: filter}
 	containers, err := dockerClient.ContainerList(context.Background(), options)
 	if err != nil {
