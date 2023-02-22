@@ -68,7 +68,6 @@ configure_gpg(){
 FULL_NAME="Paul Gaiduk"
 EMAIL=paul.gaiduk@weeve.network
 
-VERSION=$(git tag | sort -V | tail -n 1)
-VERSION=${VERSION#v}
+VERSION=$(git tag | sort -V | tail -n 1 | cut -c2-)
 
 "$@"

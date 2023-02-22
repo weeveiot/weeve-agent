@@ -2,5 +2,6 @@
   "_id": "62b09c984b303ba38597edd6",
   "command": "REMOVE",
   "manifestName": "kunbus-demo-manifest",
+  "updatedAt": "2019-03-13T14:00:00.000Z",
   "versionNumber": 1
 }
