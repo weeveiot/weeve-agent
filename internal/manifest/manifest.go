@@ -104,7 +104,7 @@ func Parse(payload []byte) (Manifest, error) {
 			return Manifest{}, traceutility.Wrap(err)
 		}
 
-		if man.debugMode {
+		if man.DebugMode {
 			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "LOG_LEVEL", "DEBUG"))
 		} else {
 			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "LOG_LEVEL", "INFO"))

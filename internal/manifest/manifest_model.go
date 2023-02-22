@@ -7,7 +7,7 @@ type manifestMsg struct {
 	Connections   connectionsString `validate:"required"`
 	Modules       []moduleMsg       `validate:"required,notblank"`
 	Command       string            `validate:"required,notblank"`
-	debugMode     bool              `validate:"required"`
+	DebugMode     bool
 }
 
 type moduleMsg struct {
