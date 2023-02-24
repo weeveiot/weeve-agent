@@ -34,54 +34,49 @@ func TestGetManifest(t *testing.T) {
 	assert.Equal(3, len(manifest.Connections))
 	assert.Equal(4, len(manifest.Modules))
 
-	if len(manifest.Modules) == 4 {
-		assert.Equal(3, len(manifest.Modules[0].Labels))
-		assert.Equal("weevenetwork/mqtt-ingress:V1", manifest.Modules[0].ImageNameFull)
-		assert.Equal(11, len(manifest.Modules[0].EnvArgs))
-		if (len(manifest.Modules[0].EnvArgs)) == 10 {
-			assert.Equal("MQTT_BROKER=mqtt://mapi-dev.weeve.engineering", manifest.Modules[0].EnvArgs[0])
-			assert.Equal("PORT=1883", manifest.Modules[0].EnvArgs[1])
-			assert.Equal("PROTOCOL=mqtt", manifest.Modules[0].EnvArgs[2])
-			assert.Equal("TOPIC=revpi_I14", manifest.Modules[0].EnvArgs[3])
-			assert.Equal("QOS=0", manifest.Modules[0].EnvArgs[4])
-			assert.Equal("SERVICE_ID=62bef68d664ed72f8ecdd690", manifest.Modules[0].EnvArgs[5])
-			assert.Equal("MODULE_NAME=weevenetwork/mqtt-ingress", manifest.Modules[0].EnvArgs[6])
-			assert.Equal("INGRESS_PORT=80", manifest.Modules[0].EnvArgs[7])
-			assert.Equal("INGRESS_PATH=/", manifest.Modules[0].EnvArgs[8])
-			assert.Equal("MODULE_TYPE=Input", manifest.Modules[0].EnvArgs[9])
-		}
+	assert.Equal(3, len(manifest.Modules[0].Labels))
+	assert.Equal("weevenetwork/mqtt-ingress:V1", manifest.Modules[0].ImageNameFull)
+	assert.ElementsMatch(manifest.Modules[0].EnvArgs, []string{
+		"MQTT_BROKER=mqtt://mapi-dev.weeve.engineering",
+		"PORT=1883",
+		"PROTOCOL=mqtt",
+		"TOPIC=revpi_I14",
+		"QOS=0",
+		"LOG_LEVEL=INFO",
+		"SERVICE_ID=62bef68d664ed72f8ecdd690",
+		"MODULE_NAME=weevenetwork/mqtt-ingress:V1",
+		"INGRESS_PORT=80",
+		"INGRESS_PATH=/",
+		"MODULE_TYPE=Input",
+	})
 
-		assert.Equal(struct{}{}, manifest.Modules[0].ExposedPorts[nat.Port("1883")])
-		assert.Equal([]nat.PortBinding{{HostPort: "1883"}}, manifest.Modules[0].PortBinding[nat.Port("1883")])
+	assert.Equal(struct{}{}, manifest.Modules[0].ExposedPorts[nat.Port("1883")])
+	assert.Equal([]nat.PortBinding{{HostPort: "1883"}}, manifest.Modules[0].PortBinding[nat.Port("1883")])
 
-		assert.Equal(1, len(manifest.Modules[0].MountConfigs))
-		if (len(manifest.Modules[0].MountConfigs)) == 1 {
-			assert.Equal(mount.Mount{Type: "bind",
-				Source:      "/data/host",
-				Target:      "/data",
-				ReadOnly:    false,
-				Consistency: "default",
-				BindOptions: &mount.BindOptions{Propagation: "rprivate", NonRecursive: true}},
-				manifest.Modules[0].MountConfigs[0])
-		}
-
-		assert.Equal(1, len(manifest.Modules[0].Resources.Devices))
-		if (len(manifest.Modules[0].MountConfigs)) == 1 {
-			assert.Equal(container.DeviceMapping{
-				PathOnHost:        "/dev/ttyUSB0/host",
-				PathInContainer:   "/dev/ttyUSB0",
-				CgroupPermissions: "rw",
-			},
-				manifest.Modules[0].Resources.Devices[0])
-		}
-
-		manifest.UpdateManifest("kunbus-demo-manifest_1d")
-		assert.Equal(13, len(manifest.Modules[0].EnvArgs))
-		if (len(manifest.Modules[0].EnvArgs)) == 12 {
-			assert.Equal("INGRESS_HOST=kunbus-demo-manifest_1d.weevenetwork_mqtt-ingress_V1.0", manifest.Modules[0].EnvArgs[10])
-			assert.Equal("EGRESS_URLS=http://kunbus-demo-manifest_1d.weevenetwork_fluctuation-filter_V1.1:80/", manifest.Modules[0].EnvArgs[11])
-		}
+	assert.Equal(1, len(manifest.Modules[0].MountConfigs))
+	if (len(manifest.Modules[0].MountConfigs)) == 1 {
+		assert.Equal(mount.Mount{Type: "bind",
+			Source:      "/data/host",
+			Target:      "/data",
+			ReadOnly:    false,
+			Consistency: "default",
+			BindOptions: &mount.BindOptions{Propagation: "rprivate", NonRecursive: true}},
+			manifest.Modules[0].MountConfigs[0])
 	}
+
+	assert.Equal(1, len(manifest.Modules[0].Resources.Devices))
+	assert.Equal(
+		container.DeviceMapping{
+			PathOnHost:        "/dev/ttyUSB0/host",
+			PathInContainer:   "/dev/ttyUSB0",
+			CgroupPermissions: "rw",
+		},
+		manifest.Modules[0].Resources.Devices[0])
+
+	manifest.UpdateManifest("kunbus-demo-manifest_1d")
+	assert.Equal(13, len(manifest.Modules[0].EnvArgs))
+	assert.Contains(manifest.Modules[0].EnvArgs, "INGRESS_HOST=kunbus-demo-manifest_1d.weevenetwork_mqtt-ingress_V1.0")
+	assert.Contains(manifest.Modules[0].EnvArgs, "EGRESS_URLS=http://kunbus-demo-manifest_1d.weevenetwork_fluctuation-filter_V1.1:80/")
 }
 
 func TestGetEdgeAppUniqueID(t *testing.T) {
