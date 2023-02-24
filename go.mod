@@ -1,6 +1,6 @@
 module github.com/weeveiot/weeve-agent
 
-go 1.19
+go 1.20
 
 require (
 	github.com/Jeffail/gabs/v2 v2.6.1
