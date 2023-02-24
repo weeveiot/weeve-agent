@@ -2,5 +2,6 @@
     "_id": "62c2c675b3646e94a216ef17",
     "command": "STOP",
     "manifestName": "kunbus-demo-manifest",
+    "updatedAt": "2019-03-13T14:00:00.000Z",
     "versionNumber": 1
 }

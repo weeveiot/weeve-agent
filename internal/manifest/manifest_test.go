@@ -2,7 +2,6 @@ package manifest_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"testing"
 
@@ -15,8 +14,8 @@ import (
 )
 
 var manifestUniqueID struct {
-	ManifestName  string  `json:"manifestName"`
-	VersionNumber float64 `json:"versionNumber"`
+	ManifestName string `json:"manifestName"`
+	UpdatedAt    string `json:"updatedAt"`
 }
 
 func TestGetManifest(t *testing.T) {
@@ -31,65 +30,60 @@ func TestGetManifest(t *testing.T) {
 
 	assert.NotNil(manifest)
 	assert.Equal("kunbus-demo-manifest", manifest.ManifestUniqueID.ManifestName)
-	assert.Equal(float64(1), manifest.VersionNumber)
+	assert.Equal("2023-01-01T00:00:00Z", manifest.ManifestUniqueID.UpdatedAt)
 	assert.Equal(3, len(manifest.Connections))
 	assert.Equal(4, len(manifest.Modules))
 
-	if len(manifest.Modules) == 4 {
-		assert.Equal(3, len(manifest.Modules[0].Labels))
-		assert.Equal("weevenetwork/mqtt-ingress:V1", manifest.Modules[0].ImageName)
-		assert.Equal(11, len(manifest.Modules[0].EnvArgs))
-		if (len(manifest.Modules[0].EnvArgs)) == 10 {
-			assert.Equal("MQTT_BROKER=mqtt://mapi-dev.weeve.engineering", manifest.Modules[0].EnvArgs[0])
-			assert.Equal("PORT=1883", manifest.Modules[0].EnvArgs[1])
-			assert.Equal("PROTOCOL=mqtt", manifest.Modules[0].EnvArgs[2])
-			assert.Equal("TOPIC=revpi_I14", manifest.Modules[0].EnvArgs[3])
-			assert.Equal("QOS=0", manifest.Modules[0].EnvArgs[4])
-			assert.Equal("SERVICE_ID=62bef68d664ed72f8ecdd690", manifest.Modules[0].EnvArgs[5])
-			assert.Equal("MODULE_NAME=weevenetwork/mqtt-ingress", manifest.Modules[0].EnvArgs[6])
-			assert.Equal("INGRESS_PORT=80", manifest.Modules[0].EnvArgs[7])
-			assert.Equal("INGRESS_PATH=/", manifest.Modules[0].EnvArgs[8])
-			assert.Equal("MODULE_TYPE=Input", manifest.Modules[0].EnvArgs[9])
-		}
+	assert.Equal(3, len(manifest.Modules[0].Labels))
+	assert.Equal("weevenetwork/mqtt-ingress:V1", manifest.Modules[0].ImageNameFull)
+	assert.ElementsMatch(manifest.Modules[0].EnvArgs, []string{
+		"MQTT_BROKER=mqtt://mapi-dev.weeve.engineering",
+		"PORT=1883",
+		"PROTOCOL=mqtt",
+		"TOPIC=revpi_I14",
+		"QOS=0",
+		"LOG_LEVEL=INFO",
+		"SERVICE_ID=62bef68d664ed72f8ecdd690",
+		"MODULE_NAME=weevenetwork/mqtt-ingress:V1",
+		"INGRESS_PORT=80",
+		"INGRESS_PATH=/",
+		"MODULE_TYPE=Input",
+	})
 
-		assert.Equal(struct{}{}, manifest.Modules[0].ExposedPorts[nat.Port("1883")])
-		assert.Equal([]nat.PortBinding{{HostPort: "1883"}}, manifest.Modules[0].PortBinding[nat.Port("1883")])
+	assert.Equal(struct{}{}, manifest.Modules[0].ExposedPorts[nat.Port("1883")])
+	assert.Equal([]nat.PortBinding{{HostPort: "1883"}}, manifest.Modules[0].PortBinding[nat.Port("1883")])
 
-		assert.Equal(1, len(manifest.Modules[0].MountConfigs))
-		if (len(manifest.Modules[0].MountConfigs)) == 1 {
-			assert.Equal(mount.Mount{Type: "bind",
-				Source:      "/data/host",
-				Target:      "/data",
-				ReadOnly:    false,
-				Consistency: "default",
-				BindOptions: &mount.BindOptions{Propagation: "rprivate", NonRecursive: true}},
-				manifest.Modules[0].MountConfigs[0])
-		}
-
-		assert.Equal(1, len(manifest.Modules[0].Resources.Devices))
-		if (len(manifest.Modules[0].MountConfigs)) == 1 {
-			assert.Equal(container.DeviceMapping{
-				PathOnHost:        "/dev/ttyUSB0/host",
-				PathInContainer:   "/dev/ttyUSB0",
-				CgroupPermissions: "rw",
-			},
-				manifest.Modules[0].Resources.Devices[0])
-		}
-
-		manifest.UpdateManifest("kunbus-demo-manifest_1d")
-		assert.Equal(13, len(manifest.Modules[0].EnvArgs))
-		if (len(manifest.Modules[0].EnvArgs)) == 12 {
-			assert.Equal("INGRESS_HOST=kunbus-demo-manifest_1d.weevenetwork_mqtt-ingress_V1.0", manifest.Modules[0].EnvArgs[10])
-			assert.Equal("EGRESS_URLS=http://kunbus-demo-manifest_1d.weevenetwork_fluctuation-filter_V1.1:80/", manifest.Modules[0].EnvArgs[11])
-		}
+	assert.Equal(1, len(manifest.Modules[0].MountConfigs))
+	if (len(manifest.Modules[0].MountConfigs)) == 1 {
+		assert.Equal(mount.Mount{Type: "bind",
+			Source:      "/data/host",
+			Target:      "/data",
+			ReadOnly:    false,
+			Consistency: "default",
+			BindOptions: &mount.BindOptions{Propagation: "rprivate", NonRecursive: true}},
+			manifest.Modules[0].MountConfigs[0])
 	}
+
+	assert.Equal(1, len(manifest.Modules[0].Resources.Devices))
+	assert.Equal(
+		container.DeviceMapping{
+			PathOnHost:        "/dev/ttyUSB0/host",
+			PathInContainer:   "/dev/ttyUSB0",
+			CgroupPermissions: "rw",
+		},
+		manifest.Modules[0].Resources.Devices[0])
+
+	manifest.UpdateManifest("kunbus-demo-manifest_1d")
+	assert.Equal(13, len(manifest.Modules[0].EnvArgs))
+	assert.Contains(manifest.Modules[0].EnvArgs, "INGRESS_HOST=kunbus-demo-manifest_1d.weevenetwork_mqtt-ingress_V1.0")
+	assert.Contains(manifest.Modules[0].EnvArgs, "EGRESS_URLS=http://kunbus-demo-manifest_1d.weevenetwork_fluctuation-filter_V1.1:80/")
 }
 
 func TestGetEdgeAppUniqueID(t *testing.T) {
 	assert := assert.New(t)
 
 	manifestUniqueID.ManifestName = "kunbus-demo-manifest"
-	manifestUniqueID.VersionNumber = 1
+	manifestUniqueID.UpdatedAt = "2023-01-01T00:00:00Z"
 
 	json, err := json.Marshal(manifestUniqueID)
 	if err != nil {
@@ -102,7 +96,7 @@ func TestGetEdgeAppUniqueID(t *testing.T) {
 	}
 
 	assert.Equal(manifestUniqueID.ManifestName, man.ManifestName)
-	assert.Equal(fmt.Sprintf("%g", manifestUniqueID.VersionNumber), man.VersionNumber)
+	assert.Equal(manifestUniqueID.UpdatedAt, man.UpdatedAt)
 }
 
 func TestGetCommand_MissingCommand(t *testing.T) {
@@ -117,7 +111,7 @@ func TestGetCommand_MissingCommand(t *testing.T) {
 	cmd, err := manifest.GetCommand(json)
 	assert.NotNil(err)
 	if err != nil {
-		assert.Equal(errMsg, err.Error())
+		assert.Contains(err.Error(), errMsg)
 		assert.Equal("", cmd)
 	}
 }
@@ -181,9 +175,9 @@ func TestValidateManifest_EmptyManifestName(t *testing.T) {
 	utilFailTestValidateManifest(t, filePath, errMsg)
 }
 
-func TestValidateManifest_MissingManifestVersionNumber(t *testing.T) {
-	errMsg := "Key: 'manifestMsg.VersionNumber' Error:Field validation for 'VersionNumber' failed on the 'required' tag"
-	filePath := "../../testdata/unittests/failMissingManifestVersionNumber.json"
+func TestValidateManifest_MissingManifestUpdatedAt(t *testing.T) {
+	errMsg := "Key: 'manifestMsg.UpdatedAt' Error:Field validation for 'UpdatedAt' failed on the 'required' tag"
+	filePath := "../../testdata/unittests/failMissingManifestUpdatedAt.json"
 	utilFailTestValidateManifest(t, filePath, errMsg)
 }
 
@@ -236,7 +230,7 @@ func TestValidateManifest(t *testing.T) {
 func TestValidateUniqueIDExist_EmptyManifestName(t *testing.T) {
 	assert := assert.New(t)
 	manifestUniqueID.ManifestName = " "
-	manifestUniqueID.VersionNumber = 1
+	manifestUniqueID.UpdatedAt = "2021-05-11T12:00:00Z"
 	errMsg := "Key: 'uniqueIDmsg.ManifestName' Error:Field validation for 'ManifestName' failed on the 'notblank' tag"
 
 	json, err := json.Marshal(manifestUniqueID)
@@ -247,13 +241,13 @@ func TestValidateUniqueIDExist_EmptyManifestName(t *testing.T) {
 	_, err = manifest.GetEdgeAppUniqueID(json)
 	assert.NotNil(err)
 	if err != nil {
-		assert.Equal(errMsg, err.Error())
+		assert.Contains(err.Error(), errMsg)
 	}
 }
 
 func TestValidateUniqueIDExist(t *testing.T) {
 	manifestUniqueID.ManifestName = "kunbus-demo-manifest"
-	manifestUniqueID.VersionNumber = 1
+	manifestUniqueID.UpdatedAt = "2021-05-11T12:00:00Z"
 
 	json, err := json.Marshal(manifestUniqueID)
 	if err != nil {

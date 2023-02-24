@@ -22,7 +22,20 @@ The node needs to be registered first to set a node name and acquire a node ID f
 For this follow our [quick setup guide](https://docs.weeve.engineering/guides/installing-the-weeve-agent).
 If the node is already registered, please fill the fields `nodeId` and `nodeName` in the config file `agent-conf.json`.
 
-### Installation
+### Installation via apt
+On Debian-based systems you can install the production ready version of weeve-agent using the apt manager. For this `agent-conf.json` configuration file needs to be placed in `/etc/weeve-agent/agent-conf.json`.
+```sh
+curl -fsSL http://weeve-agent-ppa.s3.amazonaws.com/weeve.gpg | sudo gpg --dearmor -o /usr/share/keyrings/weeve.gpg
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/weeve.gpg] http://weeve-agent-ppa.s3.amazonaws.com stable main" | \
+  sudo tee /etc/apt/sources.list.d/weeve-agent.list
+
+sudo apt update
+sudo apt install weeve-agent
+```
+
+### Installation via script
 
 Execute this one-line installer with the path to your node configuration file:
 

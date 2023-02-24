@@ -4,7 +4,9 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"io"
 	"os"
+	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
@@ -16,13 +18,14 @@ import (
 const (
 	TopicOrchestration = "orchestration"
 	topicNodeStatus    = "nodestatus"
-	topicAgentLogs     = "agentlog"
-	topicAppLogs       = "applog"
+	topicAgentLogs     = "agentlogs"
+	topicAppLogs       = "applogs"
 	topicNodePublicKey = "nodePublicKey"
 	TopicOrgPrivateKey = "orgKey"
 	TopicNodeDelete    = "delete"
 )
 
+var mqttLogger log.Logger
 var client mqtt.Client
 var subscriptionsMap map[string]mqtt.MessageHandler
 
@@ -127,14 +130,14 @@ func subscribeAndSetHandler(topic string, handler mqtt.MessageHandler) error {
 
 	log.Debug("Subscribing to topic ", fullTopic)
 	if token := client.Subscribe(fullTopic, 1, handler); token.Wait() && token.Error() != nil {
-		log.Error("Error on subscribe connection: ", token.Error())
+		mqttLogger.Error("Cannot subscribe to topic: ", token.Error())
 	}
 
 	return nil
 }
 
 var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
-	log.Warning("Connection lost ", err)
+	mqttLogger.Warning("Connection lost. Error: ", err)
 }
 
 var onConnectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
@@ -174,9 +177,21 @@ func publishMessage(topic string, message interface{}, retained bool) error {
 	}
 
 	// sending with QoS of 1 to ensure that the message gets delivered
-	if token := client.Publish(topic, 1, retained, payload); token.Wait() && token.Error() != nil {
-		return traceutility.Wrap(token.Error())
+	if token := client.Publish(topic, 1, retained, payload); token.WaitTimeout(time.Second) {
+		if token.Error() != nil {
+			return traceutility.Wrap(token.Error())
+		}
+	} else {
+		mqttLogger.Error("Timeout! Message not published! msg: ", string(payload))
 	}
 
 	return nil
+}
+
+func CreateMQTTLogger(out io.Writer, formatter log.Formatter, level log.Level) {
+	mqttLogger = log.Logger{
+		Out:       out,
+		Formatter: formatter,
+		Level:     level,
+	}
 }

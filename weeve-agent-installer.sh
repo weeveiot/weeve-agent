@@ -68,14 +68,6 @@ validating_docker(){
   fi
 }
 
-get_bucket_name(){
-    if [ "$RELEASE" = "prod" ]; then
-      S3_BUCKET="weeve-agent"
-    elif [ "$RELEASE" = "dev" ]; then
-      S3_BUCKET="weeve-agent-dev"
-    fi
-}
-
 set_weeve_url(){
     if [ "$RELEASE" = "prod" ]; then
       WEEVE_URL="mapi-$RELEASE.weeve.network"
@@ -169,6 +161,9 @@ write_to_service(){
 
   BINARY_PATH="$WEEVE_AGENT_DIR/$BINARY_NAME"
   ARGUMENTS="--out --config $CONFIG_FILE"
+
+  # remove hardcoded parameters
+  sed -i '/ConditionPathExists\|WorkingDirectory\|ExecStart/d' "$WEEVE_AGENT_DIR"/weeve-agent.service
 
   # the CLI arguments for weeve agent
   if [ -n "$BROKER" ]; then
@@ -275,6 +270,8 @@ WEEVE_AGENT_DIR="$PWD/weeve-agent"
 
 SERVICE_FILE=/lib/systemd/system/weeve-agent.service
 
+S3_BUCKET="weeve-agent-dev"
+
 options=$(getopt -l "help,configpath:,release:,test,broker:,loglevel:,heartbeat:" -- "h" "$@") || {
   show_help
   exit 1
@@ -334,8 +331,6 @@ validate_config
 
 if [ -z "$BUILD_LOCAL" ]; then
   get_release
-
-  get_bucket_name
 else
   log Building from local sources, setting release to dev
   RELEASE="dev"

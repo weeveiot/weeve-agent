@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/binary"
 	"io"
+	"regexp"
 	"strings"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -21,15 +23,22 @@ import (
 var ctx = context.Background()
 var dockerClient *client.Client
 
+// * complied regex to extract container logs
+var levelRegexp = regexp.MustCompile(`'level': '(.*?)'`)
+var filenameRegexp = regexp.MustCompile(`'filename': '(.*?)'`)
+var messageRegexp = regexp.MustCompile(`'message': '(.*?)'`)
+var timeRegexp = regexp.MustCompile(`'time': '(.*?)'`)
+
+type Log struct {
+	Level    string    `json:"level"`
+	Time     time.Time `json:"time"`
+	Filename string    `json:"filename"`
+	Message  string    `json:"message"`
+}
+
 type ContainerLog struct {
 	ContainerID string `json:"containerID"`
 	Log         []Log  `json:"log"`
-}
-
-type Log struct {
-	Time   string `json:"time"`
-	Stream string `json:"stream"`
-	Log    string `json:"log"`
 }
 
 func SetupDockerClient() {
@@ -43,10 +52,10 @@ func SetupDockerClient() {
 }
 
 func createContainer(containerConfig manifest.ContainerConfig) (string, error) {
-	log.Debugln("Creating container", containerConfig.ContainerName, "from", containerConfig.ImageName)
+	log.Debugln("Creating container", containerConfig.ContainerName, "from", containerConfig.ImageNameFull)
 
 	config := &container.Config{
-		Image:        containerConfig.ImageName,
+		Image:        containerConfig.ImageNameFull,
 		AttachStdin:  false,
 		AttachStdout: true,
 		AttachStderr: true,
@@ -57,6 +66,9 @@ func createContainer(containerConfig manifest.ContainerConfig) (string, error) {
 	}
 
 	hostConfig := &container.HostConfig{
+		LogConfig: container.LogConfig{
+			Type: "local", // From https://docs.docker.com/config/containers/logging/local/: By default, the local driver preserves 100MB of log messages per container and uses automatic compression to reduce the size on disk. The 100MB default value is based on a 20M default size for each file and a default count of 5 for the number of such files (to account for log rotation).
+		},
 		PortBindings: containerConfig.PortBinding,
 		RestartPolicy: container.RestartPolicy{
 			Name:              "on-failure",
@@ -147,7 +159,7 @@ func ReadAllContainers() ([]types.Container, error) {
 func ReadEdgeAppContainers(manifestUniqueID model.ManifestUniqueID) ([]types.Container, error) {
 	filter := filters.NewArgs()
 	filter.Add("label", "manifestName="+manifestUniqueID.ManifestName)
-	filter.Add("label", "versionNumber="+manifestUniqueID.VersionNumber)
+	filter.Add("label", "updatedAt="+manifestUniqueID.UpdatedAt)
 	options := types.ContainerListOptions{All: true, Filters: filter}
 	containers, err := dockerClient.ContainerList(context.Background(), options)
 	if err != nil {
@@ -161,14 +173,9 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 	dockerLogs := ContainerLog{ContainerID: containerID}
 
 	options := types.ContainerLogsOptions{
-		ShowStdout: true,
 		ShowStderr: true,
 		Since:      since,
 		Until:      until,
-		Timestamps: true,
-		Follow:     false,
-		Tail:       "",
-		Details:    false,
 	}
 
 	reader, err := dockerClient.ContainerLogs(context.Background(), containerID, options)
@@ -180,6 +187,7 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 	header := make([]byte, 8)
 	for {
 		var docLog Log
+
 		_, err := reader.Read(header)
 		if err != nil {
 			if err == io.EOF {
@@ -198,19 +206,17 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 			return dockerLogs, traceutility.Wrap(err)
 		}
 
-		time, log, found := strings.Cut(string(data), " ")
-		if found {
-			docLog.Time = time
-			docLog.Log = log
-			switch header[0] {
-			case 1:
-				docLog.Stream = "Stdout"
-			default:
-				docLog.Stream = "Stderr"
-			}
+		dataInString := string(data)
 
-			dockerLogs.Log = append(dockerLogs.Log, docLog)
-		}
+		timeInString := strings.Split(timeRegexp.FindStringSubmatch(dataInString)[1], ",")
+		timeInTime, _ := time.Parse("2006-01-02 15:04:05", timeInString[0])
+
+		docLog.Level = levelRegexp.FindStringSubmatch(dataInString)[1]
+		docLog.Filename = filenameRegexp.FindStringSubmatch(dataInString)[1]
+		docLog.Message = messageRegexp.FindStringSubmatch(dataInString)[1]
+		docLog.Time = timeInTime
+
+		dockerLogs.Log = append(dockerLogs.Log, docLog)
 	}
 }
 

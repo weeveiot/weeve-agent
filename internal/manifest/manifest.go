@@ -33,7 +33,7 @@ type Manifest struct {
 // This struct holds information for starting a container
 type ContainerConfig struct {
 	ContainerName string
-	ImageName     string
+	ImageNameFull string
 	EnvArgs       []string
 	NetworkName   string
 	ExposedPorts  nat.PortSet // This must be set for the container create
@@ -70,9 +70,9 @@ func Parse(payload []byte) (Manifest, error) {
 	}
 
 	labels := map[string]string{
-		"manifestID":    man.ID,
-		"manifestName":  man.ManifestName,
-		"versionNumber": fmt.Sprint(man.VersionNumber),
+		"manifestID":   man.ID,
+		"manifestName": man.ManifestName,
+		"updatedAt":    man.UpdatedAt,
 	}
 
 	var containerConfigs []ContainerConfig
@@ -88,9 +88,9 @@ func Parse(payload []byte) (Manifest, error) {
 		containerConfig.Labels = labels
 
 		if module.Image.Tag == "" {
-			containerConfig.ImageName = module.Image.Name
+			containerConfig.ImageNameFull = module.Image.Name
 		} else {
-			containerConfig.ImageName = module.Image.Name + ":" + module.Image.Tag
+			containerConfig.ImageNameFull = module.Image.Name + ":" + module.Image.Tag
 		}
 
 		containerConfig.AuthConfig = types.AuthConfig{
@@ -104,12 +104,17 @@ func Parse(payload []byte) (Manifest, error) {
 			return Manifest{}, traceutility.Wrap(err)
 		}
 
+		if man.DebugMode {
+			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "LOG_LEVEL", "DEBUG"))
+		} else {
+			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "LOG_LEVEL", "INFO"))
+		}
+
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "SERVICE_ID", man.ID))
-		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_NAME", containerConfig.ImageName))
+		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_NAME", containerConfig.ImageNameFull))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PORT", 80))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PATH", "/"))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_TYPE", module.Type))
-		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "LOG_LEVEL", strings.ToUpper(log.GetLevel().String())))
 
 		containerConfig.EnvArgs = envArgs
 		containerConfig.MountConfigs, err = parseMounts(module.Mounts)
@@ -134,7 +139,7 @@ func Parse(payload []byte) (Manifest, error) {
 
 	manifest := Manifest{
 		ID:               man.ID,
-		ManifestUniqueID: model.ManifestUniqueID{ManifestName: man.ManifestName, VersionNumber: fmt.Sprint(man.VersionNumber)},
+		ManifestUniqueID: model.ManifestUniqueID{ManifestName: man.ManifestName, UpdatedAt: man.UpdatedAt},
 		VersionNumber:    man.VersionNumber,
 		Modules:          containerConfigs,
 		Labels:           labels,
@@ -171,13 +176,13 @@ func GetEdgeAppUniqueID(payload []byte) (model.ManifestUniqueID, error) {
 		return model.ManifestUniqueID{}, traceutility.Wrap(err)
 	}
 
-	return model.ManifestUniqueID{ManifestName: uniqueID.ManifestName, VersionNumber: fmt.Sprint(uniqueID.VersionNumber)}, nil
+	return model.ManifestUniqueID{ManifestName: uniqueID.ManifestName, UpdatedAt: uniqueID.UpdatedAt}, nil
 }
 
 func (m Manifest) UpdateManifest(networkName string) {
 	for i, module := range m.Modules {
 		m.Modules[i].NetworkName = networkName
-		m.Modules[i].ContainerName = makeContainerName(networkName, module.ImageName, i)
+		m.Modules[i].ContainerName = makeContainerName(networkName, module.ImageNameFull, i)
 
 		m.Modules[i].EnvArgs = append(m.Modules[i].EnvArgs, fmt.Sprintf("%v=%v", "INGRESS_HOST", m.Modules[i].ContainerName))
 	}
