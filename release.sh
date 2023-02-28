@@ -33,7 +33,7 @@ Description: A client to manage docker containers on IoT devices." > deb-${ARCH}
 
         # TODO: generate the changelog
 
-        dpkg-deb --build deb-${ARCH} "weeve-agent_${VERSION}_${ARCH}.deb"
+        dpkg-deb -Zxz --build deb-${ARCH} "weeve-agent_${VERSION}_${ARCH}.deb"
     done
 }
 
