@@ -1,11 +1,13 @@
 .DEFAULT_GOAL := build-all
 
-LDFLAGS_COMMON=-extldflags '-static' -X 'github.com/weeveiot/weeve-agent/internal/model.Version=$(shell git tag | sort -V | tail -n 1 | cut -c2-)'
+VERSION=$(shell git tag | sort -V | tail -n 1 | cut -c2-)
+ifeq ($(strip $(VERSION)),)
+$(error VERSION is not defined)
+endif
+LDFLAGS_COMMON=-extldflags '-static' -X 'github.com/weeveiot/weeve-agent/internal/model.Version=$(VERSION)'
 LDFLAGS_RELEASE=$(LDFLAGS_COMMON) -w
 
 build:
-	# add -ldflags="-w" to remove debug info
-
 	CGO_ENABLED=0 go build -a -tags netgo -ldflags="$(LDFLAGS_COMMON)" -o bin/weeve-agent ./cmd/agent/agent.go
 .PHONY: build
 
