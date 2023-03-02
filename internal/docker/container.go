@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"io"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -173,6 +172,7 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 	dockerLogs := ContainerLog{ContainerID: containerID}
 
 	options := types.ContainerLogsOptions{
+		ShowStdout: true,
 		ShowStderr: true,
 		Since:      since,
 		Until:      until,
@@ -186,8 +186,6 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 
 	header := make([]byte, 8)
 	for {
-		var docLog Log
-
 		_, err := reader.Read(header)
 		if err != nil {
 			if err == io.EOF {
@@ -206,16 +204,7 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 			return dockerLogs, traceutility.Wrap(err)
 		}
 
-		dataInString := string(data)
-
-		timeInString := strings.Split(timeRegexp.FindStringSubmatch(dataInString)[1], ",")
-		timeInTime, _ := time.Parse("2006-01-02 15:04:05", timeInString[0])
-
-		docLog.Level = levelRegexp.FindStringSubmatch(dataInString)[1]
-		docLog.Filename = filenameRegexp.FindStringSubmatch(dataInString)[1]
-		docLog.Message = messageRegexp.FindStringSubmatch(dataInString)[1]
-		docLog.Time = timeInTime
-
+		docLog := constructLogEntry(string(data), since, until)
 		dockerLogs.Log = append(dockerLogs.Log, docLog)
 	}
 }
@@ -227,4 +216,50 @@ func InspectContainer(containerID string) (types.ContainerJSON, error) {
 	}
 
 	return containerJSON, nil
+}
+
+func constructLogEntry(data string, since string, until string) Log {
+	var docLog Log
+
+	timeSubmatch := timeRegexp.FindStringSubmatch(data)
+	if len(timeSubmatch) > 1 {
+		timeInTime, err := time.Parse("2006-01-02 15:04:05", timeSubmatch[1])
+		if err != nil {
+			log.Errorln("Unable to parse time:", err, "Using default time instead")
+			docLog.Time = meanTime(since, until)
+		} else {
+			docLog.Time = timeInTime
+		}
+	} else {
+		docLog.Time = meanTime(since, until)
+	}
+
+	levelSubmatch := levelRegexp.FindStringSubmatch(data)
+	if len(levelSubmatch) > 1 {
+		docLog.Level = levelSubmatch[1]
+	} else {
+		docLog.Level = "DEBUG"
+	}
+
+	filenameSubmatch := filenameRegexp.FindStringSubmatch(data)
+	if len(filenameSubmatch) > 1 {
+		docLog.Filename = filenameSubmatch[1]
+	} else {
+		docLog.Filename = "unknown"
+	}
+
+	messageSubmatch := messageRegexp.FindStringSubmatch(data)
+	if len(messageSubmatch) > 1 {
+		docLog.Message = messageSubmatch[1]
+	} else {
+		docLog.Message = data
+	}
+
+	return docLog
+}
+
+func meanTime(first, second string) time.Time {
+	firstTime, _ := time.Parse(time.RFC3339Nano, first)
+	secondTime, _ := time.Parse(time.RFC3339Nano, second)
+	return firstTime.Add(secondTime.Sub(firstTime) / 2)
 }
