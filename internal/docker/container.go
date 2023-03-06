@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/binary"
 	"io"
-	"regexp"
-	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -21,24 +19,6 @@ import (
 
 var ctx = context.Background()
 var dockerClient *client.Client
-
-// * complied regex to extract container logs
-var levelRegexp = regexp.MustCompile(`'level': '(.*?)'`)
-var filenameRegexp = regexp.MustCompile(`'filename': '(.*?)'`)
-var messageRegexp = regexp.MustCompile(`'message': '(.*?)'`)
-var timeRegexp = regexp.MustCompile(`'time': '(.*?)'`)
-
-type Log struct {
-	Level    string    `json:"level"`
-	Time     time.Time `json:"time"`
-	Filename string    `json:"filename"`
-	Message  string    `json:"message"`
-}
-
-type ContainerLog struct {
-	ContainerID string `json:"containerID"`
-	Log         []Log  `json:"log"`
-}
 
 func SetupDockerClient() {
 	log.Debug("Initalizing docker client...")
@@ -168,8 +148,8 @@ func ReadEdgeAppContainers(manifestUniqueID model.ManifestUniqueID) ([]types.Con
 	return containers, nil
 }
 
-func ReadContainerLogs(containerID string, since string, until string) (ContainerLog, error) {
-	dockerLogs := ContainerLog{ContainerID: containerID}
+func ReadContainerLogs(containerID string, since string, until string) ([]string, error) {
+	logLines := []string{}
 
 	options := types.ContainerLogsOptions{
 		ShowStdout: true,
@@ -180,7 +160,7 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 
 	reader, err := dockerClient.ContainerLogs(context.Background(), containerID, options)
 	if err != nil {
-		return dockerLogs, traceutility.Wrap(err)
+		return logLines, traceutility.Wrap(err)
 	}
 	defer reader.Close()
 
@@ -189,23 +169,22 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 		_, err := reader.Read(header)
 		if err != nil {
 			if err == io.EOF {
-				return dockerLogs, nil
+				return logLines, nil
 			}
-			return dockerLogs, traceutility.Wrap(err)
+			return logLines, traceutility.Wrap(err)
 		}
 
 		count := binary.BigEndian.Uint32(header[4:])
-		data := make([]byte, count)
-		_, err = reader.Read(data)
+		line := make([]byte, count)
+		_, err = reader.Read(line)
 		if err != nil {
 			if err == io.EOF {
-				return dockerLogs, nil
+				return logLines, nil
 			}
-			return dockerLogs, traceutility.Wrap(err)
+			return logLines, traceutility.Wrap(err)
 		}
 
-		docLog := constructLogEntry(string(data), since, until)
-		dockerLogs.Log = append(dockerLogs.Log, docLog)
+		logLines = append(logLines, string(line))
 	}
 }
 
@@ -216,50 +195,4 @@ func InspectContainer(containerID string) (types.ContainerJSON, error) {
 	}
 
 	return containerJSON, nil
-}
-
-func constructLogEntry(data string, since string, until string) Log {
-	var docLog Log
-
-	timeSubmatch := timeRegexp.FindStringSubmatch(data)
-	if len(timeSubmatch) > 1 {
-		timeInTime, err := time.Parse("2006-01-02 15:04:05", timeSubmatch[1])
-		if err != nil {
-			log.Errorln("Unable to parse time:", err, "Using default time instead")
-			docLog.Time = meanTime(since, until)
-		} else {
-			docLog.Time = timeInTime
-		}
-	} else {
-		docLog.Time = meanTime(since, until)
-	}
-
-	levelSubmatch := levelRegexp.FindStringSubmatch(data)
-	if len(levelSubmatch) > 1 {
-		docLog.Level = levelSubmatch[1]
-	} else {
-		docLog.Level = "DEBUG"
-	}
-
-	filenameSubmatch := filenameRegexp.FindStringSubmatch(data)
-	if len(filenameSubmatch) > 1 {
-		docLog.Filename = filenameSubmatch[1]
-	} else {
-		docLog.Filename = "unknown"
-	}
-
-	messageSubmatch := messageRegexp.FindStringSubmatch(data)
-	if len(messageSubmatch) > 1 {
-		docLog.Message = messageSubmatch[1]
-	} else {
-		docLog.Message = data
-	}
-
-	return docLog
-}
-
-func meanTime(first, second string) time.Time {
-	firstTime, _ := time.Parse(time.RFC3339Nano, first)
-	secondTime, _ := time.Parse(time.RFC3339Nano, second)
-	return firstTime.Add(secondTime.Sub(firstTime) / 2)
 }
