@@ -1,7 +1,5 @@
 package model
 
-import "strings"
-
 var Version string = "X.Y.Z"
 
 type Params struct {
@@ -28,18 +26,19 @@ type Params struct {
 }
 
 type ManifestUniqueID struct {
-	UpdatedAt    string
-	ManifestName string
+	ID string
+}
+
+func (uniqueID ManifestUniqueID) String() string {
+	return uniqueID.ID
 }
 
 func (uniqueID ManifestUniqueID) MarshalText() (text []byte, err error) {
-	return []byte(uniqueID.ManifestName + "+" + uniqueID.UpdatedAt), nil
+	return []byte(uniqueID.ID), nil
 }
 
 func (uniqueID *ManifestUniqueID) UnmarshalText(text []byte) error {
-	parts := strings.Split(string(text), "+")
-	uniqueID.ManifestName = parts[0]
-	uniqueID.UpdatedAt = parts[1]
+	uniqueID.ID = string(text)
 	return nil
 }
 

@@ -137,8 +137,7 @@ func ReadAllContainers() ([]types.Container, error) {
 
 func ReadEdgeAppContainers(manifestUniqueID model.ManifestUniqueID) ([]types.Container, error) {
 	filter := filters.NewArgs()
-	filter.Add("label", "manifestName="+manifestUniqueID.ManifestName)
-	filter.Add("label", "updatedAt="+manifestUniqueID.UpdatedAt)
+	filter.Add("label", "manifestUniqueID="+manifestUniqueID.String())
 	options := types.ContainerListOptions{All: true, Filters: filter}
 	containers, err := dockerClient.ContainerList(context.Background(), options)
 	if err != nil {

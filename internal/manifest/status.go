@@ -45,7 +45,7 @@ func GetUsedImages(uniqueID model.ManifestUniqueID) ([]string, error) {
 
 func AddKnownManifest(man Manifest) {
 	manCopy := clearSecretValues(man) // remove some fields so that secret values never touch the hard disk
-	knownManifests[man.ManifestUniqueID] = &ManifestRecord{
+	knownManifests[man.UniqueID] = &ManifestRecord{
 		Manifest: manCopy,
 		Status:   model.EdgeAppInitiated,
 	}
@@ -61,7 +61,7 @@ func DeleteKnownManifest(manifestUniqueID model.ManifestUniqueID) {
 }
 
 func SetStatus(manifestUniqueID model.ManifestUniqueID, status string) error {
-	log.Debugln("Setting status", status, "to edge app", manifestUniqueID.ManifestName, manifestUniqueID.UpdatedAt)
+	log.Debugln("Setting status", status, "to edge app", manifestUniqueID)
 
 	manifest, manifestKnown := knownManifests[manifestUniqueID]
 	if !manifestKnown {

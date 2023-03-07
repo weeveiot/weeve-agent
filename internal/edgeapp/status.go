@@ -66,7 +66,7 @@ func GetEdgeAppStatus() ([]com.EdgeAppMsg, error) {
 			continue
 		}
 
-		appContainers, err := docker.ReadEdgeAppContainers(manif.Manifest.ManifestUniqueID)
+		appContainers, err := docker.ReadEdgeAppContainers(manif.Manifest.UniqueID)
 		if err != nil {
 			return edgeApps, traceutility.Wrap(err)
 		}

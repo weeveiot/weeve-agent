@@ -32,6 +32,7 @@ func init() {
 }
 
 type msgType struct {
+	ID           string `json:"_id"`
 	ManifestName string `json:"manifestName"`
 	UpdatedAt    string `json:"updatedAt"`
 	Command      string `json:"command"`
@@ -150,13 +151,13 @@ func deployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
 	}
 
 	// Verify deployment
-	net, err := getNetwork(man.ManifestUniqueID)
+	net, err := getNetwork(man.UniqueID)
 	if err != nil {
 		return err
 	}
 
 	if len(net) > 0 {
-		_, err := checkContainersExistsWithStatus(man.ManifestUniqueID, len(man.Modules), "running")
+		_, err := checkContainersExistsWithStatus(man.UniqueID, len(man.Modules), "running")
 		if err != nil {
 			return err
 		}
@@ -169,21 +170,22 @@ func deployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
 
 func stopEdgeApplication(man manifest.Manifest) error {
 	msg := msgType{
-		ManifestName: man.ManifestUniqueID.ManifestName,
-		UpdatedAt:    man.ManifestUniqueID.UpdatedAt,
-		Command:      edgeapp.CMDStopService,
+		ID:      man.ID,
+		Command: edgeapp.CMDStopService,
 	}
 	jsonB, err := json.Marshal(msg)
 	if err != nil {
 		panic(err)
 	}
 
+	fmt.Println("Sending STOP command: ", string(jsonB))
+
 	err = handler.ProcessOrchestrationMessage(jsonB)
 	if err != nil {
 		return fmt.Errorf("ProcessMessage returned %v status", err)
 	}
 
-	_, err = checkContainersExistsWithStatus(man.ManifestUniqueID, len(man.Modules), "exited")
+	_, err = checkContainersExistsWithStatus(man.UniqueID, len(man.Modules), "exited")
 	if err != nil {
 		return err
 	}
@@ -193,21 +195,22 @@ func stopEdgeApplication(man manifest.Manifest) error {
 
 func resumeEdgeApplication(man manifest.Manifest) error {
 	msg := msgType{
-		ManifestName: man.ManifestUniqueID.ManifestName,
-		UpdatedAt:    man.ManifestUniqueID.UpdatedAt,
-		Command:      edgeapp.CMDResumeService,
+		ID:      man.ID,
+		Command: edgeapp.CMDResumeService,
 	}
 	jsonB, err := json.Marshal(msg)
 	if err != nil {
 		return err
 	}
 
+	fmt.Println("Sending RESUME command: ", string(jsonB))
+
 	err = handler.ProcessOrchestrationMessage(jsonB)
 	if err != nil {
 		return fmt.Errorf("ProcessMessage returned %v status", err)
 	}
 
-	_, err = checkContainersExistsWithStatus(man.ManifestUniqueID, len(man.Modules), "running")
+	_, err = checkContainersExistsWithStatus(man.UniqueID, len(man.Modules), "running")
 	if err != nil {
 		return err
 	}
@@ -217,8 +220,7 @@ func resumeEdgeApplication(man manifest.Manifest) error {
 
 func undeployEdgeApplication(man manifest.Manifest, operation string) error {
 	msg := msgType{
-		ManifestName: man.ManifestUniqueID.ManifestName,
-		UpdatedAt:    man.ManifestUniqueID.UpdatedAt,
+		ID: man.ID,
 	}
 	if operation == edgeapp.CMDUndeploy || operation == edgeapp.CMDRemove {
 		msg.Command = operation
@@ -230,18 +232,20 @@ func undeployEdgeApplication(man manifest.Manifest, operation string) error {
 		return err
 	}
 
+	fmt.Println("Sending UNDEPLOY / REMOVE command: ", string(jsonB))
+
 	err = handler.ProcessOrchestrationMessage(jsonB)
 	if err != nil {
 		return fmt.Errorf("ProcessMessage returned %v status", err)
 	}
 
-	net, err := getNetwork(man.ManifestUniqueID)
+	net, err := getNetwork(man.UniqueID)
 	if err != nil {
 		return err
 	}
 
 	if len(net) <= 0 {
-		dsContainers, _ := getEdgeApplicationContainers(man.ManifestUniqueID)
+		dsContainers, _ := getEdgeApplicationContainers(man.UniqueID)
 		if len(dsContainers) > 0 {
 			return errors.New("Edge application undeployment failed, containers not deleted")
 		}
@@ -273,8 +277,7 @@ func undeployEdgeApplication(man manifest.Manifest, operation string) error {
 }
 
 func parseManifest(jsonParsed *gabs.Container) (manifest.Manifest, error) {
-	manifestName := jsonParsed.Search("manifestName").Data().(string)
-	updatedAt := jsonParsed.Search("updatedAt").Data().(string)
+	id := jsonParsed.Search("_id").Data().(string)
 
 	var containerConfigs []manifest.ContainerConfig
 
@@ -295,17 +298,17 @@ func parseManifest(jsonParsed *gabs.Container) (manifest.Manifest, error) {
 	}
 
 	manifest := manifest.Manifest{
-		ManifestUniqueID: model.ManifestUniqueID{ManifestName: manifestName, UpdatedAt: updatedAt},
-		Modules:          containerConfigs,
+		UniqueID: model.ManifestUniqueID{ID: id},
+		ID:       id,
+		Modules:  containerConfigs,
 	}
 
 	return manifest, nil
 }
 
-func getNetwork(manID model.ManifestUniqueID) ([]types.NetworkResource, error) {
+func getNetwork(manifestUniqueID model.ManifestUniqueID) ([]types.NetworkResource, error) {
 	filter := filters.NewArgs()
-	filter.Add("label", "manifestName="+manID.ManifestName)
-	filter.Add("label", "updatedAt="+manID.UpdatedAt)
+	filter.Add("label", "manifestUniqueID="+manifestUniqueID.String())
 	options := types.NetworkListOptions{Filters: filter}
 	networks, err := dockerCli.NetworkList(context.Background(), options)
 	if err != nil {
@@ -317,8 +320,7 @@ func getNetwork(manID model.ManifestUniqueID) ([]types.NetworkResource, error) {
 
 func getEdgeApplicationContainers(manifestUniqueID model.ManifestUniqueID) ([]types.Container, error) {
 	filter := filters.NewArgs()
-	filter.Add("label", "manifestName="+manifestUniqueID.ManifestName)
-	filter.Add("label", "updatedAt="+manifestUniqueID.UpdatedAt)
+	filter.Add("label", "manifestUniqueID="+manifestUniqueID.String())
 	options := types.ContainerListOptions{All: true, Filters: filter}
 	containers, err := dockerCli.ContainerList(context.Background(), options)
 	if err != nil {

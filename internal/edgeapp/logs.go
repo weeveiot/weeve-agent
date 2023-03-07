@@ -43,12 +43,12 @@ func SendEdgeAppLogs(manif manifest.ManifestRecord, until string) error {
 		return traceutility.Wrap(err)
 	}
 
-	return manifest.SetLastLogRead(manif.Manifest.ManifestUniqueID, until)
+	return manifest.SetLastLogRead(manif.Manifest.UniqueID, until)
 }
 
 func GetEdgeAppLogsMsg(manif manifest.ManifestRecord, until string) (com.EdgeAppLogMsg, error) {
 	var msg com.EdgeAppLogMsg
-	containerLogs, err := GetEdgeAppLogs(manif.Manifest.ManifestUniqueID, manif.LastLogReadTime, until)
+	containerLogs, err := GetEdgeAppLogs(manif.Manifest.UniqueID, manif.LastLogReadTime, until)
 	if err != nil {
 		return msg, traceutility.Wrap(err)
 	}
