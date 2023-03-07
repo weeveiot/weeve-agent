@@ -30,7 +30,7 @@ func ReadDeployManifestLocal(manifestPath string) error {
 		return traceutility.Wrap(err)
 	}
 
-	err = UndeployEdgeApp(thisManifest.ManifestUniqueID)
+	err = UndeployEdgeApp(thisManifest.UniqueID)
 	if err != nil {
 		return traceutility.Wrap(err)
 	}

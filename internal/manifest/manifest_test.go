@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
@@ -14,8 +15,7 @@ import (
 )
 
 var manifestUniqueID struct {
-	ManifestName string `json:"manifestName"`
-	UpdatedAt    string `json:"updatedAt"`
+	ID string `json:"_id"`
 }
 
 func TestGetManifest(t *testing.T) {
@@ -29,12 +29,14 @@ func TestGetManifest(t *testing.T) {
 	manifest, _ := manifest.Parse(json)
 
 	assert.NotNil(manifest)
-	assert.Equal("kunbus-demo-manifest", manifest.ManifestUniqueID.ManifestName)
-	assert.Equal("2023-01-01T00:00:00Z", manifest.ManifestUniqueID.UpdatedAt)
+	assert.Equal("kunbus-demo-manifest", manifest.ManifestName)
+	updatedAt, _ := time.Parse(time.RFC3339, "2023-01-01T00:00:00Z")
+
+	assert.Equal(updatedAt, manifest.UpdatedAt)
 	assert.Equal(3, len(manifest.Connections))
 	assert.Equal(4, len(manifest.Modules))
 
-	assert.Equal(3, len(manifest.Modules[0].Labels))
+	assert.Equal(1, len(manifest.Modules[0].Labels))
 	assert.Equal("weevenetwork/mqtt-ingress:V1", manifest.Modules[0].ImageNameFull)
 	assert.ElementsMatch(manifest.Modules[0].EnvArgs, []string{
 		"MQTT_BROKER=mqtt://mapi-dev.weeve.engineering",
@@ -82,8 +84,7 @@ func TestGetManifest(t *testing.T) {
 func TestGetEdgeAppUniqueID(t *testing.T) {
 	assert := assert.New(t)
 
-	manifestUniqueID.ManifestName = "kunbus-demo-manifest"
-	manifestUniqueID.UpdatedAt = "2023-01-01T00:00:00Z"
+	manifestUniqueID.ID = "62bef68d664ed72f8ecdd690"
 
 	json, err := json.Marshal(manifestUniqueID)
 	if err != nil {
@@ -95,8 +96,7 @@ func TestGetEdgeAppUniqueID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Equal(manifestUniqueID.ManifestName, man.ManifestName)
-	assert.Equal(manifestUniqueID.UpdatedAt, man.UpdatedAt)
+	assert.Equal(manifestUniqueID.ID, man.ID)
 }
 
 func TestGetCommand_MissingCommand(t *testing.T) {
@@ -227,11 +227,10 @@ func TestValidateManifest(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestValidateUniqueIDExist_EmptyManifestName(t *testing.T) {
+func TestValidateUniqueIDExist_EmptyID(t *testing.T) {
 	assert := assert.New(t)
-	manifestUniqueID.ManifestName = " "
-	manifestUniqueID.UpdatedAt = "2021-05-11T12:00:00Z"
-	errMsg := "Key: 'uniqueIDmsg.ManifestName' Error:Field validation for 'ManifestName' failed on the 'notblank' tag"
+	manifestUniqueID.ID = " "
+	errMsg := "Key: 'uniqueIDmsg.ID' Error:Field validation for 'ID' failed on the 'notblank' tag"
 
 	json, err := json.Marshal(manifestUniqueID)
 	if err != nil {
@@ -246,8 +245,7 @@ func TestValidateUniqueIDExist_EmptyManifestName(t *testing.T) {
 }
 
 func TestValidateUniqueIDExist(t *testing.T) {
-	manifestUniqueID.ManifestName = "kunbus-demo-manifest"
-	manifestUniqueID.UpdatedAt = "2021-05-11T12:00:00Z"
+	manifestUniqueID.ID = "62bef68d664ed72f8ecdd690"
 
 	json, err := json.Marshal(manifestUniqueID)
 	if err != nil {

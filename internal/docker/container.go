@@ -4,9 +4,6 @@ import (
 	"context"
 	"encoding/binary"
 	"io"
-	"regexp"
-	"strings"
-	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -22,24 +19,6 @@ import (
 
 var ctx = context.Background()
 var dockerClient *client.Client
-
-// * complied regex to extract container logs
-var levelRegexp = regexp.MustCompile(`'level': '(.*?)'`)
-var filenameRegexp = regexp.MustCompile(`'filename': '(.*?)'`)
-var messageRegexp = regexp.MustCompile(`'message': '(.*?)'`)
-var timeRegexp = regexp.MustCompile(`'time': '(.*?)'`)
-
-type Log struct {
-	Level    string    `json:"level"`
-	Time     time.Time `json:"time"`
-	Filename string    `json:"filename"`
-	Message  string    `json:"message"`
-}
-
-type ContainerLog struct {
-	ContainerID string `json:"containerID"`
-	Log         []Log  `json:"log"`
-}
 
 func SetupDockerClient() {
 	log.Debug("Initalizing docker client...")
@@ -158,8 +137,7 @@ func ReadAllContainers() ([]types.Container, error) {
 
 func ReadEdgeAppContainers(manifestUniqueID model.ManifestUniqueID) ([]types.Container, error) {
 	filter := filters.NewArgs()
-	filter.Add("label", "manifestName="+manifestUniqueID.ManifestName)
-	filter.Add("label", "updatedAt="+manifestUniqueID.UpdatedAt)
+	filter.Add("label", "manifestUniqueID="+manifestUniqueID.String())
 	options := types.ContainerListOptions{All: true, Filters: filter}
 	containers, err := dockerClient.ContainerList(context.Background(), options)
 	if err != nil {
@@ -169,10 +147,11 @@ func ReadEdgeAppContainers(manifestUniqueID model.ManifestUniqueID) ([]types.Con
 	return containers, nil
 }
 
-func ReadContainerLogs(containerID string, since string, until string) (ContainerLog, error) {
-	dockerLogs := ContainerLog{ContainerID: containerID}
+func ReadContainerLogs(containerID string, since string, until string) ([]string, error) {
+	logLines := []string{}
 
 	options := types.ContainerLogsOptions{
+		ShowStdout: true,
 		ShowStderr: true,
 		Since:      since,
 		Until:      until,
@@ -180,43 +159,31 @@ func ReadContainerLogs(containerID string, since string, until string) (Containe
 
 	reader, err := dockerClient.ContainerLogs(context.Background(), containerID, options)
 	if err != nil {
-		return dockerLogs, traceutility.Wrap(err)
+		return logLines, traceutility.Wrap(err)
 	}
 	defer reader.Close()
 
 	header := make([]byte, 8)
 	for {
-		var docLog Log
-
 		_, err := reader.Read(header)
 		if err != nil {
 			if err == io.EOF {
-				return dockerLogs, nil
+				return logLines, nil
 			}
-			return dockerLogs, traceutility.Wrap(err)
+			return logLines, traceutility.Wrap(err)
 		}
 
 		count := binary.BigEndian.Uint32(header[4:])
-		data := make([]byte, count)
-		_, err = reader.Read(data)
+		line := make([]byte, count)
+		_, err = reader.Read(line)
 		if err != nil {
 			if err == io.EOF {
-				return dockerLogs, nil
+				return logLines, nil
 			}
-			return dockerLogs, traceutility.Wrap(err)
+			return logLines, traceutility.Wrap(err)
 		}
 
-		dataInString := string(data)
-
-		timeInString := strings.Split(timeRegexp.FindStringSubmatch(dataInString)[1], ",")
-		timeInTime, _ := time.Parse("2006-01-02 15:04:05", timeInString[0])
-
-		docLog.Level = levelRegexp.FindStringSubmatch(dataInString)[1]
-		docLog.Filename = filenameRegexp.FindStringSubmatch(dataInString)[1]
-		docLog.Message = messageRegexp.FindStringSubmatch(dataInString)[1]
-		docLog.Time = timeInTime
-
-		dockerLogs.Log = append(dockerLogs.Log, docLog)
+		logLines = append(logLines, string(line))
 	}
 }
 

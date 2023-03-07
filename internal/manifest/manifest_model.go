@@ -1,10 +1,10 @@
 package manifest
 
 type manifestMsg struct {
-	ID            string            `json:"_id" validate:"required,notblank,alphanum"`
-	ManifestName  string            `validate:"required,notblank"`
-	UpdatedAt     string            `validate:"required,notblank"`
-	VersionNumber float64           `validate:"required"`
+	ID            string `json:"_id" validate:"required,notblank,alphanum"`
+	ManifestName  string `validate:"required,notblank"`
+	UpdatedAt     string `validate:"required,notblank"`
+	VersionNumber float64
 	Connections   connectionsString `validate:"required"`
 	Modules       []moduleMsg       `validate:"required,notblank"`
 	Command       string            `validate:"required,notblank"`
@@ -55,8 +55,9 @@ type registryMsg struct {
 }
 
 type uniqueIDmsg struct {
-	ManifestName  string `validate:"required,notblank"`
-	UpdatedAt     string `validate:"required,notblank"`
+	ID            string `json:"_id" validate:"required,notblank,alphanum"`
+	ManifestName  string
+	UpdatedAt     string
 	VersionNumber float64
 }
 

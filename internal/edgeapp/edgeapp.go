@@ -3,7 +3,6 @@ package edgeapp
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"errors"
 
@@ -24,26 +23,20 @@ const (
 )
 
 func DeployEdgeApp(man manifest.Manifest) error {
-	deploymentID := man.ManifestUniqueID.ManifestName + "-" + man.ManifestUniqueID.UpdatedAt + " | "
+	deploymentID := man.UniqueID.String() + " | "
 
 	log.Info(deploymentID, "Deploying edge app ...")
 
 	//******** STEP 1 - Check if a version of the edge app is already deployed *************//
-	edgeAppRecord := manifest.GetKnownManifest(man.ManifestUniqueID)
+	edgeAppRecord := manifest.GetKnownManifest(man.UniqueID)
 	if edgeAppRecord != nil && edgeAppRecord.Status != model.EdgeAppUndeployed {
-		log.Warn(deploymentID, fmt.Sprintf("Edge app %v from %v already exist!", man.ManifestUniqueID.ManifestName, man.ManifestUniqueID.UpdatedAt))
+		log.Warn(deploymentID, fmt.Sprintf("Edge app %v already exist!", man.UniqueID))
 		return nil
 	}
 
 	// check if an older version of the edge app is deployed
-	newTimestamp, err := time.Parse(time.RFC3339, man.ManifestUniqueID.UpdatedAt)
-	if err != nil {
-		log.Error(deploymentID, "Deployment failed! UpdatedAt field in the manifest doesn't confirm to RFC 3339 format. Value: ", man.ManifestUniqueID.UpdatedAt)
-		return traceutility.Wrap(err)
-	}
-	for knownID := range manifest.GetKnownManifests() {
-		knownTimestamp, _ := time.Parse(time.RFC3339, knownID.UpdatedAt)
-		if knownID.ManifestName == man.ManifestUniqueID.ManifestName && knownTimestamp.Before(newTimestamp) {
+	for knownID, knownManifest := range manifest.GetKnownManifests() {
+		if knownID == man.UniqueID && knownManifest.Manifest.UpdatedAt.Before(man.UpdatedAt) {
 			// if so, remove it except for the images that are used by the new edge app
 			var newImages []string
 			for _, module := range man.Modules {
@@ -74,9 +67,9 @@ func DeployEdgeApp(man manifest.Manifest) error {
 			err = docker.PullImage(module.AuthConfig, module.ImageNameFull)
 			if err != nil {
 				log.Error(deploymentID, "Unable to pull image/s, "+err.Error())
-				setAndSendStatus(man.ManifestUniqueID, model.EdgeAppError)
+				setAndSendStatus(man.UniqueID, model.EdgeAppError)
 				log.Info(deploymentID, "Initiating rollback ...")
-				RemoveEdgeApp(man.ManifestUniqueID, nil)
+				RemoveEdgeApp(man.UniqueID, nil)
 				return errors.New("unable to pull image/s")
 			}
 		}
@@ -85,12 +78,12 @@ func DeployEdgeApp(man manifest.Manifest) error {
 	//******** STEP 3 - Create the network *************//
 	log.Info(deploymentID, "Creating network ...")
 
-	networkName, err := docker.CreateNetwork(man.ManifestUniqueID.ManifestName, man.Labels)
+	networkName, err := docker.CreateNetwork(man.ManifestName, man.Labels)
 	if err != nil {
 		log.Error("CreateNetwork failed! CAUSE --> ", err)
-		setAndSendStatus(man.ManifestUniqueID, model.EdgeAppError)
+		setAndSendStatus(man.UniqueID, model.EdgeAppError)
 		log.Info(deploymentID, "Initiating rollback ...")
-		RemoveEdgeApp(man.ManifestUniqueID, nil)
+		RemoveEdgeApp(man.UniqueID, nil)
 		return traceutility.Wrap(err)
 	}
 
@@ -104,9 +97,9 @@ func DeployEdgeApp(man manifest.Manifest) error {
 
 	if len(containerConfigs) == 0 {
 		log.Error(deploymentID, "No valid containers in Manifest")
-		setAndSendStatus(man.ManifestUniqueID, model.EdgeAppError)
+		setAndSendStatus(man.UniqueID, model.EdgeAppError)
 		log.Info(deploymentID, "Initiating rollback ...")
-		RemoveEdgeApp(man.ManifestUniqueID, nil)
+		RemoveEdgeApp(man.UniqueID, nil)
 		return errors.New("no valid contianers in manifest")
 	}
 
@@ -117,25 +110,25 @@ func DeployEdgeApp(man manifest.Manifest) error {
 		if err != nil {
 			log.Error(deploymentID, "Failed to create and start container ", containerConfigs[i].ContainerName, " CAUSE --> ", err)
 			log.Info(deploymentID, "Initiating rollback ...")
-			RemoveEdgeApp(man.ManifestUniqueID, nil)
-			setAndSendStatus(man.ManifestUniqueID, model.EdgeAppError)
+			RemoveEdgeApp(man.UniqueID, nil)
+			setAndSendStatus(man.UniqueID, model.EdgeAppError)
 			return traceutility.Wrap(err)
 		}
 		log.Info(deploymentID, "Successfully created container ", containerID)
 		log.Info(deploymentID, "Started!")
 	}
 
-	setAndSendStatus(man.ManifestUniqueID, model.EdgeAppRunning)
+	setAndSendStatus(man.UniqueID, model.EdgeAppRunning)
 
 	return nil
 }
 
 func StopEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
-	log.Infoln("Stopping edge app:", manifestUniqueID.ManifestName, manifestUniqueID.UpdatedAt)
+	log.Infoln("Stopping edge app:", manifestUniqueID)
 
 	status := manifest.GetEdgeAppStatus(manifestUniqueID)
 	if status != model.EdgeAppRunning {
-		log.Warn("Can't stop edge application with ManifestName: ", manifestUniqueID.ManifestName, " updated at ", manifestUniqueID.UpdatedAt, " with status ", status)
+		log.Warn("Can't stop edge application ", manifestUniqueID, " with status ", status)
 		return nil
 	}
 
@@ -175,11 +168,11 @@ func StopEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
 }
 
 func ResumeEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
-	log.Infoln("Resuming edge app:", manifestUniqueID.ManifestName, manifestUniqueID.UpdatedAt)
+	log.Infoln("Resuming edge app:", manifestUniqueID)
 
 	status := manifest.GetEdgeAppStatus(manifestUniqueID)
 	if status != model.EdgeAppStopped {
-		log.Warn("Can't resume edge application with ManifestName: ", manifestUniqueID.ManifestName, " updated at ", manifestUniqueID.UpdatedAt, " with status ", status)
+		log.Warn("Can't resume edge application ", manifestUniqueID, " with status ", status)
 		return nil
 	}
 
@@ -221,14 +214,14 @@ func ResumeEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
 }
 
 func UndeployEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
-	log.Infoln("Undeploying edge app:", manifestUniqueID.ManifestName, manifestUniqueID.UpdatedAt)
+	log.Infoln("Undeploying edge app:", manifestUniqueID)
 
-	undeploymentID := manifestUniqueID.ManifestName + "-" + manifestUniqueID.UpdatedAt + " | "
+	undeploymentID := manifestUniqueID.String() + " | "
 
 	// Check if edge app exist
 	edgeAppRecord := manifest.GetKnownManifest(manifestUniqueID)
 	if edgeAppRecord == nil {
-		log.Warnln(undeploymentID, "Trying to undeploy a non-existant edge application with ManifestName: ", manifestUniqueID.ManifestName, " updated at ", manifestUniqueID.UpdatedAt)
+		log.Warnln(undeploymentID, "Trying to undeploy a non-existant edge application ", manifestUniqueID)
 		return nil
 	}
 
@@ -274,9 +267,9 @@ func UndeployEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
 }
 
 func RemoveEdgeApp(manifestUniqueID model.ManifestUniqueID, keepImages []string) error {
-	log.Infoln("Removing edge app:", manifestUniqueID.ManifestName, manifestUniqueID.UpdatedAt)
+	log.Infoln("Removing edge app:", manifestUniqueID)
 
-	removalID := manifestUniqueID.ManifestName + "-" + manifestUniqueID.UpdatedAt + " | "
+	removalID := manifestUniqueID.String() + " | "
 
 	//******** STEP 1 - Undeploy the edge app *************//
 	err := UndeployEdgeApp(manifestUniqueID)

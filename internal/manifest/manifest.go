@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -22,12 +23,13 @@ import (
 )
 
 type Manifest struct {
-	ID               string
-	ManifestUniqueID model.ManifestUniqueID
-	VersionNumber    float64
-	Modules          []ContainerConfig
-	Labels           map[string]string
-	Connections      connectionsInt
+	UniqueID     model.ManifestUniqueID // this is the only field that the manifest should be identified by, the rest of identifiers are just metadata
+	ID           string
+	ManifestName string
+	UpdatedAt    time.Time
+	Modules      []ContainerConfig
+	Labels       map[string]string
+	Connections  connectionsInt
 }
 
 // This struct holds information for starting a container
@@ -69,10 +71,15 @@ func Parse(payload []byte) (Manifest, error) {
 		return Manifest{}, traceutility.Wrap(err)
 	}
 
+	updatedAt, err := time.Parse(time.RFC3339, man.UpdatedAt)
+	if err != nil {
+		return Manifest{}, traceutility.Wrap(err)
+	}
+
+	uniqueID := model.ManifestUniqueID{ID: man.ID}
+
 	labels := map[string]string{
-		"manifestID":   man.ID,
-		"manifestName": man.ManifestName,
-		"updatedAt":    man.UpdatedAt,
+		"manifestUniqueID": uniqueID.String(),
 	}
 
 	var containerConfigs []ContainerConfig
@@ -138,12 +145,13 @@ func Parse(payload []byte) (Manifest, error) {
 	}
 
 	manifest := Manifest{
-		ID:               man.ID,
-		ManifestUniqueID: model.ManifestUniqueID{ManifestName: man.ManifestName, UpdatedAt: man.UpdatedAt},
-		VersionNumber:    man.VersionNumber,
-		Modules:          containerConfigs,
-		Labels:           labels,
-		Connections:      connections,
+		UniqueID:     uniqueID,
+		ID:           man.ID,
+		ManifestName: man.ManifestName,
+		UpdatedAt:    updatedAt,
+		Modules:      containerConfigs,
+		Labels:       labels,
+		Connections:  connections,
 	}
 
 	return manifest, nil
@@ -176,7 +184,7 @@ func GetEdgeAppUniqueID(payload []byte) (model.ManifestUniqueID, error) {
 		return model.ManifestUniqueID{}, traceutility.Wrap(err)
 	}
 
-	return model.ManifestUniqueID{ManifestName: uniqueID.ManifestName, UpdatedAt: uniqueID.UpdatedAt}, nil
+	return model.ManifestUniqueID{ID: uniqueID.ID}, nil
 }
 
 func (m Manifest) UpdateManifest(networkName string) {

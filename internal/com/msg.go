@@ -3,13 +3,24 @@ package com
 import (
 	"time"
 
-	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
+type ContainerLogLineMsg struct {
+	Level    string    `json:"level"`
+	Time     time.Time `json:"time"`
+	Filename string    `json:"filename"`
+	Message  string    `json:"message"`
+}
+
+type ContainerLogMsg struct {
+	ContainerID string                `json:"containerID"`
+	Log         []ContainerLogLineMsg `json:"log"`
+}
+
 type EdgeAppLogMsg struct {
-	ManifestID    string                `json:"manifestID"`
-	ContainerLogs []docker.ContainerLog `json:"containerLog"`
+	ManifestID    string            `json:"manifestID"`
+	ContainerLogs []ContainerLogMsg `json:"containerLog"`
 }
 
 type ContainerMsg struct {
