@@ -30,20 +30,16 @@ func DeployEdgeApp(man manifest.Manifest) error {
 	//******** STEP 1 - Check if a version of the edge app is already deployed *************//
 	edgeAppRecord := manifest.GetKnownManifest(man.UniqueID)
 	if edgeAppRecord != nil && edgeAppRecord.Status != model.EdgeAppUndeployed {
-		log.Warn(deploymentID, fmt.Sprintf("Edge app %v already exist!", man.UniqueID))
-		return nil
-	}
-
-	// check if an older version of the edge app is deployed
-	for knownID, knownManifest := range manifest.GetKnownManifests() {
-		if knownID == man.UniqueID && knownManifest.Manifest.UpdatedAt.Before(man.UpdatedAt) {
-			// if so, remove it except for the images that are used by the new edge app
+		if edgeAppRecord.Manifest.UpdatedAt.Before(man.UpdatedAt) {
+			// remove the old version of the edge app, except for the images that are used by the new edge app
 			var newImages []string
 			for _, module := range man.Modules {
 				newImages = append(newImages, module.ImageNameFull)
 			}
-			RemoveEdgeApp(knownID, newImages)
-			break
+			RemoveEdgeApp(man.UniqueID, newImages)
+		} else {
+			log.Warn(deploymentID, fmt.Sprintf("Edge app %v already exist!", man.UniqueID))
+			return nil
 		}
 	}
 
