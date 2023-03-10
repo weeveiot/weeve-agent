@@ -38,8 +38,7 @@ func DeployEdgeApp(man manifest.Manifest) error {
 			}
 			RemoveEdgeApp(man.UniqueID, newImages)
 		} else {
-			log.Warn(deploymentID, fmt.Sprintf("Edge app %v already exist!", man.UniqueID))
-			return nil
+			return errors.New("edge app " + man.UniqueID.String() + " already exist")
 		}
 	}
 
@@ -122,10 +121,12 @@ func DeployEdgeApp(man manifest.Manifest) error {
 func StopEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
 	log.Infoln("Stopping edge app:", manifestUniqueID)
 
-	status := manifest.GetEdgeAppStatus(manifestUniqueID)
+	status, err := manifest.GetEdgeAppStatus(manifestUniqueID)
+	if err != nil {
+		return traceutility.Wrap(err)
+	}
 	if status != model.EdgeAppRunning {
-		log.Warn("Can't stop edge application ", manifestUniqueID, " with status ", status)
-		return nil
+		return errors.New("can't stop edge application " + manifestUniqueID.String() + " with status " + status)
 	}
 
 	containers, err := docker.ReadEdgeAppContainers(manifestUniqueID)
@@ -166,10 +167,12 @@ func StopEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
 func ResumeEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
 	log.Infoln("Resuming edge app:", manifestUniqueID)
 
-	status := manifest.GetEdgeAppStatus(manifestUniqueID)
+	status, err := manifest.GetEdgeAppStatus(manifestUniqueID)
+	if err != nil {
+		return traceutility.Wrap(err)
+	}
 	if status != model.EdgeAppStopped {
-		log.Warn("Can't resume edge application ", manifestUniqueID, " with status ", status)
-		return nil
+		return errors.New("can't resume edge application " + manifestUniqueID.String() + " with status " + status)
 	}
 
 	containers, err := docker.ReadEdgeAppContainers(manifestUniqueID)
@@ -217,8 +220,7 @@ func UndeployEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
 	// Check if edge app exist
 	edgeAppRecord := manifest.GetKnownManifest(manifestUniqueID)
 	if edgeAppRecord == nil {
-		log.Warnln(undeploymentID, "Trying to undeploy a non-existant edge application ", manifestUniqueID)
-		return nil
+		return errors.New("edge application " + manifestUniqueID.String() + " does not exist")
 	}
 
 	setAndSendStatus(manifestUniqueID, model.EdgeAppExecuting)
