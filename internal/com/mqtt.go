@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	TopicOrchestration = "orchestration"
+	TopicOrchestration = "orchestration/#"
 	topicNodeStatus    = "nodestatus"
 	topicAgentLogs     = "agentlogs"
 	topicAppLogs       = "applogs"
