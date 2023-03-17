@@ -102,7 +102,8 @@ func CreateAndStartContainer(containerConfig manifest.ContainerConfig) (string, 
 }
 
 func StopContainer(containerID string) error {
-	return dockerClient.ContainerStop(ctx, containerID, nil)
+	stopTimeout := 2
+	return dockerClient.ContainerStop(ctx, containerID, container.StopOptions{Timeout: &stopTimeout})
 }
 
 func StopAndRemoveContainer(containerID string) error {
