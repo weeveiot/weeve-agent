@@ -12,6 +12,7 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
 	"github.com/weeveiot/weeve-agent/internal/model"
+	"github.com/weeveiot/weeve-agent/internal/secret"
 	ioutility "github.com/weeveiot/weeve-agent/internal/utility/io"
 	traceutility "github.com/weeveiot/weeve-agent/internal/utility/trace"
 )
@@ -50,6 +51,7 @@ func GetStatusMessage() (com.StatusMsg, error) {
 		EdgeApplications: edgeApps,
 		DeviceParams:     deviceParams,
 		AgentVersion:     model.Version,
+		OrgKeyHash:       secret.OrgKeyHash,
 	}
 
 	return msg, nil

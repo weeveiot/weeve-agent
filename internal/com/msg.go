@@ -45,6 +45,7 @@ type StatusMsg struct {
 	EdgeApplications []EdgeAppMsg    `json:"edgeApplications"`
 	DeviceParams     DeviceParamsMsg `json:"deviceParams"`
 	AgentVersion     string          `json:"agentVersion"`
+	OrgKeyHash       string          `json:"orgKeyHash"`
 }
 
 type DeviceParamsMsg struct {

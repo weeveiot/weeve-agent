@@ -10,6 +10,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"fmt"
 	"io"
 	"os"
 
@@ -29,6 +30,7 @@ type orgPrivKeyMsg struct {
 
 var nodePrivateKey *rsa.PrivateKey
 var decryptor cipher.AEAD
+var OrgKeyHash string
 
 func InitNodeKeypair() ([]byte, error) {
 	log.Debug("Initializing node keypair...")
@@ -134,6 +136,8 @@ func ProcessOrgPrivKeyMessage(payload []byte) error {
 	if err != nil {
 		return traceutility.Wrap(err)
 	}
+
+	OrgKeyHash = fmt.Sprintf("%x", sha256.Sum256(orgSecretKey))
 
 	log.Info("Orga's private key set.")
 	return nil
