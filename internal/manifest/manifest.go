@@ -17,6 +17,7 @@ import (
 	"github.com/go-playground/validator/v10/non-standard/validators"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/weeveiot/weeve-agent/internal/config"
 	"github.com/weeveiot/weeve-agent/internal/model"
 	"github.com/weeveiot/weeve-agent/internal/secret"
 	traceutility "github.com/weeveiot/weeve-agent/internal/utility/trace"
@@ -122,6 +123,8 @@ func Parse(payload []byte) (Manifest, error) {
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PORT", 80))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PATH", "/"))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_TYPE", module.Type))
+		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "NODE_ID", config.Params.NodeId))
+		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "NODE_NAME", config.Params.NodeName))
 
 		containerConfig.EnvArgs = envArgs
 		containerConfig.MountConfigs, err = parseMounts(module.Mounts)
