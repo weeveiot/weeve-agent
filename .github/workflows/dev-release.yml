@@ -5,7 +5,7 @@ on:
     - dev
 jobs:
   push-to-s3:
-    runs-on: ubuntu-18.04
+    runs-on: self-hosted
     steps:
       - name: Setup golang
         uses: actions/setup-go@v3
