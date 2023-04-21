@@ -50,6 +50,8 @@ func TestGetManifest(t *testing.T) {
 		"INGRESS_PORT=80",
 		"INGRESS_PATH=/",
 		"MODULE_TYPE=Input",
+		"NODE_ID=",
+		"NODE_NAME=",
 	})
 
 	assert.Equal(struct{}{}, manifest.Modules[0].ExposedPorts[nat.Port("1883")])
@@ -76,7 +78,7 @@ func TestGetManifest(t *testing.T) {
 		manifest.Modules[0].Resources.Devices[0])
 
 	manifest.UpdateManifest("kunbus-demo-manifest_1d")
-	assert.Equal(13, len(manifest.Modules[0].EnvArgs))
+	assert.Equal(15, len(manifest.Modules[0].EnvArgs))
 	assert.Contains(manifest.Modules[0].EnvArgs, "INGRESS_HOST=kunbus-demo-manifest_1d.weevenetwork_mqtt-ingress_V1.0")
 	assert.Contains(manifest.Modules[0].EnvArgs, "EGRESS_URLS=http://kunbus-demo-manifest_1d.weevenetwork_fluctuation-filter_V1.1:80/")
 }
