@@ -35,8 +35,8 @@ func SendHeartbeat(msg StatusMsg) error {
 	return publishMessage(nodeStatusTopic, msg, true)
 }
 
-func SendEdgeAppLogs(msg EdgeAppLogMsg) error {
-	if len(msg.ContainerLogs) > 0 {
+func SendEdgeAppLogs(msg []EdgeAppLogMsg) error {
+	if len(msg) > 0 {
 		edgeAppLogsTopic := topicAppLogs + "/" + config.Params.NodeId
 		log.Debugln("Sending edge app logs >>", "Topic:", edgeAppLogsTopic, ">> Body:", msg)
 		return publishMessage(edgeAppLogsTopic, msg, false)

@@ -2,12 +2,12 @@ package edgeapp
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/weeveiot/weeve-agent/internal/com"
 	"github.com/weeveiot/weeve-agent/internal/docker"
 	"github.com/weeveiot/weeve-agent/internal/manifest"
-	"github.com/weeveiot/weeve-agent/internal/model"
 	traceutility "github.com/weeveiot/weeve-agent/internal/utility/trace"
 )
 
@@ -34,7 +34,7 @@ func (t *logTimestamp) UnmarshalJSON(b []byte) error {
 }
 
 func SendEdgeAppLogs(manif manifest.ManifestRecord, until string) error {
-	msg, err := GetEdgeAppLogsMsg(manif, until)
+	msg, err := GetEdgeAppLogs(manif, until)
 	if err != nil {
 		return traceutility.Wrap(err)
 	}
@@ -46,56 +46,43 @@ func SendEdgeAppLogs(manif manifest.ManifestRecord, until string) error {
 	return manifest.SetLastLogRead(manif.Manifest.UniqueID, until)
 }
 
-func GetEdgeAppLogsMsg(manif manifest.ManifestRecord, until string) (com.EdgeAppLogMsg, error) {
-	var msg com.EdgeAppLogMsg
-	containerLogs, err := GetEdgeAppLogs(manif.Manifest.UniqueID, manif.LastLogReadTime, until)
-	if err != nil {
-		return msg, traceutility.Wrap(err)
-	}
+func GetEdgeAppLogs(manif manifest.ManifestRecord, until string) ([]com.EdgeAppLogMsg, error) {
+	var edgeAppLogs []com.EdgeAppLogMsg
 
-	msg = com.EdgeAppLogMsg{
-		ManifestID:    manif.Manifest.ID,
-		ContainerLogs: containerLogs,
-	}
-
-	return msg, nil
-}
-
-func GetEdgeAppLogs(uniqueID model.ManifestUniqueID, since string, until string) ([]com.ContainerLogMsg, error) {
-	var containerLogs []com.ContainerLogMsg
-
-	appContainers, err := docker.ReadEdgeAppContainers(uniqueID)
+	appContainers, err := docker.ReadEdgeAppContainers(manif.Manifest.UniqueID)
 	if err != nil {
 		return nil, traceutility.Wrap(err)
 	}
 
 	for _, container := range appContainers {
-		dockerLogs := com.ContainerLogMsg{ContainerID: container.ID}
-		logs, err := docker.ReadContainerLogs(container.ID, since, until)
+		logs, err := docker.ReadContainerLogs(container.ID, manif.LastLogReadTime, until)
 		if err != nil {
 			return nil, traceutility.Wrap(err)
 		}
-		dockerLogs.Log = constructLogEntry(logs, since, until)
+		logMsgs := constructLogEntry(manif.Manifest.ID, container.ID, strings.Split(container.Image, "/")[1], logs, manif.LastLogReadTime, until)
 
-		if len(dockerLogs.Log) > 0 {
-			containerLogs = append(containerLogs, dockerLogs)
+		if len(logMsgs) > 0 {
+			edgeAppLogs = append(edgeAppLogs, logMsgs...)
 		}
 	}
 
-	return containerLogs, nil
+	return edgeAppLogs, nil
 }
 
-func constructLogEntry(logLines []string, since string, until string) []com.ContainerLogLineMsg {
+func constructLogEntry(manifestID string, containerID string, moduleName string, logLines []string, since string, until string) []com.EdgeAppLogMsg {
 	defaultTime := meanTime(since, until)
-	var logMsgs []com.ContainerLogLineMsg
+	var logMsgs []com.EdgeAppLogMsg
 
 	for _, line := range logLines {
 		// * default log message
-		logMsg := com.ContainerLogLineMsg{
-			Time:     defaultTime,
-			Level:    "DEBUG",
-			Filename: "unknown",
-			Message:  line,
+		logMsg := com.EdgeAppLogMsg{
+			ManifestID:  manifestID,
+			ContainerID: containerID,
+			ModuleName:  moduleName,
+			Time:        defaultTime,
+			Level:       "DEBUG",
+			Filename:    "unknown",
+			Message:     line,
 		}
 
 		// try to extract log message from json
@@ -120,9 +107,9 @@ func constructLogEntry(logLines []string, since string, until string) []com.Cont
 	return logMsgs
 }
 
-func parseJSONLogLine(line string) (com.ContainerLogLineMsg, bool) {
+func parseJSONLogLine(line string) (com.EdgeAppLogMsg, bool) {
 	docLog := dockerLogLine{}
-	logMsg := com.ContainerLogLineMsg{}
+	logMsg := com.EdgeAppLogMsg{}
 	logLine := []byte(line)
 
 	err := json.Unmarshal(logLine, &docLog)
