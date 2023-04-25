@@ -6,21 +6,14 @@ import (
 	"github.com/weeveiot/weeve-agent/internal/model"
 )
 
-type ContainerLogLineMsg struct {
-	Level    string    `json:"level"`
-	Time     time.Time `json:"time"`
-	Filename string    `json:"filename"`
-	Message  string    `json:"message"`
-}
-
-type ContainerLogMsg struct {
-	ContainerID string                `json:"containerID"`
-	Log         []ContainerLogLineMsg `json:"log"`
-}
-
 type EdgeAppLogMsg struct {
-	ManifestID    string            `json:"manifestID"`
-	ContainerLogs []ContainerLogMsg `json:"containerLog"`
+	ManifestID  string    `json:"manifestID"`
+	ContainerID string    `json:"containerID"`
+	ModuleName  string    `json:"moduleName"`
+	Time        time.Time `json:"time"`
+	Level       string    `json:"level"`
+	Filename    string    `json:"filename"`
+	Message     string    `json:"message"`
 }
 
 type ContainerMsg struct {
@@ -35,9 +28,9 @@ type EdgeAppMsg struct {
 }
 
 type agentLogMsg struct {
-	Time  time.Time `json:"time"`
-	Level string    `json:"level"`
-	Msg   string    `json:"msg"`
+	Time    time.Time `json:"time"`
+	Level   string    `json:"level"`
+	Message string    `json:"message"`
 }
 
 type StatusMsg struct {

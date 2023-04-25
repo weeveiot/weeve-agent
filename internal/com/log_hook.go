@@ -26,9 +26,9 @@ func addMqttHookToLogs(level log.Level) {
 // Fire sends logs over MQTT to MAPI
 func (hook mqttHook) Fire(entry *log.Entry) error {
 	msg := agentLogMsg{
-		Time:  entry.Time.UTC(),
-		Level: entry.Level.String(),
-		Msg:   entry.Message,
+		Time:    entry.Time.UTC(),
+		Level:   entry.Level.String(),
+		Message: entry.Message,
 	}
 
 	return publishMessage(hook.topic, msg, false)
