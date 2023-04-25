@@ -59,7 +59,7 @@ func GetEdgeAppLogs(manif manifest.ManifestRecord, until string) ([]com.EdgeAppL
 		if err != nil {
 			return nil, traceutility.Wrap(err)
 		}
-		logMsgs := constructLogEntry(manif.Manifest.ID, container.ID, strings.Split(container.Names[0], "_")[2], logs, manif.LastLogReadTime, until)
+		logMsgs := constructLogEntry(manif.Manifest.ID, container.ID, strings.Split(container.Image, "/")[1], logs, manif.LastLogReadTime, until)
 
 		if len(logMsgs) > 0 {
 			edgeAppLogs = append(edgeAppLogs, logMsgs...)
