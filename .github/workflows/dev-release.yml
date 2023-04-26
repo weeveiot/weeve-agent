@@ -2,7 +2,9 @@ name: dev-release
 on:
   push:
     branches:
-    - dev
+      - dev
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+
 jobs:
   push-to-s3:
     runs-on: self-hosted
