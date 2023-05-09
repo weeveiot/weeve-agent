@@ -31,7 +31,8 @@ func (hook mqttHook) Fire(entry *log.Entry) error {
 		Message: entry.Message,
 	}
 
-	return publishMessage(hook.topic, msg, false)
+	go publishMessage(hook.topic, msg, false)
+	return nil
 }
 
 // Levels returns the list of logging levels that will trigger Fire
