@@ -161,3 +161,11 @@ To execute all unit tests run the following command from the project root direct
 ```bash
 go test -v ./...
 ```
+
+## Contributing
+
+We welcome all contibutions to the project!
+  - if you found a bug or have an idea on how to improve weeve-agent, please open an [Issue](https://github.com/weeveiot/weeve-agent/issues)
+  - if you found a security vulnerability, please report it following our [security policy](https://github.com/weeveiot/weeve-agent/security/policy)
+
+In case you have any other questions or suggestion feel free to reach out to us under support@weeve.network or info@weeve.network.
