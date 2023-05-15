@@ -118,7 +118,7 @@ func Parse(payload []byte) (Manifest, error) {
 			envArgs = append(envArgs, fmt.Sprintf("%v=%v", "LOG_LEVEL", "INFO"))
 		}
 
-		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "SERVICE_ID", man.ID))
+		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MANIFEST_ID", man.ID))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "MODULE_NAME", containerConfig.ImageNameFull))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PORT", 80))
 		envArgs = append(envArgs, fmt.Sprintf("%v=%v", "INGRESS_PATH", "/"))

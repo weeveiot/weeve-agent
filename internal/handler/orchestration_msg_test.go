@@ -171,7 +171,7 @@ func deployEdgeApplication(jsonBytes []byte, man manifest.Manifest) error {
 func stopEdgeApplication(man manifest.Manifest) error {
 	msg := msgType{
 		ID:      man.ID,
-		Command: edgeapp.CMDStopService,
+		Command: edgeapp.CMDStop,
 	}
 	jsonB, err := json.Marshal(msg)
 	if err != nil {
@@ -196,7 +196,7 @@ func stopEdgeApplication(man manifest.Manifest) error {
 func resumeEdgeApplication(man manifest.Manifest) error {
 	msg := msgType{
 		ID:      man.ID,
-		Command: edgeapp.CMDResumeService,
+		Command: edgeapp.CMDResume,
 	}
 	jsonB, err := json.Marshal(msg)
 	if err != nil {
