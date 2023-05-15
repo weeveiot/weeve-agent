@@ -39,7 +39,7 @@ func ProcessOrchestrationMessage(payload []byte) error {
 		}
 		log.Info("Deployment done!")
 
-	case edgeapp.CMDStopService:
+	case edgeapp.CMDStop:
 		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(payload)
 		if err != nil {
 			return traceutility.Wrap(err)
@@ -48,9 +48,9 @@ func ProcessOrchestrationMessage(payload []byte) error {
 		if err != nil {
 			return traceutility.Wrap(err)
 		}
-		log.Info("Service stopped!")
+		log.Info("Edge application stopped!")
 
-	case edgeapp.CMDResumeService:
+	case edgeapp.CMDResume:
 		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(payload)
 		if err != nil {
 			return traceutility.Wrap(err)
@@ -59,7 +59,7 @@ func ProcessOrchestrationMessage(payload []byte) error {
 		if err != nil {
 			return traceutility.Wrap(err)
 		}
-		log.Info("Service resumed!")
+		log.Info("Edge application resumed!")
 
 	case edgeapp.CMDUndeploy:
 		manifestUniqueID, err := manifest.GetEdgeAppUniqueID(payload)

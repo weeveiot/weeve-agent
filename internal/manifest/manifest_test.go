@@ -45,7 +45,7 @@ func TestGetManifest(t *testing.T) {
 		"TOPIC=revpi_I14",
 		"QOS=0",
 		"LOG_LEVEL=INFO",
-		"SERVICE_ID=62bef68d664ed72f8ecdd690",
+		"MANIFEST_ID=62bef68d664ed72f8ecdd690",
 		"MODULE_NAME=weevenetwork/mqtt-ingress:V1",
 		"INGRESS_PORT=80",
 		"INGRESS_PATH=/",

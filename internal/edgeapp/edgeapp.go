@@ -15,11 +15,11 @@ import (
 )
 
 const (
-	CMDDeploy        = "DEPLOY"
-	CMDStopService   = "STOP"
-	CMDResumeService = "RESUME"
-	CMDUndeploy      = "UNDEPLOY"
-	CMDRemove        = "REMOVE"
+	CMDDeploy   = "DEPLOY"
+	CMDStop     = "STOP"
+	CMDResume   = "RESUME"
+	CMDUndeploy = "UNDEPLOY"
+	CMDRemove   = "REMOVE"
 )
 
 func DeployEdgeApp(man manifest.Manifest) error {
