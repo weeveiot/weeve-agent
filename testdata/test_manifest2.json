@@ -9,9 +9,6 @@
         ],
         "1": [
             "2"
-        ],
-        "2": [
-            "3"
         ]
     },
     "modules": [
@@ -58,40 +55,6 @@
             "mounts": [],
             "devices": [],
             "type": "Input"
-        },
-        {
-            "moduleID": "62bdb84e664ed72f8ecd88cd",
-            "moduleName": "fluctuation-filter",
-            "image": {
-                "name": "weevenetwork/fluctuation-filter",
-                "tag": "v1.0.0",
-                "registry": {
-                    "url": "https://hub.docker.com",
-                    "userName": "",
-                    "password": ""
-                }
-            },
-            "envs": [
-                {
-                    "key": "INPUT_LABEL",
-                    "value": "temp",
-                    "secret": false
-                },
-                {
-                    "key": "WINDOW_SIZE",
-                    "value": "3",
-                    "secret": false
-                },
-                {
-                    "key": "SEND_ON_CHANGE",
-                    "value": "true",
-                    "secret": false
-                }
-            ],
-            "ports": [],
-            "mounts": [],
-            "devices": [],
-            "type": "Processing"
         },
         {
             "moduleID": "62bdb84e664ed72f8ecd88d7",
@@ -162,7 +125,7 @@
                 },
                 {
                     "key": "SLACK_WEBHOOK_URL",
-                    "value": "https://hooks.slack.com/services/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",
+                    "value": "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX",
                     "secret": false
                 }
             ],

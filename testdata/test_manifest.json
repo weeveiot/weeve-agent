@@ -162,7 +162,7 @@
                 },
                 {
                     "key": "SLACK_WEBHOOK_URL",
-                    "value": "https://hooks.slack.com/services/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",
+                    "value": "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX",
                     "secret": false
                 }
             ],

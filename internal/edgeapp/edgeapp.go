@@ -15,11 +15,11 @@ import (
 )
 
 const (
-	CMDDeploy        = "DEPLOY"
-	CMDStopService   = "STOP"
-	CMDResumeService = "RESUME"
-	CMDUndeploy      = "UNDEPLOY"
-	CMDRemove        = "REMOVE"
+	CMDDeploy   = "DEPLOY"
+	CMDStop     = "STOP"
+	CMDResume   = "RESUME"
+	CMDUndeploy = "UNDEPLOY"
+	CMDRemove   = "REMOVE"
 )
 
 func DeployEdgeApp(man manifest.Manifest) error {
@@ -30,20 +30,15 @@ func DeployEdgeApp(man manifest.Manifest) error {
 	//******** STEP 1 - Check if a version of the edge app is already deployed *************//
 	edgeAppRecord := manifest.GetKnownManifest(man.UniqueID)
 	if edgeAppRecord != nil && edgeAppRecord.Status != model.EdgeAppUndeployed {
-		log.Warn(deploymentID, fmt.Sprintf("Edge app %v already exist!", man.UniqueID))
-		return nil
-	}
-
-	// check if an older version of the edge app is deployed
-	for knownID, knownManifest := range manifest.GetKnownManifests() {
-		if knownID == man.UniqueID && knownManifest.Manifest.UpdatedAt.Before(man.UpdatedAt) {
-			// if so, remove it except for the images that are used by the new edge app
+		if edgeAppRecord.Manifest.UpdatedAt.Before(man.UpdatedAt) {
+			// remove the old version of the edge app, except for the images that are used by the new edge app
 			var newImages []string
 			for _, module := range man.Modules {
 				newImages = append(newImages, module.ImageNameFull)
 			}
-			RemoveEdgeApp(knownID, newImages)
-			break
+			RemoveEdgeApp(man.UniqueID, newImages)
+		} else {
+			return errors.New("edge app " + man.UniqueID.String() + " already exist")
 		}
 	}
 
@@ -126,10 +121,12 @@ func DeployEdgeApp(man manifest.Manifest) error {
 func StopEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
 	log.Infoln("Stopping edge app:", manifestUniqueID)
 
-	status := manifest.GetEdgeAppStatus(manifestUniqueID)
+	status, err := manifest.GetEdgeAppStatus(manifestUniqueID)
+	if err != nil {
+		return traceutility.Wrap(err)
+	}
 	if status != model.EdgeAppRunning {
-		log.Warn("Can't stop edge application ", manifestUniqueID, " with status ", status)
-		return nil
+		return errors.New("can't stop edge application " + manifestUniqueID.String() + " with status " + status)
 	}
 
 	containers, err := docker.ReadEdgeAppContainers(manifestUniqueID)
@@ -170,10 +167,12 @@ func StopEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
 func ResumeEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
 	log.Infoln("Resuming edge app:", manifestUniqueID)
 
-	status := manifest.GetEdgeAppStatus(manifestUniqueID)
+	status, err := manifest.GetEdgeAppStatus(manifestUniqueID)
+	if err != nil {
+		return traceutility.Wrap(err)
+	}
 	if status != model.EdgeAppStopped {
-		log.Warn("Can't resume edge application ", manifestUniqueID, " with status ", status)
-		return nil
+		return errors.New("can't resume edge application " + manifestUniqueID.String() + " with status " + status)
 	}
 
 	containers, err := docker.ReadEdgeAppContainers(manifestUniqueID)
@@ -221,8 +220,7 @@ func UndeployEdgeApp(manifestUniqueID model.ManifestUniqueID) error {
 	// Check if edge app exist
 	edgeAppRecord := manifest.GetKnownManifest(manifestUniqueID)
 	if edgeAppRecord == nil {
-		log.Warnln(undeploymentID, "Trying to undeploy a non-existant edge application ", manifestUniqueID)
-		return nil
+		return errors.New("edge application " + manifestUniqueID.String() + " does not exist")
 	}
 
 	setAndSendStatus(manifestUniqueID, model.EdgeAppExecuting)

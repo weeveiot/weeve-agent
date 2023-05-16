@@ -112,8 +112,12 @@ func InitKnownManifests() error {
 	return json.Unmarshal(byteValue, &knownManifests)
 }
 
-func GetEdgeAppStatus(manifestUniqueID model.ManifestUniqueID) string {
-	return knownManifests[manifestUniqueID].Status
+func GetEdgeAppStatus(manifestUniqueID model.ManifestUniqueID) (string, error) {
+	manifest, manifestKnown := knownManifests[manifestUniqueID]
+	if !manifestKnown || manifest == nil {
+		return "", errors.New("could not get the status. the edge app " + manifestUniqueID.String() + " is not known")
+	}
+	return manifest.Status, nil
 }
 
 func writeKnownManifestsToFile() error {
