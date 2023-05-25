@@ -32,14 +32,14 @@ var subscriptionsMap map[string]mqtt.MessageHandler
 func SendHeartbeat(msg StatusMsg) error {
 	nodeStatusTopic := topicNodeStatus + "/" + config.Params.NodeId
 	log.Debugln("Sending update >>", "Topic:", nodeStatusTopic, ">> Body:", msg)
-	return publishMessage(nodeStatusTopic, msg, true)
+	return publishMessage(nodeStatusTopic, msg, true, 0)
 }
 
 func SendEdgeAppLogs(msg []EdgeAppLogMsg) error {
 	if len(msg) > 0 {
 		edgeAppLogsTopic := topicAppLogs + "/" + config.Params.NodeId
 		log.Debugln("Sending edge app logs >>", "Topic:", edgeAppLogsTopic, ">> Body:", msg)
-		return publishMessage(edgeAppLogsTopic, msg, false)
+		return publishMessage(edgeAppLogsTopic, msg, false, 0)
 	}
 
 	return nil
@@ -51,14 +51,14 @@ func SendNodePublicKey(nodePublicKey []byte) error {
 		NodePublicKey: string(nodePublicKey),
 	}
 	log.Debugln("Sending nodePublicKey >>", "Topic:", topic, ">> Body:", msg)
-	return publishMessage(topic, msg, true)
+	return publishMessage(topic, msg, true, 1)
 }
 
 func sendDisconnectedStatus() error {
 	nodeStatusTopic := topicNodeStatus + "/" + config.Params.NodeId
 	msg := disconnectedMsg
 	log.Debugln("Sending update >>", "Topic:", nodeStatusTopic, ">> Body:", msg)
-	return publishMessage(nodeStatusTopic, msg, true)
+	return publishMessage(nodeStatusTopic, msg, true, 1)
 }
 
 func ConnectNode(subscriptions map[string]mqtt.MessageHandler) error {
@@ -101,6 +101,7 @@ func createMqttClient() error {
 	channelOptions := mqtt.NewClientOptions()
 	channelOptions.AddBroker(config.Params.Broker)
 	channelOptions.SetClientID(config.Params.NodeId)
+	channelOptions.SetCleanSession(false) // enable persistent session
 	channelOptions.SetOnConnectHandler(onConnectHandler)
 	channelOptions.SetConnectionLostHandler(connectLostHandler)
 	channelOptions.SetWill(nodeStatusTopic, string(willPayload), 1, true)
@@ -129,7 +130,7 @@ func subscribeAndSetHandler(topic string, handler mqtt.MessageHandler) error {
 	fullTopic := config.Params.NodeId + "/" + topic
 
 	log.Debug("Subscribing to topic ", fullTopic)
-	if token := client.Subscribe(fullTopic, 1, handler); token.Wait() && token.Error() != nil {
+	if token := client.Subscribe(fullTopic, 2, handler); token.Wait() && token.Error() != nil {
 		mqttLogger.Error("Cannot subscribe to topic: ", token.Error())
 	}
 
@@ -170,14 +171,13 @@ func newTLSConfig() (*tls.Config, error) {
 	return configTLS, nil
 }
 
-func publishMessage(topic string, message interface{}, retained bool) error {
+func publishMessage(topic string, message interface{}, retained bool, qos byte) error {
 	payload, err := json.Marshal(message)
 	if err != nil {
 		return traceutility.Wrap(err)
 	}
 
-	// sending with QoS of 1 to ensure that the message gets delivered
-	if token := client.Publish(topic, 1, retained, payload); token.WaitTimeout(time.Second) {
+	if token := client.Publish(topic, qos, retained, payload); token.WaitTimeout(time.Second) {
 		if token.Error() != nil {
 			return traceutility.Wrap(token.Error())
 		}

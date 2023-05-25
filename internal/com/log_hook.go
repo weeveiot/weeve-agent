@@ -31,7 +31,7 @@ func (hook mqttHook) Fire(entry *log.Entry) error {
 		Message: entry.Message,
 	}
 
-	go publishMessage(hook.topic, msg, false)
+	go publishMessage(hook.topic, msg, false, 0)
 	return nil
 }
 
