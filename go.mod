@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/Jeffail/gabs/v2 v2.7.0
 	github.com/ahmetb/go-linq/v3 v3.2.0
-	github.com/docker/docker v23.0.1+incompatible
+	github.com/docker/docker v24.0.7+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/eclipse/paho.mqtt.golang v1.4.2
 	github.com/go-playground/validator/v10 v10.11.2
